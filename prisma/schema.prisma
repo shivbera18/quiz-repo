@@ -31,7 +31,8 @@ model Quiz {
   description String
   timeLimit   Int
   createdAt   DateTime @default(now())
-  createdBy   String  sections    Json     // JSON for PostgreSQL
+  createdBy   String
+  sections    Json     // JSON for PostgreSQL
   questions   Json     @default("[]")  // JSON for PostgreSQL
   isActive    Boolean  @default(true)
   results     QuizResult[] @relation("QuizQuizResults")
@@ -46,7 +47,8 @@ model QuizResult {
   userName  String
   userEmail String
   date      DateTime @default(now())
-  totalScore Int  sections  Json     // JSON for PostgreSQL
+  totalScore Int
+  sections  Json     // JSON for PostgreSQL
   answers   Json     // JSON for PostgreSQL
   timeSpent Int
   user      User   @relation(fields: [userId], references: [id], name: "UserQuizResults")
