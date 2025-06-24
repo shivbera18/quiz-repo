@@ -23,10 +23,31 @@ export async function GET(request: NextRequest) {
       const attempts = quiz.results.length
       const avgScore = attempts > 0 ? Math.round(quiz.results.reduce((sum, r) => sum + r.totalScore, 0) / attempts) : 0
       const avgTime = attempts > 0 ? Math.round(quiz.results.reduce((sum, r) => sum + r.timeSpent, 0) / attempts) : 0
-      // Most missed question logic can be added if questions are normalized
+      
+      // Parse questions to ensure it's always an array
+      let questionsArr: any[] = []
+      if (typeof quiz.questions === "string") {
+        try {
+          questionsArr = JSON.parse(quiz.questions)
+        } catch {
+          questionsArr = []
+        }
+      } else if (Array.isArray(quiz.questions)) {
+        questionsArr = quiz.questions
+      }
+      
       return {
         id: quiz.id,
         title: quiz.title,
+        description: quiz.description,
+        duration: quiz.timeLimit,
+        sections: quiz.sections,
+        questions: questionsArr,
+        isActive: quiz.isActive,
+        createdAt: quiz.createdAt.toISOString(),
+        createdBy: quiz.createdBy,
+        negativeMarking: true, // Default values for missing fields
+        negativeMarkValue: 0.25,
         attempts,
         avgScore,
         avgTime,

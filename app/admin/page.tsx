@@ -233,41 +233,6 @@ export default function AdminPage() {
     }))
   }
 
-  const handleCreateQuiz = () => {
-    if (!newQuiz.title || newQuiz.sections.length === 0) {
-      setError("Please provide a title and select at least one section")
-      return
-    }
-
-    const quiz: Quiz = {
-      id: Date.now().toString(),
-      title: newQuiz.title,
-      description: newQuiz.description,
-      duration: newQuiz.duration,
-      sections: newQuiz.sections,
-      questions: [],
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      createdBy: user?.id || "admin",
-      negativeMarking: newQuiz.negativeMarking,
-      negativeMarkValue: newQuiz.negativeMarkValue,
-    }
-
-    const updatedQuizzes = [...quizzes, quiz]
-    // Remove saveQuizzes, use setQuizzes for local state only
-    setQuizzes(updatedQuizzes)
-    setSuccess("Quiz created successfully!")
-    setNewQuiz({
-      title: "",
-      description: "",
-      duration: 30,
-      sections: [],
-      negativeMarking: true,
-      negativeMarkValue: 0.25,
-    })
-    setShowQuizForm(false)
-  }
-
   const handleEditQuiz = (quiz: Quiz) => {
     setEditingQuiz(quiz)
     setNewQuiz({
