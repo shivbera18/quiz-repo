@@ -18,7 +18,25 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     if (!quiz) {
       return NextResponse.json({ message: "Quiz not found" }, { status: 404 })
     }
-    return NextResponse.json({ quiz })
+    
+    // Ensure questions is always an array
+    let questionsArr: any[] = []
+    if (typeof quiz.questions === "string") {
+      try {
+        questionsArr = JSON.parse(quiz.questions)
+      } catch {
+        questionsArr = []
+      }
+    } else if (Array.isArray(quiz.questions)) {
+      questionsArr = quiz.questions
+    }
+    
+    const quizWithParsedQuestions = {
+      ...quiz,
+      questions: questionsArr,
+    }
+    
+    return NextResponse.json({ quiz: quizWithParsedQuestions })
   } catch (error) {
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
@@ -75,11 +93,29 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         description: data.description,
         timeLimit: data.duration,
         sections: data.sections,
-        questions: data.questions,
+        questions: JSON.stringify(data.questions), // Ensure questions are stored as JSON string
         isActive: data.isActive,
       },
     })
-    return NextResponse.json({ quiz: updatedQuiz })
+    
+    // Parse questions back to array for response
+    let questionsArr: any[] = []
+    if (typeof updatedQuiz.questions === "string") {
+      try {
+        questionsArr = JSON.parse(updatedQuiz.questions)
+      } catch {
+        questionsArr = []
+      }
+    } else if (Array.isArray(updatedQuiz.questions)) {
+      questionsArr = updatedQuiz.questions
+    }
+    
+    const responseQuiz = {
+      ...updatedQuiz,
+      questions: questionsArr,
+    }
+    
+    return NextResponse.json({ quiz: responseQuiz })
   } catch (error) {
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }

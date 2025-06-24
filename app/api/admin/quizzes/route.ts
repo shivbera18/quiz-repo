@@ -64,14 +64,31 @@ export async function POST(request: NextRequest) {
         description,
         timeLimit: duration, // assuming your schema uses timeLimit
         sections,
-        questions: questions || [],
+        questions: JSON.stringify(questions || []), // Ensure questions are stored as JSON string
         isActive: true,
         createdAt: new Date(),
         createdBy: "admin",
       },
     })
 
-    return NextResponse.json({ quiz: createdQuiz })
+    // Parse questions back to array for response
+    let questionsArr: any[] = []
+    if (typeof createdQuiz.questions === "string") {
+      try {
+        questionsArr = JSON.parse(createdQuiz.questions)
+      } catch {
+        questionsArr = []
+      }
+    } else if (Array.isArray(createdQuiz.questions)) {
+      questionsArr = createdQuiz.questions
+    }
+    
+    const responseQuiz = {
+      ...createdQuiz,
+      questions: questionsArr,
+    }
+
+    return NextResponse.json({ quiz: responseQuiz })
   } catch (error) {
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }

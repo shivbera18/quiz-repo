@@ -19,7 +19,27 @@ export async function GET(request: NextRequest) {
       where: { isActive: true },
       orderBy: { createdAt: "desc" },
     })
-    return NextResponse.json(quizzes)
+    
+    // Ensure all quizzes have questions parsed as arrays
+    const parsedQuizzes = quizzes.map(quiz => {
+      let questionsArr: any[] = []
+      if (typeof quiz.questions === "string") {
+        try {
+          questionsArr = JSON.parse(quiz.questions)
+        } catch {
+          questionsArr = []
+        }
+      } else if (Array.isArray(quiz.questions)) {
+        questionsArr = quiz.questions
+      }
+      
+      return {
+        ...quiz,
+        questions: questionsArr,
+      }
+    })
+    
+    return NextResponse.json(parsedQuizzes)
   } catch (error) {
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
