@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
 
-    const { title, description, duration, sections } = await request.json()
+    const { title, description, duration, sections, questions } = await request.json()
 
     // Save new quiz to the database using Prisma
     const createdQuiz = await prisma.quiz.create({
@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
         description,
         timeLimit: duration, // assuming your schema uses timeLimit
         sections,
+        questions: questions || [],
         isActive: true,
         createdAt: new Date(),
         createdBy: "admin",

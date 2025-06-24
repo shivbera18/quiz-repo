@@ -8,6 +8,7 @@ interface User {
   email: string
   isAdmin: boolean
   userType: "admin" | "student"
+  token?: string // Add token property for API auth
 }
 
 export function useAuth(requireAdmin = false) {
@@ -29,7 +30,8 @@ export function useAuth(requireAdmin = false) {
 
     try {
       const parsedUser = JSON.parse(userData)
-
+      // Attach token to user object
+      parsedUser.token = token
       // Simple token validation (check if it looks like our format)
       if (!token.includes("-") || token.length < 10) {
         localStorage.removeItem("token")

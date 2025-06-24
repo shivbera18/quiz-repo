@@ -25,8 +25,13 @@ interface Question {
 interface Quiz {
   id: string
   title: string
+  description: string
+  duration: number
   sections: string[]
   questions: Question[]
+  isActive: boolean
+  createdAt: string
+  createdBy: string
 }
 
 interface BulkManagerProps {
@@ -120,7 +125,7 @@ export default function BulkManager({ quiz, onQuizUpdate, onClose }: BulkManager
         // Validate options are not empty
         const emptyOptions = questionData.options
           .map((opt: any, idx: number) => (!opt || opt.toString().trim() === "" ? idx + 1 : null))
-          .filter((idx) => idx !== null)
+          .filter((idx: number | null) => idx !== null)
 
         if (emptyOptions.length > 0) {
           errors.push(`Question ${questionNumber}: Empty options found at positions: ${emptyOptions.join(", ")}`)

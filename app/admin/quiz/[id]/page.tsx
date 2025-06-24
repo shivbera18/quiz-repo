@@ -70,24 +70,60 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
 
   useEffect(() => {
     if (!loading && user) {
-      // Load quiz from localStorage
-      const savedQuizzes = JSON.parse(localStorage.getItem("adminQuizzes") || "[]")
-      const foundQuiz = savedQuizzes.find((q: Quiz) => q.id === params.id)
-
-      if (foundQuiz) {
-        setQuiz(foundQuiz)
-      } else {
-        setError("Quiz not found")
+      // Fetch quiz from backend API
+      const fetchQuiz = async () => {
+        try {
+          const res = await fetch(`/api/admin/quizzes/${params.id}`, {
+            headers: {
+              Authorization: `Bearer ${user.token || "admin-token-placeholder"}`,
+            },
+          })
+          if (!res.ok) throw new Error("Quiz not found or unauthorized")
+          const data = await res.json()
+          setQuiz(data.quiz)
+        } catch (err) {
+          setError("Quiz not found or unauthorized")
+        } finally {
+          setQuizLoading(false)
+        }
       }
-      setQuizLoading(false)
+      fetchQuiz()
     }
   }, [params.id, loading, user])
 
-  const saveQuiz = (updatedQuiz: Quiz) => {
-    const savedQuizzes = JSON.parse(localStorage.getItem("adminQuizzes") || "[]")
-    const updatedQuizzes = savedQuizzes.map((q: Quiz) => (q.id === updatedQuiz.id ? updatedQuiz : q))
-    localStorage.setItem("adminQuizzes", JSON.stringify(updatedQuizzes))
-    setQuiz(updatedQuiz)
+  // Save quiz to backend
+  const saveQuiz = async (updatedQuiz: Quiz) => {
+    try {
+      setError("")
+      setSuccess("")
+      if (!user) throw new Error("No user")
+      const res = await fetch(`/api/admin/quizzes/${updatedQuiz.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token || "admin-token-placeholder"}`,
+        },
+        body: JSON.stringify({
+          title: updatedQuiz.title,
+          description: updatedQuiz.description,
+          duration: updatedQuiz.duration,
+          sections: updatedQuiz.sections,
+          questions: updatedQuiz.questions,
+          isActive: updatedQuiz.isActive,
+        }),
+      })
+      if (!res.ok) throw new Error("Failed to save quiz")
+      const data = await res.json()
+      setQuiz(data.quiz)
+      setSuccess("Quiz saved to database!")
+    } catch (err) {
+      setError("Failed to save quiz to database")
+    }
+  }
+
+  // Adapter for BulkManager: expects sync function
+  const saveQuizSync = (updatedQuiz: Quiz) => {
+    saveQuiz(updatedQuiz)
   }
 
   const handleOptionChange = (index: number, value: string) => {
@@ -483,7 +519,7 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
 
         {showBulkManager && (
           <div className="mb-6">
-            <BulkManager quiz={quiz} onQuizUpdate={saveQuiz} onClose={() => setShowBulkManager(false)} />
+            <BulkManager quiz={quiz} onQuizUpdate={saveQuizSync} onClose={() => setShowBulkManager(false)} />
           </div>
         )}
 
