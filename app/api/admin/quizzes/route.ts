@@ -61,21 +61,20 @@ export async function POST(request: NextRequest) {
 
     const { title, description, duration, sections } = await request.json()
 
-    const newQuiz = {
-      id: Date.now().toString(),
-      title,
-      description,
-      duration, // in minutes
-      sections: sections || [],
-      questions: [],
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      createdBy: "admin",
-    }
+    // Save new quiz to the database using Prisma
+    const createdQuiz = await prisma.quiz.create({
+      data: {
+        title,
+        description,
+        timeLimit: duration, // assuming your schema uses timeLimit
+        sections,
+        isActive: true,
+        createdAt: new Date(),
+        createdBy: "admin",
+      },
+    })
 
-    quizzes.push(newQuiz)
-
-    return NextResponse.json({ quiz: newQuiz })
+    return NextResponse.json({ quiz: createdQuiz })
   } catch (error) {
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }

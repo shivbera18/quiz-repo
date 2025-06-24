@@ -1,3 +1,0 @@
--- AlterTable
-ALTER TABLE "Quiz" ADD COLUMN "endTime" DATETIME;
-ALTER TABLE "Quiz" ADD COLUMN "startTime" DATETIME;

@@ -33,6 +33,7 @@ model Quiz {
   createdAt   DateTime @default(now())
   createdBy   String
   sections    Json
+  isActive    Boolean  @default(true)
   results     QuizResult[] @relation("QuizQuizResults")
   startTime   DateTime? // Scheduled start time
   endTime     DateTime? // Scheduled end time
