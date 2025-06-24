@@ -173,7 +173,12 @@ export default function AdminPage() {
           })
           if (!res.ok) throw new Error("Failed to fetch quizzes")
           const data = await res.json()
-          setQuizzes(data.quizzes)
+          // Ensure all quizzes have questions array
+          const safeQuizzes = (data.quizzes || []).map((quiz: any) => ({
+            ...quiz,
+            questions: quiz.questions || [],
+          }))
+          setQuizzes(safeQuizzes)
         } catch (err) {
           setError("Failed to fetch quizzes from database")
         } finally {
@@ -303,7 +308,7 @@ export default function AdminPage() {
     totalAttempts: getQuizResults().length,
     totalQuizzes: quizzes.length,
     activeQuizzes: quizzes.filter((q) => q.isActive).length,
-    totalQuestions: quizzes.reduce((sum, quiz) => sum + quiz.questions.length, 0),
+    totalQuestions: quizzes.reduce((sum, quiz) => sum + (quiz.questions?.length || 0), 0),
   }
 
   if (loading || adminLoading) {
@@ -706,7 +711,7 @@ export default function AdminPage() {
                             </div>
                             <div>
                               <span className="text-muted-foreground">Questions:</span>
-                              <p className="font-medium">{quiz.questions.length}</p>
+                              <p className="font-medium">{quiz.questions?.length || 0}</p>
                             </div>
                             <div>
                               <span className="text-muted-foreground">Negative Marking:</span>
@@ -735,7 +740,7 @@ export default function AdminPage() {
                             <Link href={`/admin/quiz/${quiz.id}`}>
                               <Button variant="outline" size="sm">
                                 <Eye className="h-4 w-4 mr-2" />
-                                Manage Questions ({quiz.questions.length})
+                                Manage Questions ({quiz.questions?.length || 0})
                               </Button>
                             </Link>
                             <Button variant="outline" size="sm" onClick={() => handleToggleQuizStatus(quiz.id)}>
