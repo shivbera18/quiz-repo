@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { ArrowLeft, TrendingUp, Users, BookOpen, Clock, Target, Download, Filter, BarChart3 } from "lucide-react"
+import { ArrowLeft, TrendingUp, Users, BookOpen, Clock, Target, Download, Filter, BarChart3, Menu } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
 import { useAuth } from "@/hooks/use-auth"
+import { Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer"
 
 interface QuizResult {
   _id: string
@@ -287,21 +288,50 @@ export default function AdminAnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container w-full max-w-full px-2 sm:px-4 py-4 sm:py-8">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4 sm:gap-0">
+          {/* Hamburger menu for mobile */}
+          <div className="flex items-center sm:hidden">
+            <Drawer>
+              <DrawerTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </DrawerTrigger>
+              <DrawerContent>
+                <DrawerHeader>
+                  <DrawerTitle>Menu</DrawerTitle>
+                </DrawerHeader>
+                <div className="flex flex-col gap-4 p-4">
+                  <Link href="/admin">
+                    <Button variant="ghost" className="w-full">Admin Home</Button>
+                  </Link>
+                  <Link href="/admin/analytics/advanced">
+                    <Button variant="ghost" className="w-full">Advanced Analytics</Button>
+                  </Link>
+                  <Button onClick={exportAnalytics} variant="ghost" className="w-full">Export Data</Button>
+                  <ThemeToggle />
+                  <DrawerClose asChild>
+                    <Button variant="outline" className="w-full mt-2">Close</Button>
+                  </DrawerClose>
+                </div>
+              </DrawerContent>
+            </Drawer>
+          </div>
+          {/* Main header content (hidden on mobile) */}
+          <div className="hidden sm:flex items-center gap-4">
             <Link href="/admin">
               <Button variant="outline" size="icon">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Analytics Dashboard</h1>
-              <p className="text-muted-foreground">Comprehensive performance insights and statistics</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Analytics Dashboard</h1>
+              <p className="text-muted-foreground text-sm sm:text-base">Comprehensive performance insights and statistics</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="hidden sm:flex gap-2">
             <Link href="/admin/analytics/advanced">
               <Button variant="outline">
                 <BarChart3 className="h-4 w-4 mr-2" />
@@ -319,13 +349,13 @@ export default function AdminAnalyticsPage() {
         {/* Filters */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
               <Filter className="h-5 w-5" />
               Filters
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div className="space-y-2">
                 <Label>Date Range</Label>
                 <Select value={dateRange} onValueChange={setDateRange}>
@@ -393,7 +423,7 @@ export default function AdminAnalyticsPage() {
         </Card>
 
         {/* Overall Stats */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-6 gap-4 md:gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Attempts</CardTitle>
@@ -462,7 +492,7 @@ export default function AdminAnalyticsPage() {
         </div>
 
         {/* Charts */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-8">
           {/* Score Trend */}
           <Card>
             <CardHeader>
@@ -470,7 +500,7 @@ export default function AdminAnalyticsPage() {
               <CardDescription>Weekly average scores</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
+              <div className="h-[200px] sm:h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={scoreTrendData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -491,7 +521,7 @@ export default function AdminAnalyticsPage() {
               <CardDescription>Average scores by quiz</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
+              <div className="h-[200px] sm:h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={quizPerformanceData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -513,7 +543,7 @@ export default function AdminAnalyticsPage() {
             <CardDescription>Average performance across different sections</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[200px] sm:h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={sectionPerformanceData}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -534,7 +564,7 @@ export default function AdminAnalyticsPage() {
             <CardDescription>Comprehensive statistics for each quiz</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto text-xs sm:text-sm">
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="border-b">

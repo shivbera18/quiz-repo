@@ -20,6 +20,8 @@ import {
   FileText,
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
+import { Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer"
+import { Menu } from "lucide-react"
 
 interface RecentAttempt {
   _id: string
@@ -108,27 +110,44 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4 sm:gap-0">
+          {/* Hamburger menu for mobile */}
+          <div className="flex items-center sm:hidden">
+            <Drawer>
+              <DrawerTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </DrawerTrigger>
+              <DrawerContent>
+                <DrawerHeader>
+                  <DrawerTitle>Menu</DrawerTitle>
+                </DrawerHeader>
+                <div className="flex flex-col gap-4 p-4">
+                  <Link href="/dashboard">
+                    <Button variant="ghost" className="w-full">Student Dashboard</Button>
+                  </Link>
+                  <Button onClick={logout} variant="destructive" className="w-full flex items-center gap-2">
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </Button>
+                  <ThemeToggle />
+                  <DrawerClose asChild>
+                    <Button variant="outline" className="w-full mt-2">Close</Button>
+                  </DrawerClose>
+                </div>
+              </DrawerContent>
+            </Drawer>
+          </div>
+          {/* Main header content (hidden on mobile) */}
+          <div className="hidden sm:flex items-center gap-4">
             <h1 className="text-3xl font-bold text-foreground">Welcome back, {user.name}!</h1>
             <p className="text-muted-foreground">Ready to continue your exam preparation?</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="flex items-center gap-1">
-              <User className="h-3 w-3" />
-              {user.userType}
-            </Badge>
+          <div className="hidden sm:flex items-center gap-2">
             <ThemeToggle />
-            {user.isAdmin && (
-              <Link href="/admin">
-                <Button variant="outline">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Admin Panel
-                </Button>
-              </Link>
-            )}
-            <Button variant="outline" onClick={logout}>
-              <LogOut className="h-4 w-4 mr-2" />
+            <Button onClick={logout} variant="destructive" className="flex items-center gap-2">
+              <LogOut className="h-4 w-4" />
               Logout
             </Button>
           </div>
