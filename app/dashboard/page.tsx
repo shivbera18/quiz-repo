@@ -68,10 +68,13 @@ export default function DashboardPage() {
         .slice(0, 5)
       setRecentAttempts(sortedResults)
 
-      // Fetch available quizzes from backend
+      // Fetch available quizzes from backend (with cache-busting)
       fetch("/api/quizzes", {
         headers: {
           Authorization: `Bearer ${user.token || "student-token-placeholder"}`,
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          "Pragma": "no-cache",
+          "Expires": "0",
         },
       })
         .then((res) => {
