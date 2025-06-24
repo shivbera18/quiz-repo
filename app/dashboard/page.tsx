@@ -66,13 +66,16 @@ export default function DashboardPage() {
       const sortedResults = results
         .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 5)
-
       setRecentAttempts(sortedResults)
 
-      // Load available quizzes
-      const quizzes = JSON.parse(localStorage.getItem("adminQuizzes") || "[]")
-      const activeQuizzes = quizzes.filter((q: Quiz) => q.isActive && q.questions.length > 0)
-      setAvailableQuizzes(activeQuizzes)
+      // Fetch available quizzes from backend
+      fetch("/api/quizzes")
+        .then((res) => res.json())
+        .then((data) => {
+          const activeQuizzes = data.filter((q: Quiz) => q.isActive && q.questions.length > 0)
+          setAvailableQuizzes(activeQuizzes)
+        })
+        .catch(() => setAvailableQuizzes([]))
 
       // Load active goals
       const goals = JSON.parse(localStorage.getItem("performanceGoals") || "[]")
