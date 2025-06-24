@@ -11,9 +11,19 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ message: "Quiz not found" }, { status: 404 })
     }
     // Return quiz with questions (without correct answers for users)
+    let questionsArr: any[] = []
+    if (typeof quiz.questions === "string") {
+      try {
+        questionsArr = JSON.parse(quiz.questions)
+      } catch {
+        questionsArr = []
+      }
+    } else if (Array.isArray(quiz.questions)) {
+      questionsArr = quiz.questions
+    }
     const quizForUser = {
       ...quiz,
-      questions: (quiz.questions || []).map((q: any) => ({
+      questions: questionsArr.map((q: any) => ({
         id: q.id,
         section: q.section,
         question: q.question,
