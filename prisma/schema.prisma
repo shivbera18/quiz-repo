@@ -54,3 +54,25 @@ model QuizResult {
   user      User   @relation(fields: [userId], references: [id], name: "UserQuizResults")
   quiz      Quiz   @relation(fields: [quizId], references: [id], name: "QuizQuizResults")
 }
+
+model QuestionBank {
+  id           String   @id @default(uuid())
+  section      String   // "reasoning", "quantitative", "english", etc.
+  question     String   @db.Text
+  options      Json     // Array of 4 options
+  correctAnswer Int     // Index 0-3
+  explanation  String   @db.Text @default("")
+  difficulty   String   @default("medium") // "easy", "medium", "hard"
+  tags         Json     @default("[]") // Array of tags for categorization
+  image        String   @default("") // Base64 or URL
+  source       String   @default("") // Source of the question
+  isVerified   Boolean  @default(false) // Admin verification status
+  usageCount   Int      @default(0) // How many times used in quizzes
+  createdBy    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([section])
+  @@index([difficulty])
+  @@index([createdAt])
+}

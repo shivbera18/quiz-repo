@@ -12,9 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { ArrowLeft, Plus, Trash2, Edit, Save, X, Clock, BookOpen, Upload, ImageIcon } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Edit, Save, X, Clock, BookOpen, Upload, ImageIcon, Download } from "lucide-react"
 import Link from "next/link"
 import BulkManager from "./bulk-manager"
+import QuestionBankImporter from "./question-bank-importer"
 import { useAuth } from "@/hooks/use-auth"
 
 interface Quiz {
@@ -52,6 +53,7 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
   const router = useRouter()
 
   const [showBulkManager, setShowBulkManager] = useState(false)
+  const [showQuestionBankImporter, setShowQuestionBankImporter] = useState(false)
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [uploadError, setUploadError] = useState("")
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
@@ -409,6 +411,25 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
     setSuccess("")
   }
 
+  const handleImportFromQuestionBank = (importedQuestions: Omit<Question, 'id' | 'quizId' | 'createdAt'>[]) => {
+    if (!quiz) return
+
+    const newQuestions: Question[] = importedQuestions.map((q, index) => ({
+      id: `imported-${Date.now()}-${index}`,
+      quizId: quiz.id,
+      createdAt: new Date().toISOString(),
+      ...q,
+    }))
+
+    const updatedQuiz = {
+      ...quiz,
+      questions: [...quiz.questions, ...newQuestions],
+    }
+
+    saveQuiz(updatedQuiz)
+    setSuccess(`${newQuestions.length} question${newQuestions.length !== 1 ? 's' : ''} imported successfully!`)
+  }
+
   if (loading || quizLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -461,6 +482,10 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
           </div>
           <div className="flex gap-2">
             <ThemeToggle />
+            <Button variant="outline" onClick={() => setShowQuestionBankImporter(true)}>
+              <Download className="h-4 w-4 mr-2" />
+              Import from Bank
+            </Button>
             <Button variant="outline" onClick={() => setShowBulkManager(true)}>
               <Upload className="h-4 w-4 mr-2" />
               Bulk Manager
@@ -716,6 +741,18 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
             )}
           </CardContent>
         </Card>
+
+        {/* Question Bank Importer */}
+        {showQuestionBankImporter && (
+          <QuestionBankImporter
+            isOpen={showQuestionBankImporter}
+            onClose={() => setShowQuestionBankImporter(false)}
+            onImport={handleImportFromQuestionBank}
+            quizId={quiz.id}
+            userToken={user?.token || "admin-token-placeholder"}
+            availableSections={quiz.sections}
+          />
+        )}
       </div>
     </div>
   )

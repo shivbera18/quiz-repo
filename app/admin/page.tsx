@@ -493,15 +493,17 @@ export default function AdminPage() {
               </Card>
 
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                <CardHeader className="text-center">
-                  <BookOpen className="h-12 w-12 mx-auto text-purple-600 mb-2" />
-                  <CardTitle>Question Bank</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-center">
-                    Centralized question repository (Coming Soon)
-                  </CardDescription>
-                </CardContent>
+                <Link href="/admin/question-bank">
+                  <CardHeader className="text-center">
+                    <BookOpen className="h-12 w-12 mx-auto text-purple-600 mb-2" />
+                    <CardTitle>Question Bank</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <CardDescription className="text-center">
+                      Centralized question repository for all quizzes
+                    </CardDescription>
+                  </CardContent>
+                </Link>
               </Card>
 
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">
