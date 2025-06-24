@@ -161,24 +161,69 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      // Load quizzes from localStorage
-      setTimeout(() => {
-        const savedQuizzes = JSON.parse(localStorage.getItem("adminQuizzes") || "[]")
-        if (savedQuizzes.length === 0) {
-          // Initialize with mock quizzes
-          localStorage.setItem("adminQuizzes", JSON.stringify(mockQuizzes))
-          setQuizzes(mockQuizzes)
-        } else {
-          setQuizzes(savedQuizzes)
+      // Fetch quizzes from backend API
+      const fetchQuizzes = async () => {
+        try {
+          setAdminLoading(true)
+          setError("")
+          const res = await fetch("/api/admin/quizzes", {
+            headers: {
+              Authorization: `Bearer ${user.token || "admin-token-placeholder"}`,
+            },
+          })
+          if (!res.ok) throw new Error("Failed to fetch quizzes")
+          const data = await res.json()
+          setQuizzes(data.quizzes)
+        } catch (err) {
+          setError("Failed to fetch quizzes from database")
+        } finally {
+          setAdminLoading(false)
         }
-        setAdminLoading(false)
-      }, 500)
+      }
+      fetchQuizzes()
     }
   }, [loading, user])
 
-  const saveQuizzes = (updatedQuizzes: Quiz[]) => {
-    localStorage.setItem("adminQuizzes", JSON.stringify(updatedQuizzes))
-    setQuizzes(updatedQuizzes)
+  // Save quizzes to backend (for create)
+  const createQuiz = async () => {
+    if (!newQuiz.title || newQuiz.sections.length === 0) {
+      setError("Please provide a title and select at least one section")
+      return
+    }
+    try {
+      setError("")
+      setSuccess("")
+      const res = await fetch("/api/admin/quizzes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.token || "admin-token-placeholder"}`,
+        },
+        body: JSON.stringify({
+          title: newQuiz.title,
+          description: newQuiz.description,
+          duration: newQuiz.duration,
+          sections: newQuiz.sections,
+          questions: [],
+        }),
+      })
+      if (!res.ok) throw new Error("Failed to create quiz")
+      setSuccess("Quiz created successfully!")
+      setNewQuiz({
+        title: "",
+        description: "",
+        duration: 30,
+        sections: [],
+        negativeMarking: true,
+        negativeMarkValue: 0.25,
+      })
+      setShowQuizForm(false)
+      // Refetch quizzes
+      const data = await res.json()
+      setQuizzes((prev) => [...prev, data.quiz])
+    } catch (err) {
+      setError("Failed to create quiz in database")
+    }
   }
 
   const handleSectionChange = (section: string, checked: boolean) => {
@@ -209,7 +254,8 @@ export default function AdminPage() {
     }
 
     const updatedQuizzes = [...quizzes, quiz]
-    saveQuizzes(updatedQuizzes)
+    // Remove saveQuizzes, use setQuizzes for local state only
+    setQuizzes(updatedQuizzes)
     setSuccess("Quiz created successfully!")
     setNewQuiz({
       title: "",
@@ -247,7 +293,8 @@ export default function AdminPage() {
     }
 
     const updatedQuizzes = quizzes.map((q) => (q.id === editingQuiz.id ? updatedQuiz : q))
-    saveQuizzes(updatedQuizzes)
+    // Remove saveQuizzes, use setQuizzes for local state only
+    setQuizzes(updatedQuizzes)
     setSuccess("Quiz updated successfully!")
     setEditingQuiz(null)
     setNewQuiz({
@@ -265,13 +312,15 @@ export default function AdminPage() {
     if (!confirm("Are you sure you want to delete this quiz? All questions will be permanently removed.")) return
 
     const updatedQuizzes = quizzes.filter((q) => q.id !== quizId)
-    saveQuizzes(updatedQuizzes)
+    // Remove saveQuizzes, use setQuizzes for local state only
+    setQuizzes(updatedQuizzes)
     setSuccess("Quiz deleted successfully!")
   }
 
   const handleToggleQuizStatus = (quizId: string) => {
     const updatedQuizzes = quizzes.map((q) => (q.id === quizId ? { ...q, isActive: !q.isActive } : q))
-    saveQuizzes(updatedQuizzes)
+    // Remove saveQuizzes, use setQuizzes for local state only
+    setQuizzes(updatedQuizzes)
     setSuccess("Quiz status updated!")
   }
 
@@ -606,7 +655,7 @@ export default function AdminPage() {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button onClick={editingQuiz ? handleUpdateQuiz : handleCreateQuiz}>
+                      <Button onClick={editingQuiz ? handleUpdateQuiz : createQuiz}>
                         {editingQuiz ? "Update Quiz" : "Create Quiz"}
                       </Button>
                       <Button

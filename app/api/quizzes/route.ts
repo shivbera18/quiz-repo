@@ -8,10 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get("authorization")
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      // For demo purposes, return mock data without auth
-      const mockQuizzes = JSON.parse(localStorage.getItem("adminQuizzes") || "[]")
-      const activeQuizzes = mockQuizzes.filter((quiz: any) => quiz.isActive)
-      return NextResponse.json({ quizzes: activeQuizzes })
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
     const token = authHeader.substring(7)
@@ -24,6 +21,6 @@ export async function GET(request: NextRequest) {
     })
     return NextResponse.json(quizzes)
   } catch (error) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }

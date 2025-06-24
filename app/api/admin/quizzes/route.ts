@@ -3,9 +3,6 @@ import { PrismaClient } from "@/lib/generated/prisma/client"
 
 const prisma = new PrismaClient()
 
-// Mock quizzes database
-const quizzes: any[] = []
-
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get("authorization")
@@ -38,7 +35,6 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Load quizzes from localStorage simulation (this won't work in API routes, but keeping for consistency)
     return NextResponse.json({ quizzes: quizAnalytics })
   } catch (error) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
