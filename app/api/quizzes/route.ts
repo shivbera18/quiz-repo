@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" },
     })
     
-    // Ensure all quizzes have questions parsed as arrays
+    // Ensure all quizzes have questions and sections parsed as arrays
     const parsedQuizzes = quizzes.map(quiz => {
       let questionsArr: any[] = []
       if (typeof quiz.questions === "string") {
@@ -35,9 +35,21 @@ export async function GET(request: NextRequest) {
         questionsArr = quiz.questions
       }
       
+      let sectionsArr: string[] = []
+      if (typeof quiz.sections === "string") {
+        try {
+          sectionsArr = JSON.parse(quiz.sections)
+        } catch {
+          sectionsArr = []
+        }
+      } else if (Array.isArray(quiz.sections)) {
+        sectionsArr = quiz.sections
+      }
+      
       return {
         ...quiz,
         questions: questionsArr,
+        sections: sectionsArr,
       }
     })
     

@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { PrismaClient } from "@/lib/generated/prisma/client"
+import { parseJsonField, stringifyForDatabase } from "@/lib/database-utils"
 
 const prisma = new PrismaClient()
 
@@ -24,24 +25,16 @@ export async function GET(request: NextRequest) {
       const avgScore = attempts > 0 ? Math.round(quiz.results.reduce((sum, r) => sum + r.totalScore, 0) / attempts) : 0
       const avgTime = attempts > 0 ? Math.round(quiz.results.reduce((sum, r) => sum + r.timeSpent, 0) / attempts) : 0
       
-      // Parse questions to ensure it's always an array
-      let questionsArr: any[] = []
-      if (typeof quiz.questions === "string") {
-        try {
-          questionsArr = JSON.parse(quiz.questions)
-        } catch {
-          questionsArr = []
-        }
-      } else if (Array.isArray(quiz.questions)) {
-        questionsArr = quiz.questions
-      }
+      // Parse questions and sections to ensure they're always arrays
+      const questionsArr = parseJsonField(quiz.questions);
+      const sectionsArr = parseJsonField(quiz.sections);
       
       return {
         id: quiz.id,
         title: quiz.title,
         description: quiz.description,
         duration: quiz.timeLimit,
-        sections: quiz.sections,
+        sections: sectionsArr,
         questions: questionsArr,
         isActive: quiz.isActive,
         createdAt: quiz.createdAt.toISOString(),
@@ -84,29 +77,22 @@ export async function POST(request: NextRequest) {
         title,
         description,
         timeLimit: duration, // assuming your schema uses timeLimit
-        sections,
-        questions: JSON.stringify(questions || []), // Ensure questions are stored as JSON string
+        sections: stringifyForDatabase(sections),
+        questions: stringifyForDatabase(questions || []),
         isActive: true,
         createdAt: new Date(),
         createdBy: "admin",
       },
     })
 
-    // Parse questions back to array for response
-    let questionsArr: any[] = []
-    if (typeof createdQuiz.questions === "string") {
-      try {
-        questionsArr = JSON.parse(createdQuiz.questions)
-      } catch {
-        questionsArr = []
-      }
-    } else if (Array.isArray(createdQuiz.questions)) {
-      questionsArr = createdQuiz.questions
-    }
+    // Parse questions and sections back to arrays for response
+    const questionsArr = parseJsonField(createdQuiz.questions);
+    const sectionsArr = parseJsonField(createdQuiz.sections);
     
     const responseQuiz = {
       ...createdQuiz,
       questions: questionsArr,
+      sections: sectionsArr,
     }
 
     return NextResponse.json({ quiz: responseQuiz })

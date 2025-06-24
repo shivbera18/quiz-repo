@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ message: "Quiz not found" }, { status: 404 })
     }
     
-    // Ensure questions is always an array
+    // Ensure questions and sections are always arrays
     let questionsArr: any[] = []
     if (typeof quiz.questions === "string") {
       try {
@@ -31,12 +31,24 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       questionsArr = quiz.questions
     }
     
-    const quizWithParsedQuestions = {
-      ...quiz,
-      questions: questionsArr,
+    let sectionsArr: string[] = []
+    if (typeof quiz.sections === "string") {
+      try {
+        sectionsArr = JSON.parse(quiz.sections)
+      } catch {
+        sectionsArr = []
+      }
+    } else if (Array.isArray(quiz.sections)) {
+      sectionsArr = quiz.sections
     }
     
-    return NextResponse.json({ quiz: quizWithParsedQuestions })
+    const quizWithParsedData = {
+      ...quiz,
+      questions: questionsArr,
+      sections: sectionsArr,
+    }
+    
+    return NextResponse.json({ quiz: quizWithParsedData })
   } catch (error) {
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
@@ -103,13 +115,13 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         title: data.title,
         description: data.description,
         timeLimit: data.duration,
-        sections: data.sections,
+        sections: JSON.stringify(data.sections), // Stringify sections for SQLite
         questions: JSON.stringify(data.questions), // Ensure questions are stored as JSON string
         isActive: data.isActive,
       },
     })
     
-    // Parse questions back to array for response
+    // Parse questions and sections back to arrays for response
     let questionsArr: any[] = []
     if (typeof updatedQuiz.questions === "string") {
       try {
@@ -121,9 +133,21 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       questionsArr = updatedQuiz.questions
     }
     
+    let sectionsArr: string[] = []
+    if (typeof updatedQuiz.sections === "string") {
+      try {
+        sectionsArr = JSON.parse(updatedQuiz.sections)
+      } catch {
+        sectionsArr = []
+      }
+    } else if (Array.isArray(updatedQuiz.sections)) {
+      sectionsArr = updatedQuiz.sections
+    }
+    
     const responseQuiz = {
       ...updatedQuiz,
       questions: questionsArr,
+      sections: sectionsArr,
     }
     
     return NextResponse.json({ quiz: responseQuiz })

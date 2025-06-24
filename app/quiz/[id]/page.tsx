@@ -11,6 +11,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { Clock, ArrowLeft, AlertTriangle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
+import { useAuth } from "@/hooks/use-auth"
 
 interface Quiz {
   id: string
@@ -48,24 +49,60 @@ export default function QuizPage({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
 
   useEffect(() => {
-    // Load quiz from localStorage
-    const savedQuizzes = JSON.parse(localStorage.getItem("adminQuizzes") || "[]")
-    const foundQuiz = savedQuizzes.find((q: Quiz) => q.id === params.id && q.isActive)
-
-    if (foundQuiz) {
-      // Add negative marking properties if not present (for backward compatibility)
-      const quizWithNegativeMarking = {
-        ...foundQuiz,
-        negativeMarking: foundQuiz.negativeMarking ?? true,
-        negativeMarkValue: foundQuiz.negativeMarkValue ?? 0.25,
-      }
-      setQuiz(quizWithNegativeMarking)
-      setTimeLeft(quizWithNegativeMarking.duration * 60) // Convert minutes to seconds
+    // Wait for auth to load and check if user is authenticated
+    if (authLoading) return
+    
+    if (!user) {
+      alert("Please log in to take the quiz")
+      router.push("/auth/login")
+      return
     }
-    setLoading(false)
-  }, [params.id])
+
+    // Fetch quiz from backend API with authentication
+    const fetchQuiz = async () => {
+      try {
+        const res = await fetch(`/api/quizzes/${params.id}`, {
+          headers: {
+            Authorization: `Bearer ${user.token || "student-token-placeholder"}`,
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+          },
+        })
+        
+        if (!res.ok) {
+          throw new Error("Quiz not found or inactive")
+        }
+        const data = await res.json()
+        const foundQuiz = data.quiz
+
+        if (!foundQuiz || !foundQuiz.isActive) {
+          throw new Error("Quiz not found or inactive")
+        }
+
+        // Add negative marking properties if not present (for backward compatibility)
+        const quizWithNegativeMarking = {
+          ...foundQuiz,
+          negativeMarking: foundQuiz.negativeMarking ?? true,
+          negativeMarkValue: foundQuiz.negativeMarkValue ?? 0.25,
+        }
+
+        setQuiz(quizWithNegativeMarking)
+        setTimeLeft(foundQuiz.duration * 60) // Convert minutes to seconds
+      } catch (error) {
+        console.error("Error loading quiz:", error)
+        alert("Quiz not found or inactive")
+        router.push("/dashboard")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchQuiz()
+  }, [params.id, router, user, authLoading])
 
   useEffect(() => {
     if (timeLeft > 0 && !loading && quiz?.duration !== 0) {
@@ -253,10 +290,23 @@ export default function QuizPage({ params }: { params: { id: string } }) {
     }
   }
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">Loading quiz...</div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">Please log in to take the quiz</p>
+          <Link href="/auth/login">
+            <Button>Go to Login</Button>
+          </Link>
+        </div>
       </div>
     )
   }
