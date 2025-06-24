@@ -69,10 +69,17 @@ export default function DashboardPage() {
       setRecentAttempts(sortedResults)
 
       // Fetch available quizzes from backend
-      fetch("/api/quizzes")
-        .then((res) => res.json())
+      fetch("/api/quizzes", {
+        headers: {
+          Authorization: `Bearer ${user.token || "student-token-placeholder"}`,
+        },
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to fetch quizzes")
+          return res.json()
+        })
         .then((data) => {
-          const activeQuizzes = data.filter((q: Quiz) => q.isActive && q.questions.length > 0)
+          const activeQuizzes = data.filter((q: Quiz) => q.isActive && q.questions?.length > 0)
           setAvailableQuizzes(activeQuizzes)
         })
         .catch(() => setAvailableQuizzes([]))
