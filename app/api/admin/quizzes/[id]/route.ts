@@ -1,5 +1,6 @@
 import { PrismaClient } from "@/lib/generated/prisma/client"
 import { type NextRequest, NextResponse } from "next/server"
+import { parseJsonField, stringifyForDatabase } from "@/lib/database-utils"
 
 const prisma = new PrismaClient()
 
@@ -20,27 +21,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
     
     // Ensure questions and sections are always arrays
-    let questionsArr: any[] = []
-    if (typeof quiz.questions === "string") {
-      try {
-        questionsArr = JSON.parse(quiz.questions)
-      } catch {
-        questionsArr = []
-      }
-    } else if (Array.isArray(quiz.questions)) {
-      questionsArr = quiz.questions
-    }
-    
-    let sectionsArr: string[] = []
-    if (typeof quiz.sections === "string") {
-      try {
-        sectionsArr = JSON.parse(quiz.sections)
-      } catch {
-        sectionsArr = []
-      }
-    } else if (Array.isArray(quiz.sections)) {
-      sectionsArr = quiz.sections
-    }
+    const questionsArr = parseJsonField(quiz.questions);
+    const sectionsArr = parseJsonField(quiz.sections);
     
     const quizWithParsedData = {
       ...quiz,
