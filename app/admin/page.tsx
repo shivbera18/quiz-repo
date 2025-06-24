@@ -278,20 +278,56 @@ export default function AdminPage() {
     setShowQuizForm(false)
   }
 
-  const handleDeleteQuiz = (quizId: string) => {
+  const handleDeleteQuiz = async (quizId: string) => {
     if (!confirm("Are you sure you want to delete this quiz? All questions will be permanently removed.")) return
 
-    const updatedQuizzes = quizzes.filter((q) => q.id !== quizId)
-    // Remove saveQuizzes, use setQuizzes for local state only
-    setQuizzes(updatedQuizzes)
-    setSuccess("Quiz deleted successfully!")
+    try {
+      setError("")
+      setSuccess("")
+      const res = await fetch(`/api/admin/quizzes/${quizId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${user?.token || "admin-token-placeholder"}`,
+        },
+      })
+      if (!res.ok) throw new Error("Failed to delete quiz")
+      
+      // Remove from local state after successful deletion
+      const updatedQuizzes = quizzes.filter((q) => q.id !== quizId)
+      setQuizzes(updatedQuizzes)
+      setSuccess("Quiz deleted successfully!")
+    } catch (err) {
+      setError("Failed to delete quiz from database")
+    }
   }
 
-  const handleToggleQuizStatus = (quizId: string) => {
-    const updatedQuizzes = quizzes.map((q) => (q.id === quizId ? { ...q, isActive: !q.isActive } : q))
-    // Remove saveQuizzes, use setQuizzes for local state only
-    setQuizzes(updatedQuizzes)
-    setSuccess("Quiz status updated!")
+  const handleToggleQuizStatus = async (quizId: string) => {
+    try {
+      setError("")
+      setSuccess("")
+      const quiz = quizzes.find(q => q.id === quizId)
+      if (!quiz) return
+      
+      const res = await fetch(`/api/admin/quizzes/${quizId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.token || "admin-token-placeholder"}`,
+        },
+        body: JSON.stringify({
+          ...quiz,
+          isActive: !quiz.isActive,
+        }),
+      })
+      if (!res.ok) throw new Error("Failed to update quiz status")
+      
+      // Update local state after successful update
+      const updatedQuizzes = quizzes.map((q) => (q.id === quizId ? { ...q, isActive: !q.isActive } : q))
+      setQuizzes(updatedQuizzes)
+      setSuccess("Quiz status updated!")
+    } catch (err) {
+      setError("Failed to update quiz status in database")
+    }
   }
 
   const getQuizResults = () => {

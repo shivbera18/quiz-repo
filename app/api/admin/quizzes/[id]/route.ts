@@ -69,6 +69,17 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     if (!token || token.length < 10) {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
+    
+    // Delete quiz results first (foreign key constraint)
+    await prisma.quizResult.deleteMany({
+      where: { quizId: params.id }
+    })
+    
+    // Delete the quiz
+    await prisma.quiz.delete({
+      where: { id: params.id }
+    })
+    
     return NextResponse.json({ message: "Quiz deleted successfully" })
   } catch (error) {
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
