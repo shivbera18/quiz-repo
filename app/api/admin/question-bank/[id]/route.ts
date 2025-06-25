@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { PrismaClient } from "@/lib/generated/prisma/client"
+import { PrismaClient } from "@/lib/generated/prisma"
 import { parseJsonField, stringifyForDatabase } from "@/lib/database-utils"
 
 const prisma = new PrismaClient()

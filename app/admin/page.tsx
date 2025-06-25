@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Plus, Trash2, Users, BarChart3, Edit, Eye, Clock, BookOpen, LogOut, Shield, Sparkles, Trophy } from "lucide-react"
+import { Plus, Trash2, Users, BarChart3, Edit, Eye, Clock, BookOpen, LogOut, Shield, Sparkles, Trophy, FileText } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/hooks/use-auth"
 import AIQuizGenerator from "./ai-quiz-generator"
@@ -407,7 +407,18 @@ export default function AdminPage() {
           totalAttempts,
           totalQuizzes: quizData.length,
           activeQuizzes: quizData.filter((q: any) => q.isActive !== false).length,
-          totalQuestions: quizData.reduce((sum: number, quiz: any) => sum + (quiz.questions?.length || 0), 0),
+          // Calculate total questions by parsing JSON strings properly
+          totalQuestions: quizData.reduce((sum: number, quiz: any) => {
+            let questions = quiz.questions || [];
+            if (typeof questions === 'string') {
+              try {
+                questions = JSON.parse(questions);
+              } catch (e) {
+                questions = [];
+              }
+            }
+            return sum + (Array.isArray(questions) ? questions.length : 0);
+          }, 0),
           averageScore,
           recentActivity: results.slice(-5)
         }
@@ -425,7 +436,18 @@ export default function AdminPage() {
         totalAttempts: localResults.length,
         totalQuizzes: quizzes.length,
         activeQuizzes: quizzes.filter((q) => q.isActive).length,
-        totalQuestions: quizzes.reduce((sum, quiz) => sum + (quiz.questions?.length || 0), 0),
+        // Calculate total questions by parsing JSON strings properly
+        totalQuestions: quizzes.reduce((sum, quiz) => {
+          let questions = quiz.questions || [];
+          if (typeof questions === 'string') {
+            try {
+              questions = JSON.parse(questions);
+            } catch (e) {
+              questions = [];
+            }
+          }
+          return sum + (Array.isArray(questions) ? questions.length : 0);
+        }, 0),
         averageScore: localResults.length > 0 ? 
           Math.round(localResults.reduce((sum: number, r: any) => sum + (r.totalScore || 0), 0) / localResults.length) : 0,
         recentActivity: localResults.slice(-5)
@@ -542,10 +564,16 @@ export default function AdminPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Total Questions</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Total Questions
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">{stats.totalQuestions}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {stats.totalQuizzes > 0 ? Math.round(stats.totalQuestions / stats.totalQuizzes) : 0} avg per quiz
+                  </p>
                 </CardContent>
               </Card>
 

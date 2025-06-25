@@ -1,7 +1,7 @@
 // AI Complete Quiz Generator API Route
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from "@/lib/generated/prisma/client"
+import { PrismaClient } from "@/lib/generated/prisma"
 import { stringifyForDatabase } from "@/lib/database-utils"
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')

@@ -75,6 +75,7 @@ export default function DashboardPage() {
   const [activeGoals, setActiveGoals] = useState<Goal[]>([])
   const [loadingAttempts, setLoadingAttempts] = useState(true)
   const [showFlashQuestions, setShowFlashQuestions] = useState(false)
+  const [showLatestActivity, setShowLatestActivity] = useState(false)
   const [flashQuestions, setFlashQuestions] = useState<any[]>([])
 
   useEffect(() => {
@@ -478,50 +479,71 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        {/* Quick Preview of Recent Activity */}
+        {/* Quick Preview of Recent Activity - Collapsible */}
         {!loadingAttempts && allAttempts.length > 0 && (
           <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Latest Activity
-                </span>
-                <Link href="/dashboard/recent-attempts">
-                  <Button variant="outline" size="sm">
-                    <Eye className="h-4 w-4 mr-2" />
-                    View All
+            <CardHeader className="cursor-pointer" onClick={() => setShowLatestActivity(!showLatestActivity)}>
+              <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <Clock className="h-5 w-5 flex-shrink-0" />
+                  <span className="font-semibold truncate">Latest Activity</span>
+                  <Badge variant="secondary" className="text-xs flex-shrink-0">
+                    {allAttempts.length} total
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-2 justify-between sm:justify-end">
+                  <Link href="/dashboard/recent-attempts" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="outline" size="sm" className="flex items-center gap-2">
+                      <Eye className="h-4 w-4" />
+                      <span className="hidden sm:inline">View All</span>
+                      <span className="sm:hidden">All</span>
+                    </Button>
+                  </Link>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-8 h-8 p-0 flex items-center justify-center hover:bg-muted"
+                    aria-label={showLatestActivity ? "Collapse" : "Expand"}
+                  >
+                    <span className="text-lg font-bold">
+                      {showLatestActivity ? '−' : '+'}
+                    </span>
                   </Button>
-                </Link>
+                </div>
               </CardTitle>
+              <CardDescription className="text-xs text-muted-foreground">
+                Click to {showLatestActivity ? 'hide' : 'show'} your 3 most recent quiz attempts
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {allAttempts.slice(0, 3).map((attempt) => (
-                  <div key={attempt._id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm ${
-                        attempt.totalScore >= 80 ? 'bg-green-500' :
-                        attempt.totalScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                      }`}>
-                        {attempt.totalScore}%
+            {showLatestActivity && (
+              <CardContent>
+                <div className="space-y-3">
+                  {allAttempts.slice(0, 3).map((attempt) => (
+                    <div key={attempt._id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className={`w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center font-bold text-white text-sm ${
+                          attempt.totalScore >= 80 ? 'bg-green-500' :
+                          attempt.totalScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                        }`}>
+                          {attempt.totalScore}%
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-medium text-sm truncate">{attempt.quizName || 'Unknown Quiz'}</h4>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(attempt.date).toLocaleDateString()}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-medium text-sm">{attempt.quizName || 'Unknown Quiz'}</h4>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(attempt.date).toLocaleDateString()}
-                        </p>
-                      </div>
+                      <Link href={`/results/${attempt._id}`}>
+                        <Button variant="ghost" size="sm" className="flex-shrink-0">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </Link>
                     </div>
-                    <Link href={`/results/${attempt._id}`}>
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
+                  ))}
+                </div>
+              </CardContent>
+            )}
           </Card>
         )}
 

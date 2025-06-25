@@ -90,90 +90,205 @@ const SafeChart = ({ children, fallback = "Unable to load chart" }: { children: 
 export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | 'all'>('all')
   const [selectedUserId, setSelectedUserId] = useState<string | 'all'>('all')
+  const [debugInfo, setDebugInfo] = useState<string>('')
 
-  // Validate and sanitize results data
-  const validResults = (results || []).filter(result => 
-    result && 
-    typeof result === 'object' &&
-    result.date &&
-    typeof result.totalScore === 'number' &&
-    typeof result.correctAnswers === 'number' &&
-    typeof result.wrongAnswers === 'number' &&
-    typeof result.unanswered === 'number'
-  )
+  console.log('AdvancedAnalytics received results:', results?.length || 0)
+
+  // Early return if no results
+  if (!results || !Array.isArray(results)) {
+    console.error('AdvancedAnalytics: Invalid results prop:', results)
+    return (
+      <div className="p-8 text-center">
+        <div className="text-red-600 mb-4">Data Error</div>
+        <div className="text-sm text-muted-foreground">Invalid analytics data structure</div>
+      </div>
+    )
+  }
+
+  if (results.length === 0) {
+    return (
+      <div className="p-8 text-center">
+        <div className="text-muted-foreground mb-4">No analytics data available</div>
+        <div className="text-sm text-muted-foreground">Create some quiz results to see advanced analytics</div>
+      </div>
+    )
+  }
+
+  // Validate and sanitize results data with detailed logging
+  console.log('Validating results data...')
+  const validResults = (results || []).filter((result, index) => {
+    const isValid = result && 
+      typeof result === 'object' &&
+      result.date &&
+      typeof result.totalScore === 'number' &&
+      typeof result.correctAnswers === 'number' &&
+      typeof result.wrongAnswers === 'number' &&
+      typeof result.unanswered === 'number'
+    
+    if (!isValid) {
+      console.warn(`Invalid result at index ${index}:`, result)
+    }
+    return isValid
+  })
   
-  const users = Array.from(new Set(validResults.map(r => r.user?.id)))
-    .map(id => {
+  console.log(`Valid results: ${validResults.length} out of ${results.length}`)
+  
+  // Extract users with comprehensive error handling
+  let users = [];
+  try {
+    const userIds = Array.from(new Set(validResults.map(r => r.user?.id).filter(Boolean)))
+    users = userIds.map(id => {
       const result = validResults.find(r => r.user?.id === id);
       return result?.user;
-    })
-    .filter((user): user is { id: string; name: string; email: string; } => !!user);
+    }).filter((user): user is { id: string; name: string; email: string; } => {
+      const isValidUser = !!user && !!user.id && !!user.name
+      if (!isValidUser && user) {
+        console.warn('Invalid user structure:', user)
+      }
+      return isValidUser
+    });
+    console.log('Extracted users:', users)
+  } catch (error) {
+    console.error('Error extracting users:', error)
+    users = []
+  }
 
 
-  // Filter results based on selected period
+  // Filter results based on selected period with detailed logging
+  console.log('Filtering by period:', selectedPeriod)
   const filteredResults = validResults.filter(result => {
     try {
       if (selectedPeriod === 'all') return true
       const days = selectedPeriod === '7d' ? 7 : selectedPeriod === '30d' ? 30 : 90
       const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
-      return new Date(result.date) >= cutoffDate
+      const resultDate = new Date(result.date)
+      return resultDate >= cutoffDate
     } catch (error) {
-      console.warn('Error filtering result:', result, error)
+      console.warn('Error filtering result by period:', result, error)
       return false
     }
   })
+  console.log(`Filtered by period: ${filteredResults.length} results`)
 
+  // Filter by user with comprehensive error handling and logging  
+  console.log('Filtering by user:', selectedUserId)
   const userFilteredResults = filteredResults.filter(result => {
-    if (selectedUserId === 'all') return true;
-    return result.user?.id === selectedUserId;
+    try {
+      if (selectedUserId === 'all') return true;
+      const matches = result.user?.id === selectedUserId;
+      if (!matches) {
+        console.log(`Result ${result._id} user ${result.user?.id} does not match ${selectedUserId}`)
+      }
+      return matches;
+    } catch (error) {
+      console.error('Error filtering user results:', error);
+      return false;
+    }
   });
+  
+  console.log(`Filtered by user: ${userFilteredResults.length} results`)
+  
+  // Safety check with detailed error message
+  if (!Array.isArray(userFilteredResults)) {
+    console.error('userFilteredResults is not an array:', userFilteredResults)
+    return (
+      <div className="p-8 text-center">
+        <div className="text-red-600 mb-4">Filter Error</div>
+        <div className="text-sm text-muted-foreground">Results filtering failed</div>
+      </div>
+    );
+  }
+  
+  if (userFilteredResults.length === 0) {
+    const message = selectedUserId !== 'all' 
+      ? `No data found for user: ${users.find(u => u.id === selectedUserId)?.name || selectedUserId}`
+      : 'No quiz results found.'
+    
+    console.log('No filtered results, showing empty state:', message)
+    return (
+      <div className="p-8 text-center">
+        <div className="text-muted-foreground mb-4">No analytics data available</div>
+        <div className="text-sm text-muted-foreground">{message}</div>
+        <div className="text-xs text-muted-foreground mt-2">
+          Debug: {validResults.length} valid results, {filteredResults.length} period filtered, {userFilteredResults.length} user filtered
+        </div>
+      </div>
+    );
+  }
 
   // Overall Statistics with safe calculations
-  const totalQuizzes = userFilteredResults.length
-  const averageScore = totalQuizzes > 0 ? 
-    Math.round(userFilteredResults.reduce((sum, r) => sum + (r.totalScore || 0), 0) / totalQuizzes) : 0
-  const totalCorrect = userFilteredResults.reduce((sum, r) => sum + (r.correctAnswers || 0), 0)
-  const totalWrong = userFilteredResults.reduce((sum, r) => sum + (r.wrongAnswers || 0), 0)
-  const totalUnanswered = userFilteredResults.reduce((sum, r) => sum + (r.unanswered || 0), 0)
-  const totalQuestions = totalCorrect + totalWrong + totalUnanswered
-  const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0
-  const averageTime = totalQuizzes > 0 ? 
-    Math.round(userFilteredResults.reduce((sum, r) => sum + (r.timeSpent || 0), 0) / totalQuizzes / 60) : 0
+  let totalQuizzes, averageScore, totalCorrect, totalWrong, totalUnanswered, totalQuestions, accuracy, averageTime;
+  
+  try {
+    totalQuizzes = userFilteredResults.length;
+    averageScore = totalQuizzes > 0 ? 
+      Math.round(userFilteredResults.reduce((sum, r) => sum + (r.totalScore || 0), 0) / totalQuizzes) : 0;
+    totalCorrect = userFilteredResults.reduce((sum, r) => sum + (r.correctAnswers || 0), 0);
+    totalWrong = userFilteredResults.reduce((sum, r) => sum + (r.wrongAnswers || 0), 0);
+    totalUnanswered = userFilteredResults.reduce((sum, r) => sum + (r.unanswered || 0), 0);
+    totalQuestions = totalCorrect + totalWrong + totalUnanswered;
+    accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+    averageTime = totalQuizzes > 0 ? 
+      Math.round(userFilteredResults.reduce((sum, r) => sum + (r.timeSpent || 0), 0) / totalQuizzes / 60) : 0;
+  } catch (error) {
+    console.error('Error calculating basic statistics:', error);
+    // Fallback values
+    totalQuizzes = 0;
+    averageScore = 0;
+    totalCorrect = 0;
+    totalWrong = 0;
+    totalUnanswered = 0;
+    totalQuestions = 0;
+    accuracy = 0;
+    averageTime = 0;
+  }
 
-  // Performance Trends with null safety
-  const performanceTrend = userFilteredResults
-    .filter(result => result.date && result.totalScore !== undefined)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .map((result, index) => {
-      const total = (result.correctAnswers || 0) + (result.wrongAnswers || 0) + (result.unanswered || 0)
-      const accuracy = total > 0 ? Math.round(((result.correctAnswers || 0) / total) * 100) : 0
+  // Performance Trends with error handling
+  let performanceTrend = [];
+  try {
+    performanceTrend = userFilteredResults
+      .filter(result => result.date && result.totalScore !== undefined)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map((result, index) => {
+        const total = (result.correctAnswers || 0) + (result.wrongAnswers || 0) + (result.unanswered || 0)
+        const accuracy = total > 0 ? Math.round(((result.correctAnswers || 0) / total) * 100) : 0
+        return {
+          quiz: index + 1,
+          score: result.totalScore || 0,
+          accuracy,
+          timeSpent: Math.round((result.timeSpent || 0) / 60),
+          date: new Date(result.date).toLocaleDateString()
+        }
+      })
+  } catch (error) {
+    console.error('Error calculating performance trend:', error);
+    performanceTrend = [];
+  }
+
+  // Section-wise Performance with error handling
+  let sectionData = [];
+  try {
+    sectionData = ['reasoning', 'quantitative', 'english'].map(section => {
+      const sectionResults = userFilteredResults.filter(r => 
+        r.sections && 
+        typeof r.sections === 'object' && 
+        r.sections[section as keyof typeof r.sections] !== undefined
+      )
+      const avgScore = sectionResults.length > 0 ? 
+        Math.round(sectionResults.reduce((sum, r) => {
+          const score = r.sections?.[section as keyof typeof r.sections] || 0
+          return sum + score
+        }, 0) / sectionResults.length) : 0
       return {
-        quiz: index + 1,
-        score: result.totalScore || 0,
-        accuracy,
-        timeSpent: Math.round((result.timeSpent || 0) / 60),
-        date: new Date(result.date).toLocaleDateString()
+        section: section.charAt(0).toUpperCase() + section.slice(1),
+        score: avgScore,
+        attempts: sectionResults.length
       }
     })
-
-  // Section-wise Performance with better error handling
-  const sectionData = ['reasoning', 'quantitative', 'english'].map(section => {
-    const sectionResults = userFilteredResults.filter(r => 
-      r.sections && 
-      typeof r.sections === 'object' && 
-      r.sections[section as keyof typeof r.sections] !== undefined
-    )
-    const avgScore = sectionResults.length > 0 ? 
-      Math.round(sectionResults.reduce((sum, r) => {
-        const score = r.sections?.[section as keyof typeof r.sections] || 0
-        return sum + score
-      }, 0) / sectionResults.length) : 0
-    return {
-      section: section.charAt(0).toUpperCase() + section.slice(1),
-      score: avgScore,
-      attempts: sectionResults.length
-    }
-  })
+  } catch (error) {
+    console.error('Error calculating section data:', error);
+    sectionData = [];
+  }
 
   // Score Distribution with safer handling
   const scoreRanges = [
@@ -320,7 +435,17 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Advanced Analytics</h2>
         <div className="flex items-center gap-4">
-        <Select onValueChange={setSelectedUserId} value={selectedUserId}>
+        <Select onValueChange={(value) => {
+          console.log('User selection changed to:', value)
+          try {
+            setSelectedUserId(value)
+            console.log('Successfully set selectedUserId to:', value)
+          } catch (error) {
+            console.error('Error setting selected user:', error)
+            // Reset to 'all' on error
+            setSelectedUserId('all')
+          }
+        }} value={selectedUserId}>
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Select a User" />
             </SelectTrigger>
@@ -906,7 +1031,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
                             </CardHeader>
                             <CardContent>
                                 <ul className="space-y-4">
-                                    {result.answers.map((answer, index) => (
+                                    {(Array.isArray(result.answers) ? result.answers : []).map((answer, index) => (
                                         <li key={answer.questionId || index} className="p-4 border rounded-lg">
                                             <p className="font-semibold mb-2">Q: {answer.question || `Question ID: ${answer.questionId}`}</p>
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
@@ -946,11 +1071,39 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
   )
   } catch (error) {
     console.error('Advanced Analytics rendering error:', error)
+    console.log('Error stack:', error.stack)
+    console.log('Selected user ID:', selectedUserId)
+    console.log('Results passed to component:', results?.length || 0)
+    console.log('Valid results:', validResults?.length || 0)
+    
     return (
-      <div className="text-center py-12 border border-red-200 rounded-lg bg-red-50">
-        <AlertCircle className="h-16 w-16 mx-auto text-red-500 mb-4" />
-        <h3 className="text-lg font-semibold mb-2 text-red-700">Analytics Error</h3>
-        <p className="text-red-600">Unable to display analytics. Please try refreshing the page.</p>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold">Advanced Analytics</h2>
+          <div className="flex items-center gap-4">
+            <Select onValueChange={(value) => {
+              console.log('Fallback: User selection changed to:', value)
+              setSelectedUserId('all') // Reset to 'all' on error
+            }} value="all">
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select a User" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Users</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        
+        <div className="text-center py-12 border border-red-200 rounded-lg bg-red-50">
+          <div className="text-red-500 mb-4">⚠️</div>
+          <h3 className="text-lg font-semibold mb-2 text-red-700">Analytics Error</h3>
+          <p className="text-red-600 mb-4">Unable to display analytics for the selected user.</p>
+          <div className="text-sm text-muted-foreground">
+            <p>Error details have been logged to console.</p>
+            <p>Please try selecting "All Users" or refresh the page.</p>
+          </div>
+        </div>
       </div>
     )
   }

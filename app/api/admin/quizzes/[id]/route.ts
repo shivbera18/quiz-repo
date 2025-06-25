@@ -1,4 +1,4 @@
-import { PrismaClient } from "@/lib/generated/prisma/client"
+import { PrismaClient } from "@/lib/generated/prisma"
 import { type NextRequest, NextResponse } from "next/server"
 import { parseJsonField, stringifyForDatabase } from "@/lib/database-utils"
 
