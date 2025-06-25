@@ -55,14 +55,49 @@ export default function AdminAnalyticsPage() {
       fetch("/api/admin/analytics")
         .then((res) => res.json())
         .then((data) => {
-          setResults(data.results || [])
-          setQuizzes(data.quizzes || [])
-          setFilteredResults(data.results || [])
+          // Safely handle the API response
+          const apiResults = data.results || []
+          const apiQuizzes = data.quizzes || []
+          
+          // If no API data, try to get data from localStorage as fallback
+          if (apiResults.length === 0) {
+            try {
+              if (typeof window !== 'undefined') {
+                const localResults = localStorage.getItem("quizResults")
+                if (localResults) {
+                  const parsedResults = JSON.parse(localResults)
+                  setResults(parsedResults)
+                  setFilteredResults(parsedResults)
+                }
+              }
+            } catch (error) {
+              console.warn("Error loading local quiz results:", error)
+            }
+          } else {
+            setResults(apiResults)
+            setFilteredResults(apiResults)
+          }
+          
+          setQuizzes(apiQuizzes)
         })
-        .catch(() => {
-          setResults([])
-          setQuizzes([])
-          setFilteredResults([])
+        .catch((error) => {
+          console.error("Error fetching admin analytics:", error)
+          // Fallback to localStorage data
+          try {
+            if (typeof window !== 'undefined') {
+              const localResults = localStorage.getItem("quizResults")
+              if (localResults) {
+                const parsedResults = JSON.parse(localResults)
+                setResults(parsedResults)
+                setFilteredResults(parsedResults)
+              }
+            }
+          } catch (fallbackError) {
+            console.warn("Error loading fallback data:", fallbackError)
+            setResults([])
+            setQuizzes([])
+            setFilteredResults([])
+          }
         })
     }
   }, [loading, user])
@@ -108,24 +143,27 @@ export default function AdminAnalyticsPage() {
   }, [results, dateRange, selectedQuiz, minScore, maxScore])
 
   const getOverallStats = () => {
-    if (filteredResults.length === 0)
+    if (!filteredResults || filteredResults.length === 0)
       return {
         totalAttempts: 0,
         averageScore: 0,
         passRate: 0,
+        totalUsers: 0,
         averageTime: 0,
         topPerformers: 0,
         improvementRate: 0,
       }
 
-    const totalScore = filteredResults.reduce((sum, result) => sum + result.totalScore, 0)
-    const averageScore = Math.round(totalScore / filteredResults.length)
+    const totalAttempts = filteredResults.length
+    const totalScore = filteredResults.reduce((sum, result) => sum + (result.totalScore || 0), 0)
+    const averageScore = Math.round(totalScore / totalAttempts)
     const passRate = Math.round(
-      (filteredResults.filter((r) => r.totalScore >= 60).length / filteredResults.length) * 100,
+      (filteredResults.filter((r) => (r.totalScore || 0) >= 60).length / totalAttempts) * 100
     )
+    const totalUsers = new Set(filteredResults.map((result) => result._id)).size
     const totalTime = filteredResults.reduce((sum, result) => sum + (result.timeSpent || 0), 0)
-    const averageTime = Math.round(totalTime / filteredResults.length / 60) // Convert to minutes
-    const topPerformers = filteredResults.filter((r) => r.totalScore >= 80).length
+    const averageTime = Math.round(totalTime / totalAttempts / 60) // Convert to minutes
+    const topPerformers = filteredResults.filter((r) => (r.totalScore || 0) >= 80).length
 
     // Calculate improvement rate (comparing first half vs second half of attempts)
     const sortedByDate = [...filteredResults].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
@@ -135,15 +173,16 @@ export default function AdminAnalyticsPage() {
 
     let improvementRate = 0
     if (firstHalf.length > 0 && secondHalf.length > 0) {
-      const firstHalfAvg = firstHalf.reduce((sum, r) => sum + r.totalScore, 0) / firstHalf.length
-      const secondHalfAvg = secondHalf.reduce((sum, r) => sum + r.totalScore, 0) / secondHalf.length
+      const firstHalfAvg = firstHalf.reduce((sum, r) => sum + (r.totalScore || 0), 0) / firstHalf.length
+      const secondHalfAvg = secondHalf.reduce((sum, r) => sum + (r.totalScore || 0), 0) / secondHalf.length
       improvementRate = Math.round(((secondHalfAvg - firstHalfAvg) / firstHalfAvg) * 100)
     }
 
     return {
-      totalAttempts: filteredResults.length,
+      totalAttempts,
       averageScore,
       passRate,
+      totalUsers,
       averageTime,
       topPerformers,
       improvementRate,
@@ -151,21 +190,21 @@ export default function AdminAnalyticsPage() {
   }
 
   const getQuizPerformanceData = () => {
-    const quizStats = quizzes
+    const quizStats = (quizzes || [])
       .map((quiz) => {
         const quizResults = filteredResults.filter((r) => r.quizId === quiz.id)
         if (quizResults.length === 0) return null
 
-        const avgScore = Math.round(quizResults.reduce((sum, r) => sum + r.totalScore, 0) / quizResults.length)
+        const avgScore = Math.round(quizResults.reduce((sum, r) => sum + (r.totalScore || 0), 0) / quizResults.length)
         const attempts = quizResults.length
-        const passRate = Math.round((quizResults.filter((r) => r.totalScore >= 60).length / attempts) * 100)
+        const passRate = Math.round((quizResults.filter((r) => (r.totalScore || 0) >= 60).length / attempts) * 100)
 
         return {
-          name: quiz.title.length > 20 ? quiz.title.substring(0, 20) + "..." : quiz.title,
+          name: quiz.title && quiz.title.length > 20 ? quiz.title.substring(0, 20) + "..." : quiz.title || 'Unknown Quiz',
           avgScore,
           attempts,
           passRate,
-          questions: quiz.questions.length,
+          questions: quiz.questions ? quiz.questions.length : 0,
         }
       })
       .filter(Boolean)
@@ -174,6 +213,8 @@ export default function AdminAnalyticsPage() {
   }
 
   const getScoreTrendData = () => {
+    if (!filteredResults || filteredResults.length === 0) return []
+    
     const sortedResults = [...filteredResults].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
     // Group by week
