@@ -30,10 +30,10 @@ interface QuestionBankItem {
 const sections = ["Verbal Reasoning", "Quantitative Aptitude", "Logical Reasoning", "General Knowledge", "English"]
 const difficulties = ["easy", "medium", "hard"]
 
-export default function QuestionBankPage() {
-  const { user, loading, logout } = useAuth(true) // Require admin access
+export default function QuestionBankPage() {  const { user, loading, logout } = useAuth(true) // Require admin access
   const [questions, setQuestions] = useState<QuestionBankItem[]>([])
-  const [filteredQuestions, setFilteredQuestions] = useState<QuestionBankItem[]>([])  const [adminLoading, setAdminLoading] = useState(true)
+  const [filteredQuestions, setFilteredQuestions] = useState<QuestionBankItem[]>([])
+  const [adminLoading, setAdminLoading] = useState(true)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [showQuestionForm, setShowQuestionForm] = useState(false)
