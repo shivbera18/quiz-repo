@@ -7,13 +7,20 @@ const prisma = new PrismaClient()
 const validateToken = async (token: string) => {
   try {
     // Simple token format: userId-timestamp-random
-    const parts = token.split('-')
-    if (parts.length !== 3) {
+    // Since userId is a UUID with dashes, we need to handle this carefully
+    const lastDashIndex = token.lastIndexOf('-')
+    const secondLastDashIndex = token.lastIndexOf('-', lastDashIndex - 1)
+    
+    if (lastDashIndex === -1 || secondLastDashIndex === -1) {
       throw new Error('Invalid token format')
     }
     
-    const userId = parts[0]
-    const timestamp = parseInt(parts[1])
+    const userId = token.substring(0, secondLastDashIndex)
+    const timestamp = parseInt(token.substring(secondLastDashIndex + 1, lastDashIndex))
+    
+    if (isNaN(timestamp)) {
+      throw new Error('Invalid timestamp in token')
+    }
     
     // Check if token is not too old (24 hours)
     const maxAge = 24 * 60 * 60 * 1000 // 24 hours in ms

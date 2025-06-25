@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts"
+import { useAuth } from "@/hooks/use-auth"
 
 interface QuestionResult {
   question: string
@@ -56,21 +57,56 @@ interface Result {
 }
 
 export default function ResultsPage({ params }: { params: { id: string } }) {
+  const { user, loading: authLoading } = useAuth()
   const [result, setResult] = useState<Result | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedSection, setSelectedSection] = useState("all")
   const [openQuestions, setOpenQuestions] = useState<Set<number>>(new Set())
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Load result from localStorage
-    const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
-    const foundResult = results.find((r: Result) => r._id === params.id)
+    if (authLoading) return
+    
+    const loadResult = async () => {
+      try {
+        // First try to fetch from API
+        if (user?.token) {
+          const response = await fetch(`/api/results/${params.id}`, {
+            headers: {
+              Authorization: `Bearer ${user.token}`,
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+            },
+          })
 
-    if (foundResult) {
-      setResult(foundResult)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.result) {
+              setResult(data.result)
+              setLoading(false)
+              return
+            }
+          }
+        }
+
+        // Fallback to localStorage
+        const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
+        const foundResult = results.find((r: Result) => r._id === params.id)
+
+        if (foundResult) {
+          setResult(foundResult)
+        } else {
+          setError("Result not found. It may have been deleted or the link is invalid.")
+        }
+      } catch (error) {
+        console.error("Error loading result:", error)
+        setError("Failed to load quiz result. Please try again.")
+      } finally {
+        setLoading(false)
+      }
     }
-    setLoading(false)
-  }, [params.id])
+
+    loadResult()
+  }, [params.id, user, authLoading])
 
   const toggleQuestion = (index: number) => {
     const newOpenQuestions = new Set(openQuestions)
@@ -181,14 +217,25 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
     )
   }
 
-  if (!result) {
+  if (error || !result) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <p className="text-muted-foreground mb-4">Result not found</p>
-          <Link href="/dashboard">
-            <Button>Back to Dashboard</Button>
-          </Link>
+          <AlertTriangle className="h-12 w-12 mx-auto text-yellow-500 mb-4" />
+          <p className="text-muted-foreground mb-4">
+            {error || "Result not found"}
+          </p>
+          <p className="text-sm text-muted-foreground mb-6">
+            This could happen if the result was not properly saved or the link is invalid.
+          </p>
+          <div className="flex gap-4 justify-center">
+            <Link href="/dashboard">
+              <Button>Back to Dashboard</Button>
+            </Link>
+            <Link href="/history">
+              <Button variant="outline">View History</Button>
+            </Link>
+          </div>
         </div>
       </div>
     )
