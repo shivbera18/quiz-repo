@@ -38,6 +38,8 @@ model Quiz {
   results     QuizResult[] @relation("QuizQuizResults")
   startTime   DateTime? // Scheduled start time
   endTime     DateTime? // Scheduled end time
+  negativeMarking Boolean @default(true) // Enable/disable negative marking
+  negativeMarkValue Float @default(0.25) // Marks deducted per wrong answer
 }
 
 model QuizResult {

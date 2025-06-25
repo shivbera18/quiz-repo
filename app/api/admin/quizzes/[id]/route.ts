@@ -100,31 +100,14 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         sections: JSON.stringify(data.sections), // Stringify sections for SQLite
         questions: JSON.stringify(data.questions), // Ensure questions are stored as JSON string
         isActive: data.isActive,
+        negativeMarking: data.negativeMarking,
+        negativeMarkValue: data.negativeMarkValue,
       },
     })
     
     // Parse questions and sections back to arrays for response
-    let questionsArr: any[] = []
-    if (typeof updatedQuiz.questions === "string") {
-      try {
-        questionsArr = JSON.parse(updatedQuiz.questions)
-      } catch {
-        questionsArr = []
-      }
-    } else if (Array.isArray(updatedQuiz.questions)) {
-      questionsArr = updatedQuiz.questions
-    }
-    
-    let sectionsArr: string[] = []
-    if (typeof updatedQuiz.sections === "string") {
-      try {
-        sectionsArr = JSON.parse(updatedQuiz.sections)
-      } catch {
-        sectionsArr = []
-      }
-    } else if (Array.isArray(updatedQuiz.sections)) {
-      sectionsArr = updatedQuiz.sections
-    }
+    const questionsArr = parseJsonField(updatedQuiz.questions);
+    const sectionsArr = parseJsonField(updatedQuiz.sections);
     
     const responseQuiz = {
       ...updatedQuiz,

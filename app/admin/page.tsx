@@ -212,6 +212,8 @@ export default function AdminPage() {
           duration: newQuiz.duration,
           sections: newQuiz.sections,
           questions: [],
+          negativeMarking: newQuiz.negativeMarking,
+          negativeMarkValue: newQuiz.negativeMarkValue,
         }),
       })
       if (!res.ok) throw new Error("Failed to create quiz")
@@ -253,31 +255,54 @@ export default function AdminPage() {
     setShowQuizForm(true)
   }
 
-  const handleUpdateQuiz = () => {
+  const handleUpdateQuiz = async () => {
     if (!editingQuiz) return
 
-    const updatedQuiz: Quiz = {
-      ...editingQuiz,
-      title: newQuiz.title,
-      description: newQuiz.description,
-      duration: newQuiz.duration,
-      sections: newQuiz.sections,
-    }
+    try {
+      setError("")
+      setSuccess("")
+      
+      const res = await fetch(`/api/admin/quizzes/${editingQuiz.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.token || "admin-token-placeholder"}`,
+        },
+        body: JSON.stringify({
+          title: newQuiz.title,
+          description: newQuiz.description,
+          duration: newQuiz.duration,
+          sections: newQuiz.sections,
+          questions: editingQuiz.questions, // Keep existing questions
+          isActive: editingQuiz.isActive, // Keep existing active status
+          negativeMarking: newQuiz.negativeMarking,
+          negativeMarkValue: newQuiz.negativeMarkValue,
+        }),
+      })
 
-    const updatedQuizzes = quizzes.map((q) => (q.id === editingQuiz.id ? updatedQuiz : q))
-    // Remove saveQuizzes, use setQuizzes for local state only
-    setQuizzes(updatedQuizzes)
-    setSuccess("Quiz updated successfully!")
-    setEditingQuiz(null)
-    setNewQuiz({
-      title: "",
-      description: "",
-      duration: 30,
-      sections: [],
-      negativeMarking: true,
-      negativeMarkValue: 0.25,
-    })
-    setShowQuizForm(false)
+      if (!res.ok) throw new Error("Failed to update quiz")
+      
+      const data = await res.json()
+      
+      // Update local state with response data
+      const updatedQuizzes = quizzes.map((q) => (q.id === editingQuiz.id ? data.quiz : q))
+      setQuizzes(updatedQuizzes)
+      setSuccess("Quiz updated successfully!")
+      
+      // Reset form
+      setShowQuizForm(false)
+      setEditingQuiz(null)
+      setNewQuiz({
+        title: "",
+        description: "",
+        duration: 30,
+        sections: [],
+        negativeMarking: true,
+        negativeMarkValue: 0.25,
+      })
+    } catch (err) {
+      setError("Failed to update quiz in database")
+    }
   }
 
   const handleDeleteQuiz = async (quizId: string) => {

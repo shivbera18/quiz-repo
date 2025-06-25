@@ -39,8 +39,8 @@ export async function GET(request: NextRequest) {
         isActive: quiz.isActive,
         createdAt: quiz.createdAt.toISOString(),
         createdBy: quiz.createdBy,
-        negativeMarking: true, // Default values for missing fields
-        negativeMarkValue: 0.25,
+        negativeMarking: quiz.negativeMarking,
+        negativeMarkValue: quiz.negativeMarkValue,
         attempts,
         avgScore,
         avgTime,
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
 
-    const { title, description, duration, sections, questions } = await request.json()
+    const { title, description, duration, sections, questions, negativeMarking, negativeMarkValue } = await request.json()
 
     // Save new quiz to the database using Prisma
     const createdQuiz = await prisma.quiz.create({
@@ -82,6 +82,8 @@ export async function POST(request: NextRequest) {
         isActive: true,
         createdAt: new Date(),
         createdBy: "admin",
+        negativeMarking: negativeMarking ?? true,
+        negativeMarkValue: negativeMarkValue ?? 0.25,
       },
     })
 

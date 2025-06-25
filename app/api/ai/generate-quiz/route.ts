@@ -129,6 +129,8 @@ Number of questions: ${questionsPerSection}`
           isActive: true,
           createdAt: new Date(),
           createdBy: "admin",
+          negativeMarking: negativeMarking ?? true,
+          negativeMarkValue: negativeMarkValue ?? 0.25,
         },
       })
 
@@ -156,8 +158,8 @@ Number of questions: ${questionsPerSection}`
         isActive: createdQuiz.isActive,
         createdAt: createdQuiz.createdAt.toISOString(),
         createdBy: createdQuiz.createdBy,
-        negativeMarking: negativeMarking || true,
-        negativeMarkValue: negativeMarkValue || 0.25,
+        negativeMarking: createdQuiz.negativeMarking,
+        negativeMarkValue: createdQuiz.negativeMarkValue,
       }
 
       return NextResponse.json({

@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Quiz" ADD COLUMN     "negativeMarkValue" DOUBLE PRECISION NOT NULL DEFAULT 0.25,
+ADD COLUMN     "negativeMarking" BOOLEAN NOT NULL DEFAULT true;
