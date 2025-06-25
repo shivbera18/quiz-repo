@@ -18,6 +18,7 @@ import {
   Brain,
   Calculator,
   FileText,
+  Eye,
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer"
@@ -28,6 +29,12 @@ interface RecentAttempt {
   date: string
   totalScore: number
   quizName: string
+  quizId: string
+  rawScore?: number
+  correctAnswers: number
+  wrongAnswers: number
+  unanswered: number
+  timeSpent: number
   sections: {
     reasoning: number
     quantitative: number
@@ -56,17 +63,56 @@ interface Goal {
 export default function DashboardPage() {
   const { user, loading, logout } = useAuth()
   const [recentAttempts, setRecentAttempts] = useState<RecentAttempt[]>([])
+  const [allAttempts, setAllAttempts] = useState<RecentAttempt[]>([])
   const [availableQuizzes, setAvailableQuizzes] = useState<Quiz[]>([])
   const [activeGoals, setActiveGoals] = useState<Goal[]>([])
+  const [loadingAttempts, setLoadingAttempts] = useState(true)
 
   useEffect(() => {
     if (!loading && user) {
-      // Load recent attempts from localStorage
-      const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
-      const sortedResults = results
-        .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        .slice(0, 5)
-      setRecentAttempts(sortedResults)
+      // Fetch attempted quizzes from API
+      const fetchAttempts = async () => {
+        try {
+          const response = await fetch("/api/results", {
+            headers: {
+              Authorization: `Bearer ${user.token || "student-token-placeholder"}`,
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+            },
+          })
+          
+          if (response.ok) {
+            const data = await response.json()
+            const attempts = data.results || []
+            const sortedAttempts = attempts.sort((a: any, b: any) => 
+              new Date(b.date).getTime() - new Date(a.date).getTime()
+            )
+            
+            setAllAttempts(sortedAttempts)
+            setRecentAttempts(sortedAttempts.slice(0, 5))
+          } else {
+            // Fallback to localStorage if API fails
+            const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
+            const sortedResults = results
+              .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            
+            setAllAttempts(sortedResults)
+            setRecentAttempts(sortedResults.slice(0, 5))
+          }
+        } catch (error) {
+          console.error("Failed to fetch attempts:", error)
+          // Fallback to localStorage
+          const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
+          const sortedResults = results
+            .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+          
+          setAllAttempts(sortedResults)
+          setRecentAttempts(sortedResults.slice(0, 5))
+        } finally {
+          setLoadingAttempts(false)
+        }
+      }
+
+      fetchAttempts()
 
       // Fetch available quizzes from backend (with cache-busting)
       fetch("/api/quizzes", {
@@ -333,6 +379,163 @@ export default function DashboardPage() {
                   </Card>
                 )
               })}
+            </div>
+          )}
+        </div>
+
+        {/* Attempted Quizzes Section */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              <History className="h-6 w-6" />
+              Attempted Quizzes
+            </h2>
+            <Link href="/history">
+              <Button variant="outline" size="sm">
+                View All History
+              </Button>
+            </Link>
+          </div>
+          
+          {loadingAttempts ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <p className="text-muted-foreground">Loading attempted quizzes...</p>
+              </CardContent>
+            </Card>
+          ) : allAttempts.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <History className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground mb-4">No quizzes attempted yet</p>
+                <p className="text-sm text-muted-foreground">Start taking quizzes to track your progress here</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {/* Summary Stats */}
+              <div className="grid md:grid-cols-4 gap-4 mb-4">
+                <Card className="bg-blue-50 border-blue-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <p className="text-sm text-blue-600 font-medium">Total Attempts</p>
+                        <p className="text-2xl font-bold text-blue-700">{allAttempts.length}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-green-50 border-green-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-green-600" />
+                      <div>
+                        <p className="text-sm text-green-600 font-medium">Average Score</p>
+                        <p className="text-2xl font-bold text-green-700">
+                          {allAttempts.length > 0 
+                            ? Math.round(allAttempts.reduce((sum, a) => sum + a.totalScore, 0) / allAttempts.length)
+                            : 0}%
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-purple-50 border-purple-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2">
+                      <Target className="h-5 w-5 text-purple-600" />
+                      <div>
+                        <p className="text-sm text-purple-600 font-medium">Best Score</p>
+                        <p className="text-2xl font-bold text-purple-700">
+                          {allAttempts.length > 0 
+                            ? Math.max(...allAttempts.map(a => a.totalScore))
+                            : 0}%
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-orange-50 border-orange-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-5 w-5 text-orange-600" />
+                      <div>
+                        <p className="text-sm text-orange-600 font-medium">Avg Time</p>
+                        <p className="text-2xl font-bold text-orange-700">
+                          {allAttempts.length > 0 
+                            ? Math.round(allAttempts.reduce((sum, a) => sum + (a.timeSpent || 0), 0) / allAttempts.length / 60)
+                            : 0}m
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Recent Attempts List */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Recent Quiz Attempts</CardTitle>
+                  <CardDescription>Your latest quiz performances</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {allAttempts.slice(0, 5).map((attempt, index) => (
+                      <div key={attempt._id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white ${
+                            attempt.totalScore >= 80 ? 'bg-green-500' :
+                            attempt.totalScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                          }`}>
+                            {attempt.totalScore}%
+                          </div>
+                          <div>
+                            <h4 className="font-semibold">{attempt.quizName || 'Unknown Quiz'}</h4>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span>{new Date(attempt.date).toLocaleDateString()}</span>
+                              <span>✓ {attempt.correctAnswers} correct</span>
+                              <span>✗ {attempt.wrongAnswers} wrong</span>
+                              {attempt.timeSpent && (
+                                <span>⏱ {Math.round(attempt.timeSpent / 60)}m</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={
+                            attempt.totalScore >= 80 ? 'default' :
+                            attempt.totalScore >= 60 ? 'secondary' : 'destructive'
+                          }>
+                            {attempt.totalScore >= 80 ? 'Excellent' :
+                             attempt.totalScore >= 60 ? 'Good' : 'Needs Improvement'}
+                          </Badge>
+                          {attempt.quizId && (
+                            <Link href={`/results/${attempt._id}`}>
+                              <Button variant="ghost" size="sm">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {allAttempts.length > 5 && (
+                    <div className="mt-4 text-center">
+                      <Link href="/history">
+                        <Button variant="outline">
+                          View All {allAttempts.length} Attempts
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           )}
         </div>
