@@ -84,7 +84,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Advanced Analytics Component */}
-        <AdvancedAnalytics results={results} />
+        <AdvancedAnalytics results={results || []} />
       </div>
     </div>
   )

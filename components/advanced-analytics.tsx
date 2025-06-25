@@ -39,50 +39,88 @@ interface QuizResult {
 }
 
 interface AdvancedAnalyticsProps {
-  results: QuizResult[]
+  results?: QuizResult[]
 }
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316']
 
-export default function AdvancedAnalytics({ results }: AdvancedAnalyticsProps) {
+// Safe chart wrapper to handle rendering errors
+const SafeChart = ({ children, fallback = "Unable to load chart" }: { children: React.ReactNode, fallback?: string }) => {
+  try {
+    return <>{children}</>
+  } catch (error) {
+    console.warn('Chart rendering error:', error)
+    return <div className="p-4 text-center text-muted-foreground">{fallback}</div>
+  }
+}
+
+export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | 'all'>('30d')
   
+  // Validate and sanitize results data
+  const validResults = (results || []).filter(result => 
+    result && 
+    typeof result === 'object' &&
+    result.date &&
+    typeof result.totalScore === 'number' &&
+    typeof result.correctAnswers === 'number' &&
+    typeof result.wrongAnswers === 'number' &&
+    typeof result.unanswered === 'number'
+  )
+  
   // Filter results based on selected period
-  const filteredResults = results.filter(result => {
-    if (selectedPeriod === 'all') return true
-    const days = selectedPeriod === '7d' ? 7 : selectedPeriod === '30d' ? 30 : 90
-    const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
-    return new Date(result.date) >= cutoffDate
+  const filteredResults = validResults.filter(result => {
+    try {
+      if (selectedPeriod === 'all') return true
+      const days = selectedPeriod === '7d' ? 7 : selectedPeriod === '30d' ? 30 : 90
+      const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+      return new Date(result.date) >= cutoffDate
+    } catch (error) {
+      console.warn('Error filtering result:', result, error)
+      return false
+    }
   })
 
-  // Overall Statistics
+  // Overall Statistics with safe calculations
   const totalQuizzes = filteredResults.length
   const averageScore = totalQuizzes > 0 ? 
-    Math.round(filteredResults.reduce((sum, r) => sum + r.totalScore, 0) / totalQuizzes) : 0
-  const totalCorrect = filteredResults.reduce((sum, r) => sum + r.correctAnswers, 0)
-  const totalWrong = filteredResults.reduce((sum, r) => sum + r.wrongAnswers, 0)
-  const totalUnanswered = filteredResults.reduce((sum, r) => sum + r.unanswered, 0)
+    Math.round(filteredResults.reduce((sum, r) => sum + (r.totalScore || 0), 0) / totalQuizzes) : 0
+  const totalCorrect = filteredResults.reduce((sum, r) => sum + (r.correctAnswers || 0), 0)
+  const totalWrong = filteredResults.reduce((sum, r) => sum + (r.wrongAnswers || 0), 0)
+  const totalUnanswered = filteredResults.reduce((sum, r) => sum + (r.unanswered || 0), 0)
   const totalQuestions = totalCorrect + totalWrong + totalUnanswered
   const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0
   const averageTime = totalQuizzes > 0 ? 
-    Math.round(filteredResults.reduce((sum, r) => sum + r.timeSpent, 0) / totalQuizzes / 60) : 0
+    Math.round(filteredResults.reduce((sum, r) => sum + (r.timeSpent || 0), 0) / totalQuizzes / 60) : 0
 
-  // Performance Trends
+  // Performance Trends with null safety
   const performanceTrend = filteredResults
+    .filter(result => result.date && result.totalScore !== undefined)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .map((result, index) => ({
-      quiz: index + 1,
-      score: result.totalScore,
-      accuracy: Math.round((result.correctAnswers / (result.correctAnswers + result.wrongAnswers + result.unanswered)) * 100),
-      timeSpent: Math.round(result.timeSpent / 60),
-      date: new Date(result.date).toLocaleDateString()
-    }))
+    .map((result, index) => {
+      const total = (result.correctAnswers || 0) + (result.wrongAnswers || 0) + (result.unanswered || 0)
+      const accuracy = total > 0 ? Math.round(((result.correctAnswers || 0) / total) * 100) : 0
+      return {
+        quiz: index + 1,
+        score: result.totalScore || 0,
+        accuracy,
+        timeSpent: Math.round((result.timeSpent || 0) / 60),
+        date: new Date(result.date).toLocaleDateString()
+      }
+    })
 
-  // Section-wise Performance
+  // Section-wise Performance with better error handling
   const sectionData = ['reasoning', 'quantitative', 'english'].map(section => {
-    const sectionResults = filteredResults.filter(r => r.sections[section as keyof typeof r.sections] !== undefined)
+    const sectionResults = filteredResults.filter(r => 
+      r.sections && 
+      typeof r.sections === 'object' && 
+      r.sections[section as keyof typeof r.sections] !== undefined
+    )
     const avgScore = sectionResults.length > 0 ? 
-      Math.round(sectionResults.reduce((sum, r) => sum + (r.sections[section as keyof typeof r.sections] || 0), 0) / sectionResults.length) : 0
+      Math.round(sectionResults.reduce((sum, r) => {
+        const score = r.sections?.[section as keyof typeof r.sections] || 0
+        return sum + score
+      }, 0) / sectionResults.length) : 0
     return {
       section: section.charAt(0).toUpperCase() + section.slice(1),
       score: avgScore,
@@ -90,7 +128,7 @@ export default function AdvancedAnalytics({ results }: AdvancedAnalyticsProps) {
     }
   })
 
-  // Score Distribution
+  // Score Distribution with safer handling
   const scoreRanges = [
     { range: '90-100%', count: 0, color: '#10b981' },
     { range: '80-89%', count: 0, color: '#3b82f6' },
@@ -100,23 +138,29 @@ export default function AdvancedAnalytics({ results }: AdvancedAnalyticsProps) {
   ]
 
   filteredResults.forEach(result => {
-    if (result.totalScore >= 90) scoreRanges[0].count++
-    else if (result.totalScore >= 80) scoreRanges[1].count++
-    else if (result.totalScore >= 70) scoreRanges[2].count++
-    else if (result.totalScore >= 60) scoreRanges[3].count++
+    const score = result.totalScore || 0
+    if (score >= 90) scoreRanges[0].count++
+    else if (score >= 80) scoreRanges[1].count++
+    else if (score >= 70) scoreRanges[2].count++
+    else if (score >= 60) scoreRanges[3].count++
     else scoreRanges[4].count++
   })
 
-  // Weekly Progress
+  // Weekly Progress with error handling
   const weeklyData = filteredResults.reduce((acc, result) => {
-    const week = new Date(result.date).toISOString().split('T')[0]
-    if (!acc[week]) {
-      acc[week] = { date: week, quizzes: 0, totalScore: 0, avgScore: 0 }
+    try {
+      const week = new Date(result.date).toISOString().split('T')[0]
+      if (!acc[week]) {
+        acc[week] = { date: week, quizzes: 0, totalScore: 0, avgScore: 0 }
+      }
+      acc[week].quizzes++
+      acc[week].totalScore += (result.totalScore || 0)
+      acc[week].avgScore = Math.round(acc[week].totalScore / acc[week].quizzes)
+      return acc
+    } catch (error) {
+      console.warn('Error processing weekly data for result:', result, error)
+      return acc
     }
-    acc[week].quizzes++
-    acc[week].totalScore += result.totalScore
-    acc[week].avgScore = Math.round(acc[week].totalScore / acc[week].quizzes)
-    return acc
   }, {} as any)
 
   const weeklyProgress = Object.values(weeklyData).sort((a: any, b: any) => 
@@ -130,49 +174,54 @@ export default function AdvancedAnalytics({ results }: AdvancedAnalyticsProps) {
     { difficulty: 'Hard Questions', correct: 0, total: 0 }
   ]
 
-  // Time Analysis
+  // Time Analysis with safer data handling
   const timeData = filteredResults.map(result => ({
-    quiz: result.quizName.substring(0, 20) + '...',
-    timeSpent: Math.round(result.timeSpent / 60),
-    score: result.totalScore,
-    efficiency: result.totalScore / Math.max(result.timeSpent / 60, 1) // Score per minute
+    quiz: (result.quizName || 'Unknown Quiz').substring(0, 20) + '...',
+    timeSpent: Math.round((result.timeSpent || 0) / 60),
+    score: result.totalScore || 0,
+    efficiency: (result.totalScore || 0) / Math.max((result.timeSpent || 0) / 60, 1) // Score per minute
   }))
 
-  // Improvement Analysis
+  // Improvement Analysis with bounds checking
   const improvement = performanceTrend.length >= 2 ? 
-    performanceTrend[performanceTrend.length - 1].score - performanceTrend[0].score : 0
+    (performanceTrend[performanceTrend.length - 1]?.score || 0) - (performanceTrend[0]?.score || 0) : 0
 
-  // Recent Performance Analysis
+  // Recent Performance Analysis with validation
   const recentPerformance = filteredResults.slice(-5).map(result => ({
-    name: result.quizName.substring(0, 15) + '...',
-    score: result.totalScore,
-    correct: result.correctAnswers,
-    wrong: result.wrongAnswers,
-    unanswered: result.unanswered
+    name: (result.quizName || 'Unknown Quiz').substring(0, 15) + '...',
+    score: result.totalScore || 0,
+    correct: result.correctAnswers || 0,
+    wrong: result.wrongAnswers || 0,
+    unanswered: result.unanswered || 0
   }))
 
-  // Study Patterns Data
+  // Study Patterns Data with error handling
   const weeklyPatternData = filteredResults.reduce((acc, result) => {
-    const week = `Week ${Math.ceil((new Date(result.date).getDate()) / 7)}`
-    if (!acc[week]) {
-      acc[week] = { week, attempts: 0, totalScore: 0 }
+    try {
+      const week = `Week ${Math.ceil((new Date(result.date).getDate()) / 7)}`
+      if (!acc[week]) {
+        acc[week] = { week, attempts: 0, totalScore: 0 }
+      }
+      acc[week].attempts++
+      acc[week].totalScore += (result.totalScore || 0)
+      return acc
+    } catch (error) {
+      console.warn('Error processing weekly pattern data:', result, error)
+      return acc
     }
-    acc[week].attempts++
-    acc[week].totalScore += result.totalScore
-    return acc
   }, {} as any)
 
   const studyPatterns = Object.values(weeklyPatternData).map((item: any) => ({
     week: item.week,
     attempts: item.attempts,
-    avgScore: Math.round(item.totalScore / item.attempts)
+    avgScore: item.attempts > 0 ? Math.round(item.totalScore / item.attempts) : 0
   }))
 
   // Hourly Performance Analysis (simulated based on typical patterns)
   const hourlyPerformance = Array.from({ length: 24 }, (_, hour) => {
     const hourResults = filteredResults.filter(() => Math.random() > 0.7) // Simulate hourly data
     const avgScore = hourResults.length > 0 ? 
-      Math.round(hourResults.reduce((sum, r) => sum + r.totalScore, 0) / hourResults.length) : 
+      Math.round(hourResults.reduce((sum, r) => sum + (r.totalScore || 0), 0) / hourResults.length) : 
       Math.round(averageScore + (Math.random() - 0.5) * 20)
     
     return {
@@ -181,17 +230,17 @@ export default function AdvancedAnalytics({ results }: AdvancedAnalyticsProps) {
     }
   })
 
-  // Performance Variance Calculation
-  const scores = filteredResults.map(r => r.totalScore)
+  // Performance Variance Calculation with safety checks
+  const scores = filteredResults.map(r => r.totalScore || 0).filter(score => !isNaN(score))
   const variance = scores.length > 1 ? 
     Math.sqrt(scores.reduce((sum, score) => sum + Math.pow(score - averageScore, 2), 0) / scores.length) : 0
   const performanceVariance = Math.round(variance)
 
-  // Improvement Rate Calculation
+  // Improvement Rate Calculation with bounds checking
   const firstHalf = performanceTrend.slice(0, Math.ceil(performanceTrend.length / 2))
   const secondHalf = performanceTrend.slice(Math.ceil(performanceTrend.length / 2))
-  const firstHalfAvg = firstHalf.length > 0 ? firstHalf.reduce((sum, p) => sum + p.score, 0) / firstHalf.length : 0
-  const secondHalfAvg = secondHalf.length > 0 ? secondHalf.reduce((sum, p) => sum + p.score, 0) / secondHalf.length : 0
+  const firstHalfAvg = firstHalf.length > 0 ? firstHalf.reduce((sum, p) => sum + (p.score || 0), 0) / firstHalf.length : 0
+  const secondHalfAvg = secondHalf.length > 0 ? secondHalf.reduce((sum, p) => sum + (p.score || 0), 0) / secondHalf.length : 0
   const improvementRate = Math.round(secondHalfAvg - firstHalfAvg)
 
   const getPeriodLabel = (period: string) => {
@@ -204,7 +253,8 @@ export default function AdvancedAnalytics({ results }: AdvancedAnalyticsProps) {
     }
   }
 
-  if (totalQuizzes === 0) {
+  // Early return for no data
+  if (!validResults.length || totalQuizzes === 0) {
     return (
       <div className="text-center py-12">
         <BookOpen className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
@@ -213,6 +263,9 @@ export default function AdvancedAnalytics({ results }: AdvancedAnalyticsProps) {
       </div>
     )
   }
+
+  // Wrap the entire component render in error handling
+  try {
 
   return (
     <div className="space-y-6">
@@ -322,23 +375,25 @@ export default function AdvancedAnalytics({ results }: AdvancedAnalyticsProps) {
                 <CardDescription>Your score progression over time</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={performanceTrend}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="quiz" />
-                    <YAxis />
-                    <Tooltip 
-                      formatter={(value, name) => [
-                        `${value}${name === 'score' ? '%' : name === 'timeSpent' ? 'm' : '%'}`, 
-                        name === 'score' ? 'Score' : name === 'accuracy' ? 'Accuracy' : 'Time'
-                      ]}
-                      labelFormatter={(label) => `Quiz ${label}`}
-                    />
-                    <Legend />
-                    <Line type="monotone" dataKey="score" stroke="#3b82f6" strokeWidth={2} name="score" />
-                    <Line type="monotone" dataKey="accuracy" stroke="#10b981" strokeWidth={2} name="accuracy" />
-                  </LineChart>
-                </ResponsiveContainer>
+                <SafeChart fallback="Performance trend chart unavailable">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={performanceTrend}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="quiz" />
+                      <YAxis />
+                      <Tooltip 
+                        formatter={(value, name) => [
+                          `${value}${name === 'score' ? '%' : name === 'timeSpent' ? 'm' : '%'}`, 
+                          name === 'score' ? 'Score' : name === 'accuracy' ? 'Accuracy' : 'Time'
+                        ]}
+                        labelFormatter={(label) => `Quiz ${label}`}
+                      />
+                      <Legend />
+                      <Line type="monotone" dataKey="score" stroke="#3b82f6" strokeWidth={2} name="score" />
+                      <Line type="monotone" dataKey="accuracy" stroke="#10b981" strokeWidth={2} name="accuracy" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </SafeChart>
               </CardContent>
             </Card>
 
@@ -351,18 +406,20 @@ export default function AdvancedAnalytics({ results }: AdvancedAnalyticsProps) {
                 <CardDescription>Latest 5 quiz attempts</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={recentPerformance}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="correct" stackId="a" fill="#10b981" name="Correct" />
-                    <Bar dataKey="wrong" stackId="a" fill="#ef4444" name="Wrong" />
-                    <Bar dataKey="unanswered" stackId="a" fill="#6b7280" name="Unanswered" />
-                  </BarChart>
-                </ResponsiveContainer>
+                <SafeChart fallback="Recent performance chart unavailable">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={recentPerformance}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="correct" stackId="a" fill="#10b981" name="Correct" />
+                      <Bar dataKey="wrong" stackId="a" fill="#ef4444" name="Wrong" />
+                      <Bar dataKey="unanswered" stackId="a" fill="#6b7280" name="Unanswered" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </SafeChart>
               </CardContent>
             </Card>
           </div>
@@ -425,25 +482,27 @@ export default function AdvancedAnalytics({ results }: AdvancedAnalyticsProps) {
                 <CardDescription>Distribution of your quiz scores</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={scoreRanges}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ range, count }) => count > 0 ? `${range}: ${count}` : ''}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="count"
-                    >
-                      {scoreRanges.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                <SafeChart fallback="Score distribution chart unavailable">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={scoreRanges}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ range, count }) => count > 0 ? `${range}: ${count}` : ''}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="count"
+                      >
+                        {scoreRanges.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </SafeChart>
               </CardContent>
             </Card>
 
@@ -757,4 +816,14 @@ export default function AdvancedAnalytics({ results }: AdvancedAnalyticsProps) {
       </Tabs>
     </div>
   )
+  } catch (error) {
+    console.error('Advanced Analytics rendering error:', error)
+    return (
+      <div className="text-center py-12 border border-red-200 rounded-lg bg-red-50">
+        <AlertCircle className="h-16 w-16 mx-auto text-red-500 mb-4" />
+        <h3 className="text-lg font-semibold mb-2 text-red-700">Analytics Error</h3>
+        <p className="text-red-600">Unable to display analytics. Please try refreshing the page.</p>
+      </div>
+    )
+  }
 }
