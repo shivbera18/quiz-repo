@@ -82,6 +82,8 @@ export default function ProfilePage() {
   }, [])
 
   const calculateUserStats = () => {
+    if (typeof window === 'undefined') return
+    
     const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
     
     if (results.length === 0) return
@@ -132,6 +134,8 @@ export default function ProfilePage() {
   }
 
   const calculateAchievements = () => {
+    if (typeof window === 'undefined') return
+    
     const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
     
     const achievementsList: Achievement[] = [
@@ -223,6 +227,8 @@ export default function ProfilePage() {
   const { progressExp, requiredExp } = getExperienceToNextLevel()
 
   const getRecentActivity = (): ActivityItem[] => {
+    if (typeof window === 'undefined') return []
+    
     const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
     return results
       .slice(-5)
