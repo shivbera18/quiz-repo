@@ -1,13 +1,59 @@
-# Gemini API Migration - Deployment Guide
+# Quiz Platform - Complete Feature Guide
 
-## ✅ Completed Migration Tasks
+## ✅ Migration & New Features Completed
 
-1. **Code Migration**: Replaced OpenAI API with Google Gemini API
-2. **Environment Variables**: Updated all `.env` files to use `GEMINI_API_KEY`
-3. **Documentation**: Updated README.md with Gemini API instructions
-4. **Dependencies**: Installed `@google/generative-ai` package
-5. **Test Scripts**: Created test scripts for Gemini API
-6. **Git**: All changes committed and pushed to GitHub
+1. **AI Migration**: Replaced OpenAI API with Google Gemini API
+2. **AI Quiz Generator**: Create complete quizzes with AI-generated questions
+3. **Manual Timing Control**: Custom duration settings (1-600 minutes)
+4. **Multi-Section Support**: reasoning, quantitative, english, and more
+5. **Negative Marking**: Configurable penalty system
+6. **Environment Variables**: Updated all `.env` files
+7. **Documentation**: Updated README.md with Gemini API instructions
+8. **Dependencies**: Installed `@google/generative-ai` package
+9. **Test Scripts**: Created comprehensive test suite
+10. **Git Repository**: All changes committed and pushed
+
+## 🎯 New AI Quiz Generator Features
+
+### Key Capabilities:
+- **Complete Quiz Creation**: Generate entire quizzes with multiple sections
+- **AI-Powered Questions**: High-quality questions using Google Gemini
+- **Flexible Difficulty**: Easy, Medium, Hard, or Mixed difficulty levels
+- **Multi-Section Support**: Choose from 12+ available sections
+- **Custom Timing**: Set any duration from 1 minute to 10 hours
+- **Negative Marking**: Optional penalty system with custom values
+- **Smart Section Selection**: Visual section picker with badges
+- **Real-time Preview**: See question count and settings before generation
+
+### Available Sections:
+- Reasoning & Logical Reasoning
+- Quantitative Aptitude & Mathematics
+- English Language & Verbal Ability
+- General Knowledge & Current Affairs
+- Computer Science & Programming
+- Science & Data Interpretation
+
+### Usage Flow:
+1. Navigate to Admin → Manage Quizzes
+2. Click "AI Quiz Generator" button
+3. Fill in quiz details (title, topic, description)
+4. Select sections and difficulty level
+5. Set questions per section and duration
+6. Configure negative marking if needed
+7. Click "Generate AI Quiz" to create
+
+## ⏱️ Manual Timing Features
+
+### Duration Options:
+- **Quick Presets**: 15min, 30min, 45min, 1hr, 1.5hr, 2hr, 3hr
+- **Custom Input**: Any value from 1 to 600 minutes (10 hours)
+- **Smart Display**: Shows time in hours and minutes format
+- **Range Validation**: Automatic validation and feedback
+
+### Benefits:
+- **Flexible Testing**: Support for short quizzes to comprehensive exams
+- **Competitive Exam Prep**: Match real exam durations
+- **Custom Scenarios**: Adapt to any testing requirement
 
 ## 🚀 Next Steps for Production Deployment
 

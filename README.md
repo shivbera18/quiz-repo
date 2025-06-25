@@ -5,15 +5,17 @@ A modern quiz platform built with Next.js, Prisma, and PostgreSQL.
 ## Features
 
 - 🔐 Admin and Student authentication
-- 📝 Quiz creation and management
-- ⏱️ Timed quizzes with negative marking
+- 📝 Quiz creation and management with AI assistance
+- ⏱️ Flexible timing (1 minute to 10 hours) with negative marking
+- 🤖 **AI Quiz Generator**: Create complete quizzes using Google Gemini
 - 📊 Real-time analytics and progress tracking
 - 📱 Mobile-friendly responsive design
-- 🎯 Section-wise scoring (Reasoning, Quantitative, English)
+- 🎯 Multi-section support (12+ sections including reasoning, quantitative, english)
 - 🗄️ Centralized question bank with CRUD operations
-- 🤖 AI-powered question generation using Google Gemini (FREE)
-- 🔍 Advanced filtering and search in question bank
+- 🔍 Advanced filtering and search capabilities
 - 📥 Import questions from question bank to quizzes
+- ⚙️ Configurable difficulty levels and negative marking
+- 🎨 Modern UI with dark/light theme support
 
 ## Tech Stack
 
@@ -136,6 +138,45 @@ node seed-admin.js
 ### Test Student Account
 - Email: `student@test.com`
 - Password: `password`
+
+## 🤖 AI Quiz Generator
+
+This platform features a powerful AI quiz generator that creates complete quizzes using Google Gemini.
+
+### How to Use:
+1. Navigate to **Admin → Manage Quizzes**
+2. Click **"AI Quiz Generator"** (purple button)
+3. Fill in quiz details:
+   - **Title**: Name for your quiz
+   - **Topic**: Subject area (e.g., "Banking Exam", "UPSC Prelims")
+   - **Sections**: Choose from 12+ available sections
+   - **Difficulty**: Easy, Medium, Hard, or Mixed
+   - **Questions per Section**: 1-50 questions
+   - **Duration**: Custom timing (1 minute to 10 hours)
+   - **Negative Marking**: Optional penalty system
+
+### Available Sections:
+- **Reasoning**: Logical reasoning, puzzles, analytical thinking  
+- **Quantitative**: Mathematics, data interpretation, calculations
+- **Verbal**: English language, grammar, vocabulary
+- **General Knowledge**: Current affairs, static GK
+- **Computer Science**: Programming, data structures, algorithms
+- **Science**: Physics, chemistry, biology basics
+
+### Benefits:
+- ✅ **Cost-Free**: Uses Google Gemini's free tier
+- ✅ **High Quality**: AI-generated questions with explanations
+- ✅ **Instant Creation**: Generate 50+ questions in seconds
+- ✅ **Multiple Sections**: Create comprehensive multi-section tests
+- ✅ **Customizable**: Control difficulty, count, and timing
+
+## ⏱️ Flexible Timing System
+
+### Duration Options:
+- **Quick Presets**: 15min, 30min, 45min, 1hr, 1.5hr, 2hr, 3hr
+- **Custom Input**: Any duration from 1 to 600 minutes (10 hours)
+- **Smart Display**: Shows time in hours and minutes format
+- **Use Cases**: From quick assessments to comprehensive exams
 
 ## Environment Variables
 
