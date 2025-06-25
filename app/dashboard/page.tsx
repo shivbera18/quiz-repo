@@ -221,8 +221,10 @@ export default function DashboardPage() {
           </div>
           {/* Main header content (hidden on mobile) */}
           <div className="hidden sm:flex items-center gap-4">
-            <h1 className="text-3xl font-bold text-foreground">Welcome back, {user.name}!</h1>
-            <p className="text-muted-foreground">Ready to continue your exam preparation?</p>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Welcome back, {user.name}!</h1>
+              <p className="text-muted-foreground">Ready to continue your exam preparation?</p>
+            </div>
           </div>
           <div className="hidden sm:flex items-center gap-2">
             <Link href="/profile">
@@ -251,297 +253,222 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Full Mock Tests */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-            <BookOpen className="h-6 w-6" />
-            Full Mock Tests
-          </h2>
-          {fullMockTests.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-12">
-                <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground mb-4">No full mock tests available yet</p>
-                {user.isAdmin && (
-                  <Link href="/admin">
-                    <Button>Go to Admin Panel</Button>
-                  </Link>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {fullMockTests.map((quiz) => (
-                <Card key={quiz.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span>{quiz.title}</span>
-                      <Badge variant="outline">{quiz.questions.length} questions</Badge>
-                    </CardTitle>
-                    <CardDescription>{quiz.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                        <span>{quiz.duration} minutes</span>
-                      </div>
-
-                      <div className="flex gap-1">
-                        {quiz.sections.map((section) => (
-                          <Badge key={section} variant="secondary" className="text-xs">
-                            {section}
-                          </Badge>
-                        ))}
-                      </div>
-
-                      <Link href={`/quiz/${quiz.id}`}>
-                        <Button className="w-full">
-                          <BookOpen className="h-4 w-4 mr-2" />
-                          Start Full Mock Test
-                        </Button>
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+        {/* Mobile welcome section */}
+        <div className="text-center mb-8 sm:hidden">
+          <h1 className="text-2xl font-bold text-foreground mb-2">Welcome back, {user.name}!</h1>
+          <p className="text-muted-foreground">Ready to continue your exam preparation?</p>
         </div>
 
-        {/* Sectional Mock Tests */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-            <Target className="h-6 w-6" />
-            Sectional Mock Tests
-          </h2>
-          {sectionalTests.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-12">
-                <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground mb-4">No sectional tests available yet</p>
-                {user.isAdmin && (
-                  <Link href="/admin">
-                    <Button>Create Sectional Tests</Button>
-                  </Link>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sectionalTests.map((quiz) => {
-                const section = quiz.sections[0]
-                const sectionConfig = {
-                  reasoning: { icon: Brain, color: "text-purple-600", bg: "bg-purple-50" },
-                  quantitative: { icon: Calculator, color: "text-blue-600", bg: "bg-blue-50" },
-                  english: { icon: FileText, color: "text-green-600", bg: "bg-green-50" },
-                }
-                const config = sectionConfig[section as keyof typeof sectionConfig] || {
-                  icon: BookOpen,
-                  color: "text-gray-600",
-                  bg: "bg-gray-50",
-                }
-                const IconComponent = config.icon
-
-                return (
-                  <Card key={quiz.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className={`p-2 rounded-lg ${config.bg}`}>
-                            <IconComponent className={`h-5 w-5 ${config.color}`} />
-                          </div>
-                          <span>{quiz.title}</span>
-                        </div>
-                        <Badge variant="outline">{quiz.questions.length} questions</Badge>
-                      </CardTitle>
-                      <CardDescription>{quiz.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="h-4 w-4" />
-                          <span>{quiz.duration} minutes</span>
-                        </div>
-
-                        <Badge variant="secondary" className="text-xs capitalize">
-                          {section} Only
-                        </Badge>
-
-                        <Link href={`/quiz/${quiz.id}`}>
-                          <Button className="w-full" variant="outline">
-                            <IconComponent className="h-4 w-4 mr-2" />
-                            Start {section.charAt(0).toUpperCase() + section.slice(1)} Test
-                          </Button>
-                        </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Attempted Quizzes Section */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold flex items-center gap-2">
-              <History className="h-6 w-6" />
-              Attempted Quizzes
-            </h2>
-            <Link href="/history">
-              <Button variant="outline" size="sm">
-                View All History
-              </Button>
-            </Link>
-          </div>
-          
-          {loadingAttempts ? (
-            <Card>
-              <CardContent className="text-center py-12">
-                <p className="text-muted-foreground">Loading attempted quizzes...</p>
-              </CardContent>
-            </Card>
-          ) : allAttempts.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-12">
-                <History className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground mb-4">No quizzes attempted yet</p>
-                <p className="text-sm text-muted-foreground">Start taking quizzes to track your progress here</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {/* Summary Stats */}
-              <div className="grid md:grid-cols-4 gap-4 mb-4">
-                <Card className="bg-blue-50 border-blue-200">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2">
-                      <BookOpen className="h-5 w-5 text-blue-600" />
-                      <div>
-                        <p className="text-sm text-blue-600 font-medium">Total Attempts</p>
-                        <p className="text-2xl font-bold text-blue-700">{allAttempts.length}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="bg-green-50 border-green-200">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-green-600" />
-                      <div>
-                        <p className="text-sm text-green-600 font-medium">Average Score</p>
-                        <p className="text-2xl font-bold text-green-700">
-                          {allAttempts.length > 0 
-                            ? Math.round(allAttempts.reduce((sum, a) => sum + a.totalScore, 0) / allAttempts.length)
-                            : 0}%
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="bg-purple-50 border-purple-200">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2">
-                      <Target className="h-5 w-5 text-purple-600" />
-                      <div>
-                        <p className="text-sm text-purple-600 font-medium">Best Score</p>
-                        <p className="text-2xl font-bold text-purple-700">
-                          {allAttempts.length > 0 
-                            ? Math.max(...allAttempts.map(a => a.totalScore))
-                            : 0}%
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="bg-orange-50 border-orange-200">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-5 w-5 text-orange-600" />
-                      <div>
-                        <p className="text-sm text-orange-600 font-medium">Avg Time</p>
-                        <p className="text-2xl font-bold text-orange-700">
-                          {allAttempts.length > 0 
-                            ? Math.round(allAttempts.reduce((sum, a) => sum + (a.timeSpent || 0), 0) / allAttempts.length / 60)
-                            : 0}m
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Recent Attempts List */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Recent Quiz Attempts</CardTitle>
-                  <CardDescription>Your latest quiz performances</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {allAttempts.slice(0, 5).map((attempt, index) => (
-                      <div key={attempt._id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                        <div className="flex items-center gap-4">
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white ${
-                            attempt.totalScore >= 80 ? 'bg-green-500' :
-                            attempt.totalScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                          }`}>
-                            {attempt.totalScore}%
-                          </div>
-                          <div>
-                            <h4 className="font-semibold">{attempt.quizName || 'Unknown Quiz'}</h4>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <span>{new Date(attempt.date).toLocaleDateString()}</span>
-                              <span>✓ {attempt.correctAnswers} correct</span>
-                              <span>✗ {attempt.wrongAnswers} wrong</span>
-                              {attempt.timeSpent && (
-                                <span>⏱ {Math.round(attempt.timeSpent / 60)}m</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={
-                            attempt.totalScore >= 80 ? 'default' :
-                            attempt.totalScore >= 60 ? 'secondary' : 'destructive'
-                          }>
-                            {attempt.totalScore >= 80 ? 'Excellent' :
-                             attempt.totalScore >= 60 ? 'Good' : 'Needs Improvement'}
-                          </Badge>
-                          {attempt.quizId && (
-                            <Link href={`/results/${attempt._id}`}>
-                              <Button variant="ghost" size="sm">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </Link>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+        {/* Quick Stats Overview */}
+        {!loadingAttempts && allAttempts.length > 0 && (
+          <div className="grid md:grid-cols-4 gap-4 mb-8">
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <p className="text-sm text-blue-600 font-medium">Total Attempts</p>
+                    <p className="text-2xl font-bold text-blue-700">{allAttempts.length}</p>
                   </div>
-                  
-                  {allAttempts.length > 5 && (
-                    <div className="mt-4 text-center">
-                      <Link href="/history">
-                        <Button variant="outline">
-                          View All {allAttempts.length} Attempts
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          )}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-green-50 border-green-200">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-green-600" />
+                  <div>
+                    <p className="text-sm text-green-600 font-medium">Average Score</p>
+                    <p className="text-2xl font-bold text-green-700">
+                      {Math.round(allAttempts.reduce((sum, a) => sum + a.totalScore, 0) / allAttempts.length)}%
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-purple-50 border-purple-200">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-purple-600" />
+                  <div>
+                    <p className="text-sm text-purple-600 font-medium">Best Score</p>
+                    <p className="text-2xl font-bold text-purple-700">
+                      {Math.max(...allAttempts.map(a => a.totalScore))}%
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-orange-50 border-orange-200">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-orange-600" />
+                  <div>
+                    <p className="text-sm text-orange-600 font-medium">Avg Time</p>
+                    <p className="text-2xl font-bold text-orange-700">
+                      {Math.round(allAttempts.reduce((sum, a) => sum + (a.timeSpent || 0), 0) / allAttempts.length / 60)}m
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Main Navigation Cards */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Full Mock Tests Card */}
+          <Link href="/dashboard/full-mock-tests">
+            <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group hover:border-blue-500">
+              <CardContent className="p-6 text-center">
+                <div className="bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-100 transition-colors">
+                  <BookOpen className="h-8 w-8 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Full Mock Tests</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Complete comprehensive tests covering all sections
+                </p>
+                <Badge variant="outline" className="text-xs">
+                  {fullMockTests.length} available
+                </Badge>
+              </CardContent>
+            </Card>
+          </Link>
+
+          {/* Sectional Tests Card */}
+          <Link href="/dashboard/sectional-tests">
+            <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group hover:border-green-500">
+              <CardContent className="p-6 text-center">
+                <div className="bg-green-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-green-100 transition-colors">
+                  <Target className="h-8 w-8 text-green-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Sectional Tests</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Focus on specific sections for targeted practice
+                </p>
+                <Badge variant="outline" className="text-xs">
+                  {sectionalTests.length} available
+                </Badge>
+              </CardContent>
+            </Card>
+          </Link>
+
+          {/* Attempted Quizzes Card */}
+          <Link href="/dashboard/attempted-quizzes">
+            <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group hover:border-purple-500">
+              <CardContent className="p-6 text-center">
+                <div className="bg-purple-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-100 transition-colors">
+                  <History className="h-8 w-8 text-purple-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Attempted Quizzes</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Review all your quiz attempts and performance
+                </p>
+                <Badge variant="outline" className="text-xs">
+                  {allAttempts.length} attempts
+                </Badge>
+              </CardContent>
+            </Card>
+          </Link>
+
+          {/* Recent Attempts Card */}
+          <Link href="/dashboard/recent-attempts">
+            <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group hover:border-orange-500">
+              <CardContent className="p-6 text-center">
+                <div className="bg-orange-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-orange-100 transition-colors">
+                  <Clock className="h-8 w-8 text-orange-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Recent Attempts</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Quick access to your latest quiz attempts
+                </p>
+                <Badge variant="outline" className="text-xs">
+                  {Math.min(5, allAttempts.length)} recent
+                </Badge>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Quick Preview of Recent Activity */}
+        {!loadingAttempts && allAttempts.length > 0 && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Latest Activity
+                </span>
+                <Link href="/dashboard/recent-attempts">
+                  <Button variant="outline" size="sm">
+                    <Eye className="h-4 w-4 mr-2" />
+                    View All
+                  </Button>
+                </Link>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {allAttempts.slice(0, 3).map((attempt) => (
+                  <div key={attempt._id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm ${
+                        attempt.totalScore >= 80 ? 'bg-green-500' :
+                        attempt.totalScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                      }`}>
+                        {attempt.totalScore}%
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-sm">{attempt.quizName || 'Unknown Quiz'}</h4>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(attempt.date).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <Link href={`/results/${attempt._id}`}>
+                      <Button variant="ghost" size="sm">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Empty State for New Users */}
+        {!loadingAttempts && allAttempts.length === 0 && (
+          <Card className="text-center py-12">
+            <CardContent>
+              <BookOpen className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Welcome to Your Dashboard!</h3>
+              <p className="text-muted-foreground mb-6">
+                Start your exam preparation journey by taking your first quiz.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link href="/dashboard/full-mock-tests">
+                  <Button className="flex items-center gap-2">
+                    <BookOpen className="h-4 w-4" />
+                    Browse Full Mock Tests
+                  </Button>
+                </Link>
+                <Link href="/dashboard/sectional-tests">
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Target className="h-4 w-4" />
+                    Try Sectional Tests
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Additional Quick Links */}
+        <div className="grid md:grid-cols-3 gap-6">
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <Link href="/goals">
               <CardHeader className="text-center">
@@ -550,18 +477,6 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-center">Set and track your performance goals</CardDescription>
-              </CardContent>
-            </Link>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <Link href="/history">
-              <CardHeader className="text-center">
-                <History className="h-12 w-12 mx-auto text-orange-600 mb-2" />
-                <CardTitle>History</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-center">Review your past attempts and progress</CardDescription>
               </CardContent>
             </Link>
           </Card>
@@ -591,91 +506,6 @@ export default function DashboardPage() {
               </Link>
             </Card>
           )}
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Recent Attempts */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Attempts</CardTitle>
-              <CardDescription>Your latest quiz attempts and scores</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {recentAttempts.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground mb-4">No attempts yet</p>
-                  {availableQuizzes.length > 0 && (
-                    <p className="text-sm text-muted-foreground">Take a quiz to see your results here</p>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {recentAttempts.map((attempt) => (
-                    <div key={attempt._id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <p className="font-medium">{attempt.quizName || "Quiz"}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(attempt.date).toLocaleDateString()} - Total Score: {attempt.totalScore}%
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Badge variant="secondary">R: {attempt.sections.reasoning}%</Badge>
-                        <Badge variant="secondary">Q: {attempt.sections.quantitative}%</Badge>
-                        <Badge variant="secondary">E: {attempt.sections.english}%</Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Active Goals */}
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Active Goals</CardTitle>
-                  <CardDescription>Your current performance targets</CardDescription>
-                </div>
-                <Link href="/goals">
-                  <Button variant="outline" size="sm">
-                    View All
-                  </Button>
-                </Link>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {activeGoals.length === 0 ? (
-                <div className="text-center py-8">
-                  <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground mb-4">No active goals</p>
-                  <Link href="/goals">
-                    <Button>Set Your First Goal</Button>
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {activeGoals.map((goal) => (
-                    <div key={goal.id} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <p className="font-medium text-sm">{goal.title}</p>
-                        <span className="text-sm text-muted-foreground">
-                          {goal.current}/{goal.target}
-                        </span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div
-                          className="bg-primary h-2 rounded-full transition-all"
-                          style={{ width: `${Math.min((goal.current / goal.target) * 100, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>
