@@ -3,37 +3,31 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { ArrowLeft, TrendingUp, Target, Clock, Award } from "lucide-react"
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts"
+import { ArrowLeft } from "lucide-react"
+import AdvancedAnalytics from "@/components/advanced-analytics"
 
 interface QuizResult {
   _id: string
   date: string
   quizName: string
+  quizId: string
   totalScore: number
+  rawScore: number
+  positiveMarks: number
+  negativeMarks: number
+  correctAnswers: number
+  wrongAnswers: number
+  unanswered: number
   sections: {
-    reasoning: number
-    quantitative: number
-    english: number
+    reasoning?: number
+    quantitative?: number
+    english?: number
   }
-  timeSpent?: number
-  difficulty?: string
+  questions: any[]
+  timeSpent: number
+  negativeMarking: boolean
+  negativeMarkValue: number
 }
 
 export default function AnalyticsPage() {
@@ -47,57 +41,39 @@ export default function AnalyticsPage() {
     setLoading(false)
   }, [])
 
-  const getScoreProgressData = () => {
-    return results.map((result, index) => ({
-      attempt: index + 1,
-      score: result.totalScore,
-      date: new Date(result.date).toLocaleDateString(),
-      quizName: result.quizName,
-    }))
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">Loading analytics...</div>
+      </div>
+    )
   }
 
-  const getSectionPerformanceData = () => {
-    if (results.length === 0) return []
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard">
+              <Button variant="outline" size="icon">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Performance Analytics</h1>
+              <p className="text-muted-foreground">Detailed insights into your quiz performance</p>
+            </div>
+          </div>
+          <ThemeToggle />
+        </div>
 
-    const sectionTotals = { reasoning: 0, quantitative: 0, english: 0 }
-    const sectionCounts = { reasoning: 0, quantitative: 0, english: 0 }
-
-    results.forEach((result) => {
-      Object.entries(result.sections).forEach(([section, score]) => {
-        if (score > 0) {
-          sectionTotals[section as keyof typeof sectionTotals] += score
-          sectionCounts[section as keyof typeof sectionCounts]++
-        }
-      })
-    })
-
-    return [
-      {
-        section: "Reasoning",
-        average: sectionCounts.reasoning > 0 ? Math.round(sectionTotals.reasoning / sectionCounts.reasoning) : 0,
-        color: "#8884d8",
-      },
-      {
-        section: "Quantitative",
-        average:
-          sectionCounts.quantitative > 0 ? Math.round(sectionTotals.quantitative / sectionCounts.quantitative) : 0,
-        color: "#82ca9d",
-      },
-      {
-        section: "English",
-        average: sectionCounts.english > 0 ? Math.round(sectionTotals.english / sectionCounts.english) : 0,
-        color: "#ffc658",
-      },
-    ]
-  }
-
-  const getDifficultyDistribution = () => {
-    const distribution = results.reduce(
-      (acc, result) => {
-        const difficulty = result.difficulty || "mixed"
-        acc[difficulty] = (acc[difficulty] || 0) + 1
-        return acc
-      },
+        {/* Advanced Analytics Component */}
+        <AdvancedAnalytics results={results} />
+      </div>
+    </div>
+  )
+}
       {} as Record<string, number>,
     )
 

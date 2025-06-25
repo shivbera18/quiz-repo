@@ -137,8 +137,29 @@ export default function DashboardPage() {
                   <DrawerTitle>Menu</DrawerTitle>
                 </DrawerHeader>
                 <div className="flex flex-col gap-4 p-4">
-                  <Link href="/dashboard">
-                    <Button variant="ghost" className="w-full">Student Dashboard</Button>
+                  <Link href="/profile">
+                    <Button variant="ghost" className="w-full flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Profile
+                    </Button>
+                  </Link>
+                  <Link href="/analytics">
+                    <Button variant="ghost" className="w-full flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4" />
+                      Analytics
+                    </Button>
+                  </Link>
+                  <Link href="/history">
+                    <Button variant="ghost" className="w-full flex items-center gap-2">
+                      <History className="h-4 w-4" />
+                      History
+                    </Button>
+                  </Link>
+                  <Link href="/goals">
+                    <Button variant="ghost" className="w-full flex items-center gap-2">
+                      <Target className="h-4 w-4" />
+                      Goals
+                    </Button>
                   </Link>
                   <Button onClick={logout} variant="destructive" className="w-full flex items-center gap-2">
                     <LogOut className="h-4 w-4" />
@@ -158,6 +179,24 @@ export default function DashboardPage() {
             <p className="text-muted-foreground">Ready to continue your exam preparation?</p>
           </div>
           <div className="hidden sm:flex items-center gap-2">
+            <Link href="/profile">
+              <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Profile
+              </Button>
+            </Link>
+            <Link href="/analytics">
+              <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Analytics
+              </Button>
+            </Link>
+            <Link href="/history">
+              <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                <History className="h-4 w-4" />
+                History
+              </Button>
+            </Link>
             <ThemeToggle />
             <Button onClick={logout} variant="destructive" className="flex items-center gap-2">
               <LogOut className="h-4 w-4" />
