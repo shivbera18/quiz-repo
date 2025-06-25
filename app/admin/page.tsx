@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Plus, Trash2, Users, BarChart3, Edit, Eye, Clock, BookOpen, LogOut, Shield, Sparkles } from "lucide-react"
+import { Plus, Trash2, Users, BarChart3, Edit, Eye, Clock, BookOpen, LogOut, Shield, Sparkles, Trophy } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/hooks/use-auth"
 import AIQuizGenerator from "./ai-quiz-generator"
@@ -48,6 +48,15 @@ export default function AdminPage() {
   const [success, setSuccess] = useState("")
   const [showQuizForm, setShowQuizForm] = useState(false)
   const [showAIQuizGenerator, setShowAIQuizGenerator] = useState(false)
+  const [analytics, setAnalytics] = useState({
+    totalUsers: 0,
+    totalAttempts: 0,
+    totalQuizzes: 0,
+    activeQuizzes: 0,
+    totalQuestions: 0,
+    averageScore: 0,
+    recentActivity: []
+  })
   const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null)
 
   const [newQuiz, setNewQuiz] = useState({
@@ -163,11 +172,13 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      // Fetch quizzes from backend API
-      const fetchQuizzes = async () => {
+      // Fetch quizzes and analytics from backend API
+      const fetchData = async () => {
         try {
           setAdminLoading(true)
           setError("")
+          
+          // Fetch quizzes
           const res = await fetch("/api/admin/quizzes", {
             headers: {
               Authorization: `Bearer ${user.token || "admin-token-placeholder"}`,
@@ -181,13 +192,17 @@ export default function AdminPage() {
             questions: quiz.questions || [],
           }))
           setQuizzes(safeQuizzes)
+          
+          // Fetch analytics after quizzes are loaded
+          await fetchAnalytics()
+          
         } catch (err) {
-          setError("Failed to fetch quizzes from database")
+          setError("Failed to fetch data from database")
         } finally {
           setAdminLoading(false)
         }
       }
-      fetchQuizzes()
+      fetchData()
     }
   }, [loading, user])
 
@@ -372,12 +387,60 @@ export default function AdminPage() {
     }
   }
 
+  const fetchAnalytics = async () => {
+    try {
+      // Try to fetch from API first
+      const response = await fetch("/api/admin/analytics")
+      if (response.ok) {
+        const data = await response.json()
+        const results = data.results || []
+        const quizData = data.quizzes || []
+        
+        // Calculate comprehensive stats
+        const totalUsers = new Set(results.map((r: any) => r.userId || r.user?.id || 'anonymous')).size || 1
+        const totalAttempts = results.length
+        const averageScore = results.length > 0 ? 
+          Math.round(results.reduce((sum: number, r: any) => sum + (r.totalScore || 0), 0) / results.length) : 0
+        
+        const analyticsData = {
+          totalUsers,
+          totalAttempts,
+          totalQuizzes: quizData.length,
+          activeQuizzes: quizData.filter((q: any) => q.isActive !== false).length,
+          totalQuestions: quizData.reduce((sum: number, quiz: any) => sum + (quiz.questions?.length || 0), 0),
+          averageScore,
+          recentActivity: results.slice(-5)
+        }
+        
+        setAnalytics(analyticsData)
+      } else {
+        throw new Error('API failed')
+      }
+    } catch (error) {
+      console.warn('API fetch failed, using localStorage fallback')
+      // Fallback to localStorage
+      const localResults = getQuizResults()
+      const fallbackAnalytics = {
+        totalUsers: localResults.length > 0 ? new Set(localResults.map((r: any) => r.userId || 'user')).size : 1,
+        totalAttempts: localResults.length,
+        totalQuizzes: quizzes.length,
+        activeQuizzes: quizzes.filter((q) => q.isActive).length,
+        totalQuestions: quizzes.reduce((sum, quiz) => sum + (quiz.questions?.length || 0), 0),
+        averageScore: localResults.length > 0 ? 
+          Math.round(localResults.reduce((sum: number, r: any) => sum + (r.totalScore || 0), 0) / localResults.length) : 0,
+        recentActivity: localResults.slice(-5)
+      }
+      setAnalytics(fallbackAnalytics)
+    }
+  }
+
   const stats = {
-    totalUsers: 1,
-    totalAttempts: getQuizResults().length,
-    totalQuizzes: quizzes.length,
-    activeQuizzes: quizzes.filter((q) => q.isActive).length,
-    totalQuestions: quizzes.reduce((sum, quiz) => sum + (quiz.questions?.length || 0), 0),
+    totalUsers: analytics.totalUsers,
+    totalAttempts: analytics.totalAttempts,
+    totalQuizzes: analytics.totalQuizzes,
+    activeQuizzes: analytics.activeQuizzes,
+    totalQuestions: analytics.totalQuestions,
+    averageScore: analytics.averageScore,
   }
 
   if (loading || adminLoading) {
@@ -488,13 +551,14 @@ export default function AdminPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Average Questions</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Trophy className="h-5 w-5" />
+                    Average Score
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">
-                    {stats.totalQuizzes > 0 ? Math.round(stats.totalQuestions / stats.totalQuizzes) : 0}
-                  </div>
-                  <p className="text-xs text-muted-foreground">per quiz</p>
+                  <div className="text-3xl font-bold">{stats.averageScore}%</div>
+                  <p className="text-xs text-muted-foreground">across all attempts</p>
                 </CardContent>
               </Card>
             </div>
@@ -551,6 +615,39 @@ export default function AdminPage() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Recent Activity */}
+            {analytics.recentActivity && analytics.recentActivity.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Recent Quiz Attempts
+                  </CardTitle>
+                  <CardDescription>Latest quiz submissions from users</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {analytics.recentActivity.map((activity: any, index: number) => (
+                      <div key={index} className="flex justify-between items-center p-3 border rounded-lg">
+                        <div>
+                          <div className="font-medium">{activity.quizName || 'Unknown Quiz'}</div>
+                          <div className="text-sm text-muted-foreground">
+                            Score: {activity.totalScore || 0}% • {new Date(activity.date || activity.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <Badge variant={
+                          (activity.totalScore || 0) >= 80 ? "default" : 
+                          (activity.totalScore || 0) >= 60 ? "secondary" : "destructive"
+                        }>
+                          {activity.totalScore || 0}%
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Quizzes Management Tab */}

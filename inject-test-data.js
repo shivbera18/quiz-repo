@@ -1,0 +1,123 @@
+
+// Admin Analytics Test Script
+// Run this in browser console on the admin page
+
+console.log('🧪 Adding test data to localStorage...');
+
+// Clear existing data
+localStorage.removeItem('quizResults');
+
+// Add test data
+localStorage.setItem('quizResults', JSON.stringify([
+  {
+    "_id": "result_001",
+    "date": "2025-06-25T11:56:38.145Z",
+    "quizName": "Reasoning Mock Test 1",
+    "quizId": "1",
+    "totalScore": 85,
+    "rawScore": 85,
+    "positiveMarks": 17,
+    "negativeMarks": 0,
+    "correctAnswers": 17,
+    "wrongAnswers": 3,
+    "unanswered": 0,
+    "timeSpent": 3600,
+    "userId": "user_001",
+    "sections": {
+      "reasoning": 85
+    },
+    "questions": [],
+    "negativeMarking": true,
+    "negativeMarkValue": 0.25
+  },
+  {
+    "_id": "result_002",
+    "date": "2025-06-24T11:56:38.145Z",
+    "quizName": "Quantitative Aptitude Mock 1",
+    "quizId": "2",
+    "totalScore": 72,
+    "rawScore": 72,
+    "positiveMarks": 14,
+    "negativeMarks": 1,
+    "correctAnswers": 14,
+    "wrongAnswers": 4,
+    "unanswered": 2,
+    "timeSpent": 2700,
+    "userId": "user_002",
+    "sections": {
+      "quantitative": 72
+    },
+    "questions": [],
+    "negativeMarking": true,
+    "negativeMarkValue": 0.25
+  },
+  {
+    "_id": "result_003",
+    "date": "2025-06-23T11:56:38.145Z",
+    "quizName": "English Language Mock 1",
+    "quizId": "3",
+    "totalScore": 91,
+    "rawScore": 91,
+    "positiveMarks": 18,
+    "negativeMarks": 0,
+    "correctAnswers": 18,
+    "wrongAnswers": 1,
+    "unanswered": 1,
+    "timeSpent": 3200,
+    "userId": "user_003",
+    "sections": {
+      "english": 91
+    },
+    "questions": [],
+    "negativeMarking": true,
+    "negativeMarkValue": 0.25
+  },
+  {
+    "_id": "result_004",
+    "date": "2025-06-22T11:56:38.145Z",
+    "quizName": "Reasoning Mock Test 1",
+    "quizId": "1",
+    "totalScore": 67,
+    "rawScore": 67,
+    "positiveMarks": 13,
+    "negativeMarks": 2,
+    "correctAnswers": 13,
+    "wrongAnswers": 5,
+    "unanswered": 2,
+    "timeSpent": 3900,
+    "userId": "user_001",
+    "sections": {
+      "reasoning": 67
+    },
+    "questions": [],
+    "negativeMarking": true,
+    "negativeMarkValue": 0.25
+  },
+  {
+    "_id": "result_005",
+    "date": "2025-06-21T11:56:38.145Z",
+    "quizName": "Quantitative Aptitude Mock 1",
+    "quizId": "2",
+    "totalScore": 88,
+    "rawScore": 88,
+    "positiveMarks": 17,
+    "negativeMarks": 0,
+    "correctAnswers": 17,
+    "wrongAnswers": 2,
+    "unanswered": 1,
+    "timeSpent": 2400,
+    "userId": "user_004",
+    "sections": {
+      "quantitative": 88
+    },
+    "questions": [],
+    "negativeMarking": true,
+    "negativeMarkValue": 0.25
+  }
+]));
+
+console.log('✅ Test data added successfully!');
+console.log('Quiz results count:', JSON.parse(localStorage.getItem('quizResults')).length);
+
+console.log('🔄 Refreshing page to see analytics...');
+window.location.reload();
