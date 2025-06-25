@@ -272,9 +272,14 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
       setError("")
       setSuccess("")
       
+      console.log('handleAIGenerate called with questions:', generatedQuestions.length)
+      console.log('Sample question data:', generatedQuestions[0])
+      
       // Save all generated questions to the database
       const savedQuestions = []
       for (const questionData of generatedQuestions) {
+        console.log('Saving question:', questionData.question.substring(0, 50) + '...')
+        
         const res = await fetch('/api/admin/question-bank', {
           method: 'POST',
           headers: {
@@ -284,17 +289,27 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
           body: JSON.stringify(questionData)
         })
         
+        console.log('Save response status:', res.status)
+        
         if (res.ok) {
           const saved = await res.json()
+          console.log('Question saved successfully:', saved.question?.id)
           savedQuestions.push(saved.question)
+        } else {
+          const errorText = await res.text()
+          console.error('Failed to save question:', res.status, errorText)
         }
       }
+      
+      console.log('Total questions saved:', savedQuestions.length)
       
       if (savedQuestions.length > 0) {
         setQuestions(prev => [...savedQuestions, ...prev])
         setSuccess(`Successfully added ${savedQuestions.length} AI-generated question${savedQuestions.length !== 1 ? 's' : ''}!`)
+        console.log('Success message set')
       } else {
         setError("Failed to save generated questions")
+        console.log('Error: No questions saved')
       }
     } catch (err) {
       console.error('Error saving AI questions:', err)

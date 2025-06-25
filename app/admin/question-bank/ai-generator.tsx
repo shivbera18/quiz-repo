@@ -81,6 +81,14 @@ export default function AIQuestionGenerator({
     try {
       const topic = customTopic.trim() || selectedTopic
       
+      console.log('AI Generator - Starting generation with:', {
+        topic,
+        difficulty,
+        count: questionCount,
+        section: selectedSection,
+        userToken: userToken ? 'Present' : 'Missing'
+      })
+      
       const response = await fetch('/api/ai/generate-questions', {
         method: 'POST',
         headers: {
@@ -95,12 +103,16 @@ export default function AIQuestionGenerator({
         })
       })
 
+      console.log('AI Generator - Response status:', response.status)
+
       if (!response.ok) {
         const errorData = await response.json()
+        console.error('AI Generator - Error response:', errorData)
         throw new Error(errorData.details || 'Failed to generate questions')
       }
 
       const data = await response.json()
+      console.log('AI Generator - Success:', data.questions?.length, 'questions generated')
       setGeneratedQuestions(data.questions)
       setShowPreview(true)
       
@@ -113,6 +125,8 @@ export default function AIQuestionGenerator({
   }
 
   const handleAcceptQuestions = () => {
+    console.log('AI Generator - Accepting questions:', generatedQuestions.length)
+    
     const formattedQuestions = generatedQuestions.map(q => ({
       section: selectedSection,
       question: q.question,
@@ -122,6 +136,9 @@ export default function AIQuestionGenerator({
       difficulty: difficulty as 'easy' | 'medium' | 'hard',
       tags: q.tags || []
     }))
+
+    console.log('AI Generator - Formatted questions:', formattedQuestions.length)
+    console.log('AI Generator - Sample formatted question:', formattedQuestions[0])
 
     onGenerate(formattedQuestions)
     handleClose()

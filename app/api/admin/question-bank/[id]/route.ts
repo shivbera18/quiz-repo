@@ -16,7 +16,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
 
-    const question = await prisma.questionBank.findUnique({
+    const question = await prisma.questionBankItem.findUnique({
       where: { id: params.id }
     })
 
@@ -73,7 +73,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     // Update question in question bank
-    const updatedQuestion = await prisma.questionBank.update({
+    const updatedQuestion = await prisma.questionBankItem.update({
       where: { id: params.id },
       data: {
         section,
@@ -83,9 +83,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         explanation: explanation?.trim() || "",
         difficulty: difficulty || "medium",
         tags: stringifyForDatabase(tags || []),
-        image: image || "",
-        source: source || "",
-        isVerified: isVerified || false,
         updatedAt: new Date(),
       },
     })
@@ -116,7 +113,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
 
-    await prisma.questionBank.delete({
+    await prisma.questionBankItem.delete({
       where: { id: params.id }
     })
 

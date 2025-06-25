@@ -49,10 +49,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Get total count for pagination
-    const totalCount = await prisma.questionBank.count({ where: whereClause })
+    const totalCount = await prisma.questionBankItem.count({ where: whereClause })
 
     // Fetch questions with pagination
-    const questions = await prisma.questionBank.findMany({
+    const questions = await prisma.questionBankItem.findMany({
       where: whereClause,
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * limit,
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new question in question bank
-    const newQuestion = await prisma.questionBank.create({
+    const newQuestion = await prisma.questionBankItem.create({
       data: {
         section,
         question: question.trim(),
@@ -124,11 +124,6 @@ export async function POST(request: NextRequest) {
         explanation: explanation?.trim() || "",
         difficulty: difficulty || "medium",
         tags: stringifyForDatabase(tags || []),
-        image: image || "",
-        source: source || "",
-        createdBy: "admin", // In production, get from token
-        createdAt: new Date(),
-        updatedAt: new Date(),
       },
     })
 
