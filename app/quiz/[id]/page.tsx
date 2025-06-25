@@ -329,33 +329,69 @@ export default function QuizPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard">
-              <Button variant="outline" size="icon">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">{quiz.title}</h1>
-              <p className="text-muted-foreground">{quiz.description}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            {quiz.duration > 0 && (
-              <div className="flex items-center gap-2 text-lg font-semibold">
-                <Clock className="h-5 w-5" />
-                <span className={timeLeft < 60 ? "text-red-600 dark:text-red-400" : "text-foreground"}>
-                  {formatTime(timeLeft)}
-                </span>
+        <div className="mb-6">
+          {/* Mobile Header */}
+          <div className="flex flex-col space-y-4 md:hidden">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Link href="/dashboard">
+                  <Button variant="outline" size="icon">
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <ThemeToggle />
               </div>
-            )}
-            <Button onClick={handleSubmit} disabled={submitting}>
+              {quiz.duration > 0 && (
+                <div className="flex items-center gap-2 text-lg font-semibold">
+                  <Clock className="h-5 w-5" />
+                  <span className={timeLeft < 60 ? "text-red-600 dark:text-red-400" : "text-foreground"}>
+                    {formatTime(timeLeft)}
+                  </span>
+                </div>
+              )}
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">{quiz.title}</h1>
+              <p className="text-muted-foreground text-sm">{quiz.description}</p>
+            </div>
+            <Button 
+              onClick={handleSubmit} 
+              disabled={submitting} 
+              className="w-full"
+            >
               {submitting ? "Submitting..." : "Submit Quiz"}
             </Button>
+          </div>
+
+          {/* Desktop Header */}
+          <div className="hidden md:flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <Link href="/dashboard">
+                <Button variant="outline" size="icon">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">{quiz.title}</h1>
+                <p className="text-muted-foreground">{quiz.description}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <ThemeToggle />
+              {quiz.duration > 0 && (
+                <div className="flex items-center gap-2 text-lg font-semibold">
+                  <Clock className="h-5 w-5" />
+                  <span className={timeLeft < 60 ? "text-red-600 dark:text-red-400" : "text-foreground"}>
+                    {formatTime(timeLeft)}
+                  </span>
+                </div>
+              )}
+              <Button onClick={handleSubmit} disabled={submitting}>
+                {submitting ? "Submitting..." : "Submit Quiz"}
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -371,13 +407,13 @@ export default function QuizPage({ params }: { params: { id: string } }) {
         )}
 
         {/* Progress and Stats */}
-        <div className="grid md:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 pb-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium">Progress</span>
-                <span className="text-sm text-muted-foreground">
-                  Question {currentQuestionIndex + 1} of {quiz.questions.length}
+                <span className="text-xs text-muted-foreground">
+                  {currentQuestionIndex + 1}/{quiz.questions.length}
                 </span>
               </div>
               <Progress value={getProgress()} className="h-2" />
@@ -385,11 +421,11 @@ export default function QuizPage({ params }: { params: { id: string } }) {
           </Card>
 
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 pb-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium">Answered</span>
-                <span className="text-sm text-muted-foreground">
-                  {getAnsweredCount()} of {quiz.questions.length} questions
+                <span className="text-xs text-muted-foreground">
+                  {getAnsweredCount()}/{quiz.questions.length}
                 </span>
               </div>
               <Progress value={(getAnsweredCount() / quiz.questions.length) * 100} className="h-2" />
@@ -399,12 +435,12 @@ export default function QuizPage({ params }: { params: { id: string } }) {
 
         {/* Question */}
         <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg">
-              Question {currentQuestionIndex + 1}
-              <span className="ml-2 text-sm font-normal text-muted-foreground">({currentQuestion.section})</span>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg sm:text-xl flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+              <span>Question {currentQuestionIndex + 1}</span>
+              <span className="text-sm font-normal text-muted-foreground">({currentQuestion.section})</span>
             </CardTitle>
-            <CardDescription>{currentQuestion.question}</CardDescription>
+            <CardDescription className="text-sm sm:text-base">{currentQuestion.question}</CardDescription>
           </CardHeader>
           <CardContent>
             {/* Question Image */}
@@ -421,11 +457,19 @@ export default function QuizPage({ params }: { params: { id: string } }) {
             <RadioGroup
               value={userAnswer?.selectedAnswer?.toString() || ""}
               onValueChange={(value) => handleAnswerChange(currentQuestion.id, Number.parseInt(value))}
+              className="space-y-3"
             >
               {currentQuestion.options.map((option, optionIndex) => (
-                <div key={optionIndex} className="flex items-center space-x-2">
-                  <RadioGroupItem value={optionIndex.toString()} id={`${currentQuestion.id}-${optionIndex}`} />
-                  <Label htmlFor={`${currentQuestion.id}-${optionIndex}`} className="cursor-pointer flex-1">
+                <div key={optionIndex} className="flex items-start space-x-3 p-3 rounded-lg border border-transparent hover:border-border transition-colors">
+                  <RadioGroupItem 
+                    value={optionIndex.toString()} 
+                    id={`${currentQuestion.id}-${optionIndex}`} 
+                    className="mt-0.5 flex-shrink-0"
+                  />
+                  <Label 
+                    htmlFor={`${currentQuestion.id}-${optionIndex}`} 
+                    className="cursor-pointer flex-1 text-sm sm:text-base leading-relaxed"
+                  >
                     {option}
                   </Label>
                 </div>
@@ -449,40 +493,89 @@ export default function QuizPage({ params }: { params: { id: string } }) {
         </Card>
 
         {/* Navigation */}
-        <div className="flex justify-between items-center">
-          <Button variant="outline" onClick={prevQuestion} disabled={currentQuestionIndex === 0}>
-            Previous
-          </Button>
+        <div className="space-y-4">
+          {/* Mobile Navigation */}
+          <div className="md:hidden">
+            {/* Previous/Next Buttons */}
+            <div className="flex justify-between mb-4">
+              <Button 
+                variant="outline" 
+                onClick={prevQuestion} 
+                disabled={currentQuestionIndex === 0}
+                className="flex-1 mr-2"
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                onClick={nextQuestion}
+                disabled={currentQuestionIndex === quiz.questions.length - 1}
+                className="flex-1 ml-2"
+              >
+                Next
+              </Button>
+            </div>
+            
+            {/* Question Numbers Grid */}
+            <div className="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10">
+              {quiz.questions.map((_, index) => {
+                const questionAnswer = answers.find((a) => a.questionId === quiz.questions[index].id)
+                const isAnswered = questionAnswer !== undefined
+                const isCurrent = index === currentQuestionIndex
 
-          <div className="flex gap-2 flex-wrap">
-            {quiz.questions.map((_, index) => {
-              const questionAnswer = answers.find((a) => a.questionId === quiz.questions[index].id)
-              const isAnswered = questionAnswer !== undefined
-              const isCurrent = index === currentQuestionIndex
-
-              return (
-                <Button
-                  key={index}
-                  variant={isCurrent ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setCurrentQuestionIndex(index)}
-                  className={`w-8 h-8 p-0 ${
-                    isAnswered ? "bg-green-100 border-green-300 dark:bg-green-900 dark:border-green-700" : ""
-                  }`}
-                >
-                  {index + 1}
-                </Button>
-              )
-            })}
+                return (
+                  <Button
+                    key={index}
+                    variant={isCurrent ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentQuestionIndex(index)}
+                    className={`w-full h-10 text-xs ${
+                      isAnswered ? "bg-green-100 border-green-300 dark:bg-green-900 dark:border-green-700" : ""
+                    }`}
+                  >
+                    {index + 1}
+                  </Button>
+                )
+              })}
+            </div>
           </div>
 
-          <Button
-            variant="outline"
-            onClick={nextQuestion}
-            disabled={currentQuestionIndex === quiz.questions.length - 1}
-          >
-            Next
-          </Button>
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex justify-between items-center">
+            <Button variant="outline" onClick={prevQuestion} disabled={currentQuestionIndex === 0}>
+              Previous
+            </Button>
+
+            <div className="flex gap-2 flex-wrap justify-center">
+              {quiz.questions.map((_, index) => {
+                const questionAnswer = answers.find((a) => a.questionId === quiz.questions[index].id)
+                const isAnswered = questionAnswer !== undefined
+                const isCurrent = index === currentQuestionIndex
+
+                return (
+                  <Button
+                    key={index}
+                    variant={isCurrent ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentQuestionIndex(index)}
+                    className={`w-8 h-8 p-0 ${
+                      isAnswered ? "bg-green-100 border-green-300 dark:bg-green-900 dark:border-green-700" : ""
+                    }`}
+                  >
+                    {index + 1}
+                  </Button>
+                )
+              })}
+            </div>
+
+            <Button
+              variant="outline"
+              onClick={nextQuestion}
+              disabled={currentQuestionIndex === quiz.questions.length - 1}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </div>
     </div>
