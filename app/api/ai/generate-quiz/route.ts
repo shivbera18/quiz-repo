@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     // Generate questions for each section
     for (const section of sections) {
       try {
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" })
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
         
         const prompt = `Generate ${questionsPerSection} ${difficulty} level multiple choice questions for the "${section}" section about "${topic}".
 
