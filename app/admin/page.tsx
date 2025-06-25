@@ -10,9 +10,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Plus, Trash2, Users, BarChart3, Edit, Eye, Clock, BookOpen, LogOut, Shield } from "lucide-react"
+import { Plus, Trash2, Users, BarChart3, Edit, Eye, Clock, BookOpen, LogOut, Shield, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/hooks/use-auth"
+import AIQuizGenerator from "./ai-quiz-generator"
 
 interface Quiz {
   id: string
@@ -46,6 +47,7 @@ export default function AdminPage() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [showQuizForm, setShowQuizForm] = useState(false)
+  const [showAIQuizGenerator, setShowAIQuizGenerator] = useState(false)
   const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null)
 
   const [newQuiz, setNewQuiz] = useState({
@@ -330,6 +332,12 @@ export default function AdminPage() {
     }
   }
 
+  const handleAIQuizCreated = (quiz: Quiz) => {
+    setQuizzes((prev) => [...prev, quiz])
+    setShowAIQuizGenerator(false)
+    setSuccess(`Successfully created AI quiz "${quiz.title}" with ${quiz.questions.length} questions!`)
+  }
+
   const getQuizResults = () => {
     if (typeof window === "undefined") return [] // SSR/Build phase
     try {
@@ -525,10 +533,19 @@ export default function AdminPage() {
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Quiz Management</h2>
-                <Button onClick={() => setShowQuizForm(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create New Quiz
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => setShowAIQuizGenerator(true)}
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    AI Quiz Generator
+                  </Button>
+                  <Button onClick={() => setShowQuizForm(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Manually
+                  </Button>
+                </div>
               </div>
 
               {/* Quiz Form */}
@@ -565,25 +582,55 @@ export default function AdminPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="duration">Duration (minutes) *</Label>
-                        <Select
-                          value={newQuiz.duration.toString()}
-                          onValueChange={(value) =>
-                            setNewQuiz((prev) => ({ ...prev, duration: Number.parseInt(value) }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="15">15 minutes</SelectItem>
-                            <SelectItem value="30">30 minutes</SelectItem>
-                            <SelectItem value="45">45 minutes</SelectItem>
-                            <SelectItem value="60">1 hour</SelectItem>
-                            <SelectItem value="90">1.5 hours</SelectItem>
-                            <SelectItem value="120">2 hours</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Label htmlFor="duration" className="flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          Duration (minutes) *
+                        </Label>
+                        <div className="space-y-2">
+                          <Select
+                            value={newQuiz.duration.toString()}
+                            onValueChange={(value) => {
+                              if (value === "custom") {
+                                // Keep current value for custom input
+                                return
+                              }
+                              setNewQuiz((prev) => ({ ...prev, duration: Number.parseInt(value) }))
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="15">15 minutes (Quick Test)</SelectItem>
+                              <SelectItem value="30">30 minutes (Short Quiz)</SelectItem>
+                              <SelectItem value="45">45 minutes (Standard)</SelectItem>
+                              <SelectItem value="60">1 hour (Full Test)</SelectItem>
+                              <SelectItem value="90">1.5 hours (Extended)</SelectItem>
+                              <SelectItem value="120">2 hours (Long Exam)</SelectItem>
+                              <SelectItem value="180">3 hours (Comprehensive)</SelectItem>
+                              <SelectItem value="custom">Custom Duration</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          
+                          {/* Custom duration input with range indicator */}
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                min="1"
+                                max="600"
+                                value={newQuiz.duration}
+                                onChange={(e) => setNewQuiz((prev) => ({ ...prev, duration: Number.parseInt(e.target.value) || 30 }))}
+                                placeholder="Enter minutes"
+                                className="flex-1"
+                              />
+                              <span className="text-sm text-muted-foreground">minutes</span>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Range: 1-600 minutes (up to 10 hours) • Current: {Math.floor(newQuiz.duration / 60)}h {newQuiz.duration % 60}m
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -688,6 +735,18 @@ export default function AdminPage() {
                     </div>
                   </CardContent>
                 </Card>
+              )}
+
+              {/* AI Quiz Generator */}
+              {showAIQuizGenerator && (
+                <AIQuizGenerator
+                  onQuizCreated={(quiz) => {
+                    setQuizzes((prev) => [...prev, quiz])
+                    setShowAIQuizGenerator(false)
+                    setSuccess(`Successfully created AI quiz "${quiz.title}" with ${quiz.questions.length} questions!`)
+                  }}
+                  onClose={() => setShowAIQuizGenerator(false)}
+                />
               )}
 
               {/* Quizzes List */}
