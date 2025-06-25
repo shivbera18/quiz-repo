@@ -4,6 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
@@ -12,7 +15,8 @@ import {
 import { 
   Trophy, TrendingUp, TrendingDown, Target, Clock, Brain, 
   Award, Star, Zap, Calendar, BarChart3, PieChart as PieChartIcon,
-  Activity, Users, BookOpen, CheckCircle, XCircle, AlertCircle
+  Activity, Users, BookOpen, CheckCircle, XCircle, AlertCircle,
+  Search, Filter, User, Eye, Download
 } from "lucide-react"
 
 interface QuizResult {
@@ -32,10 +36,39 @@ interface QuizResult {
     quantitative?: number
     english?: number
   }
-  questions: any[]
+  answers: Array<{
+    questionId: string
+    selectedAnswer: string | number
+    isCorrect: boolean
+    question?: string
+    options?: string[]
+    correctAnswer?: number | string
+  }>
   timeSpent: number
   negativeMarking: boolean
   negativeMarkValue: number
+  user?: {
+    id: string
+    name: string
+    email: string
+  }
+  quiz?: {
+    id: string
+    title: string
+  }
+}
+
+interface UserProgress {
+  userId: string
+  userName: string
+  userEmail: string
+  totalAttempts: number
+  averageScore: number
+  bestScore: number
+  weakestSection: string
+  strongestSection: string
+  improvement: number
+  lastActivity: string
 }
 
 interface AdvancedAnalyticsProps {
@@ -55,8 +88,9 @@ const SafeChart = ({ children, fallback = "Unable to load chart" }: { children: 
 }
 
 export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsProps) {
-  const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | 'all'>('30d')
-  
+  const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | 'all'>('all')
+  const [selectedUserId, setSelectedUserId] = useState<string | 'all'>('all')
+
   // Validate and sanitize results data
   const validResults = (results || []).filter(result => 
     result && 
@@ -68,6 +102,14 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
     typeof result.unanswered === 'number'
   )
   
+  const users = Array.from(new Set(validResults.map(r => r.user?.id)))
+    .map(id => {
+      const result = validResults.find(r => r.user?.id === id);
+      return result?.user;
+    })
+    .filter((user): user is { id: string; name: string; email: string; } => !!user);
+
+
   // Filter results based on selected period
   const filteredResults = validResults.filter(result => {
     try {
@@ -81,20 +123,25 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
     }
   })
 
+  const userFilteredResults = filteredResults.filter(result => {
+    if (selectedUserId === 'all') return true;
+    return result.user?.id === selectedUserId;
+  });
+
   // Overall Statistics with safe calculations
-  const totalQuizzes = filteredResults.length
+  const totalQuizzes = userFilteredResults.length
   const averageScore = totalQuizzes > 0 ? 
-    Math.round(filteredResults.reduce((sum, r) => sum + (r.totalScore || 0), 0) / totalQuizzes) : 0
-  const totalCorrect = filteredResults.reduce((sum, r) => sum + (r.correctAnswers || 0), 0)
-  const totalWrong = filteredResults.reduce((sum, r) => sum + (r.wrongAnswers || 0), 0)
-  const totalUnanswered = filteredResults.reduce((sum, r) => sum + (r.unanswered || 0), 0)
+    Math.round(userFilteredResults.reduce((sum, r) => sum + (r.totalScore || 0), 0) / totalQuizzes) : 0
+  const totalCorrect = userFilteredResults.reduce((sum, r) => sum + (r.correctAnswers || 0), 0)
+  const totalWrong = userFilteredResults.reduce((sum, r) => sum + (r.wrongAnswers || 0), 0)
+  const totalUnanswered = userFilteredResults.reduce((sum, r) => sum + (r.unanswered || 0), 0)
   const totalQuestions = totalCorrect + totalWrong + totalUnanswered
   const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0
   const averageTime = totalQuizzes > 0 ? 
-    Math.round(filteredResults.reduce((sum, r) => sum + (r.timeSpent || 0), 0) / totalQuizzes / 60) : 0
+    Math.round(userFilteredResults.reduce((sum, r) => sum + (r.timeSpent || 0), 0) / totalQuizzes / 60) : 0
 
   // Performance Trends with null safety
-  const performanceTrend = filteredResults
+  const performanceTrend = userFilteredResults
     .filter(result => result.date && result.totalScore !== undefined)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .map((result, index) => {
@@ -111,7 +158,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
 
   // Section-wise Performance with better error handling
   const sectionData = ['reasoning', 'quantitative', 'english'].map(section => {
-    const sectionResults = filteredResults.filter(r => 
+    const sectionResults = userFilteredResults.filter(r => 
       r.sections && 
       typeof r.sections === 'object' && 
       r.sections[section as keyof typeof r.sections] !== undefined
@@ -137,7 +184,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
     { range: 'Below 60%', count: 0, color: '#6b7280' }
   ]
 
-  filteredResults.forEach(result => {
+  userFilteredResults.forEach(result => {
     const score = result.totalScore || 0
     if (score >= 90) scoreRanges[0].count++
     else if (score >= 80) scoreRanges[1].count++
@@ -147,7 +194,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
   })
 
   // Weekly Progress with error handling
-  const weeklyData = filteredResults.reduce((acc, result) => {
+  const weeklyData = userFilteredResults.reduce((acc, result) => {
     try {
       const week = new Date(result.date).toISOString().split('T')[0]
       if (!acc[week]) {
@@ -175,7 +222,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
   ]
 
   // Time Analysis with safer data handling
-  const timeData = filteredResults.map(result => ({
+  const timeData = userFilteredResults.map(result => ({
     quiz: (result.quizName || 'Unknown Quiz').substring(0, 20) + '...',
     timeSpent: Math.round((result.timeSpent || 0) / 60),
     score: result.totalScore || 0,
@@ -187,7 +234,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
     (performanceTrend[performanceTrend.length - 1]?.score || 0) - (performanceTrend[0]?.score || 0) : 0
 
   // Recent Performance Analysis with validation
-  const recentPerformance = filteredResults.slice(-5).map(result => ({
+  const recentPerformance = userFilteredResults.slice(-5).map(result => ({
     name: (result.quizName || 'Unknown Quiz').substring(0, 15) + '...',
     score: result.totalScore || 0,
     correct: result.correctAnswers || 0,
@@ -196,7 +243,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
   }))
 
   // Study Patterns Data with error handling
-  const weeklyPatternData = filteredResults.reduce((acc, result) => {
+  const weeklyPatternData = userFilteredResults.reduce((acc, result) => {
     try {
       const week = `Week ${Math.ceil((new Date(result.date).getDate()) / 7)}`
       if (!acc[week]) {
@@ -219,7 +266,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
 
   // Hourly Performance Analysis (simulated based on typical patterns)
   const hourlyPerformance = Array.from({ length: 24 }, (_, hour) => {
-    const hourResults = filteredResults.filter(() => Math.random() > 0.7) // Simulate hourly data
+    const hourResults = userFilteredResults.filter(() => Math.random() > 0.7) // Simulate hourly data
     const avgScore = hourResults.length > 0 ? 
       Math.round(hourResults.reduce((sum, r) => sum + (r.totalScore || 0), 0) / hourResults.length) : 
       Math.round(averageScore + (Math.random() - 0.5) * 20)
@@ -231,7 +278,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
   })
 
   // Performance Variance Calculation with safety checks
-  const scores = filteredResults.map(r => r.totalScore || 0).filter(score => !isNaN(score))
+  const scores = userFilteredResults.map(r => r.totalScore || 0).filter(score => !isNaN(score))
   const variance = scores.length > 1 ? 
     Math.sqrt(scores.reduce((sum, score) => sum + Math.pow(score - averageScore, 2), 0) / scores.length) : 0
   const performanceVariance = Math.round(variance)
@@ -254,7 +301,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
   }
 
   // Early return for no data
-  if (!validResults.length || totalQuizzes === 0) {
+  if (!validResults.length) {
     return (
       <div className="text-center py-12">
         <BookOpen className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
@@ -272,6 +319,20 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
       {/* Period Selector */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Advanced Analytics</h2>
+        <div className="flex items-center gap-4">
+        <Select onValueChange={setSelectedUserId} value={selectedUserId}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Select a User" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Users</SelectItem>
+              {users.map(user => (
+                <SelectItem key={user.id} value={user.id}>
+                  {user.name} ({user.email})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         <div className="flex gap-2">
           {(['7d', '30d', '90d', 'all'] as const).map(period => (
             <button
@@ -287,8 +348,19 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
             </button>
           ))}
         </div>
+        </div>
       </div>
 
+      {totalQuizzes === 0 && (
+        <div className="text-center py-12">
+            <Users className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Data for Selected User/Period</h3>
+            <p className="text-muted-foreground">Please select another user or time period.</p>
+        </div>
+      )}
+
+      {totalQuizzes > 0 && (
+      <>
       {/* Key Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
@@ -299,7 +371,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
           <CardContent>
             <div className="text-2xl font-bold">{totalQuizzes}</div>
             <p className="text-xs text-muted-foreground">
-              +{filteredResults.filter(r => 
+              +{userFilteredResults.filter(r => 
                 new Date(r.date) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
               ).length} this week
             </p>
@@ -355,13 +427,14 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
 
       {/* Detailed Analytics Tabs */}
       <Tabs defaultValue="performance" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="sections">Sections</TabsTrigger>
           <TabsTrigger value="distribution">Distribution</TabsTrigger>
           <TabsTrigger value="time">Time Analysis</TabsTrigger>
           <TabsTrigger value="patterns">Study Patterns</TabsTrigger>
           <TabsTrigger value="insights">Insights</TabsTrigger>
+          <TabsTrigger value="questions">Question Analysis</TabsTrigger>
         </TabsList>
 
         <TabsContent value="performance" className="space-y-6">
@@ -813,7 +886,62 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
             </Card>
           </div>
         </TabsContent>
+        
+        <TabsContent value="questions">
+            {selectedUserId === 'all' ? (
+                <div className="text-center py-12">
+                    <User className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Select a User</h3>
+                    <p className="text-muted-foreground">Please select a user from the dropdown to see their question-level analysis.</p>
+                </div>
+            ) : (
+                <div className="space-y-6">
+                    {userFilteredResults.map(result => (
+                        <Card key={result._id}>
+                            <CardHeader>
+                                <CardTitle>{result.quizName}</CardTitle>
+                                <CardDescription>
+                                    Taken on {new Date(result.date).toLocaleDateString()} | Score: {result.totalScore}%
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <ul className="space-y-4">
+                                    {result.answers.map((answer, index) => (
+                                        <li key={answer.questionId || index} className="p-4 border rounded-lg">
+                                            <p className="font-semibold mb-2">Q: {answer.question || `Question ID: ${answer.questionId}`}</p>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                                <div>
+                                                    <span className="font-medium">Your Answer: </span>
+                                                    <Badge variant={answer.isCorrect ? "default" : "destructive"}>
+                                                        {answer.selectedAnswer ?? 'Unanswered'}
+                                                    </Badge>
+                                                </div>
+                                                <div>
+                                                    <span className="font-medium">Correct Answer: </span>
+                                                    <Badge variant="secondary">{answer.correctAnswer}</Badge>
+                                                </div>
+                                                <div>
+                                                    <span className="font-medium">Result: </span>
+                                                    {answer.isCorrect ? (
+                                                        <span className="text-green-600 font-semibold flex items-center"><CheckCircle className="h-4 w-4 mr-1"/> Correct</span>
+                                                    ) : (
+                                                        <span className="text-red-600 font-semibold flex items-center"><XCircle className="h-4 w-4 mr-1"/> Incorrect</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            )}
+        </TabsContent>
+
       </Tabs>
+      </>
+      )}
     </div>
   )
   } catch (error) {

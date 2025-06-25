@@ -25,10 +25,26 @@ interface QuizResult {
     quantitative?: number
     english?: number
   }
-  questions: any[]
+  answers: Array<{
+    questionId: string
+    selectedAnswer: string | number
+    isCorrect: boolean
+    question?: string
+    options?: string[]
+    correctAnswer?: number | string
+  }>
   timeSpent: number
   negativeMarking: boolean
   negativeMarkValue: number
+  user?: {
+    id: string
+    name: string
+    email: string
+  }
+  quiz?: {
+    id: string
+    title: string
+  }
 }
 
 export default function AdvancedAnalyticsPage() {
@@ -71,10 +87,12 @@ export default function AdvancedAnalyticsPage() {
         wrongAnswers: result.wrongAnswers || 0,
         unanswered: result.unanswered || 0,
         sections: result.sections || {},
-        questions: result.questions || [],
+        answers: result.answers || [],
         timeSpent: result.timeSpent || 0,
         negativeMarking: result.negativeMarking || false,
-        negativeMarkValue: result.negativeMarkValue || 0
+        negativeMarkValue: result.negativeMarkValue || 0,
+        user: result.user,
+        quiz: result.quiz
       }))
       
       setResults(transformedResults)
