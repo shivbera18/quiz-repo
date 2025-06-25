@@ -10,7 +10,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Plus, Trash2, Users, BarChart3, Edit, Eye, Clock, BookOpen, LogOut, Shield, Sparkles, Trophy, FileText } from "lucide-react"
+import { Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer"
+import { Plus, Trash2, Users, BarChart3, Edit, Eye, Clock, BookOpen, LogOut, Shield, Sparkles, Trophy, FileText, Menu } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/hooks/use-auth"
 import AIQuizGenerator from "./ai-quiz-generator"
@@ -490,141 +491,220 @@ export default function AdminPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-              <Shield className="h-8 w-8 text-blue-600" />
-              Admin Panel
-            </h1>
-            <p className="text-muted-foreground">
-              Welcome, {user.name} - Manage individual quizzes and their questions
+        <div className="flex flex-col gap-4 mb-8">
+          {/* Mobile header */}
+          <div className="flex items-center justify-between sm:hidden">
+            <div className="flex items-center gap-2">
+              <Shield className="h-6 w-6 text-blue-600" />
+              <h1 className="text-xl font-bold text-foreground">Admin Panel</h1>
+            </div>
+            <Drawer>
+              <DrawerTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </DrawerTrigger>
+              <DrawerContent>
+                <DrawerHeader>
+                  <DrawerTitle>Admin Menu</DrawerTitle>
+                </DrawerHeader>
+                <div className="flex flex-col gap-4 p-4">
+                  <div className="flex items-center gap-2 p-2 border-b">
+                    <Shield className="h-4 w-4" />
+                    <span className="text-sm font-medium">Administrator</span>
+                  </div>
+                  <Link href="/dashboard">
+                    <Button variant="ghost" className="w-full justify-start">
+                      <Users className="h-4 w-4 mr-2" />
+                      Student Dashboard
+                    </Button>
+                  </Link>
+                  <Link href="/admin/analytics">
+                    <Button variant="ghost" className="w-full justify-start">
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      Analytics
+                    </Button>
+                  </Link>
+                  <Link href="/admin/question-bank">
+                    <Button variant="ghost" className="w-full justify-start">
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      Question Bank
+                    </Button>
+                  </Link>
+                  <ThemeToggle />
+                  <Button onClick={logout} variant="destructive" className="w-full justify-start">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </Button>
+                  <DrawerClose asChild>
+                    <Button variant="outline" className="w-full mt-2">Close</Button>
+                  </DrawerClose>
+                </div>
+              </DrawerContent>
+            </Drawer>
+          </div>
+
+          {/* Mobile welcome text */}
+          <div className="text-center sm:hidden">
+            <p className="text-sm text-muted-foreground">
+              Welcome, {user.name}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Manage quizzes and questions
             </p>
           </div>
-          <div className="flex gap-2">
-            <Badge variant="outline" className="flex items-center gap-1">
-              <Shield className="h-3 w-3" />
-              Administrator
-            </Badge>
-            <ThemeToggle />
-            <Link href="/dashboard">
-              <Button variant="outline">Student Dashboard</Button>
-            </Link>
-            <Button variant="outline" onClick={logout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
+
+          {/* Desktop header */}
+          <div className="hidden sm:flex sm:justify-between sm:items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+                <Shield className="h-8 w-8 text-blue-600" />
+                Admin Panel
+              </h1>
+              <p className="text-muted-foreground">
+                Welcome, {user.name} - Manage individual quizzes and their questions
+              </p>
+            </div>
+
+            {/* Desktop navigation */}
+            <div className="flex gap-2">
+              <Badge variant="outline" className="flex items-center gap-1">
+                <Shield className="h-3 w-3" />
+                Administrator
+              </Badge>
+              <ThemeToggle />
+              <Link href="/dashboard">
+                <Button variant="outline" size="sm">
+                  <Users className="h-4 w-4 mr-2" />
+                  Student Dashboard
+                </Button>
+              </Link>
+              <Button variant="outline" size="sm" onClick={logout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="quizzes">Manage Quizzes</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 h-auto">
+            <TabsTrigger value="overview" className="text-xs sm:text-sm py-2">
+              Overview & Stats
+            </TabsTrigger>
+            <TabsTrigger value="quizzes" className="text-xs sm:text-sm py-2">
+              Manage Quizzes
+            </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview">
-            <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    Total Users
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <Users className="h-4 w-4" />
+                    <span className="hidden sm:inline">Total Users</span>
+                    <span className="sm:hidden">Users</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{stats.totalUsers}</div>
+                  <div className="text-2xl font-bold">{stats.totalUsers}</div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5" />
-                    Total Attempts
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <BarChart3 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Total Attempts</span>
+                    <span className="sm:hidden">Attempts</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{stats.totalAttempts}</div>
+                  <div className="text-2xl font-bold">{stats.totalAttempts}</div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5" />
-                    Total Quizzes
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <BookOpen className="h-4 w-4" />
+                    <span className="hidden sm:inline">Total Quizzes</span>
+                    <span className="sm:hidden">Quizzes</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{stats.totalQuizzes}</div>
+                  <div className="text-2xl font-bold">{stats.totalQuizzes}</div>
                   <p className="text-xs text-muted-foreground">{stats.activeQuizzes} active</p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Total Questions
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <FileText className="h-4 w-4" />
+                    <span className="hidden sm:inline">Total Questions</span>
+                    <span className="sm:hidden">Questions</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{stats.totalQuestions}</div>
+                  <div className="text-2xl font-bold">{stats.totalQuestions}</div>
                   <p className="text-xs text-muted-foreground">
                     {stats.totalQuizzes > 0 ? Math.round(stats.totalQuestions / stats.totalQuizzes) : 0} avg per quiz
                   </p>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Trophy className="h-5 w-5" />
-                    Average Score
+              <Card className="col-span-2 md:col-span-1">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <Trophy className="h-4 w-4" />
+                    <span className="hidden sm:inline">Average Score</span>
+                    <span className="sm:hidden">Avg Score</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{stats.averageScore}%</div>
+                  <div className="text-2xl font-bold">{stats.averageScore}%</div>
                   <p className="text-xs text-muted-foreground">across all attempts</p>
                 </CardContent>
               </Card>
             </div>
 
             {/* Quick Actions */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                 <Link href="/admin/analytics">
-                  <CardHeader className="text-center">
-                    <BarChart3 className="h-12 w-12 mx-auto text-blue-600 mb-2" />
-                    <CardTitle>Advanced Analytics</CardTitle>
+                  <CardHeader className="text-center pb-2">
+                    <BarChart3 className="h-8 w-8 md:h-12 md:w-12 mx-auto text-blue-600 mb-2" />
+                    <CardTitle className="text-sm md:text-base">Advanced Analytics</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <CardDescription className="text-center">Detailed performance insights and trends</CardDescription>
+                    <CardDescription className="text-center text-xs">Detailed performance insights and trends</CardDescription>
                   </CardContent>
                 </Link>
               </Card>
 
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                 <Link href="/admin/users">
-                  <CardHeader className="text-center">
-                    <Users className="h-12 w-12 mx-auto text-green-600 mb-2" />
-                    <CardTitle>User Management</CardTitle>
+                  <CardHeader className="text-center pb-2">
+                    <Users className="h-8 w-8 md:h-12 md:w-12 mx-auto text-green-600 mb-2" />
+                    <CardTitle className="text-sm md:text-base">User Management</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <CardDescription className="text-center">Manage user accounts and monitor activity</CardDescription>
+                    <CardDescription className="text-center text-xs">Manage user accounts and monitor activity</CardDescription>
                   </CardContent>
                 </Link>
               </Card>
 
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                 <Link href="/admin/question-bank">
-                  <CardHeader className="text-center">
-                    <BookOpen className="h-12 w-12 mx-auto text-purple-600 mb-2" />
-                    <CardTitle>Question Bank</CardTitle>
+                  <CardHeader className="text-center pb-2">
+                    <BookOpen className="h-8 w-8 md:h-12 md:w-12 mx-auto text-purple-600 mb-2" />
+                    <CardTitle className="text-sm md:text-base">Question Bank</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <CardDescription className="text-center">
+                    <CardDescription className="text-center text-xs">
                       Centralized question repository for all quizzes
                     </CardDescription>
                   </CardContent>
@@ -632,12 +712,12 @@ export default function AdminPage() {
               </Card>
 
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                <CardHeader className="text-center">
-                  <Clock className="h-12 w-12 mx-auto text-orange-600 mb-2" />
-                  <CardTitle>Scheduled Exams</CardTitle>
+                <CardHeader className="text-center pb-2">
+                  <Clock className="h-8 w-8 md:h-12 md:w-12 mx-auto text-orange-600 mb-2" />
+                  <CardTitle className="text-sm md:text-base">Scheduled Exams</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="text-center">
+                  <CardDescription className="text-center text-xs">
                     Schedule and manage timed exams (Coming Soon)
                   </CardDescription>
                 </CardContent>
@@ -681,19 +761,22 @@ export default function AdminPage() {
           {/* Quizzes Management Tab */}
           <TabsContent value="quizzes">
             <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Quiz Management</h2>
-                <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <h2 className="text-xl sm:text-2xl font-bold">Quiz Management</h2>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                   <Button 
                     onClick={() => setShowAIQuizGenerator(true)}
-                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 w-full sm:w-auto justify-center"
+                    size="sm"
                   >
                     <Sparkles className="h-4 w-4 mr-2" />
-                    AI Quiz Generator
+                    <span className="hidden sm:inline">AI Quiz Generator</span>
+                    <span className="sm:hidden">AI Generator</span>
                   </Button>
-                  <Button onClick={() => setShowQuizForm(true)}>
+                  <Button onClick={() => setShowQuizForm(true)} className="w-full sm:w-auto" size="sm">
                     <Plus className="h-4 w-4 mr-2" />
-                    Create Manually
+                    <span className="hidden sm:inline">Create Manually</span>
+                    <span className="sm:hidden">Create Quiz</span>
                   </Button>
                 </div>
               </div>
@@ -916,17 +999,17 @@ export default function AdminPage() {
                   quizzes.map((quiz) => (
                     <Card key={quiz.id} className={quiz.isActive ? "" : "opacity-60"}>
                       <CardHeader>
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <CardTitle className="flex items-center gap-2">
-                              {quiz.title}
-                              <Badge variant={quiz.isActive ? "default" : "secondary"}>
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+                          <div className="flex-1 min-w-0">
+                            <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                              <span className="truncate">{quiz.title}</span>
+                              <Badge variant={quiz.isActive ? "default" : "secondary"} className="self-start sm:self-auto">
                                 {quiz.isActive ? "Active" : "Inactive"}
                               </Badge>
                             </CardTitle>
-                            <CardDescription>{quiz.description}</CardDescription>
+                            <CardDescription className="text-sm">{quiz.description}</CardDescription>
                           </div>
-                          <div className="flex gap-1">
+                          <div className="flex flex-row sm:flex-col gap-1 justify-end">
                             <Link href={`/admin/quiz/${quiz.id}`}>
                               <Button variant="ghost" size="icon" title="Manage Questions">
                                 <Eye className="h-4 w-4" />
@@ -948,12 +1031,12 @@ export default function AdminPage() {
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-3">
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                             <div>
                               <span className="text-muted-foreground">Duration:</span>
                               <p className="font-medium flex items-center gap-1">
                                 <Clock className="h-3 w-3" />
-                                {quiz.duration} minutes
+                                {quiz.duration} min
                               </p>
                             </div>
                             <div>
@@ -961,8 +1044,8 @@ export default function AdminPage() {
                               <p className="font-medium">{quiz.questions?.length || 0}</p>
                             </div>
                             <div>
-                              <span className="text-muted-foreground">Negative Marking:</span>
-                              <p className="font-medium">
+                              <span className="text-muted-foreground">Negative:</span>
+                              <p className="font-medium text-xs">
                                 {quiz.negativeMarking ? `Yes (-${quiz.negativeMarkValue})` : "No"}
                               </p>
                             </div>
@@ -974,7 +1057,7 @@ export default function AdminPage() {
 
                           <div>
                             <span className="text-muted-foreground text-sm">Sections:</span>
-                            <div className="flex gap-1 mt-1">
+                            <div className="flex flex-wrap gap-1 mt-1">
                               {quiz.sections.map((section) => (
                                 <Badge key={section} variant="outline" className="text-xs">
                                   {section}
@@ -983,14 +1066,20 @@ export default function AdminPage() {
                             </div>
                           </div>
 
-                          <div className="flex gap-2">
-                            <Link href={`/admin/quiz/${quiz.id}`}>
-                              <Button variant="outline" size="sm">
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <Link href={`/admin/quiz/${quiz.id}`} className="flex-1">
+                              <Button variant="outline" size="sm" className="w-full justify-center">
                                 <Eye className="h-4 w-4 mr-2" />
-                                Manage Questions ({quiz.questions?.length || 0})
+                                <span className="hidden sm:inline">Manage Questions ({quiz.questions?.length || 0})</span>
+                                <span className="sm:hidden">Questions ({quiz.questions?.length || 0})</span>
                               </Button>
                             </Link>
-                            <Button variant="outline" size="sm" onClick={() => handleToggleQuizStatus(quiz.id)}>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handleToggleQuizStatus(quiz.id)}
+                              className="w-full sm:w-auto"
+                            >
                               {quiz.isActive ? "Deactivate" : "Activate"}
                             </Button>
                           </div>

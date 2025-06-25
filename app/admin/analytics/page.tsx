@@ -331,9 +331,17 @@ export default function AdminAnalyticsPage() {
     <div className="min-h-screen bg-background">
       <div className="container w-full max-w-full px-2 sm:px-4 py-4 sm:py-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4 sm:gap-0">
-          {/* Hamburger menu for mobile */}
-          <div className="flex items-center sm:hidden">
+        <div className="flex flex-col gap-4 mb-8">
+          {/* Mobile header */}
+          <div className="flex items-center justify-between sm:hidden">
+            <div className="flex items-center gap-2">
+              <Link href="/admin">
+                <Button variant="outline" size="icon">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <h1 className="text-lg font-bold text-foreground truncate">Analytics</h1>
+            </div>
             <Drawer>
               <DrawerTrigger asChild>
                 <Button variant="outline" size="icon">
@@ -346,12 +354,21 @@ export default function AdminAnalyticsPage() {
                 </DrawerHeader>
                 <div className="flex flex-col gap-4 p-4">
                   <Link href="/admin">
-                    <Button variant="ghost" className="w-full">Admin Home</Button>
+                    <Button variant="ghost" className="w-full justify-start">
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Admin Home
+                    </Button>
                   </Link>
                   <Link href="/admin/analytics/advanced">
-                    <Button variant="ghost" className="w-full">Advanced Analytics</Button>
+                    <Button variant="ghost" className="w-full justify-start">
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      Advanced Analytics
+                    </Button>
                   </Link>
-                  <Button onClick={exportAnalytics} variant="ghost" className="w-full">Export Data</Button>
+                  <Button onClick={exportAnalytics} variant="ghost" className="w-full justify-start">
+                    <Download className="h-4 w-4 mr-2" />
+                    Export Data
+                  </Button>
                   <ThemeToggle />
                   <DrawerClose asChild>
                     <Button variant="outline" className="w-full mt-2">Close</Button>
@@ -360,30 +377,40 @@ export default function AdminAnalyticsPage() {
               </DrawerContent>
             </Drawer>
           </div>
-          {/* Main header content (hidden on mobile) */}
-          <div className="hidden sm:flex items-center gap-4">
-            <Link href="/admin">
-              <Button variant="outline" size="icon">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Analytics Dashboard</h1>
-              <p className="text-muted-foreground text-sm sm:text-base">Comprehensive performance insights and statistics</p>
-            </div>
+
+          {/* Mobile description */}
+          <div className="text-center sm:hidden">
+            <p className="text-xs text-muted-foreground">
+              Performance insights and statistics
+            </p>
           </div>
-          <div className="hidden sm:flex gap-2">
-            <Link href="/admin/analytics/advanced">
-              <Button variant="outline">
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Advanced Analytics
+
+          {/* Desktop header */}
+          <div className="hidden sm:flex sm:justify-between sm:items-center">
+            <div className="flex items-center gap-4">
+              <Link href="/admin">
+                <Button variant="outline" size="icon">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Analytics Dashboard</h1>
+                <p className="text-muted-foreground text-sm sm:text-base">Comprehensive performance insights and statistics</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Link href="/admin/analytics/advanced">
+                <Button variant="outline">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Advanced Analytics
+                </Button>
+              </Link>
+              <ThemeToggle />
+              <Button onClick={exportAnalytics}>
+                <Download className="h-4 w-4 mr-2" />
+                Export Data
               </Button>
-            </Link>
-            <ThemeToggle />
-            <Button onClick={exportAnalytics}>
-              <Download className="h-4 w-4 mr-2" />
-              Export Data
-            </Button>
+            </div>
           </div>
         </div>
 

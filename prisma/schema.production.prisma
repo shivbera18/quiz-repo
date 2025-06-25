@@ -1,4 +1,4 @@
-// Production schema for Neon PostgreSQL
+# Production schema for PostgreSQL/MySQL
 generator client {
   provider = "prisma-client-js"
   output   = "../lib/generated/prisma"
@@ -48,9 +48,9 @@ model QuizResult {
   userEmail String
   date      DateTime @default(now())
   totalScore Int
-  correctAnswers Int @default(0)
-  wrongAnswers Int @default(0)
-  unanswered Int @default(0)
+  correctAnswers Int
+  wrongAnswers Int
+  unanswered Int
   timeSpent Int
   sections  Json     // Native JSON for PostgreSQL
   quiz      Quiz     @relation("QuizQuizResults", fields: [quizId], references: [id])

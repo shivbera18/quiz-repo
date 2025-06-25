@@ -1,3 +1,17 @@
+#!/bin/bash
+
+# Migration script for Neon PostgreSQL deployment
+# This script helps migrate from SQLite to PostgreSQL
+
+echo "🚀 Starting Neon PostgreSQL Migration..."
+
+# Step 1: Backup current schema
+echo "📋 Backing up current schema..."
+cp prisma/schema.prisma prisma/schema.sqlite.backup
+
+# Step 2: Update schema for PostgreSQL
+echo "🔄 Updating schema for PostgreSQL..."
+cat > prisma/schema.prisma << 'EOF'
 // Production schema for Neon PostgreSQL
 generator client {
   provider = "prisma-client-js"
@@ -48,9 +62,9 @@ model QuizResult {
   userEmail String
   date      DateTime @default(now())
   totalScore Int
-  correctAnswers Int @default(0)
-  wrongAnswers Int @default(0)
-  unanswered Int @default(0)
+  correctAnswers Int
+  wrongAnswers Int
+  unanswered Int
   timeSpent Int
   sections  Json     // Native JSON for PostgreSQL
   quiz      Quiz     @relation("QuizQuizResults", fields: [quizId], references: [id])
@@ -75,3 +89,46 @@ model QuestionBankItem {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+EOF
+
+# Step 3: Generate Prisma client
+echo "⚙️  Generating Prisma client for PostgreSQL..."
+npx prisma generate
+
+# Step 4: Check environment variables
+echo "🔍 Checking environment variables..."
+if [ -f .env.local ]; then
+    if grep -q "DATABASE_URL" .env.local; then
+        echo "✅ DATABASE_URL found in .env.local"
+    else
+        echo "❌ DATABASE_URL not found in .env.local"
+        echo "Please add your Neon PostgreSQL connection string:"
+        echo 'DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require"'
+    fi
+else
+    echo "❌ .env.local not found"
+    echo "Creating .env.local template..."
+    cat > .env.local << 'EOF'
+# Neon PostgreSQL Connection
+DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require"
+
+# NextAuth Configuration
+NEXTAUTH_SECRET="your-super-secret-key-here"
+NEXTAUTH_URL="http://localhost:3000"
+
+# Google Gemini API (Optional)
+GEMINI_API_KEY="your-gemini-api-key-here"
+EOF
+    echo "Please update .env.local with your actual values"
+fi
+
+echo ""
+echo "🎉 Migration preparation complete!"
+echo ""
+echo "Next steps:"
+echo "1. Update your .env.local with your Neon DATABASE_URL"
+echo "2. Run: npx prisma db push"
+echo "3. Test your application locally"
+echo "4. Deploy to your hosting platform"
+echo ""
+echo "For detailed instructions, see NEON-DEPLOYMENT-GUIDE.md"

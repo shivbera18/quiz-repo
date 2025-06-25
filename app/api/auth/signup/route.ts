@@ -1,12 +1,23 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { PrismaClient } from "@/lib/generated/prisma"
 
-const prisma = new PrismaClient()
+// Initialize Prisma client with error handling
+const prisma = new PrismaClient({
+  errorFormat: 'pretty',
+})
 
 export async function POST(request: NextRequest) {
   try {
+    // Parse request body
     const body = await request.json()
     const { name, email, password, userType } = body
+
+    // Validate required fields
+    if (!name || !email || !password || !userType) {
+      return NextResponse.json({ 
+        message: "Name, email, password, and user type are required" 
+      }, { status: 400 })
+    }
 
     console.log("Signup attempt for:", email, "as", userType)
 
@@ -15,8 +26,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Only student registration is allowed" }, { status: 400 })
     }
 
+    // Test database connection
+    try {
+      await prisma.$connect()
+    } catch (dbError) {
+      console.error("Database connection failed:", dbError)
+      return NextResponse.json({ 
+        message: "Database connection failed" 
+      }, { status: 500 })
+    }
+
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({ where: { email } })
+    const existingUser = await prisma.user.findUnique({ 
+      where: { email: email.toLowerCase().trim() } 
+    })
     if (existingUser) {
       return NextResponse.json({ message: "User already exists" }, { status: 400 })
     }
@@ -29,8 +52,8 @@ export async function POST(request: NextRequest) {
     // Create new user in the database
     const newUser = await prisma.user.create({
       data: {
-        name,
-        email,
+        name: name.trim(),
+        email: email.toLowerCase().trim(),
         password, // In production, hash this password
         isAdmin: false,
         userType: "student",
@@ -58,6 +81,31 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error("Signup error:", error)
-    return NextResponse.json({ message: "Internal server error" }, { status: 500 })
+    
+    // More specific error messages based on error type
+    if (error instanceof Error) {
+      if (error.message.includes('connect')) {
+        return NextResponse.json({ 
+          message: "Database connection error" 
+        }, { status: 500 })
+      }
+      if (error.message.includes('timeout')) {
+        return NextResponse.json({ 
+          message: "Request timeout" 
+        }, { status: 504 })
+      }
+      if (error.message.includes('unique constraint')) {
+        return NextResponse.json({ 
+          message: "Email already exists" 
+        }, { status: 400 })
+      }
+    }
+    
+    return NextResponse.json({ 
+      message: "Internal server error" 
+    }, { status: 500 })
+  } finally {
+    // Always disconnect from database
+    await prisma.$disconnect()
   }
 }

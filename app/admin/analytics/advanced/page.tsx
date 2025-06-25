@@ -193,19 +193,42 @@ export default function AdvancedAnalyticsPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Link href="/admin/analytics">
-              <Button variant="outline" size="icon">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Advanced Analytics</h1>
-              <p className="text-muted-foreground">Comprehensive insights and performance analysis</p>
+        <div className="flex flex-col gap-4 mb-6">
+          {/* Mobile header */}
+          <div className="flex items-center justify-between sm:hidden">
+            <div className="flex items-center gap-2">
+              <Link href="/admin/analytics">
+                <Button variant="outline" size="icon">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <h1 className="text-lg font-bold text-foreground truncate">Advanced Analytics</h1>
             </div>
+            <ThemeToggle />
           </div>
-          <ThemeToggle />
+
+          {/* Mobile description */}
+          <div className="text-center sm:hidden">
+            <p className="text-xs text-muted-foreground">
+              Comprehensive insights and performance analysis
+            </p>
+          </div>
+
+          {/* Desktop header */}
+          <div className="hidden sm:flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link href="/admin/analytics">
+                <Button variant="outline" size="icon">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">Advanced Analytics</h1>
+                <p className="text-muted-foreground">Comprehensive insights and performance analysis</p>
+              </div>
+            </div>
+            <ThemeToggle />
+          </div>
         </div>
 
         {/* Error Display */}

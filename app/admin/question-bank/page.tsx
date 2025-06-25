@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Plus, Trash2, Edit, Search, BookOpen, ArrowLeft, LogOut, Shield, Save, X, Sparkles } from "lucide-react"
+import { Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer"
+import { Plus, Trash2, Edit, Search, BookOpen, ArrowLeft, LogOut, Shield, Save, X, Sparkles, Menu } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/hooks/use-auth"
 import AIQuestionGenerator from "./ai-generator"
@@ -334,70 +335,125 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-4">
-            <Link href="/admin">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-                <BookOpen className="h-8 w-8 text-purple-600" />
-                Question Bank
-              </h1>
-              <p className="text-muted-foreground">
-                Centralized repository for all quiz questions
-              </p>
+        <div className="flex flex-col gap-4 mb-8">
+          {/* Mobile header */}
+          <div className="flex items-center justify-between sm:hidden">
+            <div className="flex items-center gap-2">
+              <Link href="/admin">
+                <Button variant="ghost" size="icon">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <BookOpen className="h-6 w-6 text-purple-600" />
+              <h1 className="text-lg font-bold text-foreground truncate">Question Bank</h1>
             </div>
+            <Drawer>
+              <DrawerTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </DrawerTrigger>
+              <DrawerContent>
+                <DrawerHeader>
+                  <DrawerTitle>Menu</DrawerTitle>
+                </DrawerHeader>
+                <div className="flex flex-col gap-4 p-4">
+                  <div className="flex items-center gap-2 p-2 border-b">
+                    <Shield className="h-4 w-4" />
+                    <span className="text-sm font-medium">Administrator</span>
+                  </div>
+                  <Link href="/admin">
+                    <Button variant="ghost" className="w-full justify-start">
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Admin Home
+                    </Button>
+                  </Link>
+                  <ThemeToggle />
+                  <Button onClick={logout} variant="destructive" className="w-full justify-start">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </Button>
+                  <DrawerClose asChild>
+                    <Button variant="outline" className="w-full mt-2">Close</Button>
+                  </DrawerClose>
+                </div>
+              </DrawerContent>
+            </Drawer>
           </div>
-          <div className="flex gap-2">
-            <Badge variant="outline" className="flex items-center gap-1">
-              <Shield className="h-3 w-3" />
-              Administrator
-            </Badge>
-            <ThemeToggle />
-            <Button variant="outline" onClick={logout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
+
+          {/* Mobile description */}
+          <div className="text-center sm:hidden">
+            <p className="text-xs text-muted-foreground">
+              Centralized repository for all quiz questions
+            </p>
+          </div>
+
+          {/* Desktop header */}
+          <div className="hidden sm:flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <Link href="/admin">
+                <Button variant="ghost" size="icon">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+                  <BookOpen className="h-8 w-8 text-purple-600" />
+                  Question Bank
+                </h1>
+                <p className="text-muted-foreground">
+                  Centralized repository for all quiz questions
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Badge variant="outline" className="flex items-center gap-1">
+                <Shield className="h-3 w-3" />
+                Administrator
+              </Badge>
+              <ThemeToggle />
+              <Button variant="outline" onClick={logout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid md:grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Total Questions</CardTitle>
+              <CardTitle className="text-xs sm:text-sm">Total Questions</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{questions.length}</div>
+              <div className="text-xl sm:text-2xl font-bold">{questions.length}</div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Filtered Results</CardTitle>
+              <CardTitle className="text-xs sm:text-sm">Filtered Results</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{filteredQuestions.length}</div>
+              <div className="text-xl sm:text-2xl font-bold">{filteredQuestions.length}</div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Sections</CardTitle>
+              <CardTitle className="text-xs sm:text-sm">Sections</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl sm:text-2xl font-bold">
                 {new Set(questions.map(q => q.section)).size}
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Total Tags</CardTitle>
+              <CardTitle className="text-xs sm:text-sm">Total Tags</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{allTags.length}</div>
+              <div className="text-xl sm:text-2xl font-bold">{allTags.length}</div>
             </CardContent>
           </Card>
         </div>

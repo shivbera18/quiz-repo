@@ -1,17 +1,41 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { PrismaClient } from "@/lib/generated/prisma"
 
-const prisma = new PrismaClient()
+// Initialize Prisma client with error handling
+const prisma = new PrismaClient({
+  errorFormat: 'pretty',
+})
 
 export async function POST(request: NextRequest) {
   try {
+    // Parse request body
     const body = await request.json()
     const { email, password, userType } = body
 
+    // Validate required fields
+    if (!email || !password || !userType) {
+      return NextResponse.json({ 
+        message: "Email, password, and user type are required" 
+      }, { status: 400 })
+    }
+
     console.log("Login attempt for:", email, "as", userType)
 
+    // Test database connection
+    try {
+      await prisma.$connect()
+    } catch (dbError) {
+      console.error("Database connection failed:", dbError)
+      return NextResponse.json({ 
+        message: "Database connection failed" 
+      }, { status: 500 })
+    }
+
     // Find user in the database
-    const user = await prisma.user.findUnique({ where: { email } })
+    const user = await prisma.user.findUnique({ 
+      where: { email: email.toLowerCase().trim() } 
+    })
+    
     if (!user) {
       console.log("User not found")
       return NextResponse.json({ message: "Invalid credentials" }, { status: 401 })
@@ -35,10 +59,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Update last login
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { lastLogin: new Date() },
-    })
+    try {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { lastLogin: new Date() },
+      })
+    } catch (updateError) {
+      console.error("Failed to update last login:", updateError)
+      // Continue anyway, don't fail the login
+    }
 
     // Generate simple token (in production, use proper JWT)
     const token = `${user.id}-${Date.now()}-${Math.random().toString(36)}`
@@ -57,6 +86,26 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error("Login error:", error)
-    return NextResponse.json({ message: "Internal server error" }, { status: 500 })
+    
+    // More specific error messages based on error type
+    if (error instanceof Error) {
+      if (error.message.includes('connect')) {
+        return NextResponse.json({ 
+          message: "Database connection error" 
+        }, { status: 500 })
+      }
+      if (error.message.includes('timeout')) {
+        return NextResponse.json({ 
+          message: "Request timeout" 
+        }, { status: 504 })
+      }
+    }
+    
+    return NextResponse.json({ 
+      message: "Internal server error" 
+    }, { status: 500 })
+  } finally {
+    // Always disconnect from database
+    await prisma.$disconnect()
   }
 }
