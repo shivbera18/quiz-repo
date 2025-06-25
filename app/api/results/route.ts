@@ -1,8 +1,53 @@
 import { NextRequest, NextResponse } from "next/server"
 import { PrismaClient } from "@/lib/generated/prisma/client"
-import jwt from "jsonwebtoken"
 
 const prisma = new PrismaClient()
+
+// Helper function to validate simple token and extract user info
+const validateToken = async (token: string) => {
+  try {
+    // Simple token format: userId-timestamp-random
+    // Since userId is a UUID with dashes, we need to handle this carefully
+    const lastDashIndex = token.lastIndexOf('-')
+    const secondLastDashIndex = token.lastIndexOf('-', lastDashIndex - 1)
+    
+    if (lastDashIndex === -1 || secondLastDashIndex === -1) {
+      throw new Error('Invalid token format')
+    }
+    
+    const userId = token.substring(0, secondLastDashIndex)
+    const timestamp = parseInt(token.substring(secondLastDashIndex + 1, lastDashIndex))
+    
+    if (isNaN(timestamp)) {
+      throw new Error('Invalid timestamp in token')
+    }
+    
+    // Check if token is not too old (24 hours)
+    const maxAge = 24 * 60 * 60 * 1000 // 24 hours in ms
+    if (Date.now() - timestamp > maxAge) {
+      throw new Error('Token expired')
+    }
+    
+    // Verify user exists in database
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    })
+    
+    if (!user) {
+      throw new Error('User not found')
+    }
+    
+    return {
+      userId: user.id,
+      name: user.name,
+      email: user.email,
+      isAdmin: user.isAdmin
+    }
+  } catch (error) {
+    console.error('Token validation error:', error instanceof Error ? error.message : 'Unknown error')
+    throw new Error('Invalid token')
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,7 +57,7 @@ export async function POST(request: NextRequest) {
     }
 
     const token = authHeader.substring(7)
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key") as any
+    const decoded = await validateToken(token)
     
     const body = await request.json()
     const {
@@ -36,6 +81,12 @@ export async function POST(request: NextRequest) {
     if (!quizId || typeof totalScore !== 'number') {
       return NextResponse.json({ message: "Missing required fields" }, { status: 400 })
     }
+
+    console.log('💾 Saving quiz result to database:', {
+      userId: decoded.userId,
+      quizId,
+      totalScore
+    })
 
     // Save to database
     const result = await prisma.quizResult.create({
@@ -62,6 +113,8 @@ export async function POST(request: NextRequest) {
         timeSpent: timeSpent || 0,
       },
     })
+
+    console.log('✅ Quiz result saved successfully:', result.id)
 
     // Also save to localStorage for offline access (optional)
     const localStorageResult = {
@@ -91,7 +144,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error("Error saving quiz result:", error)
+    console.error("❌ Error saving quiz result:", error)
     return NextResponse.json({ 
       message: "Failed to save quiz result",
       error: error instanceof Error ? error.message : "Unknown error"
@@ -107,7 +160,7 @@ export async function GET(request: NextRequest) {
     }
 
     const token = authHeader.substring(7)
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key") as any
+    const decoded = await validateToken(token)
 
     // Get user's quiz results from database
     const results = await prisma.quizResult.findMany({

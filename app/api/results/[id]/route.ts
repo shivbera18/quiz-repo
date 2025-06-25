@@ -1,8 +1,45 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { PrismaClient } from "@/lib/generated/prisma/client"
-import jwt from "jsonwebtoken"
 
 const prisma = new PrismaClient()
+
+// Helper function to validate simple token and extract user info
+const validateToken = async (token: string) => {
+  try {
+    // Simple token format: userId-timestamp-random
+    const parts = token.split('-')
+    if (parts.length !== 3) {
+      throw new Error('Invalid token format')
+    }
+    
+    const userId = parts[0]
+    const timestamp = parseInt(parts[1])
+    
+    // Check if token is not too old (24 hours)
+    const maxAge = 24 * 60 * 60 * 1000 // 24 hours in ms
+    if (Date.now() - timestamp > maxAge) {
+      throw new Error('Token expired')
+    }
+    
+    // Verify user exists in database
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    })
+    
+    if (!user) {
+      throw new Error('User not found')
+    }
+    
+    return {
+      userId: user.id,
+      name: user.name,
+      email: user.email,
+      isAdmin: user.isAdmin
+    }
+  } catch (error) {
+    throw new Error('Invalid token')
+  }
+}
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -12,7 +49,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     const token = authHeader.substring(7)
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key") as any
+    const decoded = await validateToken(token)
 
     // Find result in database
     const dbResult = await prisma.quizResult.findFirst({
