@@ -1,5 +1,5 @@
 "use client"
-import { Moon, Sun, Palette, Monitor, Sunset, Leaf, Zap, Droplets, Flame, Heart, Waves } from "lucide-react"
+import { Moon, Sun, Palette, Monitor, Sunset, Leaf, Zap, Droplets, Flame, Heart, Sparkles } from "lucide-react"
 import { useTheme } from "next-themes"
 
 import { Button } from "@/components/ui/button"
@@ -22,7 +22,7 @@ const themes = [
   { name: "orange", label: "Sunset Orange", icon: Sunset, description: "Warm orange theme" },
   { name: "red", label: "Fire Red", icon: Flame, description: "Bold red theme" },
   { name: "pink", label: "Rose Pink", icon: Heart, description: "Soft pink theme" },
-  { name: "teal", label: "Teal Cyan", icon: Waves, description: "Cool teal theme" }
+  { name: "teal", label: "Teal Cyan", icon: Sparkles, description: "Cool teal theme" }
 ]
 
 export function ThemeToggle() {
