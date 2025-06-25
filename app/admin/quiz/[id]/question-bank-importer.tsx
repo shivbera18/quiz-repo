@@ -60,10 +60,9 @@ export default function QuestionBankImporter({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set())
-  
-  // Filters
-  const [selectedSection, setSelectedSection] = useState("")
-  const [selectedDifficulty, setSelectedDifficulty] = useState("")
+    // Filters
+  const [selectedSection, setSelectedSection] = useState("all")
+  const [selectedDifficulty, setSelectedDifficulty] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTags, setSelectedTags] = useState<string[]>([])
 
@@ -80,15 +79,14 @@ export default function QuestionBankImporter({
   useEffect(() => {
     applyFilters()
   }, [questions, selectedSection, selectedDifficulty, searchQuery, selectedTags])
-
   const fetchQuestions = async () => {
     try {
       setLoading(true)
       setError("")
       
       const params = new URLSearchParams()
-      if (selectedSection) params.append('section', selectedSection)
-      if (selectedDifficulty) params.append('difficulty', selectedDifficulty)
+      if (selectedSection && selectedSection !== "all") params.append('section', selectedSection)
+      if (selectedDifficulty && selectedDifficulty !== "all") params.append('difficulty', selectedDifficulty)
       if (searchQuery) params.append('search', searchQuery)
       if (selectedTags.length > 0) params.append('tags', selectedTags.join(','))
       
@@ -112,15 +110,14 @@ export default function QuestionBankImporter({
       setLoading(false)
     }
   }
-
   const applyFilters = () => {
     let filtered = [...questions]
     
-    if (selectedSection) {
+    if (selectedSection && selectedSection !== "all") {
       filtered = filtered.filter(q => q.section === selectedSection)
     }
     
-    if (selectedDifficulty) {
+    if (selectedDifficulty && selectedDifficulty !== "all") {
       filtered = filtered.filter(q => q.difficulty === selectedDifficulty)
     }
     
@@ -176,11 +173,10 @@ export default function QuestionBankImporter({
     setSelectedQuestions(new Set())
     onClose()
   }
-
   const handleClose = () => {
     setSelectedQuestions(new Set())
-    setSelectedSection("")
-    setSelectedDifficulty("")
+    setSelectedSection("all")
+    setSelectedDifficulty("all")
     setSearchQuery("")
     setSelectedTags([])
     onClose()
@@ -236,13 +232,12 @@ export default function QuestionBankImporter({
             <CardContent className="space-y-4">
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>Section</Label>
-                  <Select value={selectedSection} onValueChange={setSelectedSection}>
+                  <Label>Section</Label>                  <Select value={selectedSection} onValueChange={setSelectedSection}>
                     <SelectTrigger>
                       <SelectValue placeholder="All sections" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All sections</SelectItem>
+                      <SelectItem value="all">All sections</SelectItem>
                       {sections.map(section => (
                         <SelectItem key={section} value={section}>{section}</SelectItem>
                       ))}
@@ -257,7 +252,7 @@ export default function QuestionBankImporter({
                       <SelectValue placeholder="All difficulties" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All difficulties</SelectItem>
+                      <SelectItem value="all">All difficulties</SelectItem>
                       {difficulties.map(difficulty => (
                         <SelectItem key={difficulty} value={difficulty}>
                           {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
@@ -281,13 +276,12 @@ export default function QuestionBankImporter({
                 </div>
               </div>
 
-              <div className="flex gap-2">
-                <Button 
+              <div className="flex gap-2">                <Button 
                   variant="outline" 
                   size="sm"
                   onClick={() => {
-                    setSelectedSection("")
-                    setSelectedDifficulty("")
+                    setSelectedSection("all")
+                    setSelectedDifficulty("all")
                     setSearchQuery("")
                     setSelectedTags([])
                   }}

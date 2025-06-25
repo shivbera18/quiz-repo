@@ -10,6 +10,10 @@ A modern quiz platform built with Next.js, Prisma, and PostgreSQL.
 - 📊 Real-time analytics and progress tracking
 - 📱 Mobile-friendly responsive design
 - 🎯 Section-wise scoring (Reasoning, Quantitative, English)
+- 🗄️ Centralized question bank with CRUD operations
+- 🤖 AI-powered question generation using Google Gemini (FREE)
+- 🔍 Advanced filtering and search in question bank
+- 📥 Import questions from question bank to quizzes
 
 ## Tech Stack
 
@@ -17,6 +21,7 @@ A modern quiz platform built with Next.js, Prisma, and PostgreSQL.
 - **UI**: Tailwind CSS, Shadcn/ui
 - **Database**: PostgreSQL (production), SQLite (development)
 - **ORM**: Prisma
+- **AI**: Google Gemini (FREE) for question generation
 - **Deployment**: Vercel
 
 ## Local Development
@@ -35,8 +40,14 @@ npm install
 3. Set up environment variables:
 ```bash
 cp .env.local.example .env.local
-# Edit .env.local with your local database URL
+# Edit .env.local with your local database URL and Gemini API key
 ```
+
+### Getting a FREE Gemini API Key:
+1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Sign in with your Google account
+3. Click "Create API Key"
+4. Copy the API key and add it to your `.env.local` file
 
 4. Set up the database:
 ```bash
@@ -94,6 +105,7 @@ git push -u origin main
    - `DATABASE_URL`: Your PostgreSQL connection string
    - `NEXTAUTH_SECRET`: A random secret key
    - `NEXTAUTH_URL`: Your Vercel app URL
+   - `GEMINI_API_KEY`: Your Google Gemini API key (FREE from Google AI Studio)
 
 5. Deploy!
 
@@ -131,9 +143,11 @@ node seed-admin.js
 - `DATABASE_URL`: PostgreSQL connection string
 - `NEXTAUTH_SECRET`: Random secret for session encryption
 - `NEXTAUTH_URL`: Your production domain
+- `GEMINI_API_KEY`: Google Gemini API key for AI question generation (FREE)
 
 ### Development:
 - `DATABASE_URL`: Can use SQLite (`file:./dev.db`)
+- `GEMINI_API_KEY`: Your Google Gemini API key (FREE - get from Google AI Studio)
 
 ## API Endpoints
 
@@ -147,6 +161,12 @@ node seed-admin.js
 - `GET /api/admin/quizzes/[id]` - Get quiz details
 - `PATCH /api/admin/quizzes/[id]` - Update quiz
 - `DELETE /api/admin/quizzes/[id]` - Delete quiz
+- `GET /api/admin/question-bank` - List question bank with filters
+- `POST /api/admin/question-bank` - Create new question
+- `GET /api/admin/question-bank/[id]` - Get question details
+- `PATCH /api/admin/question-bank/[id]` - Update question
+- `DELETE /api/admin/question-bank/[id]` - Delete question
+- `POST /api/ai/generate-questions` - Generate questions using AI
 
 ### Student (requires auth)
 - `GET /api/quizzes` - List active quizzes
@@ -159,6 +179,7 @@ The application uses Prisma with the following main models:
 - `User`: Admin and student accounts
 - `Quiz`: Quiz definitions with questions
 - `QuizResult`: Completed quiz submissions
+- `QuestionBank`: Centralized repository for reusable questions
 
 ## Contributing
 

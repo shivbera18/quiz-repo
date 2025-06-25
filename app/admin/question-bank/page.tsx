@@ -9,9 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Plus, Trash2, Edit, Search, BookOpen, ArrowLeft, LogOut, Shield, Save, X } from "lucide-react"
+import { Plus, Trash2, Edit, Search, BookOpen, ArrowLeft, LogOut, Shield, Save, X, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/hooks/use-auth"
+import AIQuestionGenerator from "./ai-generator"
 
 interface QuestionBankItem {
   id: string
@@ -32,16 +33,15 @@ const difficulties = ["easy", "medium", "hard"]
 export default function QuestionBankPage() {
   const { user, loading, logout } = useAuth(true) // Require admin access
   const [questions, setQuestions] = useState<QuestionBankItem[]>([])
-  const [filteredQuestions, setFilteredQuestions] = useState<QuestionBankItem[]>([])
-  const [adminLoading, setAdminLoading] = useState(true)
+  const [filteredQuestions, setFilteredQuestions] = useState<QuestionBankItem[]>([])  const [adminLoading, setAdminLoading] = useState(true)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [showQuestionForm, setShowQuestionForm] = useState(false)
   const [editingQuestion, setEditingQuestion] = useState<QuestionBankItem | null>(null)
-  
-  // Filters
-  const [selectedSection, setSelectedSection] = useState("")
-  const [selectedDifficulty, setSelectedDifficulty] = useState("")
+  const [showAIGenerator, setShowAIGenerator] = useState(false)
+    // Filters
+  const [selectedSection, setSelectedSection] = useState("all")
+  const [selectedDifficulty, setSelectedDifficulty] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   // Form state
@@ -76,15 +76,14 @@ export default function QuestionBankPage() {
   useEffect(() => {
     applyFilters()
   }, [questions, selectedSection, selectedDifficulty, searchQuery, selectedTags])
-
   const fetchQuestions = async () => {
     try {
       setAdminLoading(true)
       setError("")
       
       const params = new URLSearchParams()
-      if (selectedSection) params.append('section', selectedSection)
-      if (selectedDifficulty) params.append('difficulty', selectedDifficulty)
+      if (selectedSection && selectedSection !== "all") params.append('section', selectedSection)
+      if (selectedDifficulty && selectedDifficulty !== "all") params.append('difficulty', selectedDifficulty)
       if (searchQuery) params.append('search', searchQuery)
       if (selectedTags.length > 0) params.append('tags', selectedTags.join(','))
       
@@ -108,15 +107,14 @@ export default function QuestionBankPage() {
       setAdminLoading(false)
     }
   }
-
   const applyFilters = () => {
     let filtered = [...questions]
     
-    if (selectedSection) {
+    if (selectedSection && selectedSection !== "all") {
       filtered = filtered.filter(q => q.section === selectedSection)
     }
     
-    if (selectedDifficulty) {
+    if (selectedDifficulty && selectedDifficulty !== "all") {
       filtered = filtered.filter(q => q.difficulty === selectedDifficulty)
     }
     
@@ -261,12 +259,46 @@ export default function QuestionBankPage() {
       setNewQuestion(prev => ({ ...prev, tags: updatedTags }))
     }
   }
-
   const removeTag = (tagToRemove: string) => {
     setNewQuestion(prev => ({
       ...prev,
       tags: prev.tags.filter(tag => tag !== tagToRemove)
     }))
+  }
+
+  const handleAIGenerate = async (generatedQuestions: any[]) => {
+    try {
+      setError("")
+      setSuccess("")
+      
+      // Save all generated questions to the database
+      const savedQuestions = []
+      for (const questionData of generatedQuestions) {
+        const res = await fetch('/api/admin/question-bank', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${user?.token || "admin-token-placeholder"}`,
+          },
+          body: JSON.stringify(questionData)
+        })
+        
+        if (res.ok) {
+          const saved = await res.json()
+          savedQuestions.push(saved.question)
+        }
+      }
+      
+      if (savedQuestions.length > 0) {
+        setQuestions(prev => [...savedQuestions, ...prev])
+        setSuccess(`Successfully added ${savedQuestions.length} AI-generated question${savedQuestions.length !== 1 ? 's' : ''}!`)
+      } else {
+        setError("Failed to save generated questions")
+      }
+    } catch (err) {
+      console.error('Error saving AI questions:', err)
+      setError("Failed to save AI-generated questions")
+    }
   }
 
   // Get unique tags from all questions for filter options
@@ -371,13 +403,22 @@ export default function QuestionBankPage() {
         </div>
 
         {/* Controls */}
-        <div className="space-y-4 mb-6">
-          <div className="flex justify-between items-center">
+        <div className="space-y-4 mb-6">          <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Questions</h2>
-            <Button onClick={() => setShowQuestionForm(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Question
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowAIGenerator(true)}
+                className="bg-gradient-to-r from-purple-500 to-blue-500 text-white border-none hover:from-purple-600 hover:to-blue-600"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                AI Generate
+              </Button>
+              <Button onClick={() => setShowQuestionForm(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Question
+              </Button>
+            </div>
           </div>
 
           {/* Filters */}
@@ -386,15 +427,14 @@ export default function QuestionBankPage() {
               <CardTitle className="text-lg">Filters & Search</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-4 gap-4">
-                <div className="space-y-2">
+              <div className="grid md:grid-cols-4 gap-4">                <div className="space-y-2">
                   <Label>Section</Label>
                   <Select value={selectedSection} onValueChange={setSelectedSection}>
                     <SelectTrigger>
                       <SelectValue placeholder="All sections" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All sections</SelectItem>
+                      <SelectItem value="all">All sections</SelectItem>
                       {sections.map(section => (
                         <SelectItem key={section} value={section}>{section}</SelectItem>
                       ))}
@@ -409,7 +449,7 @@ export default function QuestionBankPage() {
                       <SelectValue placeholder="All difficulties" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All difficulties</SelectItem>
+                      <SelectItem value="all">All difficulties</SelectItem>
                       {difficulties.map(difficulty => (
                         <SelectItem key={difficulty} value={difficulty}>
                           {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
@@ -476,12 +516,11 @@ export default function QuestionBankPage() {
                 </div>
               )}
 
-              <div className="flex gap-2">
-                <Button 
+              <div className="flex gap-2">                <Button 
                   variant="outline" 
                   onClick={() => {
-                    setSelectedSection("")
-                    setSelectedDifficulty("")
+                    setSelectedSection("all")
+                    setSelectedDifficulty("all")
                     setSearchQuery("")
                     setSelectedTags([])
                   }}
@@ -818,9 +857,17 @@ export default function QuestionBankPage() {
               <div className="text-center text-sm text-muted-foreground">
                 Showing {startIndex + 1}-{Math.min(startIndex + questionsPerPage, filteredQuestions.length)} of {filteredQuestions.length} questions
               </div>
-            </>
-          )}
+            </>          )}
         </div>
+
+        {/* AI Question Generator */}
+        <AIQuestionGenerator
+          isOpen={showAIGenerator}
+          onClose={() => setShowAIGenerator(false)}
+          onGenerate={handleAIGenerate}
+          userToken={user?.token || "admin-token-placeholder"}
+          availableSections={sections}
+        />
       </div>
     </div>
   )
