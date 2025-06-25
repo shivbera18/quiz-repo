@@ -2,6 +2,11 @@
 
 # dependencies
 /node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
 
 # next.js
 /.next/
@@ -10,27 +15,158 @@
 # production
 /build
 
+# misc
+.DS_Store
+*.pem
+
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files
-.env*
-.env.local
-.env.production
+# local env files
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local.dev
+.env.local.production.backup
+.env.production.example
 
 # vercel
 .vercel
 
-# database
-prisma/dev.db
-prisma/dev.db-journal
-*.db
-*.db-journal
-
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-/lib/generated/prisma
+
+# database files (SENSITIVE - DO NOT COMMIT)
+prisma/dev.db*
+prisma/*.db*
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# backup data (SENSITIVE - contains user data)
+/backup-data/
+backup-data/
+*.json
+!components.json
+!package.json
+!tsconfig.json
+
+# database schema backups
+prisma/schema.*.backup
+prisma/schema.local.prisma
+
+# test and debug files
+test-*.js
+debug-*.js
+check-*.js
+seed-*.js
+setup-*.js
+import-data.js
+export-production-data.js
+switch-database.js
+clear-quiz-db.js
+inject-test-data.js
+
+# test data files
+*.test.json
+test-admin-analytics-data.json
+
+# deployment scripts (may contain sensitive info)
+setup-production-db.bat
+setup-production-db.sh
+
+# generated files
+/lib/generated/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# logs
+logs
+*.log
+
+# runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# next.js build output
+.next
+
+# nuxt.js build output
+.nuxt
+
+# vuepress build output
+.vuepress/dist
+
+# Serverless directories
+.serverless/
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# Database files and sensitive data
+*.db
+*.db-*
+prisma/dev.db*
+backup-data/

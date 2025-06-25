@@ -7,7 +7,12 @@
     "build": "prisma generate && next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "db:export": "node export-production-data.js",
+    "db:setup-local": "node setup-local-database.js",
+    "db:switch-local": "node switch-database.js local",
+    "db:switch-production": "node switch-database.js production",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

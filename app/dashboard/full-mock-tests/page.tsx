@@ -22,9 +22,30 @@ interface Quiz {
 export default function FullMockTestsPage() {
   const { user, loading } = useAuth()
   const [availableQuizzes, setAvailableQuizzes] = useState<Quiz[]>([])
+  const [attemptedQuizzes, setAttemptedQuizzes] = useState<any[]>([])
 
   useEffect(() => {
     if (!loading && user) {
+      // Fetch attempted quizzes first
+      const fetchAttempts = async () => {
+        try {
+          const response = await fetch("/api/results", {
+            headers: {
+              Authorization: `Bearer ${user.token || "student-token-placeholder"}`,
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+            },
+          })
+          
+          if (response.ok) {
+            const data = await response.json()
+            setAttemptedQuizzes(data.results || [])
+          }
+        } catch (error) {
+          console.error("Failed to fetch attempts:", error)
+        }
+      }
+
+      // Fetch available quizzes
       fetch("/api/quizzes", {
         headers: {
           Authorization: `Bearer ${user.token || "student-token-placeholder"}`,
@@ -40,6 +61,8 @@ export default function FullMockTestsPage() {
           setAvailableQuizzes(activeQuizzes)
         })
         .catch(() => setAvailableQuizzes([]))
+
+      fetchAttempts()
     }
   }, [loading, user])
 
@@ -51,7 +74,12 @@ export default function FullMockTestsPage() {
     )
   }
 
-  const fullMockTests = availableQuizzes.filter((q) => q.sections.length > 1)
+  // Get attempted quiz IDs for filtering
+  const attemptedQuizIds = attemptedQuizzes.map((attempt: any) => attempt.quizId).filter(Boolean)
+  
+  // Filter out attempted quizzes and get only full mock tests
+  const unattemptedQuizzes = availableQuizzes.filter((quiz: Quiz) => !attemptedQuizIds.includes(quiz.id))
+  const fullMockTests = unattemptedQuizzes.filter((q: Quiz) => q.sections.length > 1)
 
   return (
     <div className="min-h-screen bg-background">

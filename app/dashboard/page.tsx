@@ -19,10 +19,17 @@ import {
   Calculator,
   FileText,
   Eye,
+  Trophy,
+  Flame,
+  Calendar,
+  Star,
+  Zap,
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer"
 import { Menu } from "lucide-react"
+import { ActivityCalendar } from "@/components/activity-calendar"
+import { FlashQuestions } from "@/components/flash-questions"
 
 interface RecentAttempt {
   _id: string
@@ -67,6 +74,8 @@ export default function DashboardPage() {
   const [availableQuizzes, setAvailableQuizzes] = useState<Quiz[]>([])
   const [activeGoals, setActiveGoals] = useState<Goal[]>([])
   const [loadingAttempts, setLoadingAttempts] = useState(true)
+  const [showFlashQuestions, setShowFlashQuestions] = useState(false)
+  const [flashQuestions, setFlashQuestions] = useState<any[]>([])
 
   useEffect(() => {
     if (!loading && user) {
@@ -130,6 +139,21 @@ export default function DashboardPage() {
         .then((data) => {
           const activeQuizzes = data.filter((q: Quiz) => q.isActive && q.questions?.length > 0)
           setAvailableQuizzes(activeQuizzes)
+          
+          // Prepare flash questions from all available quizzes
+          const allQuestions = activeQuizzes.flatMap((quiz: Quiz) => 
+            quiz.questions?.map((q: any) => ({
+              id: q.id || Math.random().toString(),
+              question: q.question,
+              options: q.options,
+              correctAnswer: q.correctAnswer,
+              section: q.section || 'General'
+            })) || []
+          )
+          
+          // Shuffle and take 10 random questions for flash mode
+          const shuffled = allQuestions.sort(() => Math.random() - 0.5)
+          setFlashQuestions(shuffled.slice(0, 10))
         })
         .catch(() => setAvailableQuizzes([]))
 
@@ -161,9 +185,15 @@ export default function DashboardPage() {
     )
   }
 
-  // Separate quizzes by type
-  const fullMockTests = availableQuizzes.filter((q) => q.sections.length > 1)
-  const sectionalTests = availableQuizzes.filter((q) => q.sections.length === 1)
+  // Get attempted quiz IDs for filtering
+  const attemptedQuizIds = allAttempts.map((attempt: RecentAttempt) => attempt.quizId).filter(Boolean)
+  
+  // Filter out attempted quizzes from available quizzes
+  const unattemptedQuizzes = availableQuizzes.filter((quiz: Quiz) => !attemptedQuizIds.includes(quiz.id))
+  
+  // Separate unattempted quizzes by type
+  const fullMockTests = unattemptedQuizzes.filter((q: Quiz) => q.sections.length > 1)
+  const sectionalTests = unattemptedQuizzes.filter((q: Quiz) => q.sections.length === 1)
 
   return (
     <div className="min-h-screen bg-background">
@@ -318,6 +348,51 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Activity Calendar */}
+        {!loadingAttempts && allAttempts.length > 0 && (
+          <div className="mb-8">
+            <ActivityCalendar attempts={allAttempts} />
+          </div>
+        )}
+
+        {/* Flash Questions Feature */}
+        {flashQuestions.length > 0 && (
+          <div className="mb-8">
+            <Card className="bg-gradient-to-r from-purple-600 to-purple-800 text-white">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-white/20 p-2 sm:p-3 rounded-full flex-shrink-0">
+                      <Zap className="h-5 w-5 sm:h-6 sm:w-6" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-base sm:text-lg font-semibold truncate">Flash Quick Questions</h3>
+                      <p className="text-purple-100 text-xs sm:text-sm">
+                        Rapid-fire practice with 10 random questions
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="secondary" 
+                    className="bg-white text-purple-700 hover:bg-purple-50 flex items-center gap-2 w-full sm:w-auto justify-center"
+                    onClick={() => setShowFlashQuestions(true)}
+                  >
+                    <Zap className="h-4 w-4" />
+                    <span className="whitespace-nowrap">Start Flash Quiz</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Flash Questions Modal */}
+            <FlashQuestions
+              isOpen={showFlashQuestions}
+              onClose={() => setShowFlashQuestions(false)}
+              questions={flashQuestions}
+            />
+          </div>
+        )}
+
         {/* Main Navigation Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Full Mock Tests Card */}
@@ -333,6 +408,11 @@ export default function DashboardPage() {
                 </p>
                 <Badge variant="outline" className="text-xs">
                   {fullMockTests.length} available
+                  {attemptedQuizIds.length > 0 && (
+                    <span className="ml-1 text-muted-foreground">
+                      ({attemptedQuizIds.filter(id => availableQuizzes.find(q => q.id === id && q.sections.length > 1)).length} completed)
+                    </span>
+                  )}
                 </Badge>
               </CardContent>
             </Card>
@@ -351,6 +431,11 @@ export default function DashboardPage() {
                 </p>
                 <Badge variant="outline" className="text-xs">
                   {sectionalTests.length} available
+                  {attemptedQuizIds.length > 0 && (
+                    <span className="ml-1 text-muted-foreground">
+                      ({attemptedQuizIds.filter(id => availableQuizzes.find(q => q.id === id && q.sections.length === 1)).length} completed)
+                    </span>
+                  )}
                 </Badge>
               </CardContent>
             </Card>

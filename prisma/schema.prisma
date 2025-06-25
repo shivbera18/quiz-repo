@@ -1,14 +1,12 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
+// Local development schema with SQLite
 generator client {
   provider = "prisma-client-js"
   output   = "../lib/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
@@ -32,8 +30,8 @@ model Quiz {
   timeLimit   Int
   createdAt   DateTime @default(now())
   createdBy   String
-  sections    Json     // JSON for PostgreSQL
-  questions   Json     @default("[]")  // JSON for PostgreSQL
+  sections    String   // JSON string for SQLite
+  questions   String   @default("[]")  // JSON string for SQLite
   isActive    Boolean  @default(true)
   results     QuizResult[] @relation("QuizQuizResults")
   startTime   DateTime? // Scheduled start time
@@ -50,8 +48,8 @@ model QuizResult {
   userEmail String
   date      DateTime @default(now())
   totalScore Int
-  sections  Json     // JSON for PostgreSQL
-  answers   Json     // JSON for PostgreSQL
+  sections  String   // JSON string for SQLite
+  answers   String   // JSON string for SQLite
   timeSpent Int
   user      User   @relation(fields: [userId], references: [id], name: "UserQuizResults")
   quiz      Quiz   @relation(fields: [quizId], references: [id], name: "QuizQuizResults")
@@ -60,12 +58,12 @@ model QuizResult {
 model QuestionBank {
   id           String   @id @default(uuid())
   section      String   // "reasoning", "quantitative", "english", etc.
-  question     String   @db.Text
-  options      Json     // Array of 4 options
+  question     String
+  options      String   // JSON string array of 4 options
   correctAnswer Int     // Index 0-3
-  explanation  String   @db.Text @default("")
+  explanation  String   @default("")
   difficulty   String   @default("medium") // "easy", "medium", "hard"
-  tags         Json     @default("[]") // Array of tags for categorization
+  tags         String   @default("[]") // JSON string array of tags
   image        String   @default("") // Base64 or URL
   source       String   @default("") // Source of the question
   isVerified   Boolean  @default(false) // Admin verification status
@@ -73,8 +71,4 @@ model QuestionBank {
   createdBy    String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-
-  @@index([section])
-  @@index([difficulty])
-  @@index([createdAt])
 }
