@@ -236,7 +236,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
           : 0,
     }
 
-    // Store result in localStorage
+    // Store result in localStorage AND send to database
     const result = {
       _id: Date.now().toString(),
       date: new Date().toISOString(),
@@ -256,9 +256,48 @@ export default function QuizPage({ params }: { params: { id: string } }) {
       negativeMarkValue: quiz.negativeMarkValue,
     }
 
+    // Save to localStorage for immediate access
     const existingResults = JSON.parse(localStorage.getItem("quizResults") || "[]")
     existingResults.push(result)
     localStorage.setItem("quizResults", JSON.stringify(existingResults))
+
+    // Send to database
+    try {
+      const saveResponse = await fetch("/api/results", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.token || "student-token-placeholder"}`,
+        },
+        body: JSON.stringify({
+          quizId: quiz.id,
+          quizName: quiz.title,
+          totalScore: scoreData.totalScore,
+          rawScore: scoreData.rawScore,
+          positiveMarks: scoreData.positiveMarks,
+          negativeMarks: scoreData.negativeMarks,
+          correctAnswers: scoreData.correctAnswers,
+          wrongAnswers: scoreData.wrongAnswers,
+          unanswered: scoreData.unanswered,
+          sections: sectionPercentages,
+          questions: questionResults,
+          timeSpent: quiz.duration ? quiz.duration * 60 - timeLeft : 0,
+          negativeMarking: quiz.negativeMarking,
+          negativeMarkValue: quiz.negativeMarkValue,
+        }),
+      })
+
+      if (saveResponse.ok) {
+        const saveData = await saveResponse.json()
+        console.log("✅ Quiz result saved to database:", saveData.result._id)
+        // Update result with database ID
+        result._id = saveData.result._id
+      } else {
+        console.warn("⚠️ Failed to save to database, using localStorage only")
+      }
+    } catch (error) {
+      console.warn("⚠️ Database save failed, using localStorage only:", error)
+    }
 
     router.push(`/results/${result._id}`)
   }
