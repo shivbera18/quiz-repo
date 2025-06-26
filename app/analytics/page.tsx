@@ -232,6 +232,17 @@ export default function AnalyticsPage() {
             >
               {refreshing ? "Refreshing..." : "Refresh"}
             </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                // Clear all cached data and force reload
+                localStorage.removeItem("quizResults")
+                window.location.reload()
+              }}
+              className="flex items-center gap-2"
+            >
+              Clear Cache & Reload
+            </Button>
             <ThemeToggle />
           </div>
         </div>
