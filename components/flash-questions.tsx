@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { X, Zap } from "lucide-react"
+import { X, Zap, Check, AlertCircle } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2 } from "lucide-react"
 
@@ -22,18 +22,102 @@ interface FlashQuestionsProps {
 }
 
 const mathChapters = [
-  "Arithmetic",
-  "Algebra",
-  "Geometry",
-  "Percentage",
-  "Profit & Loss",
-  "Time & Work",
-  "Speed & Distance",
-  "Probability",
-  "Statistics"
+  "Addition",
+  "Subtraction", 
+  "Multiplication",
+  "Division"
 ]
 
-export function FlashQuestions({ isOpen, onClose, questions }: FlashQuestionsProps) {
+// Function to generate simple arithmetic questions
+const generateArithmeticQuestion = (type: string): Question => {
+  const id = Math.random().toString(36).slice(2)
+  let question = ""
+  let correctAnswer = 0
+  let options: string[] = []
+  
+  switch (type) {
+    case "Addition": {
+      const a = Math.floor(Math.random() * 50) + 1
+      const b = Math.floor(Math.random() * 50) + 1
+      const result = a + b
+      question = `What is ${a} + ${b}?`
+      correctAnswer = result
+      // Generate 3 wrong answers
+      const wrongAnswers = [
+        result + Math.floor(Math.random() * 10) + 1,
+        result - Math.floor(Math.random() * 10) - 1,
+        result + Math.floor(Math.random() * 20) + 10
+      ]
+      options = [result, ...wrongAnswers].map(n => n.toString())
+      break
+    }
+    case "Subtraction": {
+      const a = Math.floor(Math.random() * 50) + 25 // Ensure positive result
+      const b = Math.floor(Math.random() * (a - 1)) + 1
+      const result = a - b
+      question = `What is ${a} - ${b}?`
+      correctAnswer = result
+      const wrongAnswers = [
+        result + Math.floor(Math.random() * 10) + 1,
+        result - Math.floor(Math.random() * 10) - 1,
+        Math.abs(result - Math.floor(Math.random() * 15) - 5)
+      ]
+      options = [result, ...wrongAnswers].map(n => n.toString())
+      break
+    }
+    case "Multiplication": {
+      const a = Math.floor(Math.random() * 12) + 2
+      const b = Math.floor(Math.random() * 12) + 2
+      const result = a * b
+      question = `What is ${a} × ${b}?`
+      correctAnswer = result
+      const wrongAnswers = [
+        result + a,
+        result - b,
+        result + Math.floor(Math.random() * 20) + 5
+      ]
+      options = [result, ...wrongAnswers].map(n => n.toString())
+      break
+    }
+    case "Division": {
+      const b = Math.floor(Math.random() * 10) + 2
+      const result = Math.floor(Math.random() * 15) + 2
+      const a = b * result // Ensure clean division
+      question = `What is ${a} ÷ ${b}?`
+      correctAnswer = result
+      const wrongAnswers = [
+        result + 1,
+        result - 1,
+        result + Math.floor(Math.random() * 5) + 2
+      ]
+      options = [result, ...wrongAnswers].map(n => n.toString())
+      break
+    }
+    default:
+      // Fallback to addition
+      const a = Math.floor(Math.random() * 20) + 1
+      const b = Math.floor(Math.random() * 20) + 1
+      const result = a + b
+      question = `What is ${a} + ${b}?`
+      correctAnswer = result
+      options = [result, result + 1, result - 1, result + 5].map(n => n.toString())
+  }
+  
+  // Shuffle options and find correct index
+  const correctAnswerStr = correctAnswer.toString()
+  const shuffledOptions = [...options].sort(() => Math.random() - 0.5)
+  const correctIndex = shuffledOptions.indexOf(correctAnswerStr)
+  
+  return {
+    id,
+    question,
+    options: shuffledOptions,
+    correctAnswer: correctIndex,
+    section: type
+  }
+}
+
+export function FlashQuestions({ isOpen, onClose, questions: _questions }: FlashQuestionsProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
   const [score, setScore] = useState(0)
@@ -46,8 +130,43 @@ export function FlashQuestions({ isOpen, onClose, questions }: FlashQuestionsPro
   const [showSpeedPrompt, setShowSpeedPrompt] = useState(true)
   const [loadingAI, setLoadingAI] = useState(false)
   const [aiError, setAIError] = useState("")
+  const [questions, setQuestions] = useState<Question[]>([])
+
+  // Generate initial arithmetic questions
+  useEffect(() => {
+    if (isOpen && questions.length === 0) {
+      generateNewQuestions()
+    }
+  }, [isOpen])
+
+  const generateNewQuestions = () => {
+    const newQuestions: Question[] = []
+    const questionTypes = ["Addition", "Subtraction", "Multiplication", "Division"]
+    
+    // Generate 10 random arithmetic questions
+    for (let i = 0; i < 10; i++) {
+      const randomType = questionTypes[Math.floor(Math.random() * questionTypes.length)]
+      newQuestions.push(generateArithmeticQuestion(randomType))
+    }
+    
+    setQuestions(newQuestions)
+    setCurrentQuestionIndex(0)
+    setSelectedAnswer(null)
+    setScore(0)
+    setShowResult(false)
+    setAnsweredQuestions([])
+    setShowSpeedPrompt(false)
+  }
 
   const currentQuestion = questions[currentQuestionIndex]
+
+  // Safety check for question data
+  if (!currentQuestion || !Array.isArray(currentQuestion.options) || currentQuestion.options.length === 0) {
+    if (questions.length > 0) {
+      console.error('Invalid question data at index', currentQuestionIndex, ':', currentQuestion)
+    }
+    return null
+  }
 
   useEffect(() => {
     if (!isOpen) {
@@ -57,18 +176,35 @@ export function FlashQuestions({ isOpen, onClose, questions }: FlashQuestionsPro
       setScore(0)
       setShowResult(false)
       setAnsweredQuestions([])
+      setQuestions([])
+      setShowSpeedPrompt(true)
     }
   }, [isOpen])
 
   const handleAnswerSelect = (answerIndex: number) => {
     if (selectedAnswer !== null) return // Prevent multiple selections
 
+    // Validate question data
+    if (!currentQuestion || !Array.isArray(currentQuestion.options) || currentQuestion.options.length === 0) {
+      console.error('Invalid question data:', currentQuestion)
+      return
+    }
+
+    // Validate answer index
+    if (typeof currentQuestion.correctAnswer !== 'number' || 
+        currentQuestion.correctAnswer < 0 || 
+        currentQuestion.correctAnswer >= currentQuestion.options.length) {
+      console.error('Invalid correctAnswer:', currentQuestion.correctAnswer, 'for options:', currentQuestion.options)
+      return
+    }
+
     setSelectedAnswer(answerIndex)
     setIsAnimating(true)
     setSlideDirection('right')
 
-    // Check if answer is correct
+    // Check if answer is correct with extra validation
     const isCorrect = answerIndex === currentQuestion.correctAnswer
+    
     if (isCorrect) {
       setScore(prev => prev + 1)
     }
@@ -104,105 +240,37 @@ export function FlashQuestions({ isOpen, onClose, questions }: FlashQuestionsPro
     }, 300)
   }
 
-  // AI Question Generation
-  const handleGenerateAIQuestion = async () => {
+  // Generate a single new arithmetic question
+  const handleGenerateAIQuestion = () => {
     setLoadingAI(true)
     setAIError("")
+    
     try {
-      const response = await fetch("/api/ai/generate-questions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          topic: chapter,
-          difficulty,
-          count: 1,
-          section: "Mathematics"
-        })
-      })
-      if (!response.ok) {
-        const err = await response.json()
-        throw new Error(err.details || "Failed to generate question")
-      }
-      const data = await response.json()
-      if (data.questions && data.questions.length > 0) {
-        // Add new question to the start of the flash questions
-        questions.unshift({
-          id: Math.random().toString(36).slice(2),
-          question: data.questions[0].question,
-          options: data.questions[0].options,
-          correctAnswer: data.questions[0].correctAnswer,
-          section: chapter
-        })
-        setCurrentQuestionIndex(0)
-        setSelectedAnswer(null)
-        setShowResult(false)
-        setAnsweredQuestions([])
-      } else {
-        setAIError("No question generated. Try again.")
-      }
+      const newQuestion = generateArithmeticQuestion(chapter)
+      
+      // Add new question to the start of the flash questions
+      setQuestions(prev => [newQuestion, ...prev])
+      setCurrentQuestionIndex(0)
+      setSelectedAnswer(null)
+      setShowResult(false)
+      setAnsweredQuestions([])
     } catch (err: any) {
-      setAIError(err.message || "Failed to generate question")
+      setAIError("Failed to generate question. Please try again.")
     } finally {
       setLoadingAI(false)
     }
   }
 
-  // Generate 10 Simplification (BODMAS) questions for speed practice
-  const startSpeedCalculation = async () => {
+  // Generate arithmetic questions for speed practice
+  const startSpeedCalculation = () => {
     setLoadingAI(true)
     setAIError("")
+    
     try {
-      const response = await fetch("/api/ai/generate-questions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          topic: "Simplification (BODMAS) - short calculation questions for speed practice. Each question must have exactly 4 options, only one correct answer, and the correct answer must be present in the options.",
-          difficulty: "medium",
-          count: 10,
-          section: "Arithmetic"
-        })
-      })
-      if (!response.ok) {
-        const err = await response.json()
-        throw new Error(err.details || "Failed to generate questions")
-      }
-      const data = await response.json()
-      if (data.questions && data.questions.length > 0) {
-        // Validate and filter questions
-        const validQuestions = data.questions.filter((q: any) =>
-          Array.isArray(q.options) &&
-          q.options.length === 4 &&
-          typeof q.correctAnswer === 'number' &&
-          q.correctAnswer >= 0 &&
-          q.correctAnswer < 4 &&
-          q.options[q.correctAnswer] !== undefined
-        )
-        if (validQuestions.length === 0) {
-          setAIError("AI did not return any valid questions. Please try again.")
-          setLoadingAI(false)
-          return
-        }
-        // Replace questions array with new set
-        questions.length = 0
-        validQuestions.forEach((q: any) => {
-          questions.push({
-            id: Math.random().toString(36).slice(2),
-            question: q.question,
-            options: q.options,
-            correctAnswer: q.correctAnswer,
-            section: "Simplification (BODMAS)"
-          })
-        })
-        setCurrentQuestionIndex(0)
-        setSelectedAnswer(null)
-        setShowResult(false)
-        setAnsweredQuestions([])
-        setShowSpeedPrompt(false)
-      } else {
-        setAIError("No questions generated. Try again.")
-      }
+      generateNewQuestions()
+      setShowSpeedPrompt(false)
     } catch (err: any) {
-      setAIError(err.message || "Failed to generate questions")
+      setAIError("Failed to generate questions. Please try again.")
     } finally {
       setLoadingAI(false)
     }
@@ -223,10 +291,11 @@ export function FlashQuestions({ isOpen, onClose, questions }: FlashQuestionsPro
           <CardContent className="p-4 sm:p-8">
             {showSpeedPrompt ? (
               <div className="flex flex-col items-center justify-center min-h-[300px] gap-6">
-                <h2 className="text-xl sm:text-2xl font-bold text-center">Do you want to practice speed calculation (simplification)?</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-center">Ready for arithmetic speed practice?</h2>
+                <p className="text-purple-200 text-center">Practice addition, subtraction, multiplication, and division</p>
                 <Button onClick={startSpeedCalculation} disabled={loadingAI} className="flex items-center gap-2 text-lg">
                   {loadingAI ? <Loader2 className="h-5 w-5 animate-spin" /> : <Zap className="h-5 w-5" />}
-                  Start Speed Practice
+                  Start Arithmetic Practice
                 </Button>
                 {aiError && <div className="text-red-300 text-xs mt-2">{aiError}</div>}
                 <Button onClick={onClose} variant="destructive" className="mt-4">Cancel</Button>
@@ -257,7 +326,7 @@ export function FlashQuestions({ isOpen, onClose, questions }: FlashQuestionsPro
                   </Select>
                   <Button onClick={handleGenerateAIQuestion} disabled={loadingAI} className="flex items-center gap-2 w-full sm:w-auto">
                     {loadingAI ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-                    Generate New Question
+                    Add New Question
                   </Button>
                 </div>
                 {aiError && <div className="text-red-300 text-xs mb-2">{aiError}</div>}
@@ -319,13 +388,12 @@ export function FlashQuestions({ isOpen, onClose, questions }: FlashQuestionsPro
 
                     {/* Question */}
                     <div className={`transition-all duration-500 ${isAnimating ? 'opacity-50 scale-95' : 'opacity-100 scale-100'}`}>
-                      <div className="mb-4 sm:mb-6">
-                        <div className="text-xs text-purple-300 mb-2 uppercase tracking-wide">
-                          {currentQuestion.section}
-                        </div>
-                        <h3 className="text-lg sm:text-xl font-semibold leading-relaxed">
-                          {currentQuestion.question}
-                        </h3>
+                      <div className="mb-4 sm:mb-6">                      <div className="text-xs text-purple-300 mb-2 uppercase tracking-wide">
+                        {currentQuestion.section}
+                      </div>
+                      <h3 className="text-lg sm:text-xl font-semibold leading-relaxed">
+                        {currentQuestion.question}
+                      </h3>
                       </div>
 
                       {/* Options */}
@@ -337,31 +405,44 @@ export function FlashQuestions({ isOpen, onClose, questions }: FlashQuestionsPro
                             disabled={selectedAnswer !== null}
                             className={`p-3 sm:p-4 text-left rounded-lg border-2 transition-all duration-200 ${
                               selectedAnswer === null
-                                ? 'border-purple-600 bg-purple-800/50 hover:border-purple-400 hover:bg-purple-700/50'
+                                ? 'border-purple-600 bg-purple-800/50 hover:border-purple-400 hover:bg-purple-700/50 cursor-pointer'
                                 : selectedAnswer === index
                                   ? index === currentQuestion.correctAnswer
-                                    ? 'border-green-400 bg-green-500/20 text-green-100'
-                                    : 'border-red-400 bg-red-500/20 text-red-100'
+                                    ? 'border-green-400 bg-green-500/30 text-green-100 shadow-lg shadow-green-500/20'
+                                    : 'border-red-400 bg-red-500/30 text-red-100 shadow-lg shadow-red-500/20'
                                   : index === currentQuestion.correctAnswer
-                                    ? 'border-green-400 bg-green-500/20 text-green-100'
-                                    : 'border-purple-600 bg-purple-800/30 opacity-50'
+                                    ? 'border-green-400 bg-green-500/30 text-green-100 shadow-lg shadow-green-500/20'
+                                    : 'border-purple-600 bg-purple-800/20 opacity-40 cursor-not-allowed'
                             }`}
                           >
                             <div className="flex items-center gap-2 sm:gap-3">
-                              <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold ${
+                              <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all ${
                                 selectedAnswer === null
-                                  ? 'border-purple-400 text-purple-300'
+                                  ? 'border-purple-400 text-purple-300 bg-transparent'
                                   : selectedAnswer === index
                                     ? index === currentQuestion.correctAnswer
-                                      ? 'border-green-400 bg-green-400 text-green-900'
-                                      : 'border-red-400 bg-red-400 text-red-900'
+                                      ? 'border-green-300 bg-green-400 text-green-900 shadow-lg'
+                                      : 'border-red-300 bg-red-400 text-red-900 shadow-lg'
                                     : index === currentQuestion.correctAnswer
-                                      ? 'border-green-400 bg-green-400 text-green-900'
-                                      : 'border-purple-600 text-purple-400'
+                                      ? 'border-green-300 bg-green-400 text-green-900 shadow-lg'
+                                      : 'border-purple-600 text-purple-500 bg-transparent'
                               }`}>
                                 {String.fromCharCode(65 + index)}
                               </div>
                               <span className="flex-1 text-sm sm:text-base">{option}</span>
+                              {selectedAnswer !== null && (
+                                <>
+                                  {selectedAnswer === index && index === currentQuestion.correctAnswer && (
+                                    <Check className="h-4 w-4 sm:h-5 sm:w-5 text-green-400 flex-shrink-0" />
+                                  )}
+                                  {selectedAnswer === index && index !== currentQuestion.correctAnswer && (
+                                    <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-400 flex-shrink-0" />
+                                  )}
+                                  {selectedAnswer !== index && index === currentQuestion.correctAnswer && (
+                                    <Check className="h-4 w-4 sm:h-5 sm:w-5 text-green-400 flex-shrink-0" />
+                                  )}
+                                </>
+                              )}
                             </div>
                           </button>
                         ))}
@@ -399,11 +480,7 @@ export function FlashQuestions({ isOpen, onClose, questions }: FlashQuestionsPro
                     <div className="flex flex-col sm:flex-row gap-3 justify-center">
                       <Button
                         onClick={() => {
-                          setCurrentQuestionIndex(0)
-                          setSelectedAnswer(null)
-                          setScore(0)
-                          setShowResult(false)
-                          setAnsweredQuestions([])
+                          generateNewQuestions()
                         }}
                         className="bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto"
                       >

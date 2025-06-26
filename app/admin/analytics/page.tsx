@@ -6,16 +6,18 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { ArrowLeft, TrendingUp, Users, BookOpen, Clock, Target, Download, Filter, BarChart3, Menu } from "lucide-react"
+import { ArrowLeft, TrendingUp, Users, BookOpen, Clock, Target, Download, Filter, BarChart3, Menu, Trash2, Eye, User } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
 import { useAuth } from "@/hooks/use-auth"
 import { Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface QuizResult {
   _id: string
+  id: string
   date: string
   quizName: string
   quizId: string
@@ -29,6 +31,18 @@ interface QuizResult {
   correctAnswers: number
   wrongAnswers: number
   unanswered: number
+  userId: string
+  userName: string
+  userEmail: string
+  user?: {
+    id: string
+    name: string
+    email: string
+  }
+  quiz?: {
+    id: string
+    title: string
+  }
 }
 
 interface Quiz {
@@ -46,8 +60,13 @@ export default function AdminAnalyticsPage() {
   const [filteredResults, setFilteredResults] = useState<QuizResult[]>([])
   const [dateRange, setDateRange] = useState("all")
   const [selectedQuiz, setSelectedQuiz] = useState("all")
+  const [selectedUser, setSelectedUser] = useState("all")
   const [minScore, setMinScore] = useState("")
   const [maxScore, setMaxScore] = useState("")
+  const [users, setUsers] = useState<{id: string, name: string, email: string}[]>([])
+  const [showUserDetails, setShowUserDetails] = useState(false)
+  const [selectedUserForDetails, setSelectedUserForDetails] = useState<string | null>(null)
+  const [userPerformanceData, setUserPerformanceData] = useState<any>(null)
 
   useEffect(() => {
     if (!loading && user) {
@@ -76,6 +95,25 @@ export default function AdminAnalyticsPage() {
           } else {
             setResults(apiResults)
             setFilteredResults(apiResults)
+            
+            // Extract unique users from results
+            const userMap = new Map<string, {id: string; name: string; email: string}>()
+            
+            apiResults.forEach((result: QuizResult) => {
+              const userId = result.userId || result.user?.id
+              const userName = result.userName || result.user?.name
+              const userEmail = result.userEmail || result.user?.email
+              
+              if (userId && userName && userEmail) {
+                userMap.set(userId, {
+                  id: userId,
+                  name: userName,
+                  email: userEmail
+                })
+              }
+            })
+            
+            setUsers(Array.from(userMap.values()))
           }
           
           setQuizzes(apiQuizzes)
@@ -131,6 +169,13 @@ export default function AdminAnalyticsPage() {
       filtered = filtered.filter((result) => result.quizId === selectedQuiz)
     }
 
+    // User filter
+    if (selectedUser !== "all") {
+      filtered = filtered.filter((result) => 
+        (result.userId || result.user?.id) === selectedUser
+      )
+    }
+
     // Score filter
     if (minScore) {
       filtered = filtered.filter((result) => result.totalScore >= Number.parseInt(minScore))
@@ -140,7 +185,7 @@ export default function AdminAnalyticsPage() {
     }
 
     setFilteredResults(filtered)
-  }, [results, dateRange, selectedQuiz, minScore, maxScore])
+  }, [results, dateRange, selectedQuiz, selectedUser, minScore, maxScore])
 
   const getOverallStats = () => {
     if (!filteredResults || filteredResults.length === 0)
@@ -314,6 +359,89 @@ export default function AdminAnalyticsPage() {
     URL.revokeObjectURL(url)
   }
 
+  const deleteResult = async (resultId: string) => {
+    if (!confirm("Are you sure you want to delete this quiz result? This action cannot be undone.")) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/admin/results?id=${resultId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("adminToken") || "admin-token"}`
+        }
+      })
+
+      if (response.ok) {
+        // Remove the result from the local state
+        setResults(prev => prev.filter(r => r.id !== resultId && r._id !== resultId))
+        alert("Quiz result deleted successfully")
+      } else {
+        throw new Error("Failed to delete result")
+      }
+    } catch (error) {
+      console.error("Error deleting result:", error)
+      alert("Failed to delete quiz result")
+    }
+  }
+
+  const deleteUserResults = async (userId: string, quizId?: string) => {
+    const confirmMessage = quizId 
+      ? "Are you sure you want to delete all results for this user in this quiz?"
+      : "Are you sure you want to delete ALL quiz results for this user?"
+    
+    if (!confirm(confirmMessage)) {
+      return
+    }
+
+    try {
+      const params = new URLSearchParams({ userId })
+      if (quizId) params.append("quizId", quizId)
+
+      const response = await fetch(`/api/admin/results?${params}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("adminToken") || "admin-token"}`
+        }
+      })
+
+      if (response.ok) {
+        // Remove the results from the local state
+        setResults(prev => prev.filter(r => {
+          const resultUserId = r.userId || r.user?.id
+          if (quizId) {
+            return !(resultUserId === userId && r.quizId === quizId)
+          }
+          return resultUserId !== userId
+        }))
+        alert("Results deleted successfully")
+      } else {
+        throw new Error("Failed to delete results")
+      }
+    } catch (error) {
+      console.error("Error deleting results:", error)
+      alert("Failed to delete results")
+    }
+  }
+
+  const viewUserDetails = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/admin/user-performance?userId=${userId}`)
+      const data = await response.json()
+      
+      if (response.ok) {
+        setUserPerformanceData(data)
+        setSelectedUserForDetails(userId)
+        setShowUserDetails(true)
+      } else {
+        throw new Error(data.error || "Failed to fetch user details")
+      }
+    } catch (error) {
+      console.error("Error fetching user details:", error)
+      alert("Failed to fetch user details")
+    }
+  }
+
   const stats = getOverallStats()
   const quizPerformanceData = getQuizPerformanceData()
   const scoreTrendData = getScoreTrendData()
@@ -450,6 +578,23 @@ export default function AdminAnalyticsPage() {
                     {quizzes.map((quiz) => (
                       <SelectItem key={quiz.id} value={quiz.id}>
                         {quiz.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>User</Label>
+                <Select value={selectedUser} onValueChange={setSelectedUser}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Users</SelectItem>
+                    {users.map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name} ({user.email})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -631,6 +776,126 @@ export default function AdminAnalyticsPage() {
           </CardContent>
         </Card>
 
+        {/* Individual Results Table with User Data */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Individual Quiz Results</CardTitle>
+            <CardDescription>Detailed results with user information and management options</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto text-xs sm:text-sm">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-2">Date</th>
+                    <th className="text-left p-2">User</th>
+                    <th className="text-left p-2">Email</th>
+                    <th className="text-left p-2">Quiz</th>
+                    <th className="text-left p-2">Score</th>
+                    <th className="text-left p-2">Correct</th>
+                    <th className="text-left p-2">Wrong</th>
+                    <th className="text-left p-2">Time</th>
+                    <th className="text-left p-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredResults.slice(0, 50).map((result, index) => (
+                    <tr key={result.id || result._id || index} className="border-b hover:bg-muted/50">
+                      <td className="p-2">{new Date(result.date).toLocaleDateString()}</td>
+                      <td className="p-2 font-medium">{result.userName || result.user?.name || "Unknown"}</td>
+                      <td className="p-2 text-muted-foreground">{result.userEmail || result.user?.email || "Unknown"}</td>
+                      <td className="p-2">{result.quizName || result.quiz?.title || "Unknown Quiz"}</td>
+                      <td className="p-2">
+                        <Badge variant={result.totalScore >= 70 ? "default" : "destructive"}>
+                          {result.totalScore}%
+                        </Badge>
+                      </td>
+                      <td className="p-2 text-green-600">{result.correctAnswers}</td>
+                      <td className="p-2 text-red-600">{result.wrongAnswers}</td>
+                      <td className="p-2">{result.timeSpent ? Math.round(result.timeSpent / 60) + "m" : "N/A"}</td>
+                      <td className="p-2">
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => viewUserDetails(result.userId || result.user?.id || "")}
+                            className="h-6 w-6 p-0"
+                            title="View user details"
+                          >
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => deleteUserResults(
+                              result.userId || result.user?.id || "", 
+                              result.quizId
+                            )}
+                            className="h-6 w-6 p-0 text-orange-600 hover:text-orange-700"
+                            title="Delete user's results for this quiz"
+                          >
+                            <User className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => deleteResult(result.id || result._id || "")}
+                            className="h-6 w-6 p-0"
+                            title="Delete this result"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {filteredResults.length > 50 && (
+                <div className="mt-4 text-center text-muted-foreground">
+                  Showing first 50 results of {filteredResults.length} total
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* User Management Actions */}
+        {selectedUser !== "all" && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>User Management</CardTitle>
+              <CardDescription>Bulk actions for selected user</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const userId = selectedUser
+                    const user = users.find(u => u.id === userId)
+                    if (user) {
+                      viewUserDetails(userId)
+                    }
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Eye className="h-4 w-4" />
+                  View User Performance
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => deleteUserResults(selectedUser)}
+                  className="flex items-center gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete All User Results
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Detailed Quiz Performance Table */}
         <Card>
           <CardHeader>
@@ -673,6 +938,123 @@ export default function AdminAnalyticsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* User Performance Details Dialog */}
+      <Dialog open={showUserDetails} onOpenChange={setShowUserDetails}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>User Performance Details</DialogTitle>
+          </DialogHeader>
+          
+          {userPerformanceData && (
+            <div className="space-y-6">
+              {/* User Info */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">User Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Name</p>
+                      <p className="font-medium">{userPerformanceData.user.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Email</p>
+                      <p className="font-medium">{userPerformanceData.user.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Quizzes</p>
+                      <p className="font-medium">{userPerformanceData.user.totalQuizzes}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Average Score</p>
+                      <Badge variant={userPerformanceData.user.averageScore >= 70 ? "default" : "destructive"}>
+                        {userPerformanceData.user.averageScore}%
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Quiz Performance Breakdown */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Performance by Quiz</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {userPerformanceData.quizPerformance.map((quiz: any) => (
+                      <div key={quiz.quizId} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-center mb-3">
+                          <h4 className="font-medium">{quiz.quizTitle}</h4>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline">{quiz.totalAttempts} attempts</Badge>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => deleteUserResults(userPerformanceData.user.id, quiz.quizId)}
+                              className="flex items-center gap-1"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-3 gap-4 mb-3">
+                          <div>
+                            <p className="text-sm text-muted-foreground">Best Score</p>
+                            <Badge variant={quiz.bestScore >= 70 ? "default" : "destructive"}>
+                              {quiz.bestScore}%
+                            </Badge>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Average Score</p>
+                            <Badge variant={quiz.averageScore >= 70 ? "default" : "destructive"}>
+                              {quiz.averageScore}%
+                            </Badge>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Average Time</p>
+                            <p className="font-medium">{quiz.averageTime}min</p>
+                          </div>
+                        </div>
+
+                        {/* Individual Attempts */}
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium">Recent Attempts:</p>
+                          <div className="max-h-32 overflow-y-auto">
+                            {quiz.attempts.slice(0, 5).map((attempt: any, index: number) => (
+                              <div key={attempt.id} className="flex justify-between items-center text-sm py-1 px-2 rounded hover:bg-muted">
+                                <span>{new Date(attempt.date).toLocaleDateString()}</span>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant={attempt.totalScore >= 70 ? "default" : "secondary"} className="text-xs">
+                                    {attempt.totalScore}%
+                                  </Badge>
+                                  <span className="text-muted-foreground">{attempt.timeSpent ? Math.round(attempt.timeSpent / 60) + "m" : "N/A"}</span>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => deleteResult(attempt.id)}
+                                    className="h-5 w-5 p-0 text-red-500 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
