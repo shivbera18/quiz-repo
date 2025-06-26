@@ -247,22 +247,22 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
+          <div className="w-full sm:w-auto">
             <h1 className="text-3xl font-bold text-foreground">Quiz Results</h1>
             <p className="text-muted-foreground">
               {result.quizName} • Completed on {new Date(result.date).toLocaleDateString()}
             </p>
           </div>
-          <div className="flex gap-2">
-            <Link href={`/quiz/${result.quizId}`}>
-              <Button variant="outline">
+          <div className="flex flex-col xs:flex-row gap-2 w-full sm:w-auto justify-end">
+            <Link href={`/quiz/${result.quizId}`} className="w-full xs:w-auto">
+              <Button variant="outline" className="w-full xs:w-auto">
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Retake Quiz
               </Button>
             </Link>
-            <Link href="/dashboard">
-              <Button>
+            <Link href="/dashboard" className="w-full xs:w-auto">
+              <Button className="w-full xs:w-auto">
                 <Home className="h-4 w-4 mr-2" />
                 Dashboard
               </Button>
@@ -281,7 +281,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
         )}
 
         {/* Score Overview */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="md:col-span-2 lg:col-span-1">
             <CardHeader className="text-center">
               <CardTitle className="text-4xl font-bold text-blue-600">{result.totalScore}%</CardTitle>
@@ -351,7 +351,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
 
         {/* Advanced Analysis */}
         {analysis && (
-          <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* Performance Insights */}
             <Card>
               <CardHeader>
@@ -421,35 +421,35 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
         )}
 
         {/* Section Performance */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          {["reasoning", "quantitative", "english"].map((section) => {
-            const stats = getSectionStats(section)
-            const sectionScore = result.sections[section as keyof typeof result.sections]
-
-            return (
-              <Card key={section}>
-                <CardHeader>
-                  <CardTitle className="text-lg capitalize">{section}</CardTitle>
-                  <CardDescription>
-                    {stats.correct}C • {stats.wrong}W • {stats.unanswered}U of {stats.total}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-2xl font-bold">{sectionScore}%</span>
-                    <Badge variant={sectionScore >= 70 ? "default" : "destructive"}>
-                      {sectionScore >= 70 ? "Good" : "Needs Work"}
-                    </Badge>
-                  </div>
-                  <Progress value={sectionScore} />
-                </CardContent>
-              </Card>
-            )
-          })}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {Object.entries(result.sections)
+            .filter(([section, score]) => score > 0 && getSectionStats(section).total > 0)
+            .map(([section, score]) => {
+              const stats = getSectionStats(section)
+              return (
+                <Card key={section}>
+                  <CardHeader>
+                    <CardTitle className="text-lg capitalize">{section}</CardTitle>
+                    <CardDescription>
+                      {stats.correct}C • {stats.wrong}W • {stats.unanswered}U of {stats.total}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-2xl font-bold">{score}%</span>
+                      <Badge variant={score >= 70 ? "default" : "destructive"}>
+                        {score >= 70 ? "Good" : "Needs Work"}
+                      </Badge>
+                    </div>
+                    <Progress value={score} />
+                  </CardContent>
+                </Card>
+              )
+            })}
         </div>
 
         {/* Section Performance Chart */}
-        {analysis && (
+        {analysis && analysis.sectionPerformance.length > 0 && (
           <Card className="mb-8">
             <CardHeader>
               <CardTitle>Section-wise Performance</CardTitle>
@@ -458,7 +458,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
             <CardContent>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={analysis.sectionPerformance}>
+                  <BarChart data={analysis.sectionPerformance.filter(s => s.score > 0)}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="section" />
                     <YAxis domain={[0, 100]} />
@@ -474,7 +474,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
         {/* Section Filter */}
         <Card className="mb-6">
           <CardHeader>
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
               <div>
                 <CardTitle>Question Analysis</CardTitle>
                 <CardDescription>Review your answers and see the correct solutions</CardDescription>
@@ -485,31 +485,24 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-2 mb-4">
+            <div className="flex flex-wrap gap-2 mb-4">
               <Button
                 variant={selectedSection === "all" ? "default" : "outline"}
                 onClick={() => setSelectedSection("all")}
               >
                 All Questions
               </Button>
-              <Button
-                variant={selectedSection === "reasoning" ? "default" : "outline"}
-                onClick={() => setSelectedSection("reasoning")}
-              >
-                Reasoning
-              </Button>
-              <Button
-                variant={selectedSection === "quantitative" ? "default" : "outline"}
-                onClick={() => setSelectedSection("quantitative")}
-              >
-                Quantitative
-              </Button>
-              <Button
-                variant={selectedSection === "english" ? "default" : "outline"}
-                onClick={() => setSelectedSection("english")}
-              >
-                English
-              </Button>
+              {Object.entries(result.sections)
+                .filter(([section, score]) => score > 0 && getSectionStats(section).total > 0)
+                .map(([section]) => (
+                  <Button
+                    key={section}
+                    variant={selectedSection === section ? "default" : "outline"}
+                    onClick={() => setSelectedSection(section)}
+                  >
+                    {section.charAt(0).toUpperCase() + section.slice(1)}
+                  </Button>
+                ))}
             </div>
           </CardContent>
         </Card>
@@ -541,13 +534,13 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                             <XCircle className="h-5 w-5 text-red-600" />
                           )}
                           <div>
-                            <CardTitle className="text-lg flex items-center gap-2">
+                            <CardTitle className="text-lg flex flex-wrap items-center gap-2">
                               Question {index + 1}
-                              <Badge variant="outline" className="ml-2">
+                              <Badge variant="outline" className="ml-2 whitespace-nowrap">
                                 {question.section}
                               </Badge>
                               {isWrong && result.negativeMarking && (
-                                <Badge variant="destructive" className="ml-2">
+                                <Badge variant="destructive" className="ml-2 whitespace-nowrap text-xs px-2 py-1">
                                   -{result.negativeMarkValue} marks
                                 </Badge>
                               )}

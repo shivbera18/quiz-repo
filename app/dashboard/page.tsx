@@ -292,54 +292,51 @@ export default function DashboardPage() {
 
         {/* Quick Stats Overview */}
         {!loadingAttempts && allAttempts.length > 0 && (
-          <div className="grid md:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6 mb-8">
             <Card className="bg-blue-50 border-blue-200">
-              <CardContent className="p-4">
+              <CardContent className="p-2 sm:p-4">
                 <div className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5 text-blue-600" />
+                  <BookOpen className="h-4 w-4 text-blue-600" />
                   <div>
-                    <p className="text-sm text-blue-600 font-medium">Total Attempts</p>
-                    <p className="text-2xl font-bold text-blue-700">{allAttempts.length}</p>
+                    <p className="text-xs sm:text-sm text-blue-600 font-medium">Total Attempts</p>
+                    <p className="text-lg sm:text-2xl font-bold text-blue-700">{allAttempts.length}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            
             <Card className="bg-green-50 border-green-200">
-              <CardContent className="p-4">
+              <CardContent className="p-2 sm:p-4">
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-green-600" />
+                  <TrendingUp className="h-4 w-4 text-green-600" />
                   <div>
-                    <p className="text-sm text-green-600 font-medium">Average Score</p>
-                    <p className="text-2xl font-bold text-green-700">
+                    <p className="text-xs sm:text-sm text-green-600 font-medium">Average Score</p>
+                    <p className="text-lg sm:text-2xl font-bold text-green-700">
                       {Math.round(allAttempts.reduce((sum, a) => sum + a.totalScore, 0) / allAttempts.length)}%
                     </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            
             <Card className="bg-purple-50 border-purple-200">
-              <CardContent className="p-4">
+              <CardContent className="p-2 sm:p-4">
                 <div className="flex items-center gap-2">
-                  <Target className="h-5 w-5 text-purple-600" />
+                  <Target className="h-4 w-4 text-purple-600" />
                   <div>
-                    <p className="text-sm text-purple-600 font-medium">Best Score</p>
-                    <p className="text-2xl font-bold text-purple-700">
+                    <p className="text-xs sm:text-sm text-purple-600 font-medium">Best Score</p>
+                    <p className="text-lg sm:text-2xl font-bold text-purple-700">
                       {Math.max(...allAttempts.map(a => a.totalScore))}%
                     </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            
             <Card className="bg-orange-50 border-orange-200">
-              <CardContent className="p-4">
+              <CardContent className="p-2 sm:p-4">
                 <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-orange-600" />
+                  <Clock className="h-4 w-4 text-orange-600" />
                   <div>
-                    <p className="text-sm text-orange-600 font-medium">Avg Time</p>
-                    <p className="text-2xl font-bold text-orange-700">
+                    <p className="text-xs sm:text-sm text-orange-600 font-medium">Avg Time</p>
+                    <p className="text-lg sm:text-2xl font-bold text-orange-700">
                       {Math.round(allAttempts.reduce((sum, a) => sum + (a.timeSpent || 0), 0) / allAttempts.length / 60)}m
                     </p>
                   </div>
@@ -352,7 +349,22 @@ export default function DashboardPage() {
         {/* Activity Calendar */}
         {!loadingAttempts && allAttempts.length > 0 && (
           <div className="mb-8">
-            <ActivityCalendar attempts={allAttempts} />
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between cursor-pointer select-none" onClick={() => setShowLatestActivity((prev) => !prev)}>
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Calendar className="h-5 w-5" />
+                  Activity Calendar
+                </CardTitle>
+                <Button variant="ghost" size="icon" aria-label="Toggle Activity Calendar">
+                  {showLatestActivity ? <Eye className="h-5 w-5" /> : <Eye className="h-5 w-5 opacity-30" />}
+                </Button>
+              </CardHeader>
+              {showLatestActivity && (
+                <CardContent>
+                  <ActivityCalendar attempts={allAttempts} />
+                </CardContent>
+              )}
+            </Card>
           </div>
         )}
 
@@ -575,40 +587,40 @@ export default function DashboardPage() {
         )}
 
         {/* Additional Quick Links */}
-        <div className="grid md:grid-cols-3 gap-6">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer min-w-0">
             <Link href="/goals">
               <CardHeader className="text-center">
                 <Target className="h-12 w-12 mx-auto text-purple-600 mb-2" />
-                <CardTitle>Goals</CardTitle>
+                <CardTitle className="truncate">Goals</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-center">Set and track your performance goals</CardDescription>
+                <CardDescription className="text-center break-words text-sm sm:text-base max-w-xs mx-auto">Set and track your performance goals</CardDescription>
               </CardContent>
             </Link>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer min-w-0">
             <Link href="/analytics">
               <CardHeader className="text-center">
                 <TrendingUp className="h-12 w-12 mx-auto text-red-600 mb-2" />
-                <CardTitle>Analytics</CardTitle>
+                <CardTitle className="truncate">Analytics</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-center">Detailed performance analysis and insights</CardDescription>
+                <CardDescription className="text-center break-words text-sm sm:text-base max-w-xs mx-auto">Detailed performance analysis and insights</CardDescription>
               </CardContent>
             </Link>
           </Card>
 
           {user.isAdmin && (
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer min-w-0">
               <Link href="/admin">
                 <CardHeader className="text-center">
                   <Settings className="h-12 w-12 mx-auto text-blue-600 mb-2" />
-                  <CardTitle>Admin</CardTitle>
+                  <CardTitle className="truncate">Admin</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="text-center">Manage quizzes and questions</CardDescription>
+                  <CardDescription className="text-center break-words text-sm sm:text-base max-w-xs mx-auto">Manage quizzes and questions</CardDescription>
                 </CardContent>
               </Link>
             </Card>

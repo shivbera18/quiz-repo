@@ -16,8 +16,9 @@ import {
   Trophy, TrendingUp, TrendingDown, Target, Clock, Brain, 
   Award, Star, Zap, Calendar, BarChart3, PieChart as PieChartIcon,
   Activity, Users, BookOpen, CheckCircle, XCircle, AlertCircle,
-  Search, Filter, User, Eye, Download
+  Search, Filter, User, Eye, Download, Menu
 } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface QuizResult {
   _id: string
@@ -91,6 +92,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | 'all'>('all')
   const [selectedUserId, setSelectedUserId] = useState<string | 'all'>('all')
   const [debugInfo, setDebugInfo] = useState<string>('')
+  const [selectedTab, setSelectedTab] = useState<string>("performance")
 
   console.log('AdvancedAnalytics received results:', results?.length || 0)
 
@@ -134,7 +136,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
   console.log(`Valid results: ${validResults.length} out of ${results.length}`)
   
   // Extract users with comprehensive error handling
-  let users = [];
+  let users: { id: string; name: string; email: string }[] = [];
   try {
     const userIds = Array.from(new Set(validResults.map(r => r.user?.id).filter(Boolean)))
     users = userIds.map(id => {
@@ -244,7 +246,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
   }
 
   // Performance Trends with error handling
-  let performanceTrend = [];
+  let performanceTrend: { quiz: number; score: number; accuracy: number; timeSpent: number; date: string }[] = [];
   try {
     performanceTrend = userFilteredResults
       .filter(result => result.date && result.totalScore !== undefined)
@@ -266,7 +268,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
   }
 
   // Section-wise Performance with error handling
-  let sectionData = [];
+  let sectionData: { section: string; score: number; attempts: number }[] = [];
   try {
     sectionData = ['reasoning', 'quantitative', 'english'].map(section => {
       const sectionResults = userFilteredResults.filter(r => 
@@ -432,21 +434,13 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
   return (
     <div className="space-y-6">
       {/* Period Selector */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
         <h2 className="text-2xl font-bold">Advanced Analytics</h2>
-        <div className="flex items-center gap-4">
-        <Select onValueChange={(value) => {
-          console.log('User selection changed to:', value)
-          try {
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Select onValueChange={(value) => {
             setSelectedUserId(value)
-            console.log('Successfully set selectedUserId to:', value)
-          } catch (error) {
-            console.error('Error setting selected user:', error)
-            // Reset to 'all' on error
-            setSelectedUserId('all')
-          }
-        }} value={selectedUserId}>
-            <SelectTrigger className="w-[200px]">
+          }} value={selectedUserId}>
+            <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Select a User" />
             </SelectTrigger>
             <SelectContent>
@@ -458,21 +452,21 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
               ))}
             </SelectContent>
           </Select>
-        <div className="flex gap-2">
-          {(['7d', '30d', '90d', 'all'] as const).map(period => (
-            <button
-              key={period}
-              onClick={() => setSelectedPeriod(period)}
-              className={`px-3 py-1 rounded-md text-sm font-medium ${
-                selectedPeriod === period 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'bg-secondary text-secondary-foreground hover:bg-accent'
-              }`}
-            >
-              {getPeriodLabel(period)}
-            </button>
-          ))}
-        </div>
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+            {(['7d', '30d', '90d', 'all'] as const).map(period => (
+              <button
+                key={period}
+                onClick={() => setSelectedPeriod(period)}
+                className={`px-3 py-1 rounded-md text-sm font-medium w-full sm:w-auto ${
+                  selectedPeriod === period 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'bg-secondary text-secondary-foreground hover:bg-accent'
+                }`}
+              >
+                {getPeriodLabel(period)}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -551,20 +545,54 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
       </div>
 
       {/* Detailed Analytics Tabs */}
-      <Tabs defaultValue="performance" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7">
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="sections">Sections</TabsTrigger>
-          <TabsTrigger value="distribution">Distribution</TabsTrigger>
-          <TabsTrigger value="time">Time Analysis</TabsTrigger>
-          <TabsTrigger value="patterns">Study Patterns</TabsTrigger>
-          <TabsTrigger value="insights">Insights</TabsTrigger>
-          <TabsTrigger value="questions">Question Analysis</TabsTrigger>
-        </TabsList>
+      <Tabs value={selectedTab} onValueChange={setSelectedTab} defaultValue="performance" className="space-y-6">
+        {/* Mobile: Dropdown for tabs */}
+        <div className="block sm:hidden mb-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="w-full flex items-center justify-between">
+                <Menu className="mr-2 h-4 w-4" />
+                {(() => {
+                  switch (selectedTab) {
+                    case "performance": return "Performance"
+                    case "sections": return "Sections"
+                    case "distribution": return "Distribution"
+                    case "time": return "Time Analysis"
+                    case "patterns": return "Study Patterns"
+                    case "insights": return "Insights"
+                    case "questions": return "Question Analysis"
+                    default: return "Select Tab"
+                  }
+                })()}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-full">
+              <DropdownMenuItem onClick={() => setSelectedTab("performance")}>Performance</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedTab("sections")}>Sections</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedTab("distribution")}>Distribution</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedTab("time")}>Time Analysis</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedTab("patterns")}>Study Patterns</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedTab("insights")}>Insights</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedTab("questions")}>Question Analysis</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        {/* Desktop: TabsList */}
+        <div className="hidden sm:block">
+          <TabsList className="w-full">
+            <TabsTrigger value="performance">Performance</TabsTrigger>
+            <TabsTrigger value="sections">Sections</TabsTrigger>
+            <TabsTrigger value="distribution">Distribution</TabsTrigger>
+            <TabsTrigger value="time">Time Analysis</TabsTrigger>
+            <TabsTrigger value="patterns">Study Patterns</TabsTrigger>
+            <TabsTrigger value="insights">Insights</TabsTrigger>
+            <TabsTrigger value="questions">Question Analysis</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="performance" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
+            <Card className="min-w-0 w-full max-w-full overflow-x-auto">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5" />
@@ -573,29 +601,29 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
                 <CardDescription>Your score progression over time</CardDescription>
               </CardHeader>
               <CardContent>
-                <SafeChart fallback="Performance trend chart unavailable">
-                  <ResponsiveContainer width="100%" height={300}>
+                <div style={{ minWidth: 0, width: '100%', touchAction: 'pan-x pan-y', overflowX: 'auto' }}>
+                  <ResponsiveContainer width="100%" height={300} minWidth={320} minHeight={220}>
                     <LineChart data={performanceTrend}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="quiz" />
                       <YAxis />
                       <Tooltip 
-                        formatter={(value, name) => [
-                          `${value}${name === 'score' ? '%' : name === 'timeSpent' ? 'm' : '%'}`, 
+                        formatter={(value: number, name: string, ...args: any[]) => [
+                          `${value}${name === 'score' ? '%' : name === 'timeSpent' ? 'm' : '%'}`,
                           name === 'score' ? 'Score' : name === 'accuracy' ? 'Accuracy' : 'Time'
                         ]}
-                        labelFormatter={(label) => `Quiz ${label}`}
+                        labelFormatter={(label: string) => `Quiz ${label}`}
                       />
                       <Legend />
                       <Line type="monotone" dataKey="score" stroke="#3b82f6" strokeWidth={2} name="score" />
                       <Line type="monotone" dataKey="accuracy" stroke="#10b981" strokeWidth={2} name="accuracy" />
                     </LineChart>
                   </ResponsiveContainer>
-                </SafeChart>
+                </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="min-w-0 w-full max-w-full overflow-x-auto">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Activity className="h-5 w-5" />
@@ -604,8 +632,8 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
                 <CardDescription>Latest 5 quiz attempts</CardDescription>
               </CardHeader>
               <CardContent>
-                <SafeChart fallback="Recent performance chart unavailable">
-                  <ResponsiveContainer width="100%" height={300}>
+                <div style={{ minWidth: 0, width: '100%', touchAction: 'pan-x pan-y', overflowX: 'auto' }}>
+                  <ResponsiveContainer width="100%" height={300} minWidth={320} minHeight={220}>
                     <BarChart data={recentPerformance}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
@@ -617,7 +645,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
                       <Bar dataKey="unanswered" stackId="a" fill="#6b7280" name="Unanswered" />
                     </BarChart>
                   </ResponsiveContainer>
-                </SafeChart>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -634,15 +662,17 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
                 <CardDescription>Your performance across different sections</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={sectionData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="section" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => [`${value}%`, 'Average Score']} />
-                    <Bar dataKey="score" fill="#3b82f6" />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div style={{ minWidth: 0, width: '100%', touchAction: 'pan-x pan-y', overflowX: 'auto' }}>
+                  <ResponsiveContainer width="100%" height={300} minWidth={320} minHeight={220}>
+                    <BarChart data={sectionData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="section" />
+                      <YAxis />
+                      <Tooltip formatter={(value) => [`${value}%`, 'Average Score']} />
+                      <Bar dataKey="score" fill="#3b82f6" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
 
@@ -671,7 +701,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
 
         <TabsContent value="distribution" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
+            <Card className="min-w-0 w-full max-w-full overflow-x-auto">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <PieChartIcon className="h-5 w-5" />
@@ -680,15 +710,15 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
                 <CardDescription>Distribution of your quiz scores</CardDescription>
               </CardHeader>
               <CardContent>
-                <SafeChart fallback="Score distribution chart unavailable">
-                  <ResponsiveContainer width="100%" height={300}>
+                <div style={{ minWidth: 0, width: '100%', touchAction: 'pan-x pan-y', overflowX: 'auto' }}>
+                  <ResponsiveContainer width="100%" height={300} minWidth={320} minHeight={220}>
                     <PieChart>
                       <Pie
                         data={scoreRanges}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ range, count }) => count > 0 ? `${range}: ${count}` : ''}
+                        label={(props: any) => props.count > 0 ? `${props.range}: ${props.count}` : ''}
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="count"
@@ -700,11 +730,11 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
                       <Tooltip />
                     </PieChart>
                   </ResponsiveContainer>
-                </SafeChart>
+                </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="min-w-0 w-full max-w-full overflow-x-auto">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
@@ -713,48 +743,16 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
                 <CardDescription>Breakdown of your answers</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span>Correct Answers</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-medium">{totalCorrect}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0}%
-                      </div>
-                    </div>
-                  </div>
-                  <Progress value={totalQuestions > 0 ? (totalCorrect / totalQuestions) * 100 : 0} className="h-2" />
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <XCircle className="h-4 w-4 text-red-500" />
-                      <span>Wrong Answers</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-medium">{totalWrong}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {totalQuestions > 0 ? Math.round((totalWrong / totalQuestions) * 100) : 0}%
-                      </div>
-                    </div>
-                  </div>
-                  <Progress value={totalQuestions > 0 ? (totalWrong / totalQuestions) * 100 : 0} className="h-2" />
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 text-gray-500" />
-                      <span>Unanswered</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-medium">{totalUnanswered}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {totalQuestions > 0 ? Math.round((totalUnanswered / totalQuestions) * 100) : 0}%
-                      </div>
-                    </div>
-                  </div>
-                  <Progress value={totalQuestions > 0 ? (totalUnanswered / totalQuestions) * 100 : 0} className="h-2" />
+                <div style={{ minWidth: 0, width: '100%', touchAction: 'pan-x pan-y', overflowX: 'auto' }}>
+                  <ResponsiveContainer width="100%" height={300} minWidth={320} minHeight={220}>
+                    <BarChart data={sectionData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="section" />
+                      <YAxis />
+                      <Tooltip formatter={(value) => [`${value}%`, 'Average Score']} />
+                      <Bar dataKey="score" fill="#3b82f6" />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
@@ -763,7 +761,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
 
         <TabsContent value="time" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
+            <Card className="min-w-0 w-full max-w-full overflow-x-auto">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Clock className="h-5 w-5" />
@@ -772,24 +770,26 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
                 <CardDescription>Relationship between time spent and scores</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <ScatterChart data={timeData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="timeSpent" name="Time (minutes)" />
-                    <YAxis dataKey="score" name="Score %" />
-                    <Tooltip 
-                      formatter={(value, name) => [
-                        `${value}${name === 'score' ? '%' : 'm'}`, 
-                        name === 'score' ? 'Score' : 'Time Spent'
-                      ]}
-                    />
-                    <Scatter dataKey="score" fill="#3b82f6" />
-                  </ScatterChart>
-                </ResponsiveContainer>
+                <div style={{ minWidth: 0, width: '100%', touchAction: 'pan-x pan-y', overflowX: 'auto' }}>
+                  <ResponsiveContainer width="100%" height={300} minWidth={320} minHeight={220}>
+                    <ScatterChart data={timeData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="timeSpent" name="Time (minutes)" />
+                      <YAxis dataKey="score" name="Score %" />
+                      <Tooltip 
+                        formatter={(value, name) => [
+                          `${value}${name === 'score' ? '%' : 'm'}`, 
+                          name === 'score' ? 'Score' : 'Time Spent'
+                        ]}
+                      />
+                      <Scatter dataKey="score" fill="#3b82f6" />
+                    </ScatterChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="min-w-0 w-full max-w-full overflow-x-auto">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Zap className="h-5 w-5" />
@@ -798,15 +798,17 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
                 <CardDescription>Score per minute ratio</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={timeData.slice(-10)}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="quiz" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => [`${typeof value === 'number' ? value.toFixed(2) : value}`, 'Score/Minute']} />
-                    <Bar dataKey="efficiency" fill="#10b981" />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div style={{ minWidth: 0, width: '100%', touchAction: 'pan-x pan-y', overflowX: 'auto' }}>
+                  <ResponsiveContainer width="100%" height={300} minWidth={320} minHeight={220}>
+                    <BarChart data={timeData.slice(-10)}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="quiz" />
+                      <YAxis />
+                      <Tooltip formatter={(value) => [`${typeof value === 'number' ? value.toFixed(2) : value}`, 'Score/Minute']} />
+                      <Bar dataKey="efficiency" fill="#10b981" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -814,6 +816,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
 
         <TabsContent value="patterns" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Collapsible Study Frequency Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -823,15 +826,20 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
                 <CardDescription>Your quiz attempt patterns over time</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={studyPatterns}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="week" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="attempts" fill="#3b82f6" />
-                  </BarChart>
-                </ResponsiveContainer>
+                <details className="w-full" defaultOpen>
+                  <summary className="cursor-pointer font-medium text-sm mb-2 select-none">Show/Hide Calendar</summary>
+                  <div className="pt-2" style={{ minWidth: 0, width: '100%', touchAction: 'pan-x pan-y', overflowX: 'auto' }}>
+                    <ResponsiveContainer width="100%" height={300} minWidth={320} minHeight={220}>
+                      <BarChart data={studyPatterns}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="week" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="attempts" fill="#3b82f6" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </details>
               </CardContent>
             </Card>
 
@@ -1036,12 +1044,6 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
                                             <p className="font-semibold mb-2">Q: {answer.question || `Question ID: ${answer.questionId}`}</p>
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                                                 <div>
-                                                    <span className="font-medium">Your Answer: </span>
-                                                    <Badge variant={answer.isCorrect ? "default" : "destructive"}>
-                                                        {answer.selectedAnswer ?? 'Unanswered'}
-                                                    </Badge>
-                                                </div>
-                                                <div>
                                                     <span className="font-medium">Correct Answer: </span>
                                                     <Badge variant="secondary">{answer.correctAnswer}</Badge>
                                                 </div>
@@ -1070,7 +1072,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
     </div>
   )
   } catch (error) {
-    console.error('Advanced Analytics rendering error:', error)
+    console.error('AdvancedAnalytics rendering error:', error)
     console.log('Error stack:', error.stack)
     console.log('Selected user ID:', selectedUserId)
     console.log('Results passed to component:', results?.length || 0)

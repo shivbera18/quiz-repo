@@ -4,6 +4,8 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { X, Zap } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Loader2 } from "lucide-react"
 
 interface Question {
   id: string
@@ -19,6 +21,18 @@ interface FlashQuestionsProps {
   questions: Question[]
 }
 
+const mathChapters = [
+  "Arithmetic",
+  "Algebra",
+  "Geometry",
+  "Percentage",
+  "Profit & Loss",
+  "Time & Work",
+  "Speed & Distance",
+  "Probability",
+  "Statistics"
+]
+
 export function FlashQuestions({ isOpen, onClose, questions }: FlashQuestionsProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
@@ -27,6 +41,11 @@ export function FlashQuestions({ isOpen, onClose, questions }: FlashQuestionsPro
   const [showResult, setShowResult] = useState(false)
   const [answeredQuestions, setAnsweredQuestions] = useState<number[]>([])
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right')
+  const [chapter, setChapter] = useState(mathChapters[0])
+  const [difficulty, setDifficulty] = useState("medium")
+  const [showSpeedPrompt, setShowSpeedPrompt] = useState(true)
+  const [loadingAI, setLoadingAI] = useState(false)
+  const [aiError, setAIError] = useState("")
 
   const currentQuestion = questions[currentQuestionIndex]
 
@@ -85,177 +104,322 @@ export function FlashQuestions({ isOpen, onClose, questions }: FlashQuestionsPro
     }, 300)
   }
 
+  // AI Question Generation
+  const handleGenerateAIQuestion = async () => {
+    setLoadingAI(true)
+    setAIError("")
+    try {
+      const response = await fetch("/api/ai/generate-questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: chapter,
+          difficulty,
+          count: 1,
+          section: "Mathematics"
+        })
+      })
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.details || "Failed to generate question")
+      }
+      const data = await response.json()
+      if (data.questions && data.questions.length > 0) {
+        // Add new question to the start of the flash questions
+        questions.unshift({
+          id: Math.random().toString(36).slice(2),
+          question: data.questions[0].question,
+          options: data.questions[0].options,
+          correctAnswer: data.questions[0].correctAnswer,
+          section: chapter
+        })
+        setCurrentQuestionIndex(0)
+        setSelectedAnswer(null)
+        setShowResult(false)
+        setAnsweredQuestions([])
+      } else {
+        setAIError("No question generated. Try again.")
+      }
+    } catch (err: any) {
+      setAIError(err.message || "Failed to generate question")
+    } finally {
+      setLoadingAI(false)
+    }
+  }
+
+  // Generate 10 Simplification (BODMAS) questions for speed practice
+  const startSpeedCalculation = async () => {
+    setLoadingAI(true)
+    setAIError("")
+    try {
+      const response = await fetch("/api/ai/generate-questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: "Simplification (BODMAS) - short calculation questions for speed practice. Each question must have exactly 4 options, only one correct answer, and the correct answer must be present in the options.",
+          difficulty: "medium",
+          count: 10,
+          section: "Arithmetic"
+        })
+      })
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.details || "Failed to generate questions")
+      }
+      const data = await response.json()
+      if (data.questions && data.questions.length > 0) {
+        // Validate and filter questions
+        const validQuestions = data.questions.filter((q: any) =>
+          Array.isArray(q.options) &&
+          q.options.length === 4 &&
+          typeof q.correctAnswer === 'number' &&
+          q.correctAnswer >= 0 &&
+          q.correctAnswer < 4 &&
+          q.options[q.correctAnswer] !== undefined
+        )
+        if (validQuestions.length === 0) {
+          setAIError("AI did not return any valid questions. Please try again.")
+          setLoadingAI(false)
+          return
+        }
+        // Replace questions array with new set
+        questions.length = 0
+        validQuestions.forEach((q: any) => {
+          questions.push({
+            id: Math.random().toString(36).slice(2),
+            question: q.question,
+            options: q.options,
+            correctAnswer: q.correctAnswer,
+            section: "Simplification (BODMAS)"
+          })
+        })
+        setCurrentQuestionIndex(0)
+        setSelectedAnswer(null)
+        setShowResult(false)
+        setAnsweredQuestions([])
+        setShowSpeedPrompt(false)
+      } else {
+        setAIError("No questions generated. Try again.")
+      }
+    } catch (err: any) {
+      setAIError(err.message || "Failed to generate questions")
+    } finally {
+      setLoadingAI(false)
+    }
+  }
+
   if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div 
-        className={`relative w-full max-w-2xl mx-auto transition-all duration-500 ${
-          isAnimating 
-            ? slideDirection === 'right'
-              ? 'transform translate-x-full opacity-0'
-              : 'transform -translate-x-full opacity-0'
-            : 'transform translate-x-0 opacity-100'
-        }`}
-      >
+      <div className={`relative w-full max-w-2xl mx-auto transition-all duration-500 ${
+        isAnimating 
+          ? slideDirection === 'right'
+            ? 'transform translate-x-full opacity-0'
+            : 'transform -translate-x-full opacity-0'
+          : 'transform translate-x-0 opacity-100'
+      }`}>
         <Card className="bg-gradient-to-br from-purple-900 via-purple-800 to-purple-900 border-purple-600 text-white shadow-2xl">
           <CardContent className="p-4 sm:p-8">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                <div className="p-2 bg-purple-700 rounded-full flex-shrink-0">
-                  <Zap className="h-4 w-4 sm:h-6 sm:w-6 text-yellow-400" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-lg sm:text-2xl font-bold truncate">Flash Questions</h2>
-                  <p className="text-purple-200 text-xs sm:text-sm">Quick rapid-fire practice</p>
-                </div>
+            {showSpeedPrompt ? (
+              <div className="flex flex-col items-center justify-center min-h-[300px] gap-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-center">Do you want to practice speed calculation (simplification)?</h2>
+                <Button onClick={startSpeedCalculation} disabled={loadingAI} className="flex items-center gap-2 text-lg">
+                  {loadingAI ? <Loader2 className="h-5 w-5 animate-spin" /> : <Zap className="h-5 w-5" />}
+                  Start Speed Practice
+                </Button>
+                {aiError && <div className="text-red-300 text-xs mt-2">{aiError}</div>}
+                <Button onClick={onClose} variant="destructive" className="mt-4">Cancel</Button>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleClose}
-                className="text-purple-200 hover:text-white hover:bg-purple-700 flex-shrink-0"
-              >
-                <X className="h-5 w-5 sm:h-6 sm:w-6" />
-              </Button>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="mb-4 sm:mb-6">
-              <div className="flex items-center justify-between text-xs sm:text-sm text-purple-200 mb-2">
-                <span>Question {currentQuestionIndex + 1} of {questions.length}</span>
-                <span>Score: {score}/{answeredQuestions.length}</span>
-              </div>
-              <div className="w-full bg-purple-800 rounded-full h-2">
-                <div 
-                  className="bg-gradient-to-r from-yellow-400 to-orange-400 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
-                ></div>
-              </div>
-            </div>
-
-            {!showResult ? (
+            ) : (
               <>
-                {/* Progress */}
-                <div className="mb-6">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-purple-200">
-                      Question {currentQuestionIndex + 1} of {questions.length}
-                    </span>
-                    <span className="text-sm text-purple-200">
-                      Score: {score}/{answeredQuestions.length}
-                    </span>
+                {/* Chapter & Difficulty Selectors + AI Button */}
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4 items-center w-full">
+                  <Select value={chapter} onValueChange={setChapter}>
+                    <SelectTrigger className="w-full sm:w-48 min-w-0 max-w-xs">
+                      <SelectValue placeholder="Math Chapter" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mathChapters.map((ch) => (
+                        <SelectItem key={ch} value={ch}>{ch}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={difficulty} onValueChange={setDifficulty}>
+                    <SelectTrigger className="w-full sm:w-32 min-w-0 max-w-xs">
+                      <SelectValue placeholder="Difficulty" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="easy">Easy</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="hard">Hard</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={handleGenerateAIQuestion} disabled={loadingAI} className="flex items-center gap-2 w-full sm:w-auto">
+                    {loadingAI ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+                    Generate New Question
+                  </Button>
+                </div>
+                {aiError && <div className="text-red-300 text-xs mb-2">{aiError}</div>}
+
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                    <div className="p-2 bg-purple-700 rounded-full flex-shrink-0">
+                      <Zap className="h-4 w-4 sm:h-6 sm:w-6 text-yellow-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h2 className="text-lg sm:text-2xl font-bold truncate">Flash Questions</h2>
+                      <p className="text-purple-200 text-xs sm:text-sm">Quick rapid-fire practice</p>
+                    </div>
                   </div>
-                  <div className="w-full bg-purple-700 rounded-full h-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleClose}
+                    className="text-purple-200 hover:text-white hover:bg-purple-700 flex-shrink-0"
+                  >
+                    <X className="h-5 w-5 sm:h-6 sm:w-6" />
+                  </Button>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="mb-4 sm:mb-6">
+                  <div className="flex items-center justify-between text-xs sm:text-sm text-purple-200 mb-2">
+                    <span>Question {currentQuestionIndex + 1} of {questions.length}</span>
+                    <span>Score: {score}/{answeredQuestions.length}</span>
+                  </div>
+                  <div className="w-full bg-purple-800 rounded-full h-2">
                     <div 
                       className="bg-gradient-to-r from-yellow-400 to-orange-400 h-2 rounded-full transition-all duration-300"
                       style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
-                    />
+                    ></div>
                   </div>
                 </div>
 
-                {/* Question */}
-                <div className={`transition-all duration-500 ${isAnimating ? 'opacity-50 scale-95' : 'opacity-100 scale-100'}`}>
-                  <div className="mb-4 sm:mb-6">
-                    <div className="text-xs text-purple-300 mb-2 uppercase tracking-wide">
-                      {currentQuestion.section}
+                {!showResult ? (
+                  <>
+                    {/* Progress */}
+                    <div className="mb-6">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-purple-200">
+                          Question {currentQuestionIndex + 1} of {questions.length}
+                        </span>
+                        <span className="text-sm text-purple-200">
+                          Score: {score}/{answeredQuestions.length}
+                        </span>
+                      </div>
+                      <div className="w-full bg-purple-700 rounded-full h-2">
+                        <div 
+                          className="bg-gradient-to-r from-yellow-400 to-orange-400 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
+                        />
+                      </div>
                     </div>
-                    <h3 className="text-lg sm:text-xl font-semibold leading-relaxed">
-                      {currentQuestion.question}
-                    </h3>
-                  </div>
 
-                  {/* Options */}
-                  <div className="grid gap-2 sm:gap-3">
-                    {currentQuestion.options.map((option, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleAnswerSelect(index)}
-                        disabled={selectedAnswer !== null}
-                        className={`p-3 sm:p-4 text-left rounded-lg border-2 transition-all duration-200 ${
-                          selectedAnswer === null
-                            ? 'border-purple-600 bg-purple-800/50 hover:border-purple-400 hover:bg-purple-700/50'
-                            : selectedAnswer === index
-                              ? index === currentQuestion.correctAnswer
-                                ? 'border-green-400 bg-green-500/20 text-green-100'
-                                : 'border-red-400 bg-red-500/20 text-red-100'
-                              : index === currentQuestion.correctAnswer
-                                ? 'border-green-400 bg-green-500/20 text-green-100'
-                                : 'border-purple-600 bg-purple-800/30 opacity-50'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold ${
-                            selectedAnswer === null
-                              ? 'border-purple-400 text-purple-300'
-                              : selectedAnswer === index
-                                ? index === currentQuestion.correctAnswer
-                                  ? 'border-green-400 bg-green-400 text-green-900'
-                                  : 'border-red-400 bg-red-400 text-red-900'
-                                : index === currentQuestion.correctAnswer
-                                  ? 'border-green-400 bg-green-400 text-green-900'
-                                  : 'border-purple-600 text-purple-400'
-                          }`}>
-                            {String.fromCharCode(65 + index)}
-                          </div>
-                          <span className="flex-1 text-sm sm:text-base">{option}</span>
+                    {/* Question */}
+                    <div className={`transition-all duration-500 ${isAnimating ? 'opacity-50 scale-95' : 'opacity-100 scale-100'}`}>
+                      <div className="mb-4 sm:mb-6">
+                        <div className="text-xs text-purple-300 mb-2 uppercase tracking-wide">
+                          {currentQuestion.section}
                         </div>
-                      </button>
-                    ))}
+                        <h3 className="text-lg sm:text-xl font-semibold leading-relaxed">
+                          {currentQuestion.question}
+                        </h3>
+                      </div>
+
+                      {/* Options */}
+                      <div className="grid gap-2 sm:gap-3">
+                        {currentQuestion.options.map((option, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleAnswerSelect(index)}
+                            disabled={selectedAnswer !== null}
+                            className={`p-3 sm:p-4 text-left rounded-lg border-2 transition-all duration-200 ${
+                              selectedAnswer === null
+                                ? 'border-purple-600 bg-purple-800/50 hover:border-purple-400 hover:bg-purple-700/50'
+                                : selectedAnswer === index
+                                  ? index === currentQuestion.correctAnswer
+                                    ? 'border-green-400 bg-green-500/20 text-green-100'
+                                    : 'border-red-400 bg-red-500/20 text-red-100'
+                                  : index === currentQuestion.correctAnswer
+                                    ? 'border-green-400 bg-green-500/20 text-green-100'
+                                    : 'border-purple-600 bg-purple-800/30 opacity-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 sm:gap-3">
+                              <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold ${
+                                selectedAnswer === null
+                                  ? 'border-purple-400 text-purple-300'
+                                  : selectedAnswer === index
+                                    ? index === currentQuestion.correctAnswer
+                                      ? 'border-green-400 bg-green-400 text-green-900'
+                                      : 'border-red-400 bg-red-400 text-red-900'
+                                    : index === currentQuestion.correctAnswer
+                                      ? 'border-green-400 bg-green-400 text-green-900'
+                                      : 'border-purple-600 text-purple-400'
+                              }`}>
+                                {String.fromCharCode(65 + index)}
+                              </div>
+                              <span className="flex-1 text-sm sm:text-base">{option}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  /* Results */
+                  <div className="text-center py-4 sm:py-8">
+                    <div className="mb-4 sm:mb-6">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Zap className="h-8 w-8 sm:h-10 sm:w-10 text-purple-900" />
+                      </div>
+                      <h3 className="text-xl sm:text-3xl font-bold mb-2">Flash Round Complete!</h3>
+                      <p className="text-purple-200 text-sm sm:text-base">Great job on your rapid-fire practice</p>
+                    </div>
+
+                    <div className="bg-purple-800/50 rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
+                      <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
+                        <div>
+                          <div className="text-xl sm:text-2xl font-bold text-yellow-400">{score}</div>
+                          <div className="text-xs sm:text-sm text-purple-200">Correct</div>
+                        </div>
+                        <div>
+                          <div className="text-xl sm:text-2xl font-bold text-red-400">{questions.length - score}</div>
+                          <div className="text-xs sm:text-sm text-purple-200">Incorrect</div>
+                        </div>
+                        <div>
+                          <div className="text-xl sm:text-2xl font-bold text-purple-300">{Math.round((score / questions.length) * 100)}%</div>
+                          <div className="text-xs sm:text-sm text-purple-200">Accuracy</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                      <Button
+                        onClick={() => {
+                          setCurrentQuestionIndex(0)
+                          setSelectedAnswer(null)
+                          setScore(0)
+                          setShowResult(false)
+                          setAnsweredQuestions([])
+                        }}
+                        className="bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto"
+                      >
+                        Try Again
+                      </Button>
+                      <Button
+                        onClick={handleClose}
+                        variant="outline"
+                        className="border-purple-400 text-purple-300 hover:bg-purple-700 w-full sm:w-auto"
+                      >
+                        Close
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
               </>
-            ) : (
-              /* Results */
-              <div className="text-center py-4 sm:py-8">
-                <div className="mb-4 sm:mb-6">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Zap className="h-8 w-8 sm:h-10 sm:w-10 text-purple-900" />
-                  </div>
-                  <h3 className="text-xl sm:text-3xl font-bold mb-2">Flash Round Complete!</h3>
-                  <p className="text-purple-200 text-sm sm:text-base">Great job on your rapid-fire practice</p>
-                </div>
-
-                <div className="bg-purple-800/50 rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
-                  <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
-                    <div>
-                      <div className="text-xl sm:text-2xl font-bold text-yellow-400">{score}</div>
-                      <div className="text-xs sm:text-sm text-purple-200">Correct</div>
-                    </div>
-                    <div>
-                      <div className="text-xl sm:text-2xl font-bold text-red-400">{questions.length - score}</div>
-                      <div className="text-xs sm:text-sm text-purple-200">Incorrect</div>
-                    </div>
-                    <div>
-                      <div className="text-xl sm:text-2xl font-bold text-purple-300">{Math.round((score / questions.length) * 100)}%</div>
-                      <div className="text-xs sm:text-sm text-purple-200">Accuracy</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Button
-                    onClick={() => {
-                      setCurrentQuestionIndex(0)
-                      setSelectedAnswer(null)
-                      setScore(0)
-                      setShowResult(false)
-                      setAnsweredQuestions([])
-                    }}
-                    className="bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto"
-                  >
-                    Try Again
-                  </Button>
-                  <Button
-                    onClick={handleClose}
-                    variant="outline"
-                    className="border-purple-400 text-purple-300 hover:bg-purple-700 w-full sm:w-auto"
-                  >
-                    Close
-                  </Button>
-                </div>
-              </div>
             )}
           </CardContent>
         </Card>

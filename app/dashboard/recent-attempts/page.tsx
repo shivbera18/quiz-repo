@@ -80,10 +80,14 @@ export default function RecentAttemptsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 relative">
+        {/* Theme Toggle Top Right */}
+        <div className="absolute right-4 top-4 z-10">
+          <ThemeToggle />
+        </div>
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-2 mb-8">
+          <div className="flex items-center gap-4 w-full sm:w-auto">
             <Link href="/dashboard">
               <Button variant="outline" size="icon">
                 <ArrowLeft className="h-4 w-4" />
@@ -94,13 +98,12 @@ export default function RecentAttemptsPage() {
               <p className="text-muted-foreground">Your latest quiz performances and results</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Link href="/dashboard/attempted-quizzes">
-              <Button variant="outline">
+          <div className="flex flex-col xs:flex-row gap-2 w-full sm:w-auto">
+            <Link href="/dashboard/attempted-quizzes" className="w-full xs:w-auto">
+              <Button variant="outline" className="w-full xs:w-auto">
                 View All Attempts
               </Button>
             </Link>
-            <ThemeToggle />
           </div>
         </div>
 
@@ -163,22 +166,22 @@ export default function RecentAttemptsPage() {
                 <CardDescription>Your latest quiz performances (last 10 attempts)</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="space-y-3 overflow-x-auto">
                   {recentAttempts.map((attempt, index) => (
-                    <div key={attempt._id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-4">
-                        <div className="flex flex-col items-center">
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white ${
+                    <div key={attempt._id} className="flex flex-col sm:flex-row sm:items-center justify-between p-2 sm:p-4 border rounded-lg hover:bg-muted/50 transition-colors min-w-[320px] max-w-full overflow-x-auto">
+                      <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+                        <div className="flex flex-col items-center flex-shrink-0">
+                          <div className={`w-10 h-10 sm:w-12 sm:h-12 aspect-square rounded-full flex items-center justify-center font-bold text-white text-base sm:text-xl flex-shrink-0 shadow-md ${
                             attempt.totalScore >= 80 ? 'bg-green-500' :
                             attempt.totalScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
                           }`}>
                             {attempt.totalScore}%
                           </div>
-                          <span className="text-xs text-muted-foreground mt-1">#{index + 1}</span>
+                          <span className="text-[10px] sm:text-xs text-muted-foreground mt-1">#{index + 1}</span>
                         </div>
-                        <div>
-                          <h4 className="font-semibold">{attempt.quizName || 'Unknown Quiz'}</h4>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="min-w-0">
+                          <h4 className="font-semibold truncate max-w-[120px] xs:max-w-[160px] sm:max-w-xs">{attempt.quizName || 'Unknown Quiz'}</h4>
+                          <div className="flex flex-wrap gap-2 text-xs sm:text-sm text-muted-foreground">
                             <span>{new Date(attempt.date).toLocaleDateString()}</span>
                             <span>✓ {attempt.correctAnswers} correct</span>
                             <span>✗ {attempt.wrongAnswers} wrong</span>
@@ -187,14 +190,14 @@ export default function RecentAttemptsPage() {
                               <span>⏱ {Math.round(attempt.timeSpent / 60)}m</span>
                             )}
                           </div>
-                          <div className="flex gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">Reasoning: {attempt.sections.reasoning}%</Badge>
-                            <Badge variant="outline" className="text-xs">Quantitative: {attempt.sections.quantitative}%</Badge>
-                            <Badge variant="outline" className="text-xs">English: {attempt.sections.english}%</Badge>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            <Badge variant="outline" className="text-[10px] sm:text-xs">Reasoning: {attempt.sections.reasoning}%</Badge>
+                            <Badge variant="outline" className="text-[10px] sm:text-xs">Quantitative: {attempt.sections.quantitative}%</Badge>
+                            <Badge variant="outline" className="text-[10px] sm:text-xs">English: {attempt.sections.english}%</Badge>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 sm:gap-2 mt-2 sm:mt-0 flex-shrink-0">
                         <Badge variant={
                           attempt.totalScore >= 80 ? 'default' :
                           attempt.totalScore >= 60 ? 'secondary' : 'destructive'

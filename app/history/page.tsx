@@ -322,16 +322,15 @@ export default function HistoryPage() {
                   return (
                     <div
                       key={attempt._id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors gap-4"
                     >
-                      <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white ${scoreColor}`}>
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className={`w-12 h-12 aspect-square rounded-full flex items-center justify-center font-bold text-white text-lg sm:text-xl flex-shrink-0 shadow-md ${scoreColor}`}>
                           {attempt.totalScore}%
                         </div>
-                        
-                        <div>
-                          <h4 className="font-semibold">{attempt.quizName || 'Unknown Quiz'}</h4>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="min-w-0">
+                          <h4 className="font-semibold truncate max-w-[180px] sm:max-w-xs">{attempt.quizName || 'Unknown Quiz'}</h4>
+                          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
                             <span>{new Date(attempt.date).toLocaleDateString()}</span>
                             <span>✓ {attempt.correctAnswers} correct</span>
                             <span>✗ {attempt.wrongAnswers} wrong</span>
@@ -340,49 +339,44 @@ export default function HistoryPage() {
                               <span>⏱ {Math.round(attempt.timeSpent / 60)}m</span>
                             )}
                           </div>
+                          {/* Section scores - always visible, wrap on mobile */}
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {attempt.sections.reasoning > 0 && (
+                              <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+                                Reasoning: {attempt.sections.reasoning}%
+                              </Badge>
+                            )}
+                            {attempt.sections.quantitative > 0 && (
+                              <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+                                Quant: {attempt.sections.quantitative}%
+                              </Badge>
+                            )}
+                            {attempt.sections.english > 0 && (
+                              <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+                                English: {attempt.sections.english}%
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4">
-                        {/* Section scores */}
-                        <div className="hidden md:flex gap-2">
-                          {attempt.sections.reasoning > 0 && (
-                            <Badge variant="secondary" className="text-xs">
-                              Reasoning: {attempt.sections.reasoning}%
-                            </Badge>
-                          )}
-                          {attempt.sections.quantitative > 0 && (
-                            <Badge variant="secondary" className="text-xs">
-                              Quant: {attempt.sections.quantitative}%
-                            </Badge>
-                          )}
-                          {attempt.sections.english > 0 && (
-                            <Badge variant="secondary" className="text-xs">
-                              English: {attempt.sections.english}%
-                            </Badge>
-                          )}
-                        </div>
-
-                        {/* Performance badge */}
+                      {/* Actions: badges, trend, button - stack/wrap on mobile */}
+                      <div className="flex flex-wrap sm:flex-nowrap flex-row sm:flex-col gap-2 items-start sm:items-end mt-2 sm:mt-0 min-w-[120px]">
                         <Badge variant={
                           attempt.totalScore >= 80 ? 'default' :
                           attempt.totalScore >= 60 ? 'secondary' : 'destructive'
-                        }>
+                        } className="text-xs px-2 py-1 whitespace-nowrap">
                           {attempt.totalScore >= 80 ? 'Excellent' :
                            attempt.totalScore >= 60 ? 'Good' : 'Needs Work'}
                         </Badge>
-
-                        {/* Trend indicator */}
                         {trend !== null && (
-                          <Badge variant={trend >= 0 ? "default" : "destructive"} className="text-xs">
+                          <Badge variant={trend >= 0 ? "default" : "destructive"} className="text-xs px-2 py-1 whitespace-nowrap">
                             {trend >= 0 ? "↗" : "↘"} {Math.abs(trend)}%
                           </Badge>
                         )}
-
-                        {/* View details button */}
                         {attempt.quizId && (
-                          <Link href={`/results/${attempt._id}`}>
-                            <Button variant="outline" size="sm">
+                          <Link href={`/results/${attempt._id}`} className="w-full sm:w-auto">
+                            <Button variant="outline" size="sm" className="w-full sm:w-auto">
                               <Eye className="h-4 w-4 mr-2" />
                               Details
                             </Button>
