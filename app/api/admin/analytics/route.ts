@@ -52,9 +52,22 @@ export async function GET(request: Request) {
       }
     }
     
-    return Response.json({ results, quizzes })
+    return Response.json({ results, quizzes }, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    })
   } catch (error) {
     console.error("❌ Admin analytics API error:", error)
-    return Response.json({ message: "Internal server error", error: error instanceof Error ? error.message : String(error) }, { status: 500 })
+    return Response.json({ message: "Internal server error", error: error instanceof Error ? error.message : String(error) }, { 
+      status: 500,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    })
   }
 }

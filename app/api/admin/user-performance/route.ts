@@ -8,11 +8,20 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url)
     const userId = url.searchParams.get("userId")
 
+    console.log('📊 Fetching user performance for userId:', userId)
+
     if (!userId) {
-      return NextResponse.json({ error: "User ID required" }, { status: 400 })
+      return NextResponse.json({ error: "User ID required" }, { 
+        status: 400,
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      })
     }
 
-    // Get user details and all their quiz results
+    // Get user details and all their quiz results directly from database
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -27,8 +36,17 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    console.log(`📈 Found user: ${user ? 'Yes' : 'No'}, Results: ${user?.quizHistory?.length || 0}`)
+
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
+      return NextResponse.json({ error: "User not found" }, { 
+        status: 404,
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      })
     }
 
     // Group results by quiz
@@ -74,6 +92,13 @@ export async function GET(request: NextRequest) {
       quiz.averageTime = Math.round(totalTime / quiz.totalAttempts)
     })
 
+    console.log('✅ User performance data prepared:', {
+      userId,
+      totalQuizzes: user.totalQuizzes,
+      averageScore: user.averageScore,
+      quizCount: Object.keys(quizPerformance).length
+    })
+
     return NextResponse.json({
       user: {
         id: user.id,
@@ -83,10 +108,23 @@ export async function GET(request: NextRequest) {
         averageScore: user.averageScore
       },
       quizPerformance: Object.values(quizPerformance)
+    }, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     })
 
   } catch (error) {
-    console.error("Error fetching user performance:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("❌ Error fetching user performance:", error)
+    return NextResponse.json({ error: "Internal server error" }, { 
+      status: 500,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    })
   }
 }
