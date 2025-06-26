@@ -47,27 +47,55 @@ export default function AnalyticsPage() {
   const [refreshing, setRefreshing] = useState(false)
 
   // Function to refresh analytics data
-  const refreshData = async () => {
+  const refreshData = async (force = false) => {
     setRefreshing(true)
     try {
       if (user) {
         const token = localStorage.getItem('authToken')
+        console.log('Refreshing analytics data...', { hasUser: !!user, hasToken: !!token, force })
+        
         if (token) {
-          const response = await fetch('/api/results', {
+          // Add cache-busting parameter for force refresh
+          const url = force ? `/api/results?_t=${Date.now()}` : '/api/results'
+          
+          const response = await fetch(url, {
             headers: {
-              'Authorization': `Bearer ${token}`
+              'Authorization': `Bearer ${token}`,
+              'Cache-Control': force ? 'no-cache' : 'default'
             }
           })
           
+          console.log('API response status:', response.status)
+          
           if (response.ok) {
             const apiData = await response.json()
+            console.log('API data received:', { resultsCount: apiData.results?.length })
+            
             if (apiData.results && Array.isArray(apiData.results)) {
               setResults(apiData.results)
               // Update localStorage with fresh data
               localStorage.setItem("quizResults", JSON.stringify(apiData.results))
+              console.log('Analytics data updated successfully')
+            }
+          } else {
+            console.error('API response not ok:', response.status, response.statusText)
+            // If API fails, try to refresh from localStorage as last resort
+            const storedResults = localStorage.getItem("quizResults")
+            if (storedResults) {
+              const parsedResults = JSON.parse(storedResults)
+              const normalizedResults = parsedResults.map((result: any) => ({
+                ...result,
+                answers: result.answers || []
+              }))
+              setResults(normalizedResults)
+              console.log('Fallback to localStorage during refresh')
             }
           }
+        } else {
+          console.warn('No auth token found')
         }
+      } else {
+        console.warn('No user authenticated')
       }
     } catch (error) {
       console.error("Error refreshing data:", error)
@@ -81,10 +109,14 @@ export default function AnalyticsPage() {
       try {
         if (typeof window === 'undefined') return
         
+        console.log('Loading analytics results...', { hasUser: !!user })
+        
         // First try to fetch from API if user is authenticated
         if (user) {
           try {
             const token = localStorage.getItem('authToken')
+            console.log('Attempting API fetch...', { hasToken: !!token })
+            
             if (token) {
               const response = await fetch('/api/results', {
                 headers: {
@@ -92,16 +124,25 @@ export default function AnalyticsPage() {
                 }
               })
               
+              console.log('Initial API response:', response.status)
+              
               if (response.ok) {
                 const apiData = await response.json()
+                console.log('Initial API data:', { resultsCount: apiData.results?.length })
+                
                 if (apiData.results && Array.isArray(apiData.results)) {
                   setResults(apiData.results)
                   // Also update localStorage with fresh data
                   localStorage.setItem("quizResults", JSON.stringify(apiData.results))
+                  console.log('Initial load from API successful')
                   setLoading(false)
                   return
                 }
+              } else {
+                console.warn('API response not ok, falling back to localStorage')
               }
+            } else {
+              console.warn('No auth token, falling back to localStorage')
             }
           } catch (apiError) {
             console.warn("Failed to fetch results from API, falling back to localStorage:", apiError)
@@ -109,6 +150,7 @@ export default function AnalyticsPage() {
         }
         
         // Fallback to localStorage if API fails or user not authenticated
+        console.log('Loading from localStorage...')
         const storedResults = localStorage.getItem("quizResults")
         if (storedResults) {
           const parsedResults = JSON.parse(storedResults)
@@ -118,6 +160,9 @@ export default function AnalyticsPage() {
             answers: result.answers || []
           }))
           setResults(normalizedResults)
+          console.log('Loaded from localStorage:', { resultsCount: normalizedResults.length })
+        } else {
+          console.log('No data in localStorage')
         }
       } catch (error) {
         console.error("Error loading quiz results:", error)
@@ -129,17 +174,28 @@ export default function AnalyticsPage() {
     loadResults()
   }, [user])
 
-  // Auto-refresh when page becomes visible
+  // Auto-refresh when page becomes visible and periodically
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && user) {
+        console.log('Page became visible, refreshing data...')
         refreshData()
       }
     }
 
+    // Set up periodic refresh every 30 seconds when page is visible
+    const intervalId = setInterval(() => {
+      if (!document.hidden && user) {
+        console.log('Periodic refresh...')
+        refreshData()
+      }
+    }, 30000) // 30 seconds
+
     document.addEventListener('visibilitychange', handleVisibilityChange)
+    
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
+      clearInterval(intervalId)
     }
   }, [user])
 
@@ -170,7 +226,7 @@ export default function AnalyticsPage() {
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              onClick={refreshData}
+              onClick={() => refreshData(true)}
               disabled={refreshing}
               className="flex items-center gap-2"
             >
@@ -182,13 +238,32 @@ export default function AnalyticsPage() {
 
         {/* Refresh Button */}
         <div className="mb-4">
-          <Button onClick={refreshData} disabled={refreshing} variant="outline">
+          <Button onClick={() => refreshData(true)} disabled={refreshing} variant="outline">
             {refreshing ? "Refreshing..." : "Refresh Data"}
           </Button>
         </div>
 
         {/* Advanced Analytics Component */}
         <AdvancedAnalytics results={results || []} />
+
+        {/* Debug Information (only in development) */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mb-4 p-4 bg-muted rounded-lg">
+            <h3 className="font-semibold mb-2">Debug Info:</h3>
+            <p>Results count: {results.length}</p>
+            <p>User authenticated: {user ? 'Yes' : 'No'}</p>
+            <p>Auth token: {localStorage.getItem('authToken') ? 'Present' : 'Missing'}</p>
+            <p>Last refresh: {refreshing ? 'In progress...' : 'Ready'}</p>
+            {results.length > 0 && (
+              <details className="mt-2">
+                <summary className="cursor-pointer">View raw data</summary>
+                <pre className="text-xs mt-2 overflow-auto max-h-40">
+                  {JSON.stringify(results.slice(0, 2), null, 2)}
+                </pre>
+              </details>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

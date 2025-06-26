@@ -154,13 +154,18 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('📊 Fetching user quiz results...')
+    
     const authHeader = request.headers.get("authorization")
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      console.log('❌ No authorization header')
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
     const token = authHeader.substring(7)
     const decoded = await validateToken(token)
+    
+    console.log('✅ Token validated for user:', decoded.userId)
 
     // Get user's quiz results from database
     const results = await prisma.quizResult.findMany({
@@ -175,6 +180,8 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { date: 'desc' }
     })
+
+    console.log(`📈 Found ${results.length} quiz results for user ${decoded.userId}`)
 
     // Transform database results to match frontend format
     const transformedResults = results.map(result => ({
@@ -202,10 +209,11 @@ export async function GET(request: NextRequest) {
       userId: result.userId
     }))
 
+    console.log('✅ Returning transformed results:', transformedResults.length)
     return NextResponse.json({ results: transformedResults })
 
   } catch (error) {
-    console.error("Error fetching quiz results:", error)
+    console.error("❌ Error fetching quiz results:", error)
     return NextResponse.json({ 
       message: "Failed to fetch quiz results",
       error: error instanceof Error ? error.message : "Unknown error"
