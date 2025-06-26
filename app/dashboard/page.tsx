@@ -29,7 +29,6 @@ import { useAuth } from "@/hooks/use-auth"
 import { Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer"
 import { Menu } from "lucide-react"
 import { ActivityCalendar } from "@/components/activity-calendar"
-import { FlashQuestions } from "@/components/flash-questions"
 
 interface RecentAttempt {
   _id: string
@@ -74,9 +73,7 @@ export default function DashboardPage() {
   const [availableQuizzes, setAvailableQuizzes] = useState<Quiz[]>([])
   const [activeGoals, setActiveGoals] = useState<Goal[]>([])
   const [loadingAttempts, setLoadingAttempts] = useState(true)
-  const [showFlashQuestions, setShowFlashQuestions] = useState(false)
   const [showLatestActivity, setShowLatestActivity] = useState(false)
-  const [flashQuestions, setFlashQuestions] = useState<any[]>([])
 
   useEffect(() => {
     if (!loading && user) {
@@ -151,10 +148,6 @@ export default function DashboardPage() {
               section: q.section || 'General'
             })) || []
           )
-          
-          // Shuffle and take 10 random questions for flash mode
-          const shuffled = allQuestions.sort(() => Math.random() - 0.5)
-          setFlashQuestions(shuffled.slice(0, 10))
         })
         .catch(() => setAvailableQuizzes([]))
 
@@ -369,9 +362,9 @@ export default function DashboardPage() {
         )}
 
         {/* Flash Questions Feature */}
-        {flashQuestions.length > 0 && (
-          <div className="mb-8">
-            <Card className="bg-gradient-to-r from-purple-600 to-purple-800 text-white">
+        <div className="mb-8">
+          <Link href="/dashboard/flash-cards">
+            <Card className="bg-gradient-to-r from-purple-600 to-purple-800 text-white hover:from-purple-700 hover:to-purple-900 transition-all duration-300 cursor-pointer">
               <CardContent className="p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="flex items-center gap-3">
@@ -379,32 +372,24 @@ export default function DashboardPage() {
                       <Zap className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-base sm:text-lg font-semibold truncate">Flash Math Questions</h3>
+                      <h3 className="text-base sm:text-lg font-semibold truncate">Flash Math Cards</h3>
                       <p className="text-purple-100 text-xs sm:text-sm">
-                        Rapid-fire arithmetic practice with basic math operations
+                        Practice individual operations or mixed questions up to 3 digits
                       </p>
                     </div>
                   </div>
                   <Button 
                     variant="secondary" 
-                    className="bg-white text-purple-700 hover:bg-purple-50 flex items-center gap-2 w-full sm:w-auto justify-center"
-                    onClick={() => setShowFlashQuestions(true)}
+                    className="bg-white text-purple-700 hover:bg-purple-50 flex items-center gap-2 w-full sm:w-auto justify-center pointer-events-none"
                   >
                     <Zap className="h-4 w-4" />
-                    <span className="whitespace-nowrap">Start Math Quiz</span>
+                    <span className="whitespace-nowrap">Practice Math</span>
                   </Button>
                 </div>
               </CardContent>
             </Card>
-            
-            {/* Flash Questions Modal */}
-            <FlashQuestions
-              isOpen={showFlashQuestions}
-              onClose={() => setShowFlashQuestions(false)}
-              questions={flashQuestions}
-            />
-          </div>
-        )}
+          </Link>
+        </div>
 
         {/* Main Navigation Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
