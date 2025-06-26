@@ -3,11 +3,11 @@ import { PrismaClient } from "@/lib/generated/prisma"
 
 const prisma = new PrismaClient()
 
-// Helper function to validate simple token and extract user info
-const validateToken = async (token: string) => {
-
 // Force this route to be dynamic (not statically rendered)
 export const dynamic = 'force-dynamic'
+
+// Helper function to validate simple token and extract user info
+const validateToken = async (token: string) => {
   try {
     // Simple token format: userId-timestamp-random
     // Since userId is a UUID with dashes, we need to handle this carefully
