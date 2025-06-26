@@ -14,6 +14,7 @@ import { Plus, Trash2, Edit, Search, BookOpen, ArrowLeft, LogOut, Shield, Save, 
 import Link from "next/link"
 import { useAuth } from "@/hooks/use-auth"
 import AIQuestionGenerator from "./ai-generator"
+import MathRenderer from "@/components/math-renderer"
 
 interface QuestionBankItem {
   id: string
@@ -812,7 +813,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                           ))}
                         </div>
                         <CardTitle className="text-base">
-                          Q{startIndex + index + 1}. {question.question}
+                          Q{startIndex + index + 1}. <MathRenderer text={question.question} />
                         </CardTitle>
                       </div>
                       <div className="flex gap-1">
@@ -850,7 +851,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                             <span className="font-medium">
                               {String.fromCharCode(65 + optIndex)}. 
                             </span>
-                            {option}
+                            <MathRenderer text={option} />
                             {optIndex === question.correctAnswer && (
                               <Badge variant="default" className="ml-2 text-xs">Correct</Badge>
                             )}
@@ -864,7 +865,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                             Explanation:
                           </Label>
                           <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                            {question.explanation}
+                            <MathRenderer text={question.explanation} />
                           </p>
                         </div>
                       )}

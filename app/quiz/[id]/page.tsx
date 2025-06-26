@@ -12,6 +12,7 @@ import { Clock, ArrowLeft, AlertTriangle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
 import { useAuth } from "@/hooks/use-auth"
+import MathRenderer from "@/components/math-renderer"
 
 interface Quiz {
   id: string
@@ -479,7 +480,9 @@ export default function QuizPage({ params }: { params: { id: string } }) {
               <span>Question {currentQuestionIndex + 1}</span>
               <span className="text-sm font-normal text-muted-foreground">({currentQuestion.section})</span>
             </CardTitle>
-            <CardDescription className="text-sm sm:text-base">{currentQuestion.question}</CardDescription>
+            <CardDescription className="text-sm sm:text-base">
+              <MathRenderer text={currentQuestion.question} />
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {/* Question Image */}
@@ -509,7 +512,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
                     htmlFor={`${currentQuestion.id}-${optionIndex}`} 
                     className="cursor-pointer flex-1 text-sm sm:text-base leading-relaxed"
                   >
-                    {option}
+                    <MathRenderer text={option} />
                   </Label>
                 </div>
               ))}

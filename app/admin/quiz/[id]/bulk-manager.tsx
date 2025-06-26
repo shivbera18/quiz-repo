@@ -9,6 +9,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Upload, Download, Trash2, Edit, X, Check } from "lucide-react"
+import { processJsonUpload } from "@/lib/json-upload-processor"
+import MathRenderer from "@/components/math-renderer"
 
 interface Question {
   id: string
@@ -63,6 +65,21 @@ export default function BulkManager({ quiz, onQuizUpdate, onClose }: BulkManager
         setUploadError("Invalid JSON file. Please check the syntax and try again.")
         return
       }
+
+      // Process the JSON with mathematical symbol support
+      const processingResult = await processJsonUpload(questionsData)
+      
+      if (!processingResult.success) {
+        setUploadError(`Processing failed: ${processingResult.errors.join(', ')}`)
+        return
+      }
+
+      if (processingResult.warnings.length > 0) {
+        console.warn('JSON processing warnings:', processingResult.warnings)
+      }
+
+      // Use the processed data with converted mathematical symbols
+      questionsData = processingResult.data || questionsData
 
       if (!Array.isArray(questionsData)) {
         setUploadError("Invalid JSON format. Expected an array of questions.")

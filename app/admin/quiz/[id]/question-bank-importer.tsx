@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Search, Plus, BookOpen, X } from "lucide-react"
+import MathRenderer from "@/components/math-renderer"
 
 interface QuestionBankItem {
   id: string
@@ -353,7 +354,7 @@ export default function QuestionBankImporter({
                             ))}
                           </div>
                           <CardTitle className="text-base">
-                            Q{startIndex + index + 1}. {question.question}
+                            Q{startIndex + index + 1}. <MathRenderer text={question.question} />
                           </CardTitle>
                         </div>
                       </div>
@@ -374,7 +375,7 @@ export default function QuestionBankImporter({
                             <span className="font-medium">
                               {String.fromCharCode(65 + optIndex)}. 
                             </span>
-                            {option}
+                            <MathRenderer text={option} />
                             {optIndex === question.correctAnswer && (
                               <Badge variant="default" className="ml-2 text-xs">Correct</Badge>
                             )}
@@ -388,7 +389,7 @@ export default function QuestionBankImporter({
                             Explanation:
                           </Label>
                           <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                            {question.explanation}
+                            <MathRenderer text={question.explanation} />
                           </p>
                         </div>
                       )}

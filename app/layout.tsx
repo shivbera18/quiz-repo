@@ -56,7 +56,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
-          <PWAHandler />
+          {/* <PWAHandler /> */}
         </ThemeProvider>
       </body>
     </html>

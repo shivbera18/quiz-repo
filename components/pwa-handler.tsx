@@ -10,6 +10,12 @@ export default function PWAHandler() {
   const [isInstalled, setIsInstalled] = useState(false)
 
   useEffect(() => {
+    // Check if user has already dismissed the install prompt
+    const hasUserDismissed = localStorage.getItem('pwa-install-dismissed') === 'true'
+    if (hasUserDismissed) {
+      return // Don't show the prompt if user previously dismissed it
+    }
+
     // Register service worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js')
@@ -76,6 +82,8 @@ export default function PWAHandler() {
     
     if (outcome === 'accepted') {
       console.log('User accepted the install prompt')
+      // Clear the dismissed flag if user accepts
+      localStorage.removeItem('pwa-install-dismissed')
     }
     
     setDeferredPrompt(null)
@@ -85,6 +93,8 @@ export default function PWAHandler() {
   const handleDismiss = () => {
     setShowInstallPrompt(false)
     setDeferredPrompt(null)
+    // Remember that user dismissed the prompt
+    localStorage.setItem('pwa-install-dismissed', 'true')
   }
 
   // Don't show if already installed or no prompt available

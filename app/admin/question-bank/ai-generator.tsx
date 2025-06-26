@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Sparkles, Loader2, Wand2, Brain, X } from "lucide-react"
+import MathRenderer from "@/components/math-renderer"
 
 interface AIGeneratedQuestion {
   question: string
@@ -292,7 +293,7 @@ export default function AIQuestionGenerator({
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <CardTitle className="text-base">
-                        Q{index + 1}. {question.question}
+                        Q{index + 1}. <MathRenderer text={question.question} />
                       </CardTitle>
                       <Button
                         variant="ghost"
@@ -319,7 +320,7 @@ export default function AIQuestionGenerator({
                             <span className="font-medium">
                               {String.fromCharCode(65 + optIndex)}. 
                             </span>
-                            {option}
+                            <MathRenderer text={option} />
                             {optIndex === question.correctAnswer && (
                               <Badge variant="default" className="ml-2 text-xs">Correct</Badge>
                             )}
@@ -333,7 +334,7 @@ export default function AIQuestionGenerator({
                             AI Explanation:
                           </Label>
                           <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                            {question.explanation}
+                            <MathRenderer text={question.explanation} />
                           </p>
                         </div>
                       )}

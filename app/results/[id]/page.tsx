@@ -18,6 +18,7 @@ import {
   ChevronRight,
   TrendingUp,
 } from "lucide-react"
+import MathRenderer from "@/components/math-renderer"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts"
 import { useAuth } from "@/hooks/use-auth"
@@ -545,7 +546,9 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                                 </Badge>
                               )}
                             </CardTitle>
-                            <CardDescription className="mt-1 line-clamp-2">{question.question}</CardDescription>
+                            <CardDescription className="mt-1 line-clamp-2">
+                              <MathRenderer text={question.question} />
+                            </CardDescription>
                           </div>
                         </div>
                         {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -556,7 +559,9 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                   <CollapsibleContent>
                     <CardContent>
                       <div className="space-y-4">
-                        <p className="font-medium">{question.question}</p>
+                        <p className="font-medium">
+                          <MathRenderer text={question.question} />
+                        </p>
 
                         {/* Question Image */}
                         {question.image && (
@@ -586,7 +591,9 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                                 }`}
                               >
                                 <div className="flex items-center justify-between">
-                                  <span>{option}</span>
+                                  <span>
+                                    <MathRenderer text={option} />
+                                  </span>
                                   <div className="flex gap-2">
                                     {isSelected && (
                                       <Badge variant={isCorrect ? "default" : "destructive"}>Your Answer</Badge>
@@ -607,7 +614,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                         {question.explanation && (
                           <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                             <p className="text-sm">
-                              <strong>Explanation:</strong> {question.explanation}
+                              <strong>Explanation:</strong> <MathRenderer text={question.explanation} />
                             </p>
                           </div>
                         )}

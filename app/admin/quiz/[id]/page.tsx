@@ -17,6 +17,7 @@ import Link from "next/link"
 import BulkManager from "./bulk-manager"
 import QuestionBankImporter from "./question-bank-importer"
 import { useAuth } from "@/hooks/use-auth"
+import MathRenderer from "@/components/math-renderer"
 
 interface Quiz {
   id: string
@@ -691,7 +692,9 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
                           <span className="text-sm text-muted-foreground">Question {index + 1}</span>
                           {question.image && <ImageIcon className="h-4 w-4 text-muted-foreground" />}
                         </div>
-                        <p className="font-medium mb-2">{question.question}</p>
+                        <p className="font-medium mb-2">
+                          <MathRenderer text={question.question} />
+                        </p>
                         {question.image && (
                           <div className="mb-2">
                             <img
