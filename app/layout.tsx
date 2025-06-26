@@ -1,5 +1,5 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -12,8 +12,6 @@ export const metadata: Metadata = {
   description: "Comprehensive banking exam preparation platform",
   generator: 'v0.dev',
   manifest: '/manifest.json',
-  themeColor: '#7c3aed',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -33,6 +31,13 @@ export const metadata: Metadata = {
     title: 'Banking Exam Preparation',
     description: 'Comprehensive banking exam preparation platform',
   },
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#7c3aed',
 }
 
 export default function RootLayout({
