@@ -24,24 +24,41 @@ export async function DELETE(request: NextRequest) {
       // Delete specific result
       console.log('🗑️ Deleting specific result:', resultId)
       
-      // First check if the result exists
-      const existingResult = await prisma.quizResult.findUnique({
-        where: { id: resultId }
-      })
-      
-      if (!existingResult) {
-        console.log('❌ Result not found:', resultId)
-        return NextResponse.json({ error: "Result not found" }, { status: 404 })
+      // Use a transaction to ensure consistency
+      try {
+        const deletedResult = await prisma.$transaction(async (tx) => {
+          // First check if the result exists
+          const existingResult = await tx.quizResult.findUnique({
+            where: { id: resultId }
+          })
+          
+          if (!existingResult) {
+            throw new Error('Result not found')
+          }
+          
+          console.log('✅ Found result to delete in transaction:', { id: existingResult.id, userId: existingResult.userId })
+          
+          // Delete the result
+          const deletedResult = await tx.quizResult.delete({
+            where: { id: resultId }
+          })
+          
+          console.log('✅ Result deleted in transaction:', deletedResult.id)
+          return deletedResult
+        })
+        
+        // Add a small delay to ensure database consistency
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        console.log('✅ Transaction completed, result deleted:', deletedResult.id)
+        return NextResponse.json({ message: "Quiz result deleted successfully", deletedId: deletedResult.id })
+      } catch (transactionError) {
+        if ((transactionError as Error).message === 'Result not found') {
+          console.log('❌ Result not found:', resultId)
+          return NextResponse.json({ error: "Result not found" }, { status: 404 })
+        }
+        throw transactionError // Re-throw other errors
       }
-      
-      console.log('✅ Found result to delete:', { id: existingResult.id, userId: existingResult.userId })
-      
-      const deletedResult = await prisma.quizResult.delete({
-        where: { id: resultId }
-      })
-      
-      console.log('✅ Result deleted successfully:', deletedResult.id)
-      return NextResponse.json({ message: "Quiz result deleted successfully", deletedId: deletedResult.id })
     } else if (userId && quizId) {
       // Delete all results for a specific user and quiz
       console.log('🗑️ Deleting results for user and quiz:', { userId, quizId })

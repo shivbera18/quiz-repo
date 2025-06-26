@@ -74,6 +74,8 @@ interface UserProgress {
 
 interface AdvancedAnalyticsProps {
   results?: QuizResult[]
+  currentUserId?: string // For student mode - auto-select this user
+  isStudentMode?: boolean // Hide user selector in student mode
 }
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316']
@@ -88,13 +90,22 @@ const SafeChart = ({ children, fallback = "Unable to load chart" }: { children: 
   }
 }
 
-export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsProps) {
+export default function AdvancedAnalytics({ results = [], currentUserId, isStudentMode = false }: AdvancedAnalyticsProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | 'all'>('all')
   const [selectedUserId, setSelectedUserId] = useState<string | 'all'>('all')
   const [debugInfo, setDebugInfo] = useState<string>('')
   const [selectedTab, setSelectedTab] = useState<string>("performance")
 
   console.log('AdvancedAnalytics received results:', results?.length || 0)
+  console.log('Student mode:', isStudentMode, 'Current user ID:', currentUserId)
+
+  // Auto-select current user in student mode
+  useEffect(() => {
+    if (isStudentMode && currentUserId) {
+      console.log('Auto-selecting current user in student mode:', currentUserId)
+      setSelectedUserId(currentUserId)
+    }
+  }, [isStudentMode, currentUserId])
 
   // Early return if no results
   if (!results || !Array.isArray(results)) {
@@ -435,23 +446,29 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
     <div className="space-y-6">
       {/* Period Selector */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
-        <h2 className="text-2xl font-bold">Advanced Analytics</h2>
+        <h2 className="text-2xl font-bold">
+          {isStudentMode ? "Your Performance Analytics" : "Advanced Analytics"}
+        </h2>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <Select onValueChange={(value) => {
-            setSelectedUserId(value)
-          }} value={selectedUserId}>
-            <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="Select a User" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Users</SelectItem>
-              {users.map(user => (
-                <SelectItem key={user.id} value={user.id}>
-                  {user.name} ({user.email})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* User Selector - Only show in admin mode */}
+          {!isStudentMode && (
+            <Select onValueChange={(value) => {
+              setSelectedUserId(value)
+            }} value={selectedUserId}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Select a User" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Users</SelectItem>
+                {users.map(user => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.name} ({user.email})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {/* Period Selector */}
           <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             {(['7d', '30d', '90d', 'all'] as const).map(period => (
               <button
@@ -826,7 +843,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
                 <CardDescription>Your quiz attempt patterns over time</CardDescription>
               </CardHeader>
               <CardContent>
-                <details className="w-full" defaultOpen>
+                <details className="w-full" open>
                   <summary className="cursor-pointer font-medium text-sm mb-2 select-none">Show/Hide Calendar</summary>
                   <div className="pt-2" style={{ minWidth: 0, width: '100%', touchAction: 'pan-x pan-y', overflowX: 'auto' }}>
                     <ResponsiveContainer width="100%" height={300} minWidth={320} minHeight={220}>
@@ -1073,7 +1090,7 @@ export default function AdvancedAnalytics({ results = [] }: AdvancedAnalyticsPro
   )
   } catch (error) {
     console.error('AdvancedAnalytics rendering error:', error)
-    console.log('Error stack:', error.stack)
+    console.log('Error stack:', error instanceof Error ? error.stack : 'Unknown error')
     console.log('Selected user ID:', selectedUserId)
     console.log('Results passed to component:', results?.length || 0)
     console.log('Valid results:', validResults?.length || 0)

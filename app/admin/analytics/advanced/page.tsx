@@ -64,16 +64,18 @@ export default function AdvancedAnalyticsPage() {
       setIsLoading(true)
       setError(null)
       
-      const response = await fetch("/api/admin/analytics")
+      console.log('🔄 Advanced Analytics: Fetching fresh data from API...')
+      // Add cache busting to ensure fresh data
+      const response = await fetch(`/api/admin/analytics?_t=${Date.now()}`)
       
       if (!response.ok) {
-        throw new Error("Failed to fetch analytics")
+        throw new Error(`Failed to fetch analytics: ${response.status}`)
       }
 
       const data = await response.json()
-      console.log("Fetched analytics data:", data)
+      console.log("✅ Advanced Analytics: Fetched fresh data:", data.results?.length || 0, "results")
       
-      // Transform the data to match our QuizResult interface
+      // Transform the data to match our QuizResult interface - no localStorage fallback
       const transformedResults = (data.results || []).map((result: any) => ({
         _id: result.id || result._id || '',
         date: result.createdAt || result.date || new Date().toISOString(),
@@ -95,87 +97,14 @@ export default function AdvancedAnalyticsPage() {
         quiz: result.quiz
       }))
       
+      console.log(`📊 Advanced Analytics: Transformed ${transformedResults.length} results`)
       setResults(transformedResults)
       
-      // If no API data, try localStorage as fallback
-      if (transformedResults.length === 0) {
-        try {
-          if (typeof window !== 'undefined') {
-            const localResults = localStorage.getItem("quizResults")
-            if (localResults) {
-              const parsedResults = JSON.parse(localResults)
-              setResults(parsedResults)
-            }
-          }
-        } catch (localError) {
-          console.warn("Error loading local data:", localError)
-        }
-      }
-      
     } catch (error) {
-      console.error("Error fetching analytics:", error)
-      setError("Failed to load analytics data. Trying fallback...")
-      
-      // Fallback to localStorage
-      try {
-        if (typeof window !== 'undefined') {
-          const localResults = localStorage.getItem("quizResults")
-          if (localResults) {
-            const parsedResults = JSON.parse(localResults)
-            // Transform localStorage data to match our interface
-            const transformedLocal = parsedResults.map((result: any) => ({
-              _id: result._id || result.id || Math.random().toString(),
-              date: result.date || new Date().toISOString(),
-              quizName: result.quizName || 'Unknown Quiz',
-              quizId: result.quizId || 'unknown',
-              totalScore: result.totalScore || 0,
-              rawScore: result.rawScore || result.totalScore || 0,
-              positiveMarks: result.positiveMarks || result.correctAnswers || 0,
-              negativeMarks: result.negativeMarks || 0,
-              correctAnswers: result.correctAnswers || 0,
-              wrongAnswers: result.wrongAnswers || 0,
-              unanswered: result.unanswered || 0,
-              sections: result.sections || {},
-              answers: result.answers || [],
-              timeSpent: result.timeSpent || 0,
-              negativeMarking: result.negativeMarking || false,
-              negativeMarkValue: result.negativeMarkValue || 0,
-              user: result.user || { id: result.userId || 'anonymous', name: 'Anonymous User', email: '' },
-              quiz: result.quiz || { id: result.quizId || 'unknown', title: result.quizName || 'Unknown Quiz' }
-            }))
-            setResults(transformedLocal)
-            setError(null) // Clear error if fallback works
-          } else {
-            // If no localStorage data either, create minimal test data
-            const testData = [{
-              _id: 'test-1',
-              date: new Date().toISOString(),
-              quizName: 'Sample Quiz',
-              quizId: 'sample-1',
-              totalScore: 75,
-              rawScore: 75,
-              positiveMarks: 15,
-              negativeMarks: 0,
-              correctAnswers: 15,
-              wrongAnswers: 5,
-              unanswered: 0,
-              sections: { reasoning: 75, quantitative: 80, english: 70 },
-              answers: [],
-              timeSpent: 1800,
-              negativeMarking: false,
-              negativeMarkValue: 0,
-              user: { id: 'test-user', name: 'Test User', email: 'test@example.com' },
-              quiz: { id: 'sample-1', title: 'Sample Quiz' }
-            }]
-            setResults(testData)
-            setError(null)
-          }
-        }
-      } catch (fallbackError) {
-        console.warn("Fallback also failed:", fallbackError)
-        setError("Failed to load analytics data from all sources.")
-        setResults([]) // Ensure results is empty array on error
-      }
+      console.error("❌ Advanced Analytics: Error fetching data:", error)
+      setError(`Failed to load analytics data: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      // No localStorage fallback - always use live data only
+      setResults([])
     } finally {
       setIsLoading(false)
     }
@@ -227,7 +156,17 @@ export default function AdvancedAnalyticsPage() {
                 <p className="text-muted-foreground">Comprehensive insights and performance analysis</p>
               </div>
             </div>
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                onClick={fetchAnalytics}
+                disabled={isLoading}
+                className="flex items-center gap-2"
+              >
+                {isLoading ? "Refreshing..." : "🔄 Refresh Data"}
+              </Button>
+              <ThemeToggle />
+            </div>
           </div>
         </div>
 

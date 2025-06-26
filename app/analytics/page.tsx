@@ -430,7 +430,11 @@ export default function AnalyticsPage() {
         )}
 
         {/* Advanced Analytics Component */}
-        <AdvancedAnalytics results={results || []} />
+        <AdvancedAnalytics 
+          results={results || []} 
+          currentUserId={user?.id}
+          isStudentMode={true}
+        />
 
         {/* Debug Information (only in development) */}
         {process.env.NODE_ENV === 'development' && (

@@ -101,8 +101,8 @@ export default function AdminAnalyticsPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      // Always fetch analytics data from backend API (no localStorage fallback)
-      fetch("/api/admin/analytics")
+      // Always fetch analytics data from backend API with cache busting (no localStorage fallback)
+      fetch(`/api/admin/analytics?_t=${Date.now()}`)
         .then((res) => res.json())
         .then((data) => {
           const apiResults = data.results || []
@@ -358,6 +358,7 @@ export default function AdminAnalyticsPage() {
     }
 
     setIsDeleting(true)
+    console.log('🗑️ Starting deletion of result:', resultId)
 
     try {
       const response = await fetch(`/api/admin/results?id=${resultId}`, {
@@ -367,22 +368,28 @@ export default function AdminAnalyticsPage() {
         }
       })
 
+      console.log('🗑️ Delete API response:', response.status)
+
       if (response.ok) {
-        // Remove the result from both local states
-        const filterFn = (r: QuizResult) => r.id !== resultId && r._id !== resultId
-        setResults(prev => prev.filter(filterFn))
-        setFilteredResults(prev => prev.filter(filterFn))
+        const result = await response.json()
+        console.log('✅ Deletion confirmed:', result.deletedId)
         
-        // Refresh data from server to ensure consistency
+        // Wait a moment for database to process
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // Force refresh from server to get accurate data
         await forceServerRefresh()
         
+        console.log('✅ Admin analytics refreshed after deletion')
         alert("Quiz result deleted successfully")
       } else {
-        throw new Error("Failed to delete result")
+        const errorText = await response.text()
+        console.error('❌ Deletion failed:', response.status, errorText)
+        throw new Error(`Delete failed: ${response.status} - ${errorText}`)
       }
     } catch (error) {
-      console.error("Error deleting result:", error)
-      alert("Failed to delete quiz result")
+      console.error("❌ Error deleting result:", error)
+      alert(`Failed to delete quiz result: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsDeleting(false)
     }
@@ -411,20 +418,16 @@ export default function AdminAnalyticsPage() {
       })
 
       if (response.ok) {
-        // Remove the results from both local states
-        const filterFn = (r: QuizResult) => {
-          const resultUserId = r.userId || r.user?.id
-          if (quizId) {
-            return !(resultUserId === userId && r.quizId === quizId)
-          }
-          return resultUserId !== userId
-        }
-        setResults(prev => prev.filter(filterFn))
-        setFilteredResults(prev => prev.filter(filterFn))
+        const result = await response.json()
+        console.log('✅ Bulk deletion confirmed:', result)
         
-        // Refresh data from server to ensure consistency
+        // Wait a moment for database to process
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // Only refresh from server - no local filtering to avoid race conditions
         await forceServerRefresh()
         
+        console.log('✅ Admin analytics refreshed after bulk deletion')
         alert("Results deleted successfully")
       } else {
         throw new Error("Failed to delete results")
@@ -456,17 +459,45 @@ export default function AdminAnalyticsPage() {
   }
 
   // Function to refresh analytics data from server
-  const forceServerRefresh = () => {
-    fetch("/api/admin/analytics?_t=" + Date.now())
-      .then((res) => res.json())
-      .then((data) => {
+  const forceServerRefresh = async () => {
+    try {
+      console.log('🔄 Force refreshing admin analytics...')
+      const response = await fetch("/api/admin/analytics?_t=" + Date.now())
+      if (response.ok) {
+        const data = await response.json()
         const apiResults = data.results || []
+        const apiQuizzes = data.quizzes || []
+        
+        console.log(`📊 Refreshed: ${apiResults.length} results, ${apiQuizzes.length} quizzes`)
+        
         setResults(apiResults)
         setFilteredResults(apiResults)
-      })
-      .catch((error) => {
-        console.error("Force server refresh failed:", error)
-      })
+        
+        // Also update users list from fresh data
+        const userMap = new Map<string, {id: string; name: string; email: string}>()
+        apiResults.forEach((result: QuizResult) => {
+          const userId = result.userId || result.user?.id
+          const userName = result.userName || result.user?.name
+          const userEmail = result.userEmail || result.user?.email
+          if (userId && userName && userEmail) {
+            userMap.set(userId, {
+              id: userId,
+              name: userName,
+              email: userEmail
+            })
+          }
+        })
+        setUsers(Array.from(userMap.values()))
+        setQuizzes(apiQuizzes)
+        
+        console.log('✅ Admin analytics refresh completed')
+      } else {
+        throw new Error(`HTTP ${response.status}`)
+      }
+    } catch (error) {
+      console.error("❌ Force server refresh failed:", error)
+      throw error // Re-throw to let caller handle it
+    }
   }
 
   const stats = getOverallStats()
