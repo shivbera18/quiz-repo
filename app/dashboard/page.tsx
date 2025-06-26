@@ -379,9 +379,9 @@ export default function DashboardPage() {
                       <Zap className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-base sm:text-lg font-semibold truncate">Flash Quick Questions</h3>
+                      <h3 className="text-base sm:text-lg font-semibold truncate">Flash Math Questions</h3>
                       <p className="text-purple-100 text-xs sm:text-sm">
-                        Rapid-fire practice with 10 random questions
+                        Rapid-fire arithmetic practice with basic math operations
                       </p>
                     </div>
                   </div>
@@ -391,7 +391,7 @@ export default function DashboardPage() {
                     onClick={() => setShowFlashQuestions(true)}
                   >
                     <Zap className="h-4 w-4" />
-                    <span className="whitespace-nowrap">Start Flash Quiz</span>
+                    <span className="whitespace-nowrap">Start Math Quiz</span>
                   </Button>
                 </div>
               </CardContent>

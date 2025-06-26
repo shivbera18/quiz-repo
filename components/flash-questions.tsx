@@ -117,7 +117,7 @@ const generateArithmeticQuestion = (type: string): Question => {
   }
 }
 
-export function FlashQuestions({ isOpen, onClose, questions: _questions }: FlashQuestionsProps) {
+export function FlashQuestions({ isOpen, onClose, questions: _questions = [] }: FlashQuestionsProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
   const [score, setScore] = useState(0)
@@ -130,14 +130,27 @@ export function FlashQuestions({ isOpen, onClose, questions: _questions }: Flash
   const [showSpeedPrompt, setShowSpeedPrompt] = useState(true)
   const [loadingAI, setLoadingAI] = useState(false)
   const [aiError, setAIError] = useState("")
-  const [questions, setQuestions] = useState<Question[]>([])
+  const [questions, setQuestions] = useState<Question[]>(_questions)
 
-  // Generate initial arithmetic questions
+  // Generate initial arithmetic questions only if no questions are provided
   useEffect(() => {
-    if (isOpen && questions.length === 0) {
-      generateNewQuestions()
+    if (isOpen) {
+      if (_questions && _questions.length > 0) {
+        // Use provided questions
+        setQuestions(_questions)
+        setShowSpeedPrompt(false)
+      } else if (questions.length === 0) {
+        // Generate new questions if none provided
+        try {
+          generateNewQuestions()
+        } catch (error) {
+          console.error('Error generating initial questions:', error)
+          setAIError('Failed to generate questions. Please try again.')
+          setShowSpeedPrompt(true)
+        }
+      }
     }
-  }, [isOpen])
+  }, [isOpen, _questions])
 
   const generateNewQuestions = () => {
     const newQuestions: Question[] = []
@@ -158,16 +171,7 @@ export function FlashQuestions({ isOpen, onClose, questions: _questions }: Flash
     setShowSpeedPrompt(false)
   }
 
-  const currentQuestion = questions[currentQuestionIndex]
-
-  // Safety check for question data
-  if (!currentQuestion || !Array.isArray(currentQuestion.options) || currentQuestion.options.length === 0) {
-    if (questions.length > 0) {
-      console.error('Invalid question data at index', currentQuestionIndex, ':', currentQuestion)
-    }
-    return null
-  }
-
+  // useEffect hooks must be called before any early returns to avoid React hook rule violations
   useEffect(() => {
     if (!isOpen) {
       // Reset state when modal closes
@@ -180,6 +184,20 @@ export function FlashQuestions({ isOpen, onClose, questions: _questions }: Flash
       setShowSpeedPrompt(true)
     }
   }, [isOpen])
+
+  const currentQuestion = questions[currentQuestionIndex]
+
+  // If modal is not open, return null early (after hooks are called)
+  if (!isOpen) {
+    return null
+  }
+
+  // Safety check for question data - handle gracefully without returning null
+  const hasValidQuestion = currentQuestion && Array.isArray(currentQuestion.options) && currentQuestion.options.length > 0
+  
+  if (!hasValidQuestion && questions.length > 0) {
+    console.error('Invalid question data at index', currentQuestionIndex, ':', currentQuestion)
+  }
 
   const handleAnswerSelect = (answerIndex: number) => {
     if (selectedAnswer !== null) return // Prevent multiple selections
@@ -338,8 +356,8 @@ export function FlashQuestions({ isOpen, onClose, questions: _questions }: Flash
                       <Zap className="h-4 w-4 sm:h-6 sm:w-6 text-yellow-400" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h2 className="text-lg sm:text-2xl font-bold truncate">Flash Questions</h2>
-                      <p className="text-purple-200 text-xs sm:text-sm">Quick rapid-fire practice</p>
+                      <h2 className="text-lg sm:text-2xl font-bold truncate">Flash Math Questions</h2>
+                      <p className="text-purple-200 text-xs sm:text-sm">Quick arithmetic practice</p>
                     </div>
                   </div>
                   <Button
@@ -386,19 +404,20 @@ export function FlashQuestions({ isOpen, onClose, questions: _questions }: Flash
                       </div>
                     </div>
 
-                    {/* Question */}
-                    <div className={`transition-all duration-500 ${isAnimating ? 'opacity-50 scale-95' : 'opacity-100 scale-100'}`}>
-                      <div className="mb-4 sm:mb-6">                      <div className="text-xs text-purple-300 mb-2 uppercase tracking-wide">
-                        {currentQuestion.section}
-                      </div>
-                      <h3 className="text-lg sm:text-xl font-semibold leading-relaxed">
-                        {currentQuestion.question}
-                      </h3>
-                      </div>
+                    {/* Question or Error State */}
+                    {hasValidQuestion ? (
+                      <div className={`transition-all duration-500 ${isAnimating ? 'opacity-50 scale-95' : 'opacity-100 scale-100'}`}>
+                        <div className="mb-4 sm:mb-6">                      <div className="text-xs text-purple-300 mb-2 uppercase tracking-wide">
+                          {currentQuestion.section}
+                        </div>
+                        <h3 className="text-lg sm:text-xl font-semibold leading-relaxed">
+                          {currentQuestion.question}
+                        </h3>
+                        </div>
 
-                      {/* Options */}
-                      <div className="grid gap-2 sm:gap-3">
-                        {currentQuestion.options.map((option, index) => (
+                        {/* Options */}
+                        <div className="grid gap-2 sm:gap-3">
+                          {currentQuestion.options.map((option, index) => (
                           <button
                             key={index}
                             onClick={() => handleAnswerSelect(index)}
@@ -446,8 +465,43 @@ export function FlashQuestions({ isOpen, onClose, questions: _questions }: Flash
                             </div>
                           </button>
                         ))}
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      /* Error State for Invalid Question */
+                      <div className="text-center py-8">
+                        <div className="mb-4">
+                          <AlertCircle className="h-12 w-12 mx-auto text-red-400 mb-4" />
+                          <h3 className="text-xl font-bold mb-2">Question Error</h3>
+                          <p className="text-purple-200 mb-4">
+                            There was an issue loading the current question.
+                          </p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                          <Button
+                            onClick={() => {
+                              try {
+                                generateNewQuestions()
+                              } catch (error) {
+                                console.error('Error regenerating questions:', error)
+                                setAIError('Failed to generate new questions')
+                              }
+                            }}
+                            className="bg-purple-600 hover:bg-purple-700"
+                          >
+                            Generate New Questions
+                          </Button>
+                          <Button
+                            onClick={handleClose}
+                            variant="outline"
+                            className="border-purple-400 text-purple-300 hover:bg-purple-700"
+                          >
+                            Close
+                          </Button>
+                        </div>
+                        {aiError && <div className="text-red-300 text-xs mt-2">{aiError}</div>}
+                      </div>
+                    )}
                   </>
                 ) : (
                   /* Results */

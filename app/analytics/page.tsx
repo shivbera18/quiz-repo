@@ -243,31 +243,119 @@ export default function AnalyticsPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard">
-              <Button variant="outline" size="icon">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
+        {/* Mobile-Responsive Header */}
+        <div className="mb-6">
+          {/* Mobile Layout */}
+          <div className="flex flex-col space-y-4 sm:hidden">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Link href="/dashboard">
+                  <Button variant="outline" size="icon">
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <ThemeToggle />
+              </div>
+            </div>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Performance Analytics</h1>
-              <p className="text-muted-foreground">Detailed insights into your quiz performance</p>
+              <h1 className="text-2xl font-bold text-foreground">Performance Analytics</h1>
+              <p className="text-sm text-muted-foreground">Detailed insights into your quiz performance</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                onClick={() => refreshData(true)}
+                disabled={refreshing}
+                className="flex items-center justify-center gap-2 w-full"
+                size="sm"
+              >
+                {refreshing ? "Refreshing..." : "Refresh"}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={async () => {
+                  setRefreshing(true)
+                  try {
+                    // Smart refresh: try API first, only update cache if API works
+                    const token = localStorage.getItem('authToken') || localStorage.getItem('token')
+                    if (token && user) {
+                      try {
+                        const response = await fetch(`/api/results?_t=${Date.now()}`, {
+                          headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Cache-Control': 'no-cache'
+                          }
+                        })
+                        
+                        if (response.ok) {
+                          const apiData = await response.json()
+                          console.log('Force refresh API data:', {
+                            resultsCount: apiData.results?.length,
+                            success: apiData.success,
+                            timestamp: apiData.timestamp
+                          })
+                          
+                          // API now always returns results array, even if empty
+                          if (apiData.results && Array.isArray(apiData.results)) {
+                            // Only update if we successfully got fresh data
+                            localStorage.setItem("quizResults", JSON.stringify(apiData.results))
+                            setResults(apiData.results)
+                            setLastUpdated(new Date())
+                            setDataSource('api')
+                            setConnectionStatus('connected')
+                            console.log("Analytics force refreshed with latest data from server")
+                            return
+                          }
+                        } else {
+                          setConnectionStatus('disconnected')
+                          const errorText = await response.text()
+                          console.error('Force refresh API error:', errorText)
+                        }
+                      } catch (error) {
+                        console.error("API refresh failed:", error)
+                      }
+                    }
+                    
+                    // If API fails, inform user but don't touch localStorage
+                    console.warn("Unable to refresh from server - keeping existing data")
+                  } finally {
+                    setRefreshing(false)
+                  }
+                }}
+                disabled={refreshing}
+                className="flex items-center justify-center gap-2 w-full"
+                size="sm"
+              >
+                {refreshing ? "Force Refreshing..." : "Force Refresh"}
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => refreshData(true)}
-              disabled={refreshing}
-              className="flex items-center gap-2"
-            >
-              {refreshing ? "Refreshing..." : "Refresh"}
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={async () => {
+
+          {/* Desktop Layout */}
+          <div className="hidden sm:flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link href="/dashboard">
+                <Button variant="outline" size="icon">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">Performance Analytics</h1>
+                <p className="text-muted-foreground">Detailed insights into your quiz performance</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => refreshData(true)}
+                disabled={refreshing}
+                className="flex items-center gap-2 whitespace-nowrap"
+              >
+                {refreshing ? "Refreshing..." : "Refresh"}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={async () => {
                 setRefreshing(true)
                 try {
                   // Smart refresh: try API first, only update cache if API works
@@ -317,49 +405,94 @@ export default function AnalyticsPage() {
                 }
               }}
               disabled={refreshing}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 whitespace-nowrap"
             >
               {refreshing ? "Force Refreshing..." : "Force Refresh"}
             </Button>
             <ThemeToggle />
           </div>
         </div>
+      </div>
 
-        {/* Data Status Information */}
+        {/* Mobile-Responsive Data Status Information */}
         <div className="mb-4 p-3 bg-muted/50 rounded-lg border">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-4">
-              <span className="text-muted-foreground">
-                {results.length} quiz result{results.length !== 1 ? 's' : ''} found
-              </span>
-              {lastUpdated && (
+          {/* Mobile Layout */}
+          <div className="sm:hidden">
+            <div className="flex flex-col space-y-2 text-sm">
+              <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">
-                  Last updated: {lastUpdated.toLocaleTimeString()}
+                  {results.length} result{results.length !== 1 ? 's' : ''}
                 </span>
-              )}
-              <span className={`px-2 py-1 rounded text-xs font-medium ${
-                dataSource === 'api' 
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                  : dataSource === 'localStorage'
-                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                  : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-              }`}>
-                {dataSource === 'api' ? '🟢 Live Data' : 
-                 dataSource === 'localStorage' ? '🟡 Cached Data' : '🔄 Loading...'}
-              </span>
-              <span className={`px-2 py-1 rounded text-xs font-medium ${
-                connectionStatus === 'connected'
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                  : connectionStatus === 'disconnected'
-                  ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                  : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-              }`}>
-                {connectionStatus === 'connected' ? '📡 Connected' :
-                 connectionStatus === 'disconnected' ? '📡 Offline' : '📡 Checking...'}
-              </span>
+                {lastUpdated && (
+                  <span className="text-muted-foreground text-xs">
+                    {lastUpdated.toLocaleTimeString()}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                  dataSource === 'api' 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                    : dataSource === 'localStorage'
+                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                    : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                }`}>
+                  {dataSource === 'api' ? '🟢 Live' : 
+                   dataSource === 'localStorage' ? '🟡 Cached' : '🔄 Loading'}
+                </span>
+                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                  connectionStatus === 'connected'
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                    : connectionStatus === 'disconnected'
+                    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                    : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                }`}>
+                  {connectionStatus === 'connected' ? '🟢 Online' : 
+                   connectionStatus === 'disconnected' ? '🔴 Offline' : '🔄 Checking'}
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground mt-2">
+                {refreshing ? 'Syncing...' : 'Auto-refresh: 15s'}
+              </div>
             </div>
-            <div className="text-xs text-muted-foreground">
-              {refreshing ? 'Syncing...' : 'Auto-refresh: 15s'}
+          </div>
+          
+          {/* Desktop Layout */}
+          <div className="hidden sm:block">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-4">
+                <span className="text-muted-foreground">
+                  {results.length} quiz result{results.length !== 1 ? 's' : ''} found
+                </span>
+                {lastUpdated && (
+                  <span className="text-muted-foreground">
+                    Last updated: {lastUpdated.toLocaleTimeString()}
+                  </span>
+                )}
+                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                  dataSource === 'api' 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                    : dataSource === 'localStorage'
+                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                    : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                }`}>
+                  {dataSource === 'api' ? '🟢 Live Data' : 
+                   dataSource === 'localStorage' ? '🟡 Cached Data' : '🔄 Loading...'}
+                </span>
+                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                  connectionStatus === 'connected'
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                    : connectionStatus === 'disconnected'
+                    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                    : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                }`}>
+                  {connectionStatus === 'connected' ? '📡 Connected' :
+                   connectionStatus === 'disconnected' ? '📡 Offline' : '📡 Checking...'}
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {refreshing ? 'Syncing...' : 'Auto-refresh: 15s'}
+              </div>
             </div>
           </div>
         </div>
