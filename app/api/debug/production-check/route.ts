@@ -1,6 +1,9 @@
 // Production Environment Checker
 // Add this to your production deployment to check what's happening
 
+// Force this route to be dynamic (not statically rendered)
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
   try {
     console.log('🔍 Production Environment Check Started');

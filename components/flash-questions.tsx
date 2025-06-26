@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { X, Zap, Check, AlertCircle } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2 } from "lucide-react"
+import MathRenderer from "@/components/math-renderer"
 
 interface Question {
   id: string
@@ -19,8 +20,6 @@ interface FlashQuestionsProps {
   isOpen: boolean
   onClose: () => void
   questions: Question[]
-  operationType?: string // "Addition", "Subtraction", "Multiplication", "Division", or "Mixed"
-  maxDigits?: number // Maximum number of digits (2 or 3)
 }
 
 const mathChapters = [
@@ -30,99 +29,79 @@ const mathChapters = [
   "Division"
 ]
 
-// Function to generate simple arithmetic questions with configurable digit limits
-const generateArithmeticQuestion = (type: string, maxDigits: number = 3): Question => {
+// Function to generate simple arithmetic questions
+const generateArithmeticQuestion = (type: string): Question => {
   const id = Math.random().toString(36).slice(2)
   let question = ""
   let correctAnswer = 0
   let options: string[] = []
   
-  // Calculate max number based on digits (2 digits = 99, 3 digits = 999)
-  const maxNumber = Math.pow(10, maxDigits) - 1
-  const minNumber = maxDigits === 2 ? 10 : 100 // Ensure we use appropriate minimum
-  
   switch (type) {
     case "Addition": {
-      // Numbers up to maxDigits for faster calculation
-      const a = Math.floor(Math.random() * maxNumber) + 1
-      const b = Math.floor(Math.random() * maxNumber) + 1
+      const a = Math.floor(Math.random() * 50) + 1
+      const b = Math.floor(Math.random() * 50) + 1
       const result = a + b
-      question = `${a} + ${b} = ?`
+      question = `What is ${a} + ${b}?`
       correctAnswer = result
-      
-      // Generate 3 wrong answers with realistic variations
+      // Generate 3 wrong answers
       const wrongAnswers = [
-        result + Math.floor(Math.random() * 50) + 1,
-        result - Math.floor(Math.random() * 50) - 1,
-        result + Math.floor(Math.random() * 100) + 10
-      ].filter(n => n > 0) // Ensure positive numbers
-      
+        result + Math.floor(Math.random() * 10) + 1,
+        result - Math.floor(Math.random() * 10) - 1,
+        result + Math.floor(Math.random() * 20) + 10
+      ]
       options = [result, ...wrongAnswers].map(n => n.toString())
       break
     }
     case "Subtraction": {
-      // Ensure positive results, numbers up to maxDigits
-      const a = Math.floor(Math.random() * maxNumber) + minNumber // Start from minNumber to ensure room for subtraction
+      const a = Math.floor(Math.random() * 50) + 25 // Ensure positive result
       const b = Math.floor(Math.random() * (a - 1)) + 1
       const result = a - b
-      question = `${a} - ${b} = ?`
+      question = `What is ${a} - ${b}?`
       correctAnswer = result
-      
       const wrongAnswers = [
-        result + Math.floor(Math.random() * 30) + 1,
-        result - Math.floor(Math.random() * 30) - 1,
-        Math.abs(result + Math.floor(Math.random() * 50) - 25)
-      ].filter(n => n >= 0) // Ensure non-negative numbers
-      
+        result + Math.floor(Math.random() * 10) + 1,
+        result - Math.floor(Math.random() * 10) - 1,
+        Math.abs(result - Math.floor(Math.random() * 15) - 5)
+      ]
       options = [result, ...wrongAnswers].map(n => n.toString())
       break
     }
     case "Multiplication": {
-      // Keep numbers smaller for faster calculation based on maxDigits
-      const maxForMultiplication = maxDigits === 2 ? 12 : 99 // For 2-digit, use smaller numbers
-      const a = Math.floor(Math.random() * maxForMultiplication) + 1
-      const b = Math.floor(Math.random() * maxForMultiplication) + 1
+      const a = Math.floor(Math.random() * 12) + 2
+      const b = Math.floor(Math.random() * 12) + 2
       const result = a * b
-      question = `${a} × ${b} = ?`
+      question = `What is ${a} × ${b}?`
       correctAnswer = result
-      
       const wrongAnswers = [
-        result + Math.floor(Math.random() * 50) + 1,
-        result - Math.floor(Math.random() * 50) - 1,
-        result + Math.floor(Math.random() * 100) + 10
-      ].filter(n => n > 0)
-      
+        result + a,
+        result - b,
+        result + Math.floor(Math.random() * 20) + 5
+      ]
       options = [result, ...wrongAnswers].map(n => n.toString())
       break
     }
     case "Division": {
-      // Ensure clean division, keep numbers manageable based on maxDigits
-      const maxForDivision = maxDigits === 2 ? 12 : 99
-      const divisor = Math.floor(Math.random() * (maxForDivision - 1)) + 2 // 2 to maxForDivision
-      const quotient = Math.floor(Math.random() * (maxForDivision - 1)) + 1 // 1 to maxForDivision-1
-      const dividend = divisor * quotient // This ensures clean division
-      
-      question = `${dividend} ÷ ${divisor} = ?`
-      correctAnswer = quotient
-      
+      const b = Math.floor(Math.random() * 10) + 2
+      const result = Math.floor(Math.random() * 15) + 2
+      const a = b * result // Ensure clean division
+      question = `What is ${a} ÷ ${b}?`
+      correctAnswer = result
       const wrongAnswers = [
-        quotient + Math.floor(Math.random() * 10) + 1,
-        Math.max(1, quotient - Math.floor(Math.random() * 10) - 1),
-        quotient + Math.floor(Math.random() * 20) + 5
-      ].filter(n => n > 0)
-      
-      options = [quotient, ...wrongAnswers].map(n => n.toString())
+        result + 1,
+        result - 1,
+        result + Math.floor(Math.random() * 5) + 2
+      ]
+      options = [result, ...wrongAnswers].map(n => n.toString())
       break
     }
     default:
-      // Fallback to simple addition based on maxDigits
-      const maxFallback = maxDigits === 2 ? 99 : 999
-      const a = Math.floor(Math.random() * maxFallback) + 1
-      const b = Math.floor(Math.random() * maxFallback) + 1
+      // Fallback to addition
+      const a = Math.floor(Math.random() * 20) + 1
+      const b = Math.floor(Math.random() * 20) + 1
       const result = a + b
-      question = `${a} + ${b} = ?`
+      question = `What is ${a} + ${b}?`
       correctAnswer = result
-      options = [result, result + 5, result - 3, result + 12].map(n => n.toString())
+      options = [result, result + 1, result - 1, result + 5].map(n => n.toString())
   }
   
   // Shuffle options and find correct index
@@ -139,7 +118,7 @@ const generateArithmeticQuestion = (type: string, maxDigits: number = 3): Questi
   }
 }
 
-export function FlashQuestions({ isOpen, onClose, questions: _questions = [], operationType = "Mixed", maxDigits = 3 }: FlashQuestionsProps) {
+export function FlashQuestions({ isOpen, onClose, questions: _questions = [] }: FlashQuestionsProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
   const [score, setScore] = useState(0)
@@ -154,23 +133,34 @@ export function FlashQuestions({ isOpen, onClose, questions: _questions = [], op
   const [aiError, setAIError] = useState("")
   const [questions, setQuestions] = useState<Question[]>(_questions)
 
+  // Generate initial arithmetic questions only if no questions are provided
+  useEffect(() => {
+    if (isOpen) {
+      if (_questions && _questions.length > 0) {
+        // Use provided questions
+        setQuestions(_questions)
+        setShowSpeedPrompt(false)
+      } else if (questions.length === 0) {
+        // Generate new questions if none provided
+        try {
+          generateNewQuestions()
+        } catch (error) {
+          console.error('Error generating initial questions:', error)
+          setAIError('Failed to generate questions. Please try again.')
+          setShowSpeedPrompt(true)
+        }
+      }
+    }
+  }, [isOpen, _questions])
+
   const generateNewQuestions = () => {
     const newQuestions: Question[] = []
+    const questionTypes = ["Addition", "Subtraction", "Multiplication", "Division"]
     
-    // Generate 10 questions based on operation type
+    // Generate 10 random arithmetic questions
     for (let i = 0; i < 10; i++) {
-      let questionType: string
-      
-      if (operationType === "Mixed") {
-        // For mixed, use all types randomly
-        const questionTypes = ["Addition", "Subtraction", "Multiplication", "Division"]
-        questionType = questionTypes[Math.floor(Math.random() * questionTypes.length)]
-      } else {
-        // Use the specific operation type
-        questionType = operationType
-      }
-      
-      newQuestions.push(generateArithmeticQuestion(questionType, maxDigits))
+      const randomType = questionTypes[Math.floor(Math.random() * questionTypes.length)]
+      newQuestions.push(generateArithmeticQuestion(randomType))
     }
     
     setQuestions(newQuestions)
@@ -181,26 +171,6 @@ export function FlashQuestions({ isOpen, onClose, questions: _questions = [], op
     setAnsweredQuestions([])
     setShowSpeedPrompt(false)
   }
-
-  // Generate initial arithmetic questions only if no questions are provided
-  useEffect(() => {
-    if (isOpen) {
-      if (_questions && _questions.length > 0) {
-        // Use provided questions
-        setQuestions(_questions)
-        setShowSpeedPrompt(false)
-      } else if (questions.length === 0 || operationType) {
-        // Generate new questions if none provided or operation type changed
-        try {
-          generateNewQuestions()
-        } catch (error) {
-          console.error('Error generating initial questions:', error)
-          setAIError('Failed to generate questions. Please try again.')
-          setShowSpeedPrompt(true)
-        }
-      }
-    }
-  }, [isOpen, _questions, operationType, maxDigits])
 
   // useEffect hooks must be called before any early returns to avoid React hook rule violations
   useEffect(() => {
@@ -387,12 +357,8 @@ export function FlashQuestions({ isOpen, onClose, questions: _questions = [], op
                       <Zap className="h-4 w-4 sm:h-6 sm:w-6 text-yellow-400" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h2 className="text-lg sm:text-2xl font-bold truncate">
-                        {operationType === "Mixed" ? `Flash Math Questions (${maxDigits}-Digit)` : `${operationType} Practice (${maxDigits}-Digit)`}
-                      </h2>
-                      <p className="text-purple-200 text-xs sm:text-sm">
-                        {operationType === "Mixed" ? `Quick arithmetic practice with ${maxDigits}-digit numbers` : `Practice ${operationType.toLowerCase()} with ${maxDigits}-digit numbers`}
-                      </p>
+                      <h2 className="text-lg sm:text-2xl font-bold truncate">Flash Questions</h2>
+                      <p className="text-purple-200 text-xs sm:text-sm">Quick rapid-fire practice</p>
                     </div>
                   </div>
                   <Button
@@ -442,12 +408,13 @@ export function FlashQuestions({ isOpen, onClose, questions: _questions = [], op
                     {/* Question or Error State */}
                     {hasValidQuestion ? (
                       <div className={`transition-all duration-500 ${isAnimating ? 'opacity-50 scale-95' : 'opacity-100 scale-100'}`}>
-                        <div className="mb-4 sm:mb-6">                      <div className="text-xs text-purple-300 mb-2 uppercase tracking-wide">
-                          {currentQuestion.section}
-                        </div>
-                        <h3 className="text-lg sm:text-xl font-semibold leading-relaxed">
-                          {currentQuestion.question}
-                        </h3>
+                        <div className="mb-4 sm:mb-6">
+                          <div className="text-xs text-purple-300 mb-2 uppercase tracking-wide">
+                            {currentQuestion.section}
+                          </div>
+                          <h3 className="text-lg sm:text-xl font-semibold leading-relaxed">
+                            <MathRenderer text={currentQuestion.question} />
+                          </h3>
                         </div>
 
                         {/* Options */}
@@ -483,7 +450,9 @@ export function FlashQuestions({ isOpen, onClose, questions: _questions = [], op
                               }`}>
                                 {String.fromCharCode(65 + index)}
                               </div>
-                              <span className="flex-1 text-sm sm:text-base">{option}</span>
+                              <span className="flex-1 text-sm sm:text-base">
+                                <MathRenderer text={option} />
+                              </span>
                               {selectedAnswer !== null && (
                                 <>
                                   {selectedAnswer === index && index === currentQuestion.correctAnswer && (
