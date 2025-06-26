@@ -2,6 +2,9 @@ import { PrismaClient } from "@/lib/generated/prisma"
 
 const prisma = new PrismaClient()
 
+// Force this route to be dynamic (not statically rendered)
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
   try {
     console.log('📊 Admin analytics API called')

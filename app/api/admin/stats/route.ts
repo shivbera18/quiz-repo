@@ -2,6 +2,9 @@ import { type NextRequest, NextResponse } from "next/server"
 
 // Mock data
 const users = [
+
+// Force this route to be dynamic (not statically rendered)
+export const dynamic = 'force-dynamic'
   { id: "1", name: "Admin User", email: "admin@example.com", isAdmin: true },
   { id: "2", name: "Test User", email: "user@example.com", isAdmin: false },
 ]

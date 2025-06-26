@@ -1,0 +1,116 @@
+// Simple API test for Vercel deployment
+// This endpoint helps test basic functionality in Vercel
+
+export async function GET(request: Request) {
+  try {
+    console.log('🧪 Vercel API Test Started');
+    
+    const testResults = {
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+      vercel: {
+        region: process.env.VERCEL_REGION || 'unknown',
+        url: process.env.VERCEL_URL || 'unknown'
+      },
+      database: {
+        hasUrl: !!process.env.DATABASE_URL,
+        urlLength: process.env.DATABASE_URL?.length || 0,
+        urlStart: process.env.DATABASE_URL?.substring(0, 20) + '...' || 'none'
+      }
+    };
+
+    // Test 1: Basic Prisma import
+    let prismaTest = { importSuccess: false, error: null };
+    try {
+      const { PrismaClient } = await import("@/lib/generated/prisma");
+      prismaTest.importSuccess = true;
+      testResults.prismaImport = prismaTest;
+
+      // Test 2: Database connection
+      const prisma = new PrismaClient();
+      await prisma.$connect();
+      testResults.dbConnection = { success: true };
+
+      // Test 3: Simple count query
+      const quizResultCount = await prisma.quizResult.count();
+      const userCount = await prisma.user.count();
+      const quizCount = await prisma.quiz.count();
+      
+      testResults.dbCounts = {
+        quizResults: quizResultCount,
+        users: userCount,
+        quizzes: quizCount
+      };
+
+      // Test 4: Sample query (like analytics)
+      const sampleResult = await prisma.quizResult.findFirst({
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          quiz: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+        },
+        orderBy: {
+          date: 'desc',
+        },
+      });
+
+      testResults.sampleQuery = {
+        found: !!sampleResult,
+        data: sampleResult ? {
+          id: sampleResult.id,
+          userName: sampleResult.userName,
+          quizTitle: sampleResult.quiz?.title,
+          score: sampleResult.totalScore,
+          date: sampleResult.date
+        } : null
+      };
+
+      await prisma.$disconnect();
+
+    } catch (error) {
+      prismaTest.error = error.message;
+      testResults.prismaImport = prismaTest;
+      testResults.error = error.message;
+    }
+
+    console.log('✅ Vercel test completed:', testResults);
+
+    return Response.json({
+      status: 'Vercel API Test',
+      success: true,
+      ...testResults
+    }, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Vercel test failed:', error);
+    return Response.json({
+      status: 'Vercel API Test Failed',
+      success: false,
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    }, { 
+      status: 500,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
+  }
+}
