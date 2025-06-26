@@ -183,21 +183,22 @@ export async function GET(request: NextRequest) {
       quizName: result.quiz?.title || 'Unknown Quiz',
       quizId: result.quizId,
       totalScore: result.totalScore,
-      rawScore: (result.sections as any)?.rawScore || result.totalScore,
-      positiveMarks: (result.sections as any)?.positiveMarks || 0,
-      negativeMarks: (result.sections as any)?.negativeMarks || 0,
-      correctAnswers: (result.sections as any)?.correctAnswers || 0,
-      wrongAnswers: (result.sections as any)?.wrongAnswers || 0,
-      unanswered: (result.sections as any)?.unanswered || 0,
+      rawScore: result.rawScore || result.totalScore,
+      positiveMarks: result.positiveMarks || 0,
+      negativeMarks: result.negativeMarks || 0,
+      correctAnswers: result.correctAnswers || 0,
+      wrongAnswers: result.wrongAnswers || 0,
+      unanswered: result.unanswered || 0,
       sections: {
         reasoning: (result.sections as any)?.reasoning || 0,
         quantitative: (result.sections as any)?.quantitative || 0,
         english: (result.sections as any)?.english || 0
       },
-      questions: result.answers || [],
+      questions: (result.sections as any)?.questions || [],
+      answers: result.answers || [],
       timeSpent: result.timeSpent,
-      negativeMarking: (result.sections as any)?.negativeMarking || true,
-      negativeMarkValue: (result.sections as any)?.negativeMarkValue || 0.25,
+      negativeMarking: result.negativeMarking,
+      negativeMarkValue: result.negativeMarkValue,
       userId: result.userId
     }))
 
