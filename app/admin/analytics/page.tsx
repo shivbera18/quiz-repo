@@ -19,7 +19,6 @@ interface QuizResult {
   _id: string
   id: string
   date: string
-  quizName: string
   quizId: string
   totalScore: number
   sections: {
@@ -53,6 +52,37 @@ interface Quiz {
   createdAt: string
 }
 
+// Utility function to get quiz title with fallbacks
+const getQuizTitle = (result: QuizResult, quizzes: Quiz[]): string => {
+  // First priority: quiz relationship from API
+  if (result.quiz?.title) {
+    return result.quiz.title
+  }
+  
+  // Second priority: find in quizzes array by quizId
+  if (result.quizId) {
+    const quiz = quizzes.find(q => q.id === result.quizId)
+    if (quiz?.title) {
+      return quiz.title
+    }
+  }
+  
+  // Debug logging for problematic cases
+  if (process.env.NODE_ENV === 'development') {
+    console.warn('Unknown Quiz detected:', {
+      resultId: result.id,
+      quizId: result.quizId,
+      hasQuizRelation: !!result.quiz,
+      quizTitle: result.quiz?.title,
+      availableQuizzes: quizzes.length,
+      availableQuizIds: quizzes.map(q => q.id)
+    })
+  }
+  
+  // Fallback
+  return "Unknown Quiz"
+}
+
 export default function AdminAnalyticsPage() {
   const { user, loading } = useAuth(true)
   const [results, setResults] = useState<QuizResult[]>([])
@@ -67,6 +97,7 @@ export default function AdminAnalyticsPage() {
   const [showUserDetails, setShowUserDetails] = useState(false)
   const [selectedUserForDetails, setSelectedUserForDetails] = useState<string | null>(null)
   const [userPerformanceData, setUserPerformanceData] = useState<any>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     if (!loading && user) {
@@ -246,6 +277,7 @@ export default function AdminAnalyticsPage() {
 
         return {
           name: quiz.title && quiz.title.length > 20 ? quiz.title.substring(0, 20) + "..." : quiz.title || 'Unknown Quiz',
+          fullName: quiz.title || 'Unknown Quiz',
           avgScore,
           attempts,
           passRate,
@@ -341,7 +373,7 @@ export default function AdminAnalyticsPage() {
       sectionPerformance,
       detailedResults: filteredResults.map((result) => ({
         date: result.date,
-        quiz: result.quizName,
+        quiz: getQuizTitle(result, quizzes),
         score: result.totalScore,
         timeSpent: result.timeSpent,
         sections: result.sections,
@@ -364,6 +396,8 @@ export default function AdminAnalyticsPage() {
       return
     }
 
+    setIsDeleting(true)
+
     try {
       const response = await fetch(`/api/admin/results?id=${resultId}`, {
         method: "DELETE",
@@ -373,8 +407,14 @@ export default function AdminAnalyticsPage() {
       })
 
       if (response.ok) {
-        // Remove the result from the local state
-        setResults(prev => prev.filter(r => r.id !== resultId && r._id !== resultId))
+        // Remove the result from both local states
+        const filterFn = (r: QuizResult) => r.id !== resultId && r._id !== resultId
+        setResults(prev => prev.filter(filterFn))
+        setFilteredResults(prev => prev.filter(filterFn))
+        
+        // Refresh data from server to ensure consistency
+        await refreshAnalyticsData()
+        
         alert("Quiz result deleted successfully")
       } else {
         throw new Error("Failed to delete result")
@@ -382,6 +422,8 @@ export default function AdminAnalyticsPage() {
     } catch (error) {
       console.error("Error deleting result:", error)
       alert("Failed to delete quiz result")
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -393,6 +435,8 @@ export default function AdminAnalyticsPage() {
     if (!confirm(confirmMessage)) {
       return
     }
+
+    setIsDeleting(true)
 
     try {
       const params = new URLSearchParams({ userId })
@@ -406,14 +450,20 @@ export default function AdminAnalyticsPage() {
       })
 
       if (response.ok) {
-        // Remove the results from the local state
-        setResults(prev => prev.filter(r => {
+        // Remove the results from both local states
+        const filterFn = (r: QuizResult) => {
           const resultUserId = r.userId || r.user?.id
           if (quizId) {
             return !(resultUserId === userId && r.quizId === quizId)
           }
           return resultUserId !== userId
-        }))
+        }
+        setResults(prev => prev.filter(filterFn))
+        setFilteredResults(prev => prev.filter(filterFn))
+        
+        // Refresh data from server to ensure consistency
+        await refreshAnalyticsData()
+        
         alert("Results deleted successfully")
       } else {
         throw new Error("Failed to delete results")
@@ -421,6 +471,8 @@ export default function AdminAnalyticsPage() {
     } catch (error) {
       console.error("Error deleting results:", error)
       alert("Failed to delete results")
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -439,6 +491,43 @@ export default function AdminAnalyticsPage() {
     } catch (error) {
       console.error("Error fetching user details:", error)
       alert("Failed to fetch user details")
+    }
+  }
+
+  // Function to refresh analytics data from server
+  const refreshAnalyticsData = async () => {
+    try {
+      const response = await fetch("/api/admin/analytics")
+      const data = await response.json()
+      
+      if (response.ok) {
+        const apiResults = data.results || []
+        const apiQuizzes = data.quizzes || []
+        
+        setResults(apiResults)
+        setQuizzes(apiQuizzes)
+        
+        // Extract unique users from results
+        const userMap = new Map<string, {id: string; name: string; email: string}>()
+        
+        apiResults.forEach((result: QuizResult) => {
+          const userId = result.userId || result.user?.id
+          const userName = result.userName || result.user?.name
+          const userEmail = result.userEmail || result.user?.email
+          
+          if (userId && userName && userEmail) {
+            userMap.set(userId, {
+              id: userId,
+              name: userName,
+              email: userEmail
+            })
+          }
+        })
+        
+        setUsers(Array.from(userMap.values()))
+      }
+    } catch (error) {
+      console.error("Error refreshing analytics data:", error)
     }
   }
 
@@ -804,7 +893,7 @@ export default function AdminAnalyticsPage() {
                       <td className="p-2">{new Date(result.date).toLocaleDateString()}</td>
                       <td className="p-2 font-medium">{result.userName || result.user?.name || "Unknown"}</td>
                       <td className="p-2 text-muted-foreground">{result.userEmail || result.user?.email || "Unknown"}</td>
-                      <td className="p-2">{result.quizName || result.quiz?.title || "Unknown Quiz"}</td>
+                      <td className="p-2">{getQuizTitle(result, quizzes)}</td>
                       <td className="p-2">
                         <Badge variant={result.totalScore >= 70 ? "default" : "destructive"}>
                           {result.totalScore}%
@@ -831,6 +920,7 @@ export default function AdminAnalyticsPage() {
                               result.userId || result.user?.id || "", 
                               result.quizId
                             )}
+                            disabled={isDeleting}
                             className="h-6 w-6 p-0 text-orange-600 hover:text-orange-700"
                             title="Delete user's results for this quiz"
                           >
@@ -840,6 +930,7 @@ export default function AdminAnalyticsPage() {
                             size="sm"
                             variant="destructive"
                             onClick={() => deleteResult(result.id || result._id || "")}
+                            disabled={isDeleting}
                             className="h-6 w-6 p-0"
                             title="Delete this result"
                           >
@@ -886,6 +977,7 @@ export default function AdminAnalyticsPage() {
                 <Button
                   variant="destructive"
                   onClick={() => deleteUserResults(selectedUser)}
+                  disabled={isDeleting}
                   className="flex items-center gap-2"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -994,6 +1086,7 @@ export default function AdminAnalyticsPage() {
                               size="sm"
                               variant="destructive"
                               onClick={() => deleteUserResults(userPerformanceData.user.id, quiz.quizId)}
+                              disabled={isDeleting}
                               className="flex items-center gap-1"
                             >
                               <Trash2 className="h-3 w-3" />
@@ -1037,6 +1130,7 @@ export default function AdminAnalyticsPage() {
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => deleteResult(attempt.id)}
+                                    disabled={isDeleting}
                                     className="h-5 w-5 p-0 text-red-500 hover:text-red-700"
                                   >
                                     <Trash2 className="h-3 w-3" />

@@ -7,13 +7,48 @@ export async function GET(request: Request) {
     // Optionally, add authentication here
     const results = await prisma.quizResult.findMany({
       include: {
-        quiz: true,
-        user: true,
+        quiz: {
+          select: {
+            id: true,
+            title: true
+          }
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
       },
+      orderBy: {
+        date: 'desc'
+      }
     })
-    const quizzes = await prisma.quiz.findMany()
+    
+    const quizzes = await prisma.quiz.findMany({
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        questions: true,
+        isActive: true,
+        createdAt: true
+      }
+    })
+    
+    // In development, log any results with missing quiz data
+    if (process.env.NODE_ENV === 'development') {
+      const problematicResults = results.filter(r => !r.quiz?.title)
+      if (problematicResults.length > 0) {
+        console.warn(`Found ${problematicResults.length} results without quiz titles:`, 
+          problematicResults.map(r => ({ id: r.id, quizId: r.quizId })))
+      }
+    }
+    
     return Response.json({ results, quizzes })
   } catch (error) {
-    return Response.json({ message: "Internal server error" }, { status: 500 })
+    console.error("Admin analytics API error:", error)
+    return Response.json({ message: "Internal server error", error: error instanceof Error ? error.message : String(error) }, { status: 500 })
   }
 }
