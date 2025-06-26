@@ -4,6 +4,8 @@ const prisma = new PrismaClient()
 
 export async function GET(request: Request) {
   try {
+    console.log('📊 Admin analytics API called')
+    
     // Optionally, add authentication here
     const results = await prisma.quizResult.findMany({
       include: {
@@ -26,6 +28,8 @@ export async function GET(request: Request) {
       }
     })
     
+    console.log(`📈 Found ${results.length} quiz results in database`)
+    
     const quizzes = await prisma.quiz.findMany({
       select: {
         id: true,
@@ -36,6 +40,8 @@ export async function GET(request: Request) {
         createdAt: true
       }
     })
+    
+    console.log(`📚 Found ${quizzes.length} quizzes in database`)
     
     // In development, log any results with missing quiz data
     if (process.env.NODE_ENV === 'development') {
@@ -48,7 +54,7 @@ export async function GET(request: Request) {
     
     return Response.json({ results, quizzes })
   } catch (error) {
-    console.error("Admin analytics API error:", error)
+    console.error("❌ Admin analytics API error:", error)
     return Response.json({ message: "Internal server error", error: error instanceof Error ? error.message : String(error) }, { status: 500 })
   }
 }

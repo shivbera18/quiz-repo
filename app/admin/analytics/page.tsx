@@ -101,72 +101,33 @@ export default function AdminAnalyticsPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      // Fetch analytics data from backend API
+      // Always fetch analytics data from backend API (no localStorage fallback)
       fetch("/api/admin/analytics")
         .then((res) => res.json())
         .then((data) => {
-          // Safely handle the API response
           const apiResults = data.results || []
           const apiQuizzes = data.quizzes || []
-          
-          // If no API data, try to get data from localStorage as fallback
-          if (apiResults.length === 0) {
-            try {
-              if (typeof window !== 'undefined') {
-                const localResults = localStorage.getItem("quizResults")
-                if (localResults) {
-                  const parsedResults = JSON.parse(localResults)
-                  setResults(parsedResults)
-                  setFilteredResults(parsedResults)
-                }
-              }
-            } catch (error) {
-              console.warn("Error loading local quiz results:", error)
+          setResults(apiResults)
+          setFilteredResults(apiResults)
+          // Extract unique users from results
+          const userMap = new Map<string, {id: string; name: string; email: string}>()
+          apiResults.forEach((result: QuizResult) => {
+            const userId = result.userId || result.user?.id
+            const userName = result.userName || result.user?.name
+            const userEmail = result.userEmail || result.user?.email
+            if (userId && userName && userEmail) {
+              userMap.set(userId, {
+                id: userId,
+                name: userName,
+                email: userEmail
+              })
             }
-          } else {
-            setResults(apiResults)
-            setFilteredResults(apiResults)
-            
-            // Extract unique users from results
-            const userMap = new Map<string, {id: string; name: string; email: string}>()
-            
-            apiResults.forEach((result: QuizResult) => {
-              const userId = result.userId || result.user?.id
-              const userName = result.userName || result.user?.name
-              const userEmail = result.userEmail || result.user?.email
-              
-              if (userId && userName && userEmail) {
-                userMap.set(userId, {
-                  id: userId,
-                  name: userName,
-                  email: userEmail
-                })
-              }
-            })
-            
-            setUsers(Array.from(userMap.values()))
-          }
-          
+          })
+          setUsers(Array.from(userMap.values()))
           setQuizzes(apiQuizzes)
         })
         .catch((error) => {
-          console.error("Error fetching admin analytics:", error)
-          // Fallback to localStorage data
-          try {
-            if (typeof window !== 'undefined') {
-              const localResults = localStorage.getItem("quizResults")
-              if (localResults) {
-                const parsedResults = JSON.parse(localResults)
-                setResults(parsedResults)
-                setFilteredResults(parsedResults)
-              }
-            }
-          } catch (fallbackError) {
-            console.warn("Error loading fallback data:", fallbackError)
-            setResults([])
-            setQuizzes([])
-            setFilteredResults([])
-          }
+          console.error("Error fetching admin analytics (no fallback):", error)
         })
     }
   }, [loading, user])
@@ -413,7 +374,7 @@ export default function AdminAnalyticsPage() {
         setFilteredResults(prev => prev.filter(filterFn))
         
         // Refresh data from server to ensure consistency
-        await refreshAnalyticsData()
+        await forceServerRefresh()
         
         alert("Quiz result deleted successfully")
       } else {
@@ -462,7 +423,7 @@ export default function AdminAnalyticsPage() {
         setFilteredResults(prev => prev.filter(filterFn))
         
         // Refresh data from server to ensure consistency
-        await refreshAnalyticsData()
+        await forceServerRefresh()
         
         alert("Results deleted successfully")
       } else {
@@ -495,40 +456,17 @@ export default function AdminAnalyticsPage() {
   }
 
   // Function to refresh analytics data from server
-  const refreshAnalyticsData = async () => {
-    try {
-      const response = await fetch("/api/admin/analytics")
-      const data = await response.json()
-      
-      if (response.ok) {
+  const forceServerRefresh = () => {
+    fetch("/api/admin/analytics?_t=" + Date.now())
+      .then((res) => res.json())
+      .then((data) => {
         const apiResults = data.results || []
-        const apiQuizzes = data.quizzes || []
-        
         setResults(apiResults)
-        setQuizzes(apiQuizzes)
-        
-        // Extract unique users from results
-        const userMap = new Map<string, {id: string; name: string; email: string}>()
-        
-        apiResults.forEach((result: QuizResult) => {
-          const userId = result.userId || result.user?.id
-          const userName = result.userName || result.user?.name
-          const userEmail = result.userEmail || result.user?.email
-          
-          if (userId && userName && userEmail) {
-            userMap.set(userId, {
-              id: userId,
-              name: userName,
-              email: userEmail
-            })
-          }
-        })
-        
-        setUsers(Array.from(userMap.values()))
-      }
-    } catch (error) {
-      console.error("Error refreshing analytics data:", error)
-    }
+        setFilteredResults(apiResults)
+      })
+      .catch((error) => {
+        console.error("Force server refresh failed:", error)
+      })
   }
 
   const stats = getOverallStats()

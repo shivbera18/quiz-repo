@@ -96,21 +96,21 @@ export async function POST(request: NextRequest) {
         userName: decoded.name || 'Unknown User',
         userEmail: decoded.email || 'unknown@email.com',
         totalScore,
+        rawScore: rawScore || totalScore,
+        positiveMarks: positiveMarks || 0,
+        negativeMarks: negativeMarks || 0,
+        correctAnswers: correctAnswers || 0,
+        wrongAnswers: wrongAnswers || 0,
+        unanswered: unanswered || 0,
+        timeSpent: timeSpent || 0,
+        negativeMarking: negativeMarking || false,
+        negativeMarkValue: negativeMarkValue || 0.25,
         sections: {
           reasoning: sections?.reasoning || 0,
           quantitative: sections?.quantitative || 0,
           english: sections?.english || 0,
-          rawScore,
-          positiveMarks,
-          negativeMarks,
-          correctAnswers,
-          wrongAnswers,
-          unanswered,
-          negativeMarking,
-          negativeMarkValue
         },
         answers: questions || [],
-        timeSpent: timeSpent || 0,
       },
     })
 
@@ -159,11 +159,19 @@ export async function GET(request: NextRequest) {
     const authHeader = request.headers.get("authorization")
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       console.log('❌ No authorization header')
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ message: "Unauthorized", results: [] }, { status: 401 })
     }
 
     const token = authHeader.substring(7)
-    const decoded = await validateToken(token)
+    
+    // Validate token and get user info
+    let decoded
+    try {
+      decoded = await validateToken(token)
+    } catch (tokenError) {
+      console.log('❌ Token validation failed:', tokenError instanceof Error ? tokenError.message : 'Unknown error')
+      return NextResponse.json({ message: "Invalid or expired token", results: [] }, { status: 401 })
+    }
     
     console.log('✅ Token validated for user:', decoded.userId)
 
@@ -210,13 +218,26 @@ export async function GET(request: NextRequest) {
     }))
 
     console.log('✅ Returning transformed results:', transformedResults.length)
-    return NextResponse.json({ results: transformedResults })
+    
+    // Always return results array, even if empty
+    return NextResponse.json({ 
+      results: transformedResults,
+      success: true,
+      timestamp: new Date().toISOString(),
+      count: transformedResults.length
+    })
 
   } catch (error) {
     console.error("❌ Error fetching quiz results:", error)
+    
+    // Return empty results array instead of error for better UX
     return NextResponse.json({ 
+      results: [],
+      success: false,
       message: "Failed to fetch quiz results",
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : "Unknown error",
+      timestamp: new Date().toISOString(),
+      count: 0
     }, { status: 500 })
   }
 }
