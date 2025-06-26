@@ -9,7 +9,10 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Banking Exam Preparation",
   description: "Comprehensive banking exam preparation platform",
-    generator: 'v0.dev'
+  generator: 'v0.dev',
+  manifest: '/manifest.json',
+  themeColor: '#7c3aed',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
 }
 
 export default function RootLayout({
