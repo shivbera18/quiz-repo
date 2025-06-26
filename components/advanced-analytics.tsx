@@ -22,6 +22,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 
 interface QuizResult {
   _id: string
+  id?: string
   date: string
   quizName: string
   quizId: string
@@ -48,6 +49,9 @@ interface QuizResult {
   timeSpent: number
   negativeMarking: boolean
   negativeMarkValue: number
+  userId?: string
+  userName?: string
+  userEmail?: string
   user?: {
     id: string
     name: string
@@ -149,18 +153,33 @@ export default function AdvancedAnalytics({ results = [], currentUserId, isStude
   // Extract users with comprehensive error handling
   let users: { id: string; name: string; email: string }[] = [];
   try {
-    const userIds = Array.from(new Set(validResults.map(r => r.user?.id).filter(Boolean)))
-    users = userIds.map(id => {
-      const result = validResults.find(r => r.user?.id === id);
-      return result?.user;
-    }).filter((user): user is { id: string; name: string; email: string; } => {
-      const isValidUser = !!user && !!user.id && !!user.name
-      if (!isValidUser && user) {
-        console.warn('Invalid user structure:', user)
+    // Create a comprehensive map of users from multiple possible fields
+    const userMap = new Map<string, { id: string; name: string; email: string }>();
+    
+    validResults.forEach(result => {
+      // Extract user information from multiple possible sources
+      const userId = result.user?.id || result.userId;
+      const userName = result.user?.name || result.userName || 'Unknown User';
+      const userEmail = result.user?.email || result.userEmail || 'Unknown Email';
+      
+      if (userId && userName !== 'Unknown User' && userEmail !== 'Unknown Email') {
+        userMap.set(userId, {
+          id: userId,
+          name: userName,
+          email: userEmail
+        });
+      } else {
+        console.warn('Incomplete user data in result:', {
+          resultId: result._id || result.id,
+          userId,
+          userName,
+          userEmail
+        });
       }
-      return isValidUser
     });
-    console.log('Extracted users:', users)
+    
+    users = Array.from(userMap.values());
+    console.log('Extracted users:', users.map(u => ({ id: u.id, name: u.name })));
   } catch (error) {
     console.error('Error extracting users:', error)
     users = []
@@ -188,10 +207,31 @@ export default function AdvancedAnalytics({ results = [], currentUserId, isStude
   const userFilteredResults = filteredResults.filter(result => {
     try {
       if (selectedUserId === 'all') return true;
-      const matches = result.user?.id === selectedUserId;
+      
+      // Check multiple possible user ID fields for comprehensive matching
+      const possibleUserIds = [
+        result.user?.id,           // Standard user object ID
+        result.userId,             // Direct userId field
+        result.userEmail,          // Sometimes email is used as ID
+        result._id,                // In case result ID matches user ID
+        result.id                  // Alternative result ID
+      ].filter(id => id); // Remove null/undefined values
+      
+      const matches = possibleUserIds.some(userId => userId === selectedUserId);
+      
       if (!matches) {
-        console.log(`Result ${result._id} user ${result.user?.id} does not match ${selectedUserId}`)
+        console.log(`Result ${result._id || result.id} user fields:`, {
+          'user?.id': result.user?.id,
+          'userId': result.userId, 
+          'userEmail': result.userEmail,
+          'userName': result.userName || result.user?.name,
+          'selectedUserId': selectedUserId,
+          'possibleIds': possibleUserIds
+        });
+      } else {
+        console.log(`✅ Match found for result ${result._id || result.id}`);
       }
+      
       return matches;
     } catch (error) {
       console.error('Error filtering user results:', error);
