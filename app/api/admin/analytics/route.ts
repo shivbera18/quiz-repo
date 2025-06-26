@@ -9,23 +9,23 @@ export async function GET(request: Request) {
     // Optionally, add authentication here
     const results = await prisma.quizResult.findMany({
       include: {
-        quiz: {
-          select: {
-            id: true,
-            title: true
-          }
-        },
         user: {
           select: {
             id: true,
             name: true,
-            email: true
-          }
+            email: true,
+          },
+        },
+        quiz: {
+          select: {
+            id: true,
+            title: true,
+          },
         },
       },
       orderBy: {
-        date: 'desc'
-      }
+        date: 'desc',
+      },
     })
     
     console.log(`📈 Found ${results.length} quiz results in database`)
