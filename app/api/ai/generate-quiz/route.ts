@@ -7,9 +7,6 @@ import { stringifyForDatabase } from "@/lib/database-utils"
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
 const prisma = new PrismaClient()
 
-// Force this route to be dynamic (not statically rendered)
-export const dynamic = 'force-dynamic'
-
 export async function POST(request: NextRequest) {
   try {
     const {

@@ -2,9 +2,6 @@ import { PrismaClient } from "@/lib/generated/prisma"
 
 const prisma = new PrismaClient()
 
-// Force this route to be dynamic (not statically rendered)
-export const dynamic = 'force-dynamic'
-
 export async function GET(request: Request) {
   try {
     console.log('📊 Admin analytics API called')
@@ -12,23 +9,23 @@ export async function GET(request: Request) {
     // Optionally, add authentication here
     const results = await prisma.quizResult.findMany({
       include: {
+        quiz: {
+          select: {
+            id: true,
+            title: true
+          }
+        },
         user: {
           select: {
             id: true,
             name: true,
-            email: true,
-          },
-        },
-        quiz: {
-          select: {
-            id: true,
-            title: true,
-          },
+            email: true
+          }
         },
       },
       orderBy: {
-        date: 'desc',
-      },
+        date: 'desc'
+      }
     })
     
     console.log(`📈 Found ${results.length} quiz results in database`)
@@ -55,22 +52,9 @@ export async function GET(request: Request) {
       }
     }
     
-    return Response.json({ results, quizzes }, {
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
-    })
+    return Response.json({ results, quizzes })
   } catch (error) {
     console.error("❌ Admin analytics API error:", error)
-    return Response.json({ message: "Internal server error", error: error instanceof Error ? error.message : String(error) }, { 
-      status: 500,
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
-    })
+    return Response.json({ message: "Internal server error", error: error instanceof Error ? error.message : String(error) }, { status: 500 })
   }
 }

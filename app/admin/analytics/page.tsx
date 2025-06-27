@@ -102,13 +102,7 @@ export default function AdminAnalyticsPage() {
   useEffect(() => {
     if (!loading && user) {
       // Always fetch analytics data from backend API with cache busting (no localStorage fallback)
-      fetch(`/api/admin/analytics?_t=${Date.now()}`, {
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          "Pragma": "no-cache",
-          "Expires": "0"
-        }
-      })
+      fetch(`/api/admin/analytics?_t=${Date.now()}`)
         .then((res) => res.json())
         .then((data) => {
           const apiResults = data.results || []
@@ -448,13 +442,7 @@ export default function AdminAnalyticsPage() {
 
   const viewUserDetails = async (userId: string) => {
     try {
-      const response = await fetch(`/api/admin/user-performance?userId=${userId}&_t=${Date.now()}`, {
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          "Pragma": "no-cache",
-          "Expires": "0"
-        }
-      })
+      const response = await fetch(`/api/admin/user-performance?userId=${userId}`)
       const data = await response.json()
       
       if (response.ok) {
@@ -474,13 +462,7 @@ export default function AdminAnalyticsPage() {
   const forceServerRefresh = async () => {
     try {
       console.log('🔄 Force refreshing admin analytics...')
-      const response = await fetch("/api/admin/analytics?_t=" + Date.now(), {
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          "Pragma": "no-cache",
-          "Expires": "0"
-        }
-      })
+      const response = await fetch("/api/admin/analytics?_t=" + Date.now())
       if (response.ok) {
         const data = await response.json()
         const apiResults = data.results || []
