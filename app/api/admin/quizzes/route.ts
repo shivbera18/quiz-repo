@@ -77,15 +77,15 @@ export async function POST(request: NextRequest) {
       data: {
         title,
         description,
-        timeLimit: duration, // assuming your schema uses timeLimit
+        timeLimit: duration,
         chapterId: chapterId || null,
         sections: stringifyForDatabase(sections),
         questions: stringifyForDatabase(questions || []),
         isActive: true,
-        createdAt: new Date(),
         createdBy: "admin",
         negativeMarking: negativeMarking ?? true,
         negativeMarkValue: negativeMarkValue ?? 0.25,
+        // Remove createdAt - it's handled automatically by Prisma @default(now())
       },
     })
 
@@ -102,6 +102,35 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ quiz: responseQuiz })
   } catch (error) {
     console.error("Error creating quiz:", error)
-    return NextResponse.json({ message: "Internal server error" }, { status: 500 })
+    
+    // Type-safe error handling
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorCode = (error as any)?.code
+    
+    console.error("Error details:", {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: errorMessage,
+      code: errorCode
+    })
+    
+    // Provide more specific error messages
+    if (errorCode === 'P2002') {
+      return NextResponse.json({ 
+        message: "Quiz with this title already exists",
+        error: "Unique constraint violation" 
+      }, { status: 400 })
+    }
+    
+    if (errorCode === 'P2003') {
+      return NextResponse.json({ 
+        message: "Invalid chapter ID provided",
+        error: "Foreign key constraint violation" 
+      }, { status: 400 })
+    }
+    
+    return NextResponse.json({ 
+      message: "Failed to create quiz in database",
+      error: errorMessage
+    }, { status: 500 })
   }
 }
