@@ -59,6 +59,7 @@ interface Chapter {
 
 export default function AdminPage() {
   const { user, loading, logout } = useAuth(true) // Require admin access
+  const [mounted, setMounted] = useState(false)
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
   const [adminLoading, setAdminLoading] = useState(true)
   const [error, setError] = useState("")
@@ -213,6 +214,11 @@ export default function AdminPage() {
     },
   ]
 
+  // Prevent hydration mismatch by only rendering after client mount
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   useEffect(() => {
     if (!loading && user) {
       // Fetch quizzes and analytics from backend API
@@ -335,15 +341,15 @@ export default function AdminPage() {
       return
     }
     
-    if (!newQuiz.subjectId || newQuiz.subjectId === "none") {
-      setError("Please select a subject")
-      return
-    }
-    
-    if (!newQuiz.chapterId || newQuiz.chapterId === "none") {
-      setError("Please select a chapter")
-      return
-    }
+    // Note: Subject and Chapter are optional - allow creating quizzes without them
+    console.log('Creating quiz with data:', {
+      title: newQuiz.title,
+      description: newQuiz.description,
+      duration: newQuiz.duration,
+      chapterId: newQuiz.chapterId === "none" ? null : newQuiz.chapterId,
+      sections: newQuiz.sections,
+      subjectId: newQuiz.subjectId === "none" ? null : newQuiz.subjectId
+    })
     
     try {
       setError("")
@@ -358,14 +364,22 @@ export default function AdminPage() {
           title: newQuiz.title,
           description: newQuiz.description,
           duration: newQuiz.duration,
-          chapterId: newQuiz.chapterId,
+          chapterId: newQuiz.chapterId === "none" ? null : newQuiz.chapterId,
           sections: newQuiz.sections,
           questions: [],
           negativeMarking: newQuiz.negativeMarking,
           negativeMarkValue: newQuiz.negativeMarkValue,
         }),
       })
-      if (!res.ok) throw new Error("Failed to create quiz")
+      if (!res.ok) {
+        const errorData = await res.json()
+        console.error('Quiz creation failed:', errorData)
+        throw new Error(errorData.message || errorData.error || "Failed to create quiz")
+      }
+      
+      const data = await res.json()
+      console.log('Quiz creation successful:', data)
+      
       setSuccess("Quiz created successfully!")
       setNewQuiz({
         title: "",
@@ -379,10 +393,11 @@ export default function AdminPage() {
       })
       setShowQuizForm(false)
       // Refetch quizzes
-      const data = await res.json()
       setQuizzes((prev) => [...prev, data.quiz])
     } catch (err) {
-      setError("Failed to create quiz in database")
+      console.error('Quiz creation error:', err)
+      const errorMessage = err instanceof Error ? err.message : "Failed to create quiz in database"
+      setError(errorMessage)
     }
   }
 
@@ -631,16 +646,22 @@ export default function AdminPage() {
     averageScore: analytics.averageScore,
   }
 
-  // Icon mapping function to render proper icons
+  // Icon mapping function to render proper icons (client-side only to prevent hydration errors)
   const getSubjectIcon = (iconName: string) => {
+    // Only render icons after component mounts to prevent hydration mismatch
+    if (!mounted) {
+      return <span className="text-2xl">📚</span> // Default fallback during SSR
+    }
+    
+    // Use emoji icons only to prevent hydration mismatch with SVG icons
     const iconMap: { [key: string]: JSX.Element } = {
-      'BookOpen': <BookOpen className="w-6 h-6" />,
-      'Brain': <Brain className="w-6 h-6" />,
-      'Hash': <Hash className="w-6 h-6" />,
-      'Pencil': <Pencil className="w-6 h-6" />,
-      'Palette': <Palette className="w-6 h-6" />,
-      'Music': <Music className="w-6 h-6" />,
-      // Fallback to emoji icons
+      'BookOpen': <span className="text-2xl">📖</span>,
+      'Brain': <span className="text-2xl">🧠</span>,
+      'Hash': <span className="text-2xl">🔢</span>,
+      'Pencil': <span className="text-2xl">✏️</span>,
+      'Palette': <span className="text-2xl">🎨</span>,
+      'Music': <span className="text-2xl">🎵</span>,
+      // Emoji icons (no hydration issues)
       '📚': <span className="text-2xl">📚</span>,
       '🧠': <span className="text-2xl">🧠</span>,
       '🔢': <span className="text-2xl">🔢</span>,
@@ -649,7 +670,7 @@ export default function AdminPage() {
       '🎵': <span className="text-2xl">🎵</span>
     };
     
-    return iconMap[iconName] || <BookOpen className="w-6 h-6" />;
+    return iconMap[iconName] || <span className="text-2xl">📚</span>;
   }
 
   if (loading || adminLoading) {
@@ -1314,17 +1335,51 @@ export default function AdminPage() {
                           <div>
                             <span className="text-muted-foreground text-sm">Sections:</span>
                             <div className="flex flex-wrap gap-1 mt-1">
-                              {Array.isArray(quiz.sections) && quiz.sections.length > 0 ? (
-                                quiz.sections.map((section) => (
-                                  <Badge key={section} variant="outline" className="text-xs">
-                                    {section}
+                              {(() => {
+                                // Handle different section formats
+                                if (!quiz.sections) {
+                                  return (
+                                    <Badge variant="outline" className="text-xs text-muted-foreground">
+                                      No sections
+                                    </Badge>
+                                  )
+                                }
+
+                                // If sections is an array of strings
+                                if (Array.isArray(quiz.sections) && quiz.sections.length > 0) {
+                                  return quiz.sections.map((section, index) => {
+                                    // Handle if section is a string
+                                    if (typeof section === 'string') {
+                                      return (
+                                        <Badge key={section} variant="outline" className="text-xs">
+                                          {section}
+                                        </Badge>
+                                      )
+                                    }
+                                    // Handle if section is an object with name property
+                                    if (typeof section === 'object' && section.name) {
+                                      return (
+                                        <Badge key={section.name || index} variant="outline" className="text-xs">
+                                          {section.name}
+                                        </Badge>
+                                      )
+                                    }
+                                    // Fallback for unknown format
+                                    return (
+                                      <Badge key={index} variant="outline" className="text-xs">
+                                        Section {index + 1}
+                                      </Badge>
+                                    )
+                                  })
+                                }
+
+                                // Fallback for other formats
+                                return (
+                                  <Badge variant="outline" className="text-xs text-muted-foreground">
+                                    No sections
                                   </Badge>
-                                ))
-                              ) : (
-                                <Badge variant="outline" className="text-xs text-muted-foreground">
-                                  No sections
-                                </Badge>
-                              )}
+                                )
+                              })()}
                             </div>
                           </div>
 
@@ -1423,12 +1478,12 @@ export default function AdminPage() {
                             <SelectItem value="📝">📝 Writing</SelectItem>
                             <SelectItem value="🎨">🎨 Art</SelectItem>
                             <SelectItem value="🎵">🎵 Music</SelectItem>
-                            <SelectItem value="BookOpen">📖 Book Open (Icon)</SelectItem>
-                            <SelectItem value="Brain">🧠 Brain (Icon)</SelectItem>
-                            <SelectItem value="Hash">🔢 Hash (Icon)</SelectItem>
-                            <SelectItem value="Pencil">✏️ Pencil (Icon)</SelectItem>
-                            <SelectItem value="Palette">🎨 Palette (Icon)</SelectItem>
-                            <SelectItem value="Music">🎵 Music (Icon)</SelectItem>
+                            <SelectItem value="BookOpen">📖 Book Open</SelectItem>
+                            <SelectItem value="Brain">🧠 Brain Alt</SelectItem>
+                            <SelectItem value="Hash">🔢 Hash</SelectItem>
+                            <SelectItem value="Pencil">✏️ Pencil</SelectItem>
+                            <SelectItem value="Palette">🎨 Palette</SelectItem>
+                            <SelectItem value="Music">🎵 Music Alt</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
