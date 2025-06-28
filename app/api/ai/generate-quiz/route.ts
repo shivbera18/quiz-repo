@@ -129,11 +129,11 @@ Number of questions: ${questionsPerSection}`
           sections: stringifyForDatabase(sections),
           questions: stringifyForDatabase(allQuestions),
           isActive: true,
-          createdAt: new Date(),
           createdBy: "admin",
           negativeMarking: negativeMarking ?? true,
           negativeMarkValue: negativeMarkValue ?? 0.25,
           chapterId: chapterId || null,
+          // Remove createdAt - it's handled automatically by Prisma @default(now())
         },
       })
 
@@ -172,9 +172,35 @@ Number of questions: ${questionsPerSection}`
       })
 
     } catch (dbError) {
-      console.error('Database error:', dbError)
+      console.error('Database error creating quiz:', dbError)
+      
+      // Type-safe error handling
+      const errorMessage = dbError instanceof Error ? dbError.message : String(dbError)
+      const errorCode = (dbError as any)?.code
+      
+      console.error("Database error details:", {
+        name: dbError instanceof Error ? dbError.name : 'Unknown',
+        message: errorMessage,
+        code: errorCode
+      })
+      
+      // Provide more specific error messages
+      if (errorCode === 'P2002') {
+        return NextResponse.json(
+          { error: 'Quiz with this title already exists' },
+          { status: 400 }
+        )
+      }
+      
+      if (errorCode === 'P2003') {
+        return NextResponse.json(
+          { error: 'Invalid chapter ID provided' },
+          { status: 400 }
+        )
+      }
+      
       return NextResponse.json(
-        { error: 'Failed to save quiz to database' },
+        { error: 'Failed to create quiz in database', details: errorMessage },
         { status: 500 }
       )
     }
