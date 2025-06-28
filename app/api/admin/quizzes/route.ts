@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
         title: quiz.title,
         description: quiz.description,
         duration: quiz.timeLimit,
+        chapterId: quiz.chapterId,
         sections: sectionsArr,
         questions: questionsArr,
         isActive: quiz.isActive,
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
 
-    const { title, description, duration, sections, questions, negativeMarking, negativeMarkValue } = await request.json()
+    const { title, description, duration, chapterId, sections, questions, negativeMarking, negativeMarkValue } = await request.json()
 
     // Save new quiz to the database using Prisma
     const createdQuiz = await prisma.quiz.create({
@@ -77,6 +78,7 @@ export async function POST(request: NextRequest) {
         title,
         description,
         timeLimit: duration, // assuming your schema uses timeLimit
+        chapterId: chapterId || null,
         sections: stringifyForDatabase(sections),
         questions: stringifyForDatabase(questions || []),
         isActive: true,
@@ -99,6 +101,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ quiz: responseQuiz })
   } catch (error) {
+    console.error("Error creating quiz:", error)
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }

@@ -17,7 +17,11 @@ export function parseJsonField(field: any): any[] {
 export function stringifyForDatabase(data: any): any {
   // For SQLite development, we need to stringify
   // For PostgreSQL production, we can pass the object directly
-  if (process.env.NODE_ENV === "development" && process.env.DATABASE_URL?.includes("file:")) {
+  const databaseUrl = process.env.DATABASE_URL || ""
+  const isDevMode = !process.env.NODE_ENV || process.env.NODE_ENV === "development"
+  const isSQLite = databaseUrl.includes("file:") || databaseUrl.includes("sqlite")
+  
+  if (isDevMode || isSQLite) {
     return JSON.stringify(data);
   }
   return data;

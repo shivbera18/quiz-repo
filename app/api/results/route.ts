@@ -3,6 +3,9 @@ import { PrismaClient } from "@/lib/generated/prisma"
 
 const prisma = new PrismaClient()
 
+// Force dynamic rendering to ensure fresh data
+export const dynamic = 'force-dynamic'
+
 // Helper function to validate simple token and extract user info
 const validateToken = async (token: string) => {
   try {
@@ -96,21 +99,13 @@ export async function POST(request: NextRequest) {
         userName: decoded.name || 'Unknown User',
         userEmail: decoded.email || 'unknown@email.com',
         totalScore,
-        rawScore: rawScore || totalScore,
-        positiveMarks: positiveMarks || 0,
-        negativeMarks: negativeMarks || 0,
-        correctAnswers: correctAnswers || 0,
-        wrongAnswers: wrongAnswers || 0,
-        unanswered: unanswered || 0,
         timeSpent: timeSpent || 0,
-        negativeMarking: negativeMarking || false,
-        negativeMarkValue: negativeMarkValue || 0.25,
-        sections: {
+        sections: JSON.stringify({
           reasoning: sections?.reasoning || 0,
           quantitative: sections?.quantitative || 0,
           english: sections?.english || 0,
-        },
-        answers: questions || [],
+        }),
+        answers: JSON.stringify(questions || []),
       },
     })
 
@@ -192,30 +187,49 @@ export async function GET(request: NextRequest) {
     console.log(`📈 Found ${results.length} quiz results for user ${decoded.userId}`)
 
     // Transform database results to match frontend format
-    const transformedResults = results.map(result => ({
-      _id: result.id,
-      date: result.date.toISOString(),
-      quizName: result.quiz?.title || 'Unknown Quiz',
-      quizId: result.quizId,
-      totalScore: result.totalScore,
-      rawScore: result.rawScore || result.totalScore,
-      positiveMarks: result.positiveMarks || 0,
-      negativeMarks: result.negativeMarks || 0,
-      correctAnswers: result.correctAnswers || 0,
-      wrongAnswers: result.wrongAnswers || 0,
-      unanswered: result.unanswered || 0,
-      sections: {
-        reasoning: (result.sections as any)?.reasoning || 0,
-        quantitative: (result.sections as any)?.quantitative || 0,
-        english: (result.sections as any)?.english || 0
-      },
-      questions: (result.sections as any)?.questions || [],
-      answers: result.answers || [],
-      timeSpent: result.timeSpent,
-      negativeMarking: result.negativeMarking,
-      negativeMarkValue: result.negativeMarkValue,
-      userId: result.userId
-    }))
+    const transformedResults = results.map(result => {
+      // Parse JSON strings safely
+      let sections = { reasoning: 0, quantitative: 0, english: 0 }
+      let answers: any[] = []
+      
+      try {
+        if (result.sections) {
+          const parsedSections = JSON.parse(result.sections)
+          sections = { ...sections, ...parsedSections }
+        }
+      } catch (e) {
+        console.warn('Failed to parse sections JSON:', e)
+      }
+      
+      try {
+        if (result.answers) {
+          answers = JSON.parse(result.answers)
+        }
+      } catch (e) {
+        console.warn('Failed to parse answers JSON:', e)
+      }
+
+      return {
+        _id: result.id,
+        date: result.date.toISOString(),
+        quizName: result.quiz?.title || 'Unknown Quiz',
+        quizId: result.quizId,
+        totalScore: result.totalScore,
+        rawScore: result.totalScore, // Use totalScore as rawScore since we don't have separate field
+        positiveMarks: sections.reasoning + sections.quantitative + sections.english,
+        negativeMarks: 0, // Calculate from answers if needed
+        correctAnswers: answers.filter(a => a.isCorrect).length,
+        wrongAnswers: answers.filter(a => !a.isCorrect && a.selectedAnswer !== null).length,
+        unanswered: answers.filter(a => a.selectedAnswer === null || a.selectedAnswer === undefined).length,
+        sections,
+        questions: [], // Not stored in results
+        answers,
+        timeSpent: result.timeSpent,
+        negativeMarking: true, // Default value
+        negativeMarkValue: 0.25, // Default value
+        userId: result.userId
+      }
+    })
 
     console.log('✅ Returning transformed results:', transformedResults.length)
     

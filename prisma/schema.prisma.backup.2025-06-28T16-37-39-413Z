@@ -1,12 +1,12 @@
-// Development schema with PostgreSQL
+// Local development schema with SQLite
 generator client {
   provider = "prisma-client-js"
   output   = "../lib/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
@@ -30,8 +30,8 @@ model Quiz {
   timeLimit   Int
   createdAt   DateTime @default(now())
   createdBy   String
-  sections    String   // JSON string for PostgreSQL
-  questions   String   @default("[]")  // JSON string for PostgreSQL
+  sections    String   // JSON string for SQLite
+  questions   String   @default("[]")  // JSON string for SQLite
   isActive    Boolean  @default(true)
   results     QuizResult[] @relation("QuizQuizResults")
   startTime   DateTime? // Scheduled start time
@@ -50,8 +50,8 @@ model QuizResult {
   userEmail String
   date      DateTime @default(now())
   totalScore Int
-  sections  String   // JSON string for PostgreSQL
-  answers   String   // JSON string for PostgreSQL
+  sections  String   // JSON string for SQLite
+  answers   String   // JSON string for SQLite
   timeSpent Int
   user      User   @relation(fields: [userId], references: [id], name: "UserQuizResults")
   quiz      Quiz   @relation(fields: [quizId], references: [id], name: "QuizQuizResults")
@@ -93,7 +93,7 @@ model QuestionBankItem {
   source       String   @default("") // Source of the question
   isVerified   Boolean  @default(false) // Admin verification status
   usageCount   Int      @default(0) // How many times used in quizzes
-  createdBy    String   @default("admin") // Admin who created it
+  createdBy    String
   chapterId    String?
   chapter      Chapter? @relation(fields: [chapterId], references: [id])
   createdAt    DateTime @default(now())

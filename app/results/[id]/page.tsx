@@ -65,6 +65,32 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
   const [openQuestions, setOpenQuestions] = useState<Set<number>>(new Set())
   const [error, setError] = useState<string | null>(null)
 
+  // Helper function to safely parse questions data
+  const parseResultData = (resultData: any): Result => {
+    return {
+      ...resultData,
+      questions: (() => {
+        if (Array.isArray(resultData.questions)) {
+          return resultData.questions;
+        } else if (typeof resultData.questions === 'string') {
+          try {
+            const parsed = JSON.parse(resultData.questions);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        }
+        return [];
+      })(),
+      sections: typeof resultData.sections === 'string' 
+        ? (() => {
+            try { return JSON.parse(resultData.sections); } 
+            catch { return { reasoning: 0, quantitative: 0, english: 0 }; }
+          })()
+        : (resultData.sections || { reasoning: 0, quantitative: 0, english: 0 })
+    };
+  }
+
   useEffect(() => {
     if (authLoading) return
     
@@ -82,7 +108,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
           if (response.ok) {
             const data = await response.json()
             if (data.result) {
-              setResult(data.result)
+              setResult(parseResultData(data.result))
               setLoading(false)
               return
             }
@@ -94,7 +120,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
         const foundResult = results.find((r: Result) => r._id === params.id)
 
         if (foundResult) {
-          setResult(foundResult)
+          setResult(parseResultData(foundResult))
         } else {
           setError("Result not found. It may have been deleted or the link is invalid.")
         }
@@ -120,7 +146,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
   }
 
   const toggleAllQuestions = () => {
-    if (!result) return
+    if (!result || !Array.isArray(result.questions)) return
 
     if (openQuestions.size === result.questions.length) {
       setOpenQuestions(new Set())
@@ -130,13 +156,13 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
   }
 
   const getFilteredQuestions = () => {
-    if (!result) return []
+    if (!result || !Array.isArray(result.questions)) return []
     if (selectedSection === "all") return result.questions
     return result.questions.filter((q) => q.section === selectedSection)
   }
 
   const getSectionStats = (section: string) => {
-    if (!result) return { correct: 0, total: 0, wrong: 0, unanswered: 0 }
+    if (!result || !Array.isArray(result.questions)) return { correct: 0, total: 0, wrong: 0, unanswered: 0 }
     const sectionQuestions = result.questions.filter((q) => q.section === section)
     const correct = sectionQuestions.filter((q) => q.isCorrect).length
     const wrong = sectionQuestions.filter((q) => !q.isCorrect && q.selectedAnswer !== -1).length
@@ -145,18 +171,18 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
   }
 
   const getPerformanceAnalysis = () => {
-    if (!result) return null
+    if (!result || !Array.isArray(result.questions)) return null
 
-    const totalQuestions = result.questions.length
-    const correct = result.correctAnswers || result.questions.filter((q) => q.isCorrect).length
-    const wrong = result.wrongAnswers || result.questions.filter((q) => !q.isCorrect && q.selectedAnswer !== -1).length
-    const unanswered = result.unanswered || result.questions.filter((q) => q.selectedAnswer === -1).length
+    const totalQuestions = Array.isArray(result.questions) ? result.questions.length : 0
+    const correct = result.correctAnswers || (Array.isArray(result.questions) ? result.questions.filter((q) => q.isCorrect).length : 0)
+    const wrong = result.wrongAnswers || (Array.isArray(result.questions) ? result.questions.filter((q) => !q.isCorrect && q.selectedAnswer !== -1).length : 0)
+    const unanswered = result.unanswered || (Array.isArray(result.questions) ? result.questions.filter((q) => q.selectedAnswer === -1).length : 0)
 
     // Performance by difficulty (based on section performance)
     const sectionPerformance = [
-      { section: "Reasoning", score: result.sections.reasoning, color: "#8884d8" },
-      { section: "Quantitative", score: result.sections.quantitative, color: "#82ca9d" },
-      { section: "English", score: result.sections.english, color: "#ffc658" },
+      { section: "Reasoning", score: result.sections?.reasoning || 0, color: "#8884d8" },
+      { section: "Quantitative", score: result.sections?.quantitative || 0, color: "#82ca9d" },
+      { section: "English", score: result.sections?.english || 0, color: "#ffc658" },
     ].filter((s) => s.score > 0)
 
     // Answer distribution
@@ -309,10 +335,10 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-600">
-                {result.correctAnswers || result.questions.filter((q) => q.isCorrect).length}
+                {result.correctAnswers || (Array.isArray(result.questions) ? result.questions.filter((q) => q.isCorrect).length : 0)}
               </div>
               <p className="text-sm text-muted-foreground">
-                +{result.positiveMarks || result.questions.filter((q) => q.isCorrect).length} marks
+                +{result.positiveMarks || (Array.isArray(result.questions) ? result.questions.filter((q) => q.isCorrect).length : 0)} marks
               </p>
             </CardContent>
           </Card>
@@ -326,7 +352,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-red-600">
-                {result.wrongAnswers || result.questions.filter((q) => !q.isCorrect && q.selectedAnswer !== -1).length}
+                {result.wrongAnswers || (Array.isArray(result.questions) ? result.questions.filter((q) => !q.isCorrect && q.selectedAnswer !== -1).length : 0)}
               </div>
               {result.negativeMarking && (
                 <p className="text-sm text-muted-foreground">-{result.negativeMarks || 0} marks</p>
@@ -343,7 +369,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-gray-600">
-                {result.unanswered || result.questions.filter((q) => q.selectedAnswer === -1).length}
+                {result.unanswered || (Array.isArray(result.questions) ? result.questions.filter((q) => q.selectedAnswer === -1).length : 0)}
               </div>
               <p className="text-sm text-muted-foreground">No penalty</p>
             </CardContent>
@@ -481,7 +507,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                 <CardDescription>Review your answers and see the correct solutions</CardDescription>
               </div>
               <Button onClick={toggleAllQuestions} variant="outline">
-                {openQuestions.size === result.questions.length ? "Collapse All" : "Expand All"}
+                {(Array.isArray(result.questions) && openQuestions.size === result.questions.length) ? "Collapse All" : "Expand All"}
               </Button>
             </div>
           </CardHeader>

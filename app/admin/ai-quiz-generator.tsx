@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,6 +9,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, Sparkles, Clock, BookOpen, Target, Settings } from "lucide-react"
+
+interface Subject {
+  id: string
+  name: string
+  description: string
+}
+
+interface Chapter {
+  id: string
+  name: string
+  description: string
+  subjectId: string
+}
 
 interface Quiz {
   id: string
@@ -46,10 +59,18 @@ export default function AIQuizGenerator({ onQuizCreated, onClose }: AIQuizGenera
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   
+  // Subject and Chapter data
+  const [subjects, setSubjects] = useState<Subject[]>([])
+  const [chapters, setChapters] = useState<Chapter[]>([])
+  const [loadingSubjects, setLoadingSubjects] = useState(true)
+  const [loadingChapters, setLoadingChapters] = useState(false)
+  
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     topic: "",
+    subjectId: "none",
+    chapterId: "none",
     sections: [] as string[],
     difficulty: "medium",
     questionsPerSection: 10,
@@ -70,6 +91,61 @@ export default function AIQuizGenerator({ onQuizCreated, onClose }: AIQuizGenera
     { value: "hard", label: "Hard", description: "Advanced level questions" },
     { value: "mixed", label: "Mixed", description: "Combination of all levels" }
   ]
+
+  // Fetch subjects on component mount
+  useEffect(() => {
+    fetchSubjects()
+  }, [])
+
+  const fetchSubjects = async () => {
+    try {
+      const response = await fetch('/api/subjects')
+      if (response.ok) {
+        const data = await response.json()
+        setSubjects(data)
+      } else {
+        setError('Failed to load subjects')
+      }
+    } catch (error) {
+      setError('Error loading subjects')
+    } finally {
+      setLoadingSubjects(false)
+    }
+  }
+
+  const fetchChapters = async (subjectId: string) => {
+    if (!subjectId || subjectId === "none") return
+    
+    setLoadingChapters(true)
+    try {
+      const response = await fetch(`/api/subjects/${subjectId}/chapters`)
+      if (response.ok) {
+        const data = await response.json()
+        setChapters(data)
+      } else {
+        setError('Failed to load chapters')
+        setChapters([])
+      }
+    } catch (error) {
+      setError('Error loading chapters')
+      setChapters([])
+    } finally {
+      setLoadingChapters(false)
+    }
+  }
+
+  const handleSubjectChange = (subjectId: string) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      subjectId,
+      chapterId: "none" // Reset chapter when subject changes
+    }))
+    if (subjectId !== "none") {
+      fetchChapters(subjectId)
+    } else {
+      setChapters([])
+    }
+  }
 
   const handleSectionToggle = (section: string) => {
     setFormData(prev => ({
@@ -102,6 +178,8 @@ export default function AIQuizGenerator({ onQuizCreated, onClose }: AIQuizGenera
           title: formData.title,
           description: formData.description,
           topic: formData.topic,
+          subjectId: formData.subjectId === "none" ? null : formData.subjectId,
+          chapterId: formData.chapterId === "none" ? null : formData.chapterId,
           sections: formData.sections,
           difficulty: formData.difficulty,
           questionsPerSection: formData.questionsPerSection,
@@ -130,6 +208,8 @@ export default function AIQuizGenerator({ onQuizCreated, onClose }: AIQuizGenera
         title: "",
         description: "",
         topic: "",
+        subjectId: "none",
+        chapterId: "none",
         sections: [],
         difficulty: "medium",
         questionsPerSection: 10,
@@ -202,6 +282,59 @@ export default function AIQuizGenerator({ onQuizCreated, onClose }: AIQuizGenera
             placeholder="Brief description of the quiz (optional)"
             rows={3}
           />
+        </div>
+
+        {/* Subject and Chapter Selection */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="subject">Subject (Optional)</Label>
+            <Select 
+              value={formData.subjectId} 
+              onValueChange={handleSubjectChange}
+              disabled={loadingSubjects}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={loadingSubjects ? "Loading subjects..." : "Select a subject"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No subject (General Quiz)</SelectItem>
+                {subjects.map((subject) => (
+                  <SelectItem key={subject.id} value={subject.id}>
+                    {subject.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="chapter">Chapter (Optional)</Label>
+            <Select 
+              value={formData.chapterId} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, chapterId: value }))}
+              disabled={!formData.subjectId || formData.subjectId === "none" || loadingChapters || chapters.length === 0}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={
+                  !formData.subjectId || formData.subjectId === "none"
+                    ? "Select a subject first" 
+                    : loadingChapters 
+                      ? "Loading chapters..." 
+                      : chapters.length === 0
+                        ? "No chapters available"
+                        : "Select a chapter"
+                } />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No specific chapter</SelectItem>
+                {chapters.map((chapter) => (
+                  <SelectItem key={chapter.id} value={chapter.id}>
+                    {chapter.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Sections Selection */}

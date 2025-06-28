@@ -13,6 +13,8 @@ export async function POST(request: NextRequest) {
       title,
       description,
       topic,
+      subjectId,
+      chapterId,
       sections,
       difficulty,
       questionsPerSection,
@@ -131,6 +133,7 @@ Number of questions: ${questionsPerSection}`
           createdBy: "admin",
           negativeMarking: negativeMarking ?? true,
           negativeMarkValue: negativeMarkValue ?? 0.25,
+          chapterId: chapterId || null,
         },
       })
 

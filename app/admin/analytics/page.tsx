@@ -102,13 +102,27 @@ export default function AdminAnalyticsPage() {
   useEffect(() => {
     if (!loading && user) {
       // Always fetch analytics data from backend API with cache busting (no localStorage fallback)
-      fetch(`/api/admin/analytics?_t=${Date.now()}`)
-        .then((res) => res.json())
-        .then((data) => {
+      const fetchAnalytics = async () => {
+        try {
+          console.log('🔄 Admin Analytics: Fetching fresh data...')
+          const response = await fetch(`/api/admin/analytics?_t=${Date.now()}`)
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+          }
+          
+          const data = await response.json()
+          console.log('✅ Admin Analytics: Fresh data received:', {
+            resultsCount: data.results?.length,
+            quizzesCount: data.quizzes?.length,
+            success: data.success
+          })
+          
           const apiResults = data.results || []
           const apiQuizzes = data.quizzes || []
           setResults(apiResults)
           setFilteredResults(apiResults)
+          
           // Extract unique users from results
           const userMap = new Map<string, {id: string; name: string; email: string}>()
           apiResults.forEach((result: QuizResult) => {
@@ -125,10 +139,18 @@ export default function AdminAnalyticsPage() {
           })
           setUsers(Array.from(userMap.values()))
           setQuizzes(apiQuizzes)
-        })
-        .catch((error) => {
-          console.error("Error fetching admin analytics (no fallback):", error)
-        })
+          
+        } catch (error) {
+          console.error("❌ Error fetching admin analytics:", error)
+          // For admin analytics, we don't use localStorage fallback - always show current DB state
+          setResults([])
+          setFilteredResults([])
+          setUsers([])
+          setQuizzes([])
+        }
+      }
+      
+      fetchAnalytics()
     }
   }, [loading, user])
 

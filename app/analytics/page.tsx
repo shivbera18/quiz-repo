@@ -59,8 +59,8 @@ export default function AnalyticsPage() {
         console.log('Refreshing analytics data...', { hasUser: !!user, hasToken: !!token, force })
         
         if (token) {
-          // Add cache-busting parameter for force refresh
-          const url = force ? `/api/results?_t=${Date.now()}` : '/api/results'
+          // Use dedicated analytics API with cache-busting
+          const url = force ? `/api/analytics?_t=${Date.now()}` : '/api/analytics'
           
           const response = await fetch(url, {
             headers: {
@@ -69,17 +69,17 @@ export default function AnalyticsPage() {
             }
           })
           
-          console.log('API response status:', response.status)
+          console.log('Analytics API response status:', response.status)
           
           if (response.ok) {
             const apiData = await response.json()
-            console.log('API data received:', { 
+            console.log('Analytics API data received:', { 
               resultsCount: apiData.results?.length, 
               success: apiData.success,
-              timestamp: apiData.timestamp
+              timestamp: apiData.timestamp,
+              hasAnalytics: !!apiData.analytics
             })
             
-            // API now always returns results array, even if empty
             if (apiData.results && Array.isArray(apiData.results)) {
               setResults(apiData.results)
               // Update localStorage with fresh data
@@ -91,22 +91,39 @@ export default function AnalyticsPage() {
             }
           } else {
             setConnectionStatus('disconnected')
-            console.error('API response not ok:', response.status, response.statusText)
-            // Log the response body for debugging
-            const errorText = await response.text()
-            console.error('API error response:', errorText)
+            console.error('Analytics API response not ok:', response.status, response.statusText)
             
-            // If API fails, try to refresh from localStorage as last resort
-            const storedResults = localStorage.getItem("quizResults")
-            if (storedResults) {
-              const parsedResults = JSON.parse(storedResults)
-              const normalizedResults = parsedResults.map((result: any) => ({
-                ...result,
-                answers: result.answers || []
-              }))
-              setResults(normalizedResults)
-              setDataSource('localStorage')
-              console.log('Fallback to localStorage during refresh')
+            // Fallback to results API if analytics API fails
+            const fallbackResponse = await fetch(force ? `/api/results?_t=${Date.now()}` : '/api/results', {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Cache-Control': force ? 'no-cache' : 'default'
+              }
+            })
+            
+            if (fallbackResponse.ok) {
+              const fallbackData = await fallbackResponse.json()
+              if (fallbackData.results && Array.isArray(fallbackData.results)) {
+                setResults(fallbackData.results)
+                localStorage.setItem("quizResults", JSON.stringify(fallbackData.results))
+                setLastUpdated(new Date())
+                setDataSource('api')
+                setConnectionStatus('connected')
+                console.log('Fallback to results API successful')
+              }
+            } else {
+              // Final fallback to localStorage
+              const storedResults = localStorage.getItem("quizResults")
+              if (storedResults) {
+                const parsedResults = JSON.parse(storedResults)
+                const normalizedResults = parsedResults.map((result: any) => ({
+                  ...result,
+                  answers: result.answers || []
+                }))
+                setResults(normalizedResults)
+                setDataSource('localStorage')
+                console.log('Fallback to localStorage during refresh')
+              }
             }
           }
         } else {
@@ -129,31 +146,31 @@ export default function AnalyticsPage() {
         
         console.log('Loading analytics results...', { hasUser: !!user })
         
-        // First try to fetch from API if user is authenticated
+        // First try to fetch from analytics API if user is authenticated
         if (user) {
           try {
             // Try both token keys for compatibility
             const token = localStorage.getItem('authToken') || localStorage.getItem('token')
-            console.log('Attempting API fetch...', { hasToken: !!token })
+            console.log('Attempting analytics API fetch...', { hasToken: !!token })
             
             if (token) {
-              const response = await fetch('/api/results', {
+              const response = await fetch('/api/analytics', {
                 headers: {
                   'Authorization': `Bearer ${token}`
                 }
               })
               
-              console.log('Initial API response:', response.status)
+              console.log('Initial analytics API response:', response.status)
               
               if (response.ok) {
                 const apiData = await response.json()
-                console.log('Initial API data:', { 
+                console.log('Initial analytics API data:', { 
                   resultsCount: apiData.results?.length,
                   success: apiData.success,
-                  timestamp: apiData.timestamp
+                  timestamp: apiData.timestamp,
+                  hasAnalytics: !!apiData.analytics
                 })
                 
-                // API now always returns results array, even if empty
                 if (apiData.results && Array.isArray(apiData.results)) {
                   setResults(apiData.results)
                   // Also update localStorage with fresh data
@@ -161,22 +178,42 @@ export default function AnalyticsPage() {
                   setLastUpdated(new Date())
                   setDataSource('api')
                   setConnectionStatus('connected')
-                  console.log('Initial load from API successful')
+                  console.log('Initial load from analytics API successful')
                   setLoading(false)
                   return
                 }
               } else {
+                console.warn('Analytics API response not ok, falling back to results API')
+                
+                // Fallback to results API
+                const fallbackResponse = await fetch('/api/results', {
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  }
+                })
+                
+                if (fallbackResponse.ok) {
+                  const fallbackData = await fallbackResponse.json()
+                  if (fallbackData.results && Array.isArray(fallbackData.results)) {
+                    setResults(fallbackData.results)
+                    localStorage.setItem("quizResults", JSON.stringify(fallbackData.results))
+                    setLastUpdated(new Date())
+                    setDataSource('api')
+                    setConnectionStatus('connected')
+                    console.log('Fallback to results API successful')
+                    setLoading(false)
+                    return
+                  }
+                }
+                
                 setConnectionStatus('disconnected')
-                console.warn('API response not ok, falling back to localStorage')
-                // Log the error for debugging
-                const errorText = await response.text()
-                console.error('API error:', errorText)
+                console.warn('Both APIs failed, falling back to localStorage')
               }
             } else {
               console.warn('No auth token, falling back to localStorage')
             }
           } catch (apiError) {
-            console.warn("Failed to fetch results from API, falling back to localStorage:", apiError)
+            console.warn("Failed to fetch from analytics APIs, falling back to localStorage:", apiError)
           }
         }
         

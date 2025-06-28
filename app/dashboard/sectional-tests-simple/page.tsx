@@ -5,8 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { BookOpen, Calculator, FlaskConical, Globe, Users, Zap, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import { ThemeToggle } from "@/components/theme-toggle";
-import { useAuth } from "@/hooks/use-auth";
 
 interface Subject {
   id: string;
@@ -27,65 +25,42 @@ const subjectIcons: { [key: string]: any } = {
   English: Users,
 };
 
-export default function SectionalTestsPage() {
-  const { user, loading: authLoading } = useAuth();
+export default function SectionalTestsSimplePage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     fetchSubjects();
   }, []);
 
   const fetchSubjects = async () => {
     try {
-      console.log('🔄 Fetching subjects...');
+      console.log('Fetching subjects...');
       const response = await fetch('/api/subjects');
-      console.log('📡 API Response status:', response.status);
+      console.log('Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Subjects loaded:', data.length, 'subjects');
-        console.log('📋 Subjects data:', data);
+        console.log('Subjects data:', data);
         setSubjects(data);
-        setError(null);
       } else {
-        const errorText = `API Error: ${response.status} ${response.statusText}`;
-        console.error('❌', errorText);
-        setError(errorText);
+        setError(`Failed to load subjects: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
-      const errorText = `Network Error: ${error}`;
-      console.error('❌', errorText);
-      setError(errorText);
+      console.error('Error fetching subjects:', error);
+      setError(`Error: ${error}`);
     } finally {
       setLoading(false);
     }
   };
 
-  if (authLoading) {
-    return (
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Sectional Tests</h1>
-          <ThemeToggle />
-        </div>
-        <div className="text-center">🔐 Checking authentication...</div>
-      </div>
-    );
-  }
-
   if (loading) {
     return (
       <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Sectional Tests</h1>
-          <ThemeToggle />
-        </div>
-        <div className="text-center mb-4">📚 Loading subjects...</div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <h1 className="text-3xl font-bold mb-6">Sectional Tests (Simple)</h1>
+        <div className="text-center">Loading subjects...</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
           {[1, 2, 3, 4].map((i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader>
@@ -105,18 +80,11 @@ export default function SectionalTestsPage() {
   if (error) {
     return (
       <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Sectional Tests</h1>
-          <ThemeToggle />
-        </div>
+        <h1 className="text-3xl font-bold mb-6">Sectional Tests (Simple)</h1>
         <div className="text-center text-red-600">
-          <h3 className="text-lg font-medium mb-2">❌ Error Loading Subjects</h3>
-          <p className="mb-4">{error}</p>
-          <Button onClick={fetchSubjects} className="mr-2">
-            🔄 Retry
-          </Button>
-          <Button variant="outline" onClick={() => window.location.reload()}>
-            🔄 Refresh Page
+          <p>{error}</p>
+          <Button onClick={() => window.location.reload()} className="mt-4">
+            Retry
           </Button>
         </div>
       </div>
@@ -125,15 +93,10 @@ export default function SectionalTestsPage() {
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Sectional Tests</h1>
-          <p className="text-gray-600">Choose a subject to practice chapter-wise quizzes</p>
-          <p className="text-sm text-blue-600 mt-1">
-            ✅ Found {subjects.length} subjects • 🔄 API working • 👤 User: {user?.name || 'Guest'}
-          </p>
-        </div>
-        <ThemeToggle />
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Sectional Tests (Simple)</h1>
+        <p className="text-gray-600">Choose a subject to practice chapter-wise quizzes</p>
+        <p className="text-sm text-blue-600 mt-1">Found {subjects.length} subjects</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -149,14 +112,10 @@ export default function SectionalTestsPage() {
                       className="p-3 rounded-lg"
                       style={{ backgroundColor: `${subject.color}20` }}
                     >
-                      {mounted ? (
-                        <IconComponent 
-                          className="h-6 w-6" 
-                          style={{ color: subject.color }}
-                        />
-                      ) : (
-                        <div className="h-6 w-6 bg-gray-300 rounded animate-pulse" />
-                      )}
+                      <IconComponent 
+                        className="h-6 w-6" 
+                        style={{ color: subject.color }}
+                      />
                     </div>
                     <div className="flex-1">
                       <CardTitle className="group-hover:text-blue-600 transition-colors">
@@ -178,7 +137,7 @@ export default function SectionalTestsPage() {
                     </div>
                   </div>
                   <Button className="w-full group-hover:bg-blue-600 transition-colors" variant="outline">
-                    Start Practice {mounted && <ArrowRight className="ml-2 h-4 w-4" />}
+                    Start Practice <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </CardContent>
               </Card>
@@ -189,26 +148,11 @@ export default function SectionalTestsPage() {
 
       {subjects.length === 0 && !loading && !error && (
         <div className="text-center py-12">
-          {mounted ? (
-            <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          ) : (
-            <div className="h-12 w-12 bg-gray-300 rounded mx-auto mb-4 animate-pulse" />
-          )}
-          <h3 className="text-lg font-medium text-gray-900 mb-2">📚 No subjects found</h3>
-          <p className="text-gray-600 mb-4">
-            API is working but returned 0 subjects. Check database or seeding.
-          </p>
-          <div className="space-y-2 text-sm text-gray-500 mb-4">
-            <p>• API Status: ✅ Accessible</p>
-            <p>• Auth Status: {user ? '✅ Authenticated' : '❌ Not authenticated'}</p>
-            <p>• Loading: {loading ? '🔄 Loading' : '✅ Complete'}</p>
-            <p>• Error: {error || '✅ None'}</p>
-          </div>
-          <Button variant="outline" onClick={fetchSubjects} className="mr-2">
-            🔄 Retry API Call
-          </Button>
+          <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No subjects available</h3>
+          <p className="text-gray-600 mb-4">Subjects will appear here once they are added by admin.</p>
           <Button variant="outline" onClick={() => window.location.reload()}>
-            🔄 Refresh Page
+            Refresh Page
           </Button>
         </div>
       )}

@@ -76,26 +76,53 @@ export default function AdvancedAnalyticsPage() {
       console.log("✅ Advanced Analytics: Fetched fresh data:", data.results?.length || 0, "results")
       
       // Transform the data to match our QuizResult interface - no localStorage fallback
-      const transformedResults = (data.results || []).map((result: any) => ({
-        _id: result.id || result._id || '',
-        date: result.createdAt || result.date || new Date().toISOString(),
-        quizName: result.quiz?.title || result.quizName || 'Unknown Quiz',
-        quizId: result.quizId || result.quiz?.id || '',
-        totalScore: result.totalScore || 0,
-        rawScore: result.rawScore || result.totalScore || 0,
-        positiveMarks: result.positiveMarks || result.totalScore || 0,
-        negativeMarks: result.negativeMarks || 0,
-        correctAnswers: result.correctAnswers || 0,
-        wrongAnswers: result.wrongAnswers || 0,
-        unanswered: result.unanswered || 0,
-        sections: result.sections || {},
-        answers: result.answers || [],
-        timeSpent: result.timeSpent || 0,
-        negativeMarking: result.negativeMarking || false,
-        negativeMarkValue: result.negativeMarkValue || 0,
-        user: result.user,
-        quiz: result.quiz
-      }))
+      const transformedResults = (data.results || []).map((result: any) => {
+        // Parse JSON strings safely
+        let sections = { reasoning: 0, quantitative: 0, english: 0 }
+        let answers: any[] = []
+        
+        try {
+          if (result.sections && typeof result.sections === 'string') {
+            const parsedSections = JSON.parse(result.sections)
+            sections = { ...sections, ...parsedSections }
+          } else if (result.sections && typeof result.sections === 'object') {
+            sections = { ...sections, ...result.sections }
+          }
+        } catch (e) {
+          console.warn('Failed to parse sections JSON:', e)
+        }
+        
+        try {
+          if (result.answers && typeof result.answers === 'string') {
+            answers = JSON.parse(result.answers)
+          } else if (result.answers && Array.isArray(result.answers)) {
+            answers = result.answers
+          }
+        } catch (e) {
+          console.warn('Failed to parse answers JSON:', e)
+        }
+
+        return {
+          _id: result.id || result._id || '',
+          date: result.createdAt || result.date || new Date().toISOString(),
+          quizName: result.quiz?.title || result.quizName || 'Unknown Quiz',
+          quizId: result.quizId || result.quiz?.id || '',
+          totalScore: result.totalScore || 0,
+          rawScore: result.totalScore || 0, // Use totalScore as rawScore
+          positiveMarks: sections.reasoning + sections.quantitative + sections.english,
+          negativeMarks: Math.max(0, (sections.reasoning + sections.quantitative + sections.english) - (result.totalScore || 0)),
+          correctAnswers: answers.filter(a => a.isCorrect).length,
+          wrongAnswers: answers.filter(a => !a.isCorrect && a.selectedAnswer !== null && a.selectedAnswer !== undefined).length,
+          unanswered: answers.filter(a => a.selectedAnswer === null || a.selectedAnswer === undefined).length,
+          sections,
+          answers,
+          timeSpent: result.timeSpent || 0,
+          negativeMarking: true, // Default value
+          negativeMarkValue: 0.25, // Default value
+          user: result.user,
+          quiz: result.quiz
+        }
+      })
       
       console.log(`📊 Advanced Analytics: Transformed ${transformedResults.length} results`)
       setResults(transformedResults)

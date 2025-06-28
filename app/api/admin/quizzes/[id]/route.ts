@@ -97,6 +97,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         title: data.title,
         description: data.description,
         timeLimit: data.duration,
+        chapterId: data.chapterId || null,
         sections: JSON.stringify(data.sections), // Stringify sections for SQLite
         questions: JSON.stringify(data.questions), // Ensure questions are stored as JSON string
         isActive: data.isActive,

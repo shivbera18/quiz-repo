@@ -98,6 +98,8 @@ export default function AdvancedAnalytics({ results = [], currentUserId, isStude
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | 'all'>('all')
   const [selectedUserId, setSelectedUserId] = useState<string | 'all'>('all')
   const [debugInfo, setDebugInfo] = useState<string>('')
+  const [refreshing, setRefreshing] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [selectedTab, setSelectedTab] = useState<string>("performance")
 
   console.log('AdvancedAnalytics received results:', results?.length || 0)
@@ -110,6 +112,50 @@ export default function AdvancedAnalytics({ results = [], currentUserId, isStude
       setSelectedUserId(currentUserId)
     }
   }, [isStudentMode, currentUserId])
+
+  // Auto-refresh effect
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && !isStudentMode) {
+        console.log('Advanced Analytics: Page became visible, refreshing data...')
+        refreshData()
+      }
+    }
+
+    // Set up periodic refresh for admin mode
+    let intervalId: NodeJS.Timeout | null = null
+    if (!isStudentMode) {
+      intervalId = setInterval(() => {
+        if (!document.hidden) {
+          console.log('Advanced Analytics: Periodic refresh...')
+          refreshData()
+        }
+      }, 30000) // 30 seconds for admin analytics
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      if (intervalId) clearInterval(intervalId)
+    }
+  }, [isStudentMode])
+
+  // Refresh function for manual refresh
+  const refreshData = async () => {
+    if (refreshing) return // Prevent multiple simultaneous refreshes
+    
+    setRefreshing(true)
+    try {
+      console.log('🔄 Advanced Analytics: Manual refresh triggered')
+      setLastUpdated(new Date())
+      console.log('✅ Advanced Analytics: Manual refresh completed')
+    } catch (error) {
+      console.error('❌ Advanced Analytics: Manual refresh failed:', error)
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   // Early return if no results
   if (!results || !Array.isArray(results)) {

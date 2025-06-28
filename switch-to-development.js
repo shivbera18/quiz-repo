@@ -1,4 +1,19 @@
-// Development schema with PostgreSQL
+const fs = require('fs')
+
+async function switchToDevelopmentDB() {
+  console.log('🔄 Switching to PostgreSQL development database...\n')
+
+  try {
+    // Backup current schema
+    console.log('1. Backing up current schema...')
+    const currentSchema = fs.readFileSync('prisma/schema.prisma', 'utf8')
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+    fs.writeFileSync(`prisma/schema.prisma.backup.${timestamp}`, currentSchema)
+    console.log('   ✅ Current schema backed up')
+
+    // Create development schema
+    console.log('2. Creating development schema...')
+    const developmentSchema = `// Development schema with PostgreSQL
 generator client {
   provider = "prisma-client-js"
   output   = "../lib/generated/prisma"
@@ -6,7 +21,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = "postgresql://quizdb_owner:npg_5ITBoeNYp1gR@ep-blue-sound-a8tppvlf-pooler.eastus2.azure.neon.tech/quizdb?sslmode=require&channel_binding=require"
 }
 
 model User {
@@ -93,9 +108,27 @@ model QuestionBankItem {
   source       String   @default("") // Source of the question
   isVerified   Boolean  @default(false) // Admin verification status
   usageCount   Int      @default(0) // How many times used in quizzes
-  createdBy    String   @default("admin") // Admin who created it
+  createdBy    String
   chapterId    String?
   chapter      Chapter? @relation(fields: [chapterId], references: [id])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+`
+
+    fs.writeFileSync('prisma/schema.prisma', developmentSchema)
+    console.log('   ✅ Development schema created')
+
+    console.log('\n🎉 Database switch completed!')
+    console.log('\n📋 Next steps:')
+    console.log('   1. Run: npx prisma generate')
+    console.log('   2. Run: npx prisma db push')
+    console.log('   3. Run: node setup-development-db.js (to seed initial data)')
+    console.log('   4. Restart your development server')
+    
+  } catch (error) {
+    console.error('❌ Database switch failed:', error)
+  }
+}
+
+switchToDevelopmentDB()
