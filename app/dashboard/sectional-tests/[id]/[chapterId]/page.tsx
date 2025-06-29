@@ -132,13 +132,13 @@ export default function ChapterQuizzesPage() {
         {quizzes.map((quiz, index) => (
           <Card key={quiz.id} className="hover:shadow-md transition-shadow border-2 hover:border-blue-200">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
                     <div className="flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-600 rounded-full text-sm font-semibold">
                       {index + 1}
                     </div>
-                    <h3 className="text-lg font-semibold">{quiz.title}</h3>
+                    <h3 className="text-lg font-semibold break-words">{quiz.title}</h3>
                     <Badge className={getDifficultyColor(quiz.difficulty)}>
                       {quiz.difficulty}
                     </Badge>
@@ -146,10 +146,8 @@ export default function ChapterQuizzesPage() {
                       <CheckCircle className="h-5 w-5 text-green-500" />
                     )}
                   </div>
-                  
-                  <p className="text-gray-600 mb-3">{quiz.description}</p>
-                  
-                  <div className="flex items-center space-x-6 text-sm text-gray-500">
+                  <p className="text-gray-600 mb-3 break-words">{quiz.description}</p>
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500">
                     <div className="flex items-center space-x-1">
                       <Target className="h-4 w-4" />
                       <span>{quiz.questionCount} questions</span>
@@ -170,10 +168,9 @@ export default function ChapterQuizzesPage() {
                     )}
                   </div>
                 </div>
-                
-                <div className="ml-6">
-                  <Link href={`/quiz/${quiz.id}`}>
-                    <Button className="flex items-center space-x-2">
+                <div className="sm:ml-6 w-full sm:w-auto">
+                  <Link href={`/quiz/${quiz.id}`} className="block w-full">
+                    <Button className="flex items-center justify-center w-full sm:w-auto space-x-2 mt-4 sm:mt-0">
                       <Play className="h-4 w-4" />
                       <span>{quiz.isCompleted ? 'Retake' : 'Start Quiz'}</span>
                     </Button>

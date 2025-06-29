@@ -473,10 +473,10 @@ export default function QuizPage({ params }: { params: { id: string } }) {
               <h1 className="text-2xl font-bold text-foreground">{quiz.title}</h1>
               <p className="text-muted-foreground text-sm">{quiz.description}</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="outline" className="flex-1">
+                  <Button variant="outline" className="w-full sm:w-auto">
                     <Home className="h-4 w-4 mr-2" />
                     {getBackButtonText()}
                   </Button>
@@ -499,7 +499,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
               <Button 
                 onClick={handleSubmit} 
                 disabled={submitting} 
-                className="flex-1"
+                className="w-full sm:w-auto"
               >
                 {submitting ? "Submitting..." : "Submit Quiz"}
               </Button>
