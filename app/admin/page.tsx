@@ -15,6 +15,8 @@ import { Plus, Trash2, Users, BarChart3, Edit, Eye, Clock, BookOpen, LogOut, Shi
 import Link from "next/link"
 import { useAuth } from "@/hooks/use-auth"
 import AIQuizGenerator from "./ai-quiz-generator"
+import ManageQuizzesPage from "./manage-quizzes"
+import QuizManagementSection from "./QuizManagementSection"
 
 interface Quiz {
   id: string
@@ -1348,6 +1350,11 @@ export default function AdminPage() {
                 />
               )}
 
+              <QuizManagementSection onEditQuiz={(quiz) => {
+                setEditingQuiz(quiz);
+                setShowQuizForm(true);
+              }} />
+
               {/* Quizzes List */}
               <div className="grid md:grid-cols-1 gap-6">
                 {quizzes.length === 0 ? (
@@ -1445,14 +1452,7 @@ export default function AdminPage() {
                                         </Badge>
                                       )
                                     }
-                                    // Handle if section is an object with name property
-                                    if (typeof section === 'object' && section.name) {
-                                      return (
-                                        <Badge key={section.name || index} variant="outline" className="text-xs">
-                                          {section.name}
-                                        </Badge>
-                                      )
-                                    }
+                                    // (Removed: object with name property case, only string[] supported)
                                     // Fallback for unknown format
                                     return (
                                       <Badge key={index} variant="outline" className="text-xs">
@@ -1556,7 +1556,7 @@ export default function AdminPage() {
                         >
                           <SelectTrigger>
                             <div className="flex items-center gap-2">
-                              {getSubjectIcon(newSubject.icon)}
+                              {getSubjectIcon(newSubject.icon || "")}
                               <span>Select Icon</span>
                             </div>
                           </SelectTrigger>
@@ -1798,7 +1798,7 @@ export default function AdminPage() {
                         <div key={subject.id} className="p-4 border rounded-lg">
                           <div className="flex justify-between items-center">
                             <div className="flex items-center gap-2">
-                              {getSubjectIcon(subject.icon)}
+                              {getSubjectIcon(subject.icon || "")}
                               <div>
                                 <div className="font-medium">{subject.name}</div>
                                 <div className="text-sm text-muted-foreground">

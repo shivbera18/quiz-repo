@@ -116,12 +116,11 @@ export default function ChapterQuizzesPage() {
           <ThemeToggle />
         </div>
         
-        <Link 
-          href={`/dashboard/sectional-tests/${subjectId}`}
-          className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Chapters
+        <Link href={`/dashboard/sectional-tests/${subjectId}`} className="block mb-4">
+          <Button variant="secondary" className="rounded-full px-4 py-2 flex items-center gap-2 shadow hover:bg-blue-600 hover:text-white transition-colors">
+            <ArrowLeft className="h-5 w-5" />
+            <span className="font-semibold">Back to Chapters</span>
+          </Button>
         </Link>
         
         <h1 className="text-3xl font-bold">{chapter?.name} - Practice Quizzes</h1>

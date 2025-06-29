@@ -94,12 +94,11 @@ export default function SubjectChaptersPage() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex justify-between items-center mb-4">
-          <Link 
-            href="/dashboard/sectional-tests"
-            className="inline-flex items-center text-blue-600 hover:text-blue-800"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Subjects
+          <Link href="/dashboard/sectional-tests" className="block">
+            <Button variant="secondary" className="rounded-full px-4 py-2 flex items-center gap-2 shadow hover:bg-blue-600 hover:text-white transition-colors">
+              <ArrowLeft className="h-5 w-5" />
+              <span className="font-semibold">Back to Subjects</span>
+            </Button>
           </Link>
           <ThemeToggle />
         </div>
