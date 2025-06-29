@@ -251,8 +251,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { title: validatedTitle, description: validatedDescription, duration: validatedDuration, chapterId: validatedChapterId, sections: validatedSections, questions: validatedQuestions, negativeMarking: validatedNegativeMarking, negativeMarkValue: validatedNegativeMarkValue } = body
-
     // Detailed logging for Vercel debugging
     console.log('[QUIZ_CREATION] Starting database operation...')
     console.log('[QUIZ_CREATION] Environment:', {
@@ -277,16 +275,16 @@ export async function POST(request: NextRequest) {
 
     // Log the data being inserted
     const dataToInsert = {
-      title: validatedTitle,
-      description: validatedDescription || "",
-      timeLimit: validatedDuration,
-      chapterId: validatedChapterId || null,
-      sections: stringifyForDatabase(validatedSections),
-      questions: stringifyForDatabase(validatedQuestions || []),
+      title: title,
+      description: description || "",
+      timeLimit: duration,
+      chapterId: chapterId,
+      sections: stringifyForDatabase(sections),
+      questions: stringifyForDatabase(questions || []),
       isActive: true,
       createdBy: "admin",
-      negativeMarking: validatedNegativeMarking ?? true,
-      negativeMarkValue: validatedNegativeMarkValue ?? 0.25,
+      negativeMarking: negativeMarking ?? true,
+      negativeMarkValue: negativeMarkValue ?? 0.25,
     }
     
     console.log('[QUIZ_CREATION] Data to insert:', {

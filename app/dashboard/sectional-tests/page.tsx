@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Calculator, FlaskConical, Globe, Users, Zap, ArrowRight } from 'lucide-react';
+import { BookOpen, Calculator, FlaskConical, Globe, Users, Zap, ArrowRight, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
@@ -127,6 +127,10 @@ export default function SectionalTestsPage() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-8">
         <div>
+        <Link href="/dashboard" className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 mb-4">
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Back to Dashboard
+        </Link>
           <h1 className="text-3xl font-bold mb-2">Sectional Tests</h1>
           <p className="text-gray-600">Choose a subject to practice chapter-wise quizzes</p>
           <p className="text-sm text-blue-600 mt-1">

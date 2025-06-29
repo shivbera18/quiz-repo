@@ -403,7 +403,7 @@ export default function AdminPage() {
           title: newQuiz.title.trim(),
           description: newQuiz.description.trim(),
           duration: newQuiz.duration,
-          chapterId: (newQuiz.chapterId === "none" || !newQuiz.chapterId || newQuiz.chapterId.trim() === "") ? null : newQuiz.chapterId,
+          chapterId: newQuiz.chapterId,
           sections: newQuiz.sections,
           questions: [],
           negativeMarking: newQuiz.negativeMarking,
