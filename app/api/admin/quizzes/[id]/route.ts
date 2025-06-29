@@ -91,19 +91,24 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
     const data = await request.json()
+    // Only update chapterId if a valid value is provided
+    const updateData: any = {
+      title: data.title,
+      description: data.description,
+      timeLimit: data.duration,
+      sections: JSON.stringify(data.sections),
+      questions: JSON.stringify(data.questions),
+      isActive: data.isActive,
+      negativeMarking: data.negativeMarking,
+      negativeMarkValue: data.negativeMarkValue,
+    };
+    if (data.chapterId && data.chapterId !== "none" && data.chapterId.trim() !== "") {
+      updateData.chapterId = data.chapterId;
+    }
+    // If you also want to protect subjectId, add similar logic here
     const updatedQuiz = await prisma.quiz.update({
       where: { id: params.id },
-      data: {
-        title: data.title,
-        description: data.description,
-        timeLimit: data.duration,
-        chapterId: data.chapterId || null,
-        sections: JSON.stringify(data.sections), // Stringify sections for SQLite
-        questions: JSON.stringify(data.questions), // Ensure questions are stored as JSON string
-        isActive: data.isActive,
-        negativeMarking: data.negativeMarking,
-        negativeMarkValue: data.negativeMarkValue,
-      },
+      data: updateData,
     })
     
     // Parse questions and sections back to arrays for response
