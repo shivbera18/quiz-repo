@@ -336,24 +336,63 @@ export default function AdminPage() {
 
   // Save quizzes to backend (for create)
   const createQuiz = async () => {
-    if (!newQuiz.title || !Array.isArray(newQuiz.sections) || newQuiz.sections.length === 0) {
-      setError("Please provide a title and select at least one section")
+    // Clear previous messages
+    setError("")
+    setSuccess("")
+    
+    // Comprehensive validation with specific error messages
+    if (!newQuiz.title.trim()) {
+      setError("❌ Quiz title is required")
       return
     }
     
-    // Note: Subject and Chapter are optional - allow creating quizzes without them
-    console.log('Creating quiz with data:', {
+    if (newQuiz.title.trim().length < 3) {
+      setError("❌ Quiz title must be at least 3 characters long")
+      return
+    }
+    
+    if (newQuiz.duration < 5) {
+      setError("❌ Quiz duration must be at least 5 minutes")
+      return
+    }
+    
+    if (newQuiz.duration > 300) {
+      setError("❌ Quiz duration cannot exceed 300 minutes (5 hours)")
+      return
+    }
+    
+    if (!newQuiz.subjectId || newQuiz.subjectId === "none") {
+      setError("❌ Please select a subject - this is required for proper organization")
+      return
+    }
+    
+    if (!newQuiz.chapterId || newQuiz.chapterId === "none") {
+      setError("❌ Please select a chapter - this is required for proper organization")
+      return
+    }
+    
+    if (!Array.isArray(newQuiz.sections) || newQuiz.sections.length === 0) {
+      setError("❌ Please select at least one section (e.g., Quantitative, Reasoning, English)")
+      return
+    }
+    
+    if (newQuiz.negativeMarking && (newQuiz.negativeMarkValue <= 0 || newQuiz.negativeMarkValue > 1)) {
+      setError("❌ Negative marking value must be between 0.1 and 1.0")
+      return
+    }
+
+    console.log('🔧 Creating quiz with data:', {
       title: newQuiz.title,
       description: newQuiz.description,
       duration: newQuiz.duration,
-      chapterId: newQuiz.chapterId === "none" ? null : newQuiz.chapterId,
+      chapterId: newQuiz.chapterId,
+      subjectId: newQuiz.subjectId,
       sections: newQuiz.sections,
-      subjectId: newQuiz.subjectId === "none" ? null : newQuiz.subjectId
+      negativeMarking: newQuiz.negativeMarking,
+      negativeMarkValue: newQuiz.negativeMarkValue,
     })
     
     try {
-      setError("")
-      setSuccess("")
       const res = await fetch("/api/admin/quizzes", {
         method: "POST",
         headers: {
@@ -361,8 +400,8 @@ export default function AdminPage() {
           Authorization: `Bearer ${user?.token || "admin-token-placeholder"}`,
         },
         body: JSON.stringify({
-          title: newQuiz.title,
-          description: newQuiz.description,
+          title: newQuiz.title.trim(),
+          description: newQuiz.description.trim(),
           duration: newQuiz.duration,
           chapterId: newQuiz.chapterId === "none" ? null : newQuiz.chapterId,
           sections: newQuiz.sections,
@@ -371,16 +410,47 @@ export default function AdminPage() {
           negativeMarkValue: newQuiz.negativeMarkValue,
         }),
       })
+      
+      console.log('📡 API Response status:', res.status)
+      console.log('📡 API Response headers:', res.headers)
+      
       if (!res.ok) {
-        const errorData = await res.json()
-        console.error('Quiz creation failed:', errorData)
-        throw new Error(errorData.message || errorData.error || "Failed to create quiz")
+        const errorText = await res.text()
+        console.error('❌ API Error Response:', errorText)
+        
+        let errorData
+        try {
+          errorData = JSON.parse(errorText)
+        } catch {
+          errorData = { message: errorText }
+        }
+        
+        // Specific error messages based on API response
+        if (res.status === 400) {
+          setError(`❌ Validation Error: ${errorData.message || errorData.error || 'Invalid quiz data provided'}`)
+        } else if (res.status === 401) {
+          setError("❌ Authentication Error: You are not authorized to create quizzes")
+        } else if (res.status === 403) {
+          setError("❌ Permission Error: You don't have permission to create quizzes")
+        } else if (res.status === 404) {
+          setError("❌ API Error: Quiz creation endpoint not found")
+        } else if (res.status === 500) {
+          setError(`❌ Database Error: ${errorData.message || 'Internal server error during quiz creation'}`)
+        } else {
+          setError(`❌ Unknown Error (${res.status}): ${errorData.message || errorData.error || 'Failed to create quiz'}`)
+        }
+        return
       }
       
       const data = await res.json()
-      console.log('Quiz creation successful:', data)
+      console.log('✅ Quiz creation successful:', data)
       
-      setSuccess("Quiz created successfully!")
+      if (!data.quiz) {
+        setError("❌ Server Error: Quiz was created but response format is invalid")
+        return
+      }
+      
+      setSuccess(`✅ Quiz "${data.quiz.title}" created successfully! You can now add questions to it.`)
       setNewQuiz({
         title: "",
         description: "",
@@ -392,12 +462,31 @@ export default function AdminPage() {
         negativeMarkValue: 0.25,
       })
       setShowQuizForm(false)
-      // Refetch quizzes
-      setQuizzes((prev) => [...prev, data.quiz])
+      
+      // Refetch quizzes to show the new one
+      const updatedQuizzes = await fetch("/api/admin/quizzes", {
+        headers: {
+          Authorization: `Bearer ${user?.token || "admin-token-placeholder"}`,
+        },
+      })
+      if (updatedQuizzes.ok) {
+        const updatedData = await updatedQuizzes.json()
+        setQuizzes(updatedData.quizzes || [])
+      }
+      
     } catch (err) {
-      console.error('Quiz creation error:', err)
-      const errorMessage = err instanceof Error ? err.message : "Failed to create quiz in database"
-      setError(errorMessage)
+      console.error('❌ Network/JavaScript Error:', err)
+      
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        setError("❌ Network Error: Cannot connect to server. Please check your internet connection.")
+      } else if (err instanceof SyntaxError) {
+        setError("❌ Response Error: Server returned invalid data format")
+      } else if (err instanceof Error && err.name === 'AbortError') {
+        setError("❌ Timeout Error: Request took too long to complete")
+      } else {
+        const errorMessage = err instanceof Error ? err.message : "Unknown error occurred"
+        setError(`❌ Unexpected Error: ${errorMessage}`)
+      }
     }
   }
 

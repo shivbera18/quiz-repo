@@ -14,15 +14,28 @@ export function parseJsonField(field: any): any[] {
   return [];
 }
 
-export function stringifyForDatabase(data: any): any {
-  // For SQLite development, we need to stringify
-  // For PostgreSQL production, we can pass the object directly
-  const databaseUrl = process.env.DATABASE_URL || ""
-  const isDevMode = !process.env.NODE_ENV || process.env.NODE_ENV === "development"
-  const isSQLite = databaseUrl.includes("file:") || databaseUrl.includes("sqlite")
-  
-  if (isDevMode || isSQLite) {
-    return JSON.stringify(data);
+export function stringifyForDatabase(data: any): string {
+  // Always return a JSON string for consistent database storage
+  if (data === null || data === undefined) {
+    return "[]";
   }
-  return data;
+  
+  if (typeof data === "string") {
+    // If it's already a string, check if it's valid JSON
+    try {
+      JSON.parse(data);
+      return data; // Valid JSON string, return as-is
+    } catch {
+      // Not valid JSON, wrap it in an array and stringify
+      return JSON.stringify([data]);
+    }
+  }
+  
+  // For arrays, objects, or other types, stringify them
+  try {
+    return JSON.stringify(data);
+  } catch {
+    // If stringify fails, return empty array
+    return "[]";
+  }
 }

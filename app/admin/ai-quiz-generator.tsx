@@ -157,16 +157,75 @@ export default function AIQuizGenerator({ onQuizCreated, onClose }: AIQuizGenera
   }
 
   const generateQuiz = async () => {
-    if (!formData.title || !formData.topic || formData.sections.length === 0) {
-      setError("Please fill in all required fields and select at least one section")
+    // Clear previous messages
+    setError("")
+    setSuccess("")
+    
+    // Comprehensive validation with specific error messages
+    if (!formData.title.trim()) {
+      setError("❌ Quiz title is required")
+      return
+    }
+    
+    if (formData.title.trim().length < 3) {
+      setError("❌ Quiz title must be at least 3 characters long")
+      return
+    }
+    
+    if (!formData.topic.trim()) {
+      setError("❌ Topic/subject matter is required for AI quiz generation")
+      return
+    }
+    
+    if (formData.topic.trim().length < 5) {
+      setError("❌ Topic must be at least 5 characters long to generate meaningful questions")
+      return
+    }
+    
+    if (formData.sections.length === 0) {
+      setError("❌ Please select at least one section (e.g., Quantitative, Reasoning, English)")
+      return
+    }
+    
+    if (formData.questionsPerSection < 1) {
+      setError("❌ Questions per section must be at least 1")
+      return
+    }
+    
+    if (formData.questionsPerSection > 50) {
+      setError("❌ Questions per section cannot exceed 50 (to avoid API limits)")
+      return
+    }
+    
+    if (formData.duration < 5) {
+      setError("❌ Quiz duration must be at least 5 minutes")
+      return
+    }
+    
+    if (!formData.subjectId || formData.subjectId === "none") {
+      setError("❌ Please select a subject - this is required for proper organization")
+      return
+    }
+    
+    if (!formData.chapterId || formData.chapterId === "none") {
+      setError("❌ Please select a chapter - this is required for proper organization")
       return
     }
 
     setIsGenerating(true)
-    setError("")
-    setSuccess("")
 
     try {
+      console.log('🤖 Generating AI quiz with data:', {
+        title: formData.title,
+        topic: formData.topic,
+        subjectId: formData.subjectId,
+        chapterId: formData.chapterId,
+        sections: formData.sections,
+        difficulty: formData.difficulty,
+        questionsPerSection: formData.questionsPerSection,
+        duration: formData.duration
+      })
+
       // Generate complete quiz using the new API endpoint
       const response = await fetch('/api/ai/generate-quiz', {
         method: 'POST',
@@ -175,9 +234,9 @@ export default function AIQuizGenerator({ onQuizCreated, onClose }: AIQuizGenera
           'Authorization': 'Bearer admin-token-placeholder'
         },
         body: JSON.stringify({
-          title: formData.title,
-          description: formData.description,
-          topic: formData.topic,
+          title: formData.title.trim(),
+          description: formData.description.trim(),
+          topic: formData.topic.trim(),
           subjectId: formData.subjectId === "none" ? null : formData.subjectId,
           chapterId: formData.chapterId === "none" ? null : formData.chapterId,
           sections: formData.sections,
@@ -189,18 +248,57 @@ export default function AIQuizGenerator({ onQuizCreated, onClose }: AIQuizGenera
         })
       })
 
+      console.log('🤖 AI API Response status:', response.status)
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to generate quiz')
+        const errorText = await response.text()
+        console.error('❌ AI API Error Response:', errorText)
+        
+        let errorData
+        try {
+          errorData = JSON.parse(errorText)
+        } catch {
+          errorData = { error: errorText }
+        }
+
+        // Specific error messages based on API response
+        if (response.status === 400) {
+          setError(`❌ AI Validation Error: ${errorData.error || 'Invalid quiz generation parameters'}`)
+        } else if (response.status === 401) {
+          setError("❌ AI Authentication Error: API key invalid or missing")
+        } else if (response.status === 403) {
+          setError("❌ AI Permission Error: Access denied to AI service")
+        } else if (response.status === 429) {
+          setError("❌ AI Rate Limit Error: Too many requests. Please wait a moment and try again.")
+        } else if (response.status === 500) {
+          setError(`❌ AI Service Error: ${errorData.error || 'Internal AI service error'}`)
+        } else if (response.status === 503) {
+          setError("❌ AI Service Unavailable: The AI service is temporarily down. Please try again later.")
+        } else {
+          setError(`❌ AI Unknown Error (${response.status}): ${errorData.error || 'Failed to generate quiz'}`)
+        }
+        return
       }
 
       const data = await response.json()
+      console.log('✅ AI Quiz generation successful:', data)
       
-      if (!data.success || !data.quiz) {
-        throw new Error('Invalid response from AI quiz generator')
+      if (!data.success) {
+        setError(`❌ AI Generation Failed: ${data.error || 'AI service returned failure status'}`)
+        return
+      }
+      
+      if (!data.quiz) {
+        setError("❌ AI Response Error: Quiz data is missing from AI response")
+        return
+      }
+      
+      if (!data.quiz.questions || data.quiz.questions.length === 0) {
+        setError("❌ AI Generation Error: No questions were generated. Try a different topic or parameters.")
+        return
       }
 
-      setSuccess(data.message || `Successfully created AI quiz with ${data.quiz.questions.length} questions!`)
+      setSuccess(`✅ AI Quiz "${data.quiz.title}" created successfully with ${data.quiz.questions.length} questions!`)
       onQuizCreated(data.quiz)
       
       // Reset form

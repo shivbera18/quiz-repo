@@ -1,11 +1,10 @@
 // AI Complete Quiz Generator API Route
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from "@/lib/generated/prisma"
+import { prisma, VercelPrismaClient } from "@/lib/prisma-client"
 import { stringifyForDatabase } from "@/lib/database-utils"
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
-const prisma = new PrismaClient()
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,19 +22,98 @@ export async function POST(request: NextRequest) {
       negativeMarkValue
     } = await request.json()
 
-    // Validate required fields
-    if (!title || !topic || !sections || !Array.isArray(sections) || sections.length === 0) {
-      return NextResponse.json(
-        { error: 'Missing required fields: title, topic, sections' },
-        { status: 400 }
-      )
+    // Validate required fields with detailed error messages
+    const validationErrors = []
+
+    if (!title) {
+      validationErrors.push({
+        field: "title",
+        message: "Quiz title is required",
+        errorType: "VALIDATION_ERROR"
+      })
+    } else if (typeof title !== 'string' || title.trim().length < 3) {
+      validationErrors.push({
+        field: "title",
+        message: "Quiz title must be at least 3 characters long",
+        errorType: "VALIDATION_ERROR"
+      })
+    }
+
+    if (!topic) {
+      validationErrors.push({
+        field: "topic",
+        message: "Topic/subject matter is required for AI quiz generation",
+        errorType: "VALIDATION_ERROR"
+      })
+    } else if (typeof topic !== 'string' || topic.trim().length < 5) {
+      validationErrors.push({
+        field: "topic",
+        message: "Topic must be at least 5 characters long to generate meaningful questions",
+        errorType: "VALIDATION_ERROR"
+      })
+    }
+
+    if (!sections || !Array.isArray(sections) || sections.length === 0) {
+      validationErrors.push({
+        field: "sections",
+        message: "At least one section is required (e.g., Quantitative, Reasoning, English)",
+        errorType: "VALIDATION_ERROR"
+      })
+    }
+
+    if (!questionsPerSection || questionsPerSection < 1) {
+      validationErrors.push({
+        field: "questionsPerSection",
+        message: "Questions per section must be at least 1",
+        errorType: "VALIDATION_ERROR"
+      })
+    } else if (questionsPerSection > 50) {
+      validationErrors.push({
+        field: "questionsPerSection",
+        message: "Questions per section cannot exceed 50 (to avoid API limits)",
+        errorType: "VALIDATION_ERROR"
+      })
+    }
+
+    if (!duration || duration < 5) {
+      validationErrors.push({
+        field: "duration",
+        message: "Quiz duration must be at least 5 minutes",
+        errorType: "VALIDATION_ERROR"
+      })
+    }
+
+    if (!subjectId) {
+      validationErrors.push({
+        field: "subjectId",
+        message: "Subject selection is required for proper quiz organization",
+        errorType: "VALIDATION_ERROR"
+      })
+    }
+
+    if (!chapterId) {
+      validationErrors.push({
+        field: "chapterId",
+        message: "Chapter selection is required for proper quiz organization",
+        errorType: "VALIDATION_ERROR"
+      })
+    }
+
+    if (validationErrors.length > 0) {
+      return NextResponse.json({
+        message: "Validation failed",
+        errors: validationErrors,
+        errorType: "VALIDATION_ERROR",
+        totalErrors: validationErrors.length
+      }, { status: 400 })
     }
 
     if (!process.env.GEMINI_API_KEY) {
-      return NextResponse.json(
-        { error: 'Gemini API key not configured' },
-        { status: 500 }
-      )
+      return NextResponse.json({
+        message: "AI service configuration error",
+        error: 'Gemini API key not configured on server',
+        errorType: "CONFIG_ERROR"
+      }, { status: 500 })
     }
 
     // Authorization check
@@ -112,10 +190,53 @@ Number of questions: ${questionsPerSection}`
         
       } catch (sectionError) {
         console.error(`Error generating questions for section ${section}:`, sectionError)
-        return NextResponse.json(
-          { error: `Failed to generate questions for section: ${section}` },
-          { status: 500 }
-        )
+        
+        const errorMessage = sectionError instanceof Error ? sectionError.message : String(sectionError)
+        
+        // Specific AI service error handling
+        if (errorMessage.includes('API key') || errorMessage.includes('authentication')) {
+          return NextResponse.json({
+            message: "AI service authentication error",
+            error: "Invalid or expired API key for AI service",
+            errorType: "AI_AUTH_ERROR",
+            section: section
+          }, { status: 401 })
+        }
+        
+        if (errorMessage.includes('quota') || errorMessage.includes('limit')) {
+          return NextResponse.json({
+            message: "AI service quota exceeded",
+            error: "API rate limit or quota exceeded. Please try again later.",
+            errorType: "AI_QUOTA_ERROR",
+            section: section
+          }, { status: 429 })
+        }
+        
+        if (errorMessage.includes('JSON')) {
+          return NextResponse.json({
+            message: "AI response format error",
+            error: `AI service returned invalid response format for section: ${section}`,
+            errorType: "AI_FORMAT_ERROR",
+            section: section
+          }, { status: 500 })
+        }
+        
+        if (errorMessage.includes('No valid JSON')) {
+          return NextResponse.json({
+            message: "AI response parsing error",
+            error: `Unable to extract valid questions from AI response for section: ${section}`,
+            errorType: "AI_PARSE_ERROR",
+            section: section
+          }, { status: 500 })
+        }
+        
+        return NextResponse.json({
+          message: "AI question generation failed",
+          error: `Failed to generate questions for section: ${section}`,
+          errorType: "AI_GENERATION_ERROR",
+          section: section,
+          details: errorMessage
+        }, { status: 500 })
       }
     }
 
@@ -172,47 +293,98 @@ Number of questions: ${questionsPerSection}`
       })
 
     } catch (dbError) {
-      console.error('Database error creating quiz:', dbError)
+      console.error('Database error creating AI quiz:', dbError)
       
       // Type-safe error handling
       const errorMessage = dbError instanceof Error ? dbError.message : String(dbError)
       const errorCode = (dbError as any)?.code
       
-      console.error("Database error details:", {
+      console.error("AI Quiz database error details:", {
         name: dbError instanceof Error ? dbError.name : 'Unknown',
         message: errorMessage,
         code: errorCode
       })
       
-      // Provide more specific error messages
+      // Handle specific Prisma errors for AI quiz creation
       if (errorCode === 'P2002') {
-        return NextResponse.json(
-          { error: 'Quiz with this title already exists' },
-          { status: 400 }
-        )
+        const targetField = (dbError as any)?.meta?.target?.[0] || 'field'
+        return NextResponse.json({
+          message: "Duplicate AI quiz error",
+          error: `An AI quiz with this ${targetField} already exists`,
+          errorType: "AI_DUPLICATE_ERROR",
+          field: targetField
+        }, { status: 400 })
       }
       
       if (errorCode === 'P2003') {
-        return NextResponse.json(
-          { error: 'Invalid chapter ID provided' },
-          { status: 400 }
-        )
+        const targetField = (dbError as any)?.meta?.field_name || 'chapterId'
+        return NextResponse.json({
+          message: "Invalid AI quiz reference",
+          error: `The ${targetField} provided for AI quiz does not exist`,
+          errorType: "AI_FOREIGN_KEY_ERROR",
+          field: targetField
+        }, { status: 400 })
+      }
+
+      if (errorCode === 'P2025') {
+        return NextResponse.json({
+          message: "AI quiz record not found",
+          error: "Referenced record for AI quiz creation does not exist",
+          errorType: "AI_RECORD_NOT_FOUND"
+        }, { status: 404 })
+      }
+
+      // Handle connection errors
+      if (errorMessage.includes('connect') || errorMessage.includes('ECONNREFUSED')) {
+        return NextResponse.json({
+          message: "AI quiz database connection error",
+          error: "Unable to connect to database while creating AI quiz",
+          errorType: "AI_CONNECTION_ERROR"
+        }, { status: 503 })
       }
       
-      return NextResponse.json(
-        { error: 'Failed to create quiz in database', details: errorMessage },
-        { status: 500 }
-      )
+      return NextResponse.json({
+        message: "AI quiz database creation failed",
+        error: errorMessage,
+        errorType: "AI_DATABASE_ERROR"
+      }, { status: 500 })
     }
 
   } catch (error) {
-    console.error('AI Quiz Generation Error:', error)
-    return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : 'Failed to generate AI quiz',
-        details: error instanceof Error ? error.stack : undefined
-      },
-      { status: 500 }
-    )
+    console.error('General AI Quiz Generation Error:', error)
+    
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    
+    // Handle different types of general errors
+    if (errorMessage.includes('fetch') || errorMessage.includes('network')) {
+      return NextResponse.json({
+        message: "Network error during AI quiz generation",
+        error: "Unable to connect to external services",
+        errorType: "NETWORK_ERROR"
+      }, { status: 503 })
+    }
+
+    if (errorMessage.includes('timeout')) {
+      return NextResponse.json({
+        message: "AI quiz generation timeout",
+        error: "Request timed out while generating quiz",
+        errorType: "TIMEOUT_ERROR"
+      }, { status: 408 })
+    }
+
+    if (errorMessage.includes('JSON') || errorMessage.includes('parse')) {
+      return NextResponse.json({
+        message: "Request format error",
+        error: "Invalid request format for AI quiz generation",
+        errorType: "FORMAT_ERROR"
+      }, { status: 400 })
+    }
+    
+    return NextResponse.json({
+      message: "Unexpected error during AI quiz generation",
+      error: errorMessage,
+      errorType: "UNKNOWN_ERROR",
+      details: error instanceof Error ? error.stack : undefined
+    }, { status: 500 })
   }
 }
