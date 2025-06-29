@@ -138,7 +138,12 @@ export default function DashboardPage() {
           return res.json()
         })
         .then((data) => {
-          const activeQuizzes = data.filter((q: Quiz) => q.isActive && q.questions?.length > 0)
+          console.log('📊 Raw quiz data received:', data)
+          // Handle both array and object responses
+          const quizzesArray = Array.isArray(data) ? data : (data.value || data)
+          console.log('📊 Quizzes array:', quizzesArray)
+          const activeQuizzes = quizzesArray.filter((q: Quiz) => q.isActive && q.questions?.length > 0)
+          console.log('📊 Active quizzes:', activeQuizzes)
           setAvailableQuizzes(activeQuizzes)
           
           // Prepare flash questions from all available quizzes
@@ -156,7 +161,10 @@ export default function DashboardPage() {
           const shuffled = allQuestions.sort(() => Math.random() - 0.5)
           setFlashQuestions(shuffled.slice(0, 10))
         })
-        .catch(() => setAvailableQuizzes([]))
+        .catch((error) => {
+          console.error("❌ Error fetching quizzes:", error)
+          setAvailableQuizzes([])
+        })
 
       // Load active goals
       const goals = JSON.parse(localStorage.getItem("performanceGoals") || "[]")
