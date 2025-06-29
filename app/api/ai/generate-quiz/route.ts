@@ -83,14 +83,6 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    if (!subjectId) {
-      validationErrors.push({
-        field: "subjectId",
-        message: "Subject selection is required for proper quiz organization",
-        errorType: "VALIDATION_ERROR"
-      })
-    }
-
     if (!chapterId) {
       validationErrors.push({
         field: "chapterId",

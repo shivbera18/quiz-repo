@@ -1,15 +1,26 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Clock, ArrowLeft, AlertTriangle } from "lucide-react"
+import { Clock, ArrowLeft, AlertTriangle, Home } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import Link from "next/link"
 import { useAuth } from "@/hooks/use-auth"
 import MathRenderer from "@/components/math-renderer"
@@ -50,7 +61,57 @@ export default function QuizPage({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user, loading: authLoading } = useAuth()
+
+  // Enhanced back navigation logic
+  const getBackUrl = () => {
+    // Check if user came from sectional tests via URL parameters
+    const fromSubject = searchParams.get('fromSubject')
+    const fromChapter = searchParams.get('fromChapter')
+    
+    if (fromSubject && fromChapter) {
+      return `/dashboard/sectional-tests/${fromSubject}/${fromChapter}`
+    } else if (fromSubject) {
+      return `/dashboard/sectional-tests/${fromSubject}`
+    }
+    
+    // Check if user came from sectional tests via referrer
+    if (typeof window !== 'undefined') {
+      const referrer = document.referrer
+      if (referrer.includes('sectional-tests')) {
+        const match = referrer.match(/sectional-tests\/([^\/]+)(?:\/([^\/]+))?/)
+        if (match) {
+          const [, subjectId, chapterId] = match
+          if (chapterId) {
+            return `/dashboard/sectional-tests/${subjectId}/${chapterId}`
+          }
+          return `/dashboard/sectional-tests/${subjectId}`
+        }
+        return '/dashboard/sectional-tests'
+      }
+    }
+    
+    // Default to dashboard
+    return '/dashboard'
+  }
+
+  const getBackButtonText = () => {
+    const backUrl = getBackUrl()
+    if (backUrl.includes('sectional-tests')) {
+      if (backUrl.split('/').length === 5) { // Has chapter
+        return 'Back to Chapter'
+      } else if (backUrl.split('/').length === 4) { // Has subject
+        return 'Back to Subject'
+      }
+      return 'Back to Sectional Tests'
+    }
+    return 'Back to Dashboard'
+  }
+
+  const handleBackNavigation = () => {
+    router.push(getBackUrl())
+  }
 
   useEffect(() => {
     // Wait for auth to load and check if user is authenticated
@@ -376,11 +437,27 @@ export default function QuizPage({ params }: { params: { id: string } }) {
           <div className="flex flex-col space-y-4 md:hidden">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Link href="/dashboard">
-                  <Button variant="outline" size="icon">
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                </Link>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Leave Quiz?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to leave this quiz? Your progress will be lost and you'll need to start over.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Continue Quiz</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleBackNavigation}>
+                        Yes, Leave Quiz
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
                 <ThemeToggle />
               </div>
               {quiz.duration > 0 && (
@@ -396,29 +473,91 @@ export default function QuizPage({ params }: { params: { id: string } }) {
               <h1 className="text-2xl font-bold text-foreground">{quiz.title}</h1>
               <p className="text-muted-foreground text-sm">{quiz.description}</p>
             </div>
-            <Button 
-              onClick={handleSubmit} 
-              disabled={submitting} 
-              className="w-full"
-            >
-              {submitting ? "Submitting..." : "Submit Quiz"}
-            </Button>
+            <div className="flex gap-2">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="flex-1">
+                    <Home className="h-4 w-4 mr-2" />
+                    {getBackButtonText()}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Leave Quiz?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to leave this quiz? Your progress will be lost and you'll need to start over.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Continue Quiz</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleBackNavigation}>
+                      Yes, Leave Quiz
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <Button 
+                onClick={handleSubmit} 
+                disabled={submitting} 
+                className="flex-1"
+              >
+                {submitting ? "Submitting..." : "Submit Quiz"}
+              </Button>
+            </div>
           </div>
 
           {/* Desktop Header */}
           <div className="hidden md:flex justify-between items-center">
             <div className="flex items-center gap-4">
-              <Link href="/dashboard">
-                <Button variant="outline" size="icon">
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-              </Link>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Leave Quiz?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to leave this quiz? Your progress will be lost and you'll need to start over.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Continue Quiz</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleBackNavigation}>
+                      Yes, Leave Quiz
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
               <div>
                 <h1 className="text-3xl font-bold text-foreground">{quiz.title}</h1>
                 <p className="text-muted-foreground">{quiz.description}</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline">
+                    <Home className="h-4 w-4 mr-2" />
+                    {getBackButtonText()}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Leave Quiz?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to leave this quiz? Your progress will be lost and you'll need to start over.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Continue Quiz</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleBackNavigation}>
+                      Yes, Leave Quiz
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
               <ThemeToggle />
               {quiz.duration > 0 && (
                 <div className="flex items-center gap-2 text-lg font-semibold">

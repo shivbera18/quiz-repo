@@ -144,15 +144,6 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Subject validation
-    if (!subjectId) {
-      validationErrors.push({
-        field: "subjectId",
-        message: "Subject selection is required for proper quiz organization",
-        errorType: "VALIDATION_ERROR"
-      })
-    }
-
     // Chapter validation  
     if (!chapterId) {
       validationErrors.push({
