@@ -1202,17 +1202,17 @@ export default function AdminPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="chapter">Chapter (Optional)</Label>
+                        <Label htmlFor="chapter">Chapter <span className="text-red-500">*</span></Label>
                         <Select
-                          value={newQuiz.chapterId || "none"}
+                          value={newQuiz.chapterId}
                           onValueChange={(value) => setNewQuiz(prev => ({ ...prev, chapterId: value }))}
                           disabled={!newQuiz.subjectId || loadingChapters}
+                          required
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select a chapter" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">No Chapter</SelectItem>
                             {loadingChapters ? (
                               <SelectItem value="loading" disabled>Loading chapters...</SelectItem>
                             ) : (
