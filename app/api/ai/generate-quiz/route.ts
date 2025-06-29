@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    if (!chapterId) {
+    if (!chapterId || (typeof chapterId === 'string' && chapterId.trim() === '')) {
       validationErrors.push({
         field: "chapterId",
         message: "Chapter selection is required for proper quiz organization",

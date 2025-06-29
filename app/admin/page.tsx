@@ -366,7 +366,7 @@ export default function AdminPage() {
       return
     }
     
-    if (!newQuiz.chapterId || newQuiz.chapterId === "none") {
+    if (!newQuiz.chapterId || newQuiz.chapterId === "none" || newQuiz.chapterId.trim() === "") {
       setError("❌ Please select a chapter - this is required for proper organization")
       return
     }
@@ -403,7 +403,7 @@ export default function AdminPage() {
           title: newQuiz.title.trim(),
           description: newQuiz.description.trim(),
           duration: newQuiz.duration,
-          chapterId: newQuiz.chapterId === "none" ? null : newQuiz.chapterId,
+          chapterId: (newQuiz.chapterId === "none" || !newQuiz.chapterId || newQuiz.chapterId.trim() === "") ? null : newQuiz.chapterId,
           sections: newQuiz.sections,
           questions: [],
           negativeMarking: newQuiz.negativeMarking,
@@ -1205,7 +1205,7 @@ export default function AdminPage() {
                         <Label htmlFor="chapter">Chapter (Optional)</Label>
                         <Select
                           value={newQuiz.chapterId || "none"}
-                          onValueChange={(value) => setNewQuiz(prev => ({ ...prev, chapterId: value === "none" ? "" : value }))}
+                          onValueChange={(value) => setNewQuiz(prev => ({ ...prev, chapterId: value }))}
                           disabled={!newQuiz.subjectId || loadingChapters}
                         >
                           <SelectTrigger>
