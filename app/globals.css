@@ -272,13 +272,43 @@
     --chart-5: 190 70% 40%;
   }
 
-@layer base {
-  * {
-    @apply border-border;
+  /* Glassmorphism Neon Theme */
+  .glassmorphism {
+    /* Dark base with neon accents */
+    --background: 220 25% 6%;
+    --foreground: 210 100% 95%;
+    --card: 220 25% 8%;
+    --card-foreground: 210 100% 95%;
+    --popover: 220 25% 8%;
+    --popover-foreground: 210 100% 95%;
+    --primary: 195 100% 50%;
+    --primary-foreground: 220 25% 6%;
+    --secondary: 220 25% 12%;
+    --secondary-foreground: 210 100% 90%;
+    --muted: 220 25% 12%;
+    --muted-foreground: 210 20% 70%;
+    --accent: 270 100% 60%;
+    --accent-foreground: 220 25% 6%;
+    --destructive: 0 75% 60%;
+    --destructive-foreground: 210 100% 95%;
+    --border: 220 25% 20%;
+    --input: 220 25% 12%;
+    --ring: 195 100% 50%;
+    --chart-1: 195 100% 50%;
+    --chart-2: 270 100% 60%;
+    --chart-3: 315 100% 60%;
+    --chart-4: 45 100% 60%;
+    --chart-5: 120 100% 50%;
+    
+    /* Glassmorphism specific variables */
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --neon-glow: 0 0 20px rgba(0, 255, 255, 0.5);
+    --neon-glow-strong: 0 0 30px rgba(0, 255, 255, 0.8);
+    --noise-opacity: 0.03;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
+
+  /* ...existing code... */
 }
 
 @layer utilities {
