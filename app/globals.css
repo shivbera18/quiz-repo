@@ -4,50 +4,68 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    /* Neumorphic Light Theme */
+    --background: 225 25% 95%;
+    --foreground: 225 25% 15%;
+    --card: 225 25% 95%;
+    --card-foreground: 225 25% 15%;
+    --popover: 225 25% 95%;
+    --popover-foreground: 225 25% 15%;
+    --primary: 220 70% 50%;
+    --primary-foreground: 225 25% 95%;
+    --secondary: 225 15% 85%;
+    --secondary-foreground: 225 25% 25%;
+    --muted: 225 15% 85%;
+    --muted-foreground: 225 25% 45%;
+    --accent: 280 65% 60%;
+    --accent-foreground: 225 25% 95%;
+    --destructive: 0 75% 60%;
+    --destructive-foreground: 225 25% 95%;
+    --border: 225 20% 82%;
+    --input: 225 20% 90%;
+    --ring: 220 70% 50%;
+    --radius: 1rem;
+    --chart-1: 280 65% 60%;
+    --chart-2: 160 70% 50%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 200 70% 55%;
+    --chart-5: 340 75% 55%;
+    
+    /* Neumorphic specific variables */
+    --neu-light: 225 25% 98%;
+    --neu-dark: 225 25% 88%;
+    --neu-shadow-light: 225 25% 100%;
+    --neu-shadow-dark: 225 25% 85%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    /* Neumorphic Dark Theme */
+    --background: 225 25% 8%;
+    --foreground: 225 25% 88%;
+    --card: 225 25% 8%;
+    --card-foreground: 225 25% 88%;
+    --popover: 225 25% 8%;
+    --popover-foreground: 225 25% 88%;
+    --primary: 220 70% 60%;
+    --primary-foreground: 225 25% 8%;
+    --secondary: 225 15% 12%;
+    --secondary-foreground: 225 25% 78%;
+    --muted: 225 15% 12%;
+    --muted-foreground: 225 25% 58%;
+    --accent: 280 65% 65%;
+    --accent-foreground: 225 25% 8%;
+    --destructive: 0 75% 65%;
+    --destructive-foreground: 225 25% 8%;
+    --border: 225 20% 15%;
+    --input: 225 20% 12%;
+    --ring: 220 70% 60%;
+    
+    /* Neumorphic specific variables for dark theme */
+    --neu-light: 225 25% 12%;
+    --neu-dark: 225 25% 4%;
+    --neu-shadow-light: 225 25% 16%;
+    --neu-shadow-dark: 225 25% 2%;
+  }
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 94.1%;
@@ -253,7 +271,6 @@
     --chart-4: 170 60% 50%;
     --chart-5: 190 70% 40%;
   }
-}
 
 @layer base {
   * {
@@ -272,5 +289,196 @@
   
   .scrollbar-hide::-webkit-scrollbar {
     display: none;  /* Safari and Chrome */
+  }
+}
+
+/* Neumorphic Custom Utilities */
+@layer components {
+  .neu-card {
+    @apply bg-background border-0 rounded-3xl;
+    box-shadow: 
+      20px 20px 60px hsl(var(--neu-shadow-dark)),
+      -20px -20px 60px hsl(var(--neu-shadow-light));
+  }
+  
+  .neu-card-inset {
+    @apply bg-background border-0 rounded-3xl;
+    box-shadow: 
+      inset 20px 20px 60px hsl(var(--neu-shadow-dark)),
+      inset -20px -20px 60px hsl(var(--neu-shadow-light));
+  }
+  
+  .neu-button {
+    @apply bg-background border-0 rounded-2xl transition-all duration-200;
+    box-shadow: 
+      10px 10px 30px hsl(var(--neu-shadow-dark)),
+      -10px -10px 30px hsl(var(--neu-shadow-light));
+  }
+  
+  .neu-button-active {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border: 0;
+    border-radius: 1rem;
+    transition: all 0.2s;
+    box-shadow: 
+      inset 5px 5px 15px hsl(var(--neu-shadow-dark)),
+      inset -5px -5px 15px hsl(var(--neu-shadow-light));
+  }
+  
+  .neu-button:hover {
+    box-shadow: 
+      15px 15px 40px hsl(var(--neu-shadow-dark)),
+      -15px -15px 40px hsl(var(--neu-shadow-light));
+    transform: translateY(-2px);
+  }
+  
+  .neu-button:active {
+    box-shadow: 
+      inset 5px 5px 15px hsl(var(--neu-shadow-dark)),
+      inset -5px -5px 15px hsl(var(--neu-shadow-light));
+    transform: translateY(0px);
+  }
+  
+  .neu-input {
+    background: hsl(var(--background));
+    border: 1px solid hsl(var(--border));
+    border-radius: 1rem;
+    padding: 0.5rem 1rem;
+    transition: all 0.2s;
+    box-shadow: 
+      inset 8px 8px 20px hsl(var(--neu-shadow-dark)),
+      inset -8px -8px 20px hsl(var(--neu-shadow-light));
+  }
+  
+  .neu-input:focus {
+    outline: none;
+    box-shadow: 
+      inset 10px 10px 25px hsl(var(--neu-shadow-dark)),
+      inset -10px -10px 25px hsl(var(--neu-shadow-light)),
+      0 0 0 2px hsl(var(--ring));
+  }
+  
+  .neu-icon-button {
+    background: hsl(var(--background));
+    border: 0;
+    border-radius: 1rem;
+    padding: 0.75rem;
+    transition: all 0.2s;
+    box-shadow: 
+      8px 8px 25px hsl(var(--neu-shadow-dark)),
+      -8px -8px 25px hsl(var(--neu-shadow-light));
+  }
+  
+  .neu-icon-button:hover {
+    box-shadow: 
+      12px 12px 35px hsl(var(--neu-shadow-dark)),
+      -12px -12px 35px hsl(var(--neu-shadow-light));
+    transform: translateY(-1px);
+  }
+  
+  .neu-icon-button:active {
+    box-shadow: 
+      inset 4px 4px 12px hsl(var(--neu-shadow-dark)),
+      inset -4px -4px 12px hsl(var(--neu-shadow-light));
+    transform: translateY(0px);
+  }
+  
+  .neu-surface {
+    background: hsl(var(--background));
+    background: linear-gradient(145deg, hsl(var(--neu-light)), hsl(var(--neu-dark)));
+  }
+  
+  .neu-text-gradient {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+/* Page Transition Utilities */
+@layer utilities {
+  .page-enter {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  
+  .page-enter-active {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    transition: opacity 400ms ease-out, transform 400ms ease-out;
+  }
+  
+  .page-exit {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  
+  .page-exit-active {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.98);
+    transition: opacity 400ms ease-in, transform 400ms ease-in;
+  }
+  
+  /* Enhanced hover and focus effects */
+  .hover-lift {
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  }
+  
+  .hover-glow {
+    transition: box-shadow 0.3s ease-out;
+  }
+  
+  .hover-glow:hover {
+    box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
+  }
+  
+  /* Smooth animations for all interactive elements */
+  .animate-smooth {
+    transition: all 0.2s ease-out;
+  }
+  
+  /* Stagger animation delays */
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
+  
+  /* Loading skeleton animations */
+  @keyframes skeleton-loading {
+    0% { background-position: -200px 0; }
+    100% { background-position: calc(200px + 100%) 0; }
+  }
+  
+  .skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200px 100%;
+    animation: skeleton-loading 1.5s infinite;
+  }
+  
+  .dark .skeleton {
+    background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+    background-size: 200px 100%;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .page-enter-active,
+  .page-exit-active,
+  .hover-lift,
+  .hover-glow,
+  .animate-smooth {
+    transition: none !important;
+  }
+  
+  .skeleton {
+    animation: none !important;
   }
 }

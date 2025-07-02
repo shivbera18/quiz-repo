@@ -75,26 +75,32 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl flex items-center justify-center gap-2">
-            <User className="h-6 w-6" />
-            Create Student Account
-          </CardTitle>
-          <CardDescription>Join thousands of students preparing for banking exams</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="min-h-screen neu-surface flex items-center justify-center p-4">
+      <div className="neu-card w-full max-w-md p-8">
+        <div className="text-center mb-8">
+          <div className="neu-card-inset p-6 rounded-2xl mb-6">
+            <h1 className="text-3xl font-bold neu-text-gradient mb-2 flex items-center justify-center gap-3">
+              <div className="neu-icon-button p-2">
+                <User className="h-6 w-6 text-primary" />
+              </div>
+              Join Our Community
+            </h1>
+            <p className="text-muted-foreground">Create your student account and start your banking exam journey</p>
+          </div>
+        </div>
+        <div className="neu-card-inset p-6 rounded-2xl">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+              <div className="neu-card-inset p-4 rounded-2xl border-destructive/20">
+                <Alert variant="destructive" className="border-0 bg-transparent">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
+            <div className="space-y-3">
+              <Label htmlFor="name" className="text-sm font-medium text-foreground">Full Name</Label>
+              <input
                 id="name"
                 name="name"
                 type="text"
@@ -102,25 +108,27 @@ export default function SignupPage() {
                 value={formData.name}
                 onChange={handleChange}
                 required
+                className="neu-input w-full"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
+            <div className="space-y-3">
+              <Label htmlFor="email" className="text-sm font-medium text-foreground">Email Address</Label>
+              <input
                 id="email"
                 name="email"
                 type="email"
-                placeholder="Enter your email"
+                placeholder="your.email@example.com"
                 value={formData.email}
                 onChange={handleChange}
                 required
+                className="neu-input w-full"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
+            <div className="space-y-3">
+              <Label htmlFor="password" className="text-sm font-medium text-foreground">Password</Label>
+              <input
                 id="password"
                 name="password"
                 type="password"
@@ -128,12 +136,13 @@ export default function SignupPage() {
                 value={formData.password}
                 onChange={handleChange}
                 required
+                className="neu-input w-full"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
+            <div className="space-y-3">
+              <Label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">Confirm Password</Label>
+              <input
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
@@ -141,25 +150,30 @@ export default function SignupPage() {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 required
+                className="neu-input w-full"
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            <button type="submit" className="neu-button w-full py-4 font-medium text-primary" disabled={loading}>
               {loading ? "Creating account..." : "Create Student Account"}
-            </Button>
+            </button>
           </form>
+        </div>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+        <div className="mt-8 space-y-4">
+          <div className="neu-card-inset p-4 rounded-2xl text-center">
+            <p className="text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link href="/auth/login" className="text-blue-600 hover:underline">
+              <Link href="/auth/login" className="text-primary hover:text-accent font-medium">
                 Sign in
               </Link>
             </p>
-            <p className="text-xs text-gray-500 mt-2">Admin accounts are created by system administrators only</p>
           </div>
-        </CardContent>
-      </Card>
+          <div className="neu-card-inset p-3 rounded-2xl text-center">
+            <p className="text-xs text-muted-foreground">Admin accounts are created by system administrators only</p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

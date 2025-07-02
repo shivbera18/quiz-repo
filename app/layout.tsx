@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { PageTransition } from "@/components/page-transition"
 import PWAHandler from "@/components/pwa-handler"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -64,7 +65,9 @@ export default function RootLayout({
           themes={['light', 'dark', 'system', 'blue', 'green', 'purple', 'orange', 'red', 'pink', 'teal']}
           disableTransitionOnChange
         >
-          {children}
+          <PageTransition>
+            {children}
+          </PageTransition>
           {/* <PWAHandler /> */}
         </ThemeProvider>
       </body>

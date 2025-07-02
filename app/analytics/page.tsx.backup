@@ -54,10 +54,12 @@ export default function AnalyticsPage() {
     setRefreshing(true)
     try {
       if (user) {
+        // Try both token keys for compatibility
         const token = localStorage.getItem('authToken') || localStorage.getItem('token')
         console.log('Refreshing analytics data...', { hasUser: !!user, hasToken: !!token, force })
         
         if (token) {
+          // Use dedicated analytics API with cache-busting
           const url = force ? `/api/analytics?_t=${Date.now()}` : '/api/analytics'
           
           const response = await fetch(url, {
@@ -80,6 +82,7 @@ export default function AnalyticsPage() {
             
             if (apiData.results && Array.isArray(apiData.results)) {
               setResults(apiData.results)
+              // Update localStorage with fresh data
               localStorage.setItem("quizResults", JSON.stringify(apiData.results))
               setLastUpdated(new Date())
               setDataSource('api')
@@ -90,6 +93,7 @@ export default function AnalyticsPage() {
             setConnectionStatus('disconnected')
             console.error('Analytics API response not ok:', response.status, response.statusText)
             
+            // Fallback to results API if analytics API fails
             const fallbackResponse = await fetch(force ? `/api/results?_t=${Date.now()}` : '/api/results', {
               headers: {
                 'Authorization': `Bearer ${token}`,
@@ -108,6 +112,7 @@ export default function AnalyticsPage() {
                 console.log('Fallback to results API successful')
               }
             } else {
+              // Final fallback to localStorage
               const storedResults = localStorage.getItem("quizResults")
               if (storedResults) {
                 const parsedResults = JSON.parse(storedResults)
@@ -141,8 +146,10 @@ export default function AnalyticsPage() {
         
         console.log('Loading analytics results...', { hasUser: !!user })
         
+        // First try to fetch from analytics API if user is authenticated
         if (user) {
           try {
+            // Try both token keys for compatibility
             const token = localStorage.getItem('authToken') || localStorage.getItem('token')
             console.log('Attempting analytics API fetch...', { hasToken: !!token })
             
@@ -166,6 +173,7 @@ export default function AnalyticsPage() {
                 
                 if (apiData.results && Array.isArray(apiData.results)) {
                   setResults(apiData.results)
+                  // Also update localStorage with fresh data
                   localStorage.setItem("quizResults", JSON.stringify(apiData.results))
                   setLastUpdated(new Date())
                   setDataSource('api')
@@ -177,6 +185,7 @@ export default function AnalyticsPage() {
               } else {
                 console.warn('Analytics API response not ok, falling back to results API')
                 
+                // Fallback to results API
                 const fallbackResponse = await fetch('/api/results', {
                   headers: {
                     'Authorization': `Bearer ${token}`
@@ -208,17 +217,19 @@ export default function AnalyticsPage() {
           }
         }
         
+        // Fallback to localStorage if API fails or user not authenticated
         console.log('Loading from localStorage...')
         const storedResults = localStorage.getItem("quizResults")
         if (storedResults) {
           const parsedResults = JSON.parse(storedResults)
+          // Ensure each result has the answers field
           const normalizedResults = parsedResults.map((result: any) => ({
             ...result,
             answers: result.answers || []
           }))
           setResults(normalizedResults)
           setDataSource('localStorage')
-          setConnectionStatus('disconnected')
+          setConnectionStatus('disconnected') // Using cached data means we're not connected to API
           console.log('Loaded from localStorage:', { resultsCount: normalizedResults.length })
         } else {
           console.log('No data in localStorage')
@@ -233,6 +244,7 @@ export default function AnalyticsPage() {
     loadResults()
   }, [user])
 
+  // Auto-refresh when page becomes visible and periodically
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && user) {
@@ -241,12 +253,13 @@ export default function AnalyticsPage() {
       }
     }
 
+    // Set up periodic refresh every 15 seconds when page is visible (reduced from 30s for faster updates)
     const intervalId = setInterval(() => {
       if (!document.hidden && user) {
         console.log('Periodic refresh...')
         refreshData()
       }
-    }, 15000)
+    }, 15000) // 15 seconds for more responsive updates
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
     
@@ -298,6 +311,61 @@ export default function AnalyticsPage() {
               >
                 {refreshing ? "Refreshing..." : "Refresh Data"}
               </button>
+              <button
+                onClick={async () => {
+                  setRefreshing(true)
+                  try {
+                    // Smart refresh: try API first, only update cache if API works
+                    const token = localStorage.getItem('authToken') || localStorage.getItem('token')
+                    if (token && user) {
+                      try {
+                        const response = await fetch(`/api/results?_t=${Date.now()}`, {
+                          headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Cache-Control': 'no-cache'
+                          }
+                        })
+                        
+                        if (response.ok) {
+                          const apiData = await response.json()
+                          console.log('Force refresh API data:', {
+                            resultsCount: apiData.results?.length,
+                            success: apiData.success,
+                            timestamp: apiData.timestamp
+                          })
+                          
+                          // API now always returns results array, even if empty
+                          if (apiData.results && Array.isArray(apiData.results)) {
+                            // Only update if we successfully got fresh data
+                            localStorage.setItem("quizResults", JSON.stringify(apiData.results))
+                            setResults(apiData.results)
+                            setLastUpdated(new Date())
+                            setDataSource('api')
+                            setConnectionStatus('connected')
+                            console.log("Analytics force refreshed with latest data from server")
+                            return
+                          }
+                        } else {
+                          setConnectionStatus('disconnected')
+                          const errorText = await response.text()
+                          console.error('Force refresh API error:', errorText)
+                        }
+                      } catch (error) {
+                        console.error("API refresh failed:", error)
+                      }
+                    }
+                    
+                    // If API fails, inform user but don't touch localStorage
+                    console.warn("Unable to refresh from server - keeping existing data")
+                  } finally {
+                    setRefreshing(false)
+                  }
+                }}
+                disabled={refreshing}
+                className="neu-button py-3 px-4 w-full text-sm font-medium text-primary disabled:opacity-50"
+              >
+                {refreshing ? "Force Refreshing..." : "Force Refresh"}
+              </button>
             </div>
           </div>
 
@@ -324,17 +392,70 @@ export default function AnalyticsPage() {
                   >
                     {refreshing ? "Refreshing..." : "Refresh"}
                   </button>
-                  <div className="neu-icon-button p-2">
-                    <ThemeToggle />
-                  </div>
-                </div>
-              </div>
-            </div>
+              <Button
+                variant="secondary"
+                onClick={async () => {
+                setRefreshing(true)
+                try {
+                  // Smart refresh: try API first, only update cache if API works
+                  const token = localStorage.getItem('authToken') || localStorage.getItem('token')
+                  if (token && user) {
+                    try {
+                      const response = await fetch(`/api/results?_t=${Date.now()}`, {
+                        headers: {
+                          'Authorization': `Bearer ${token}`,
+                          'Cache-Control': 'no-cache'
+                        }
+                      })
+                      
+                      if (response.ok) {
+                        const apiData = await response.json()
+                        console.log('Force refresh API data:', {
+                          resultsCount: apiData.results?.length,
+                          success: apiData.success,
+                          timestamp: apiData.timestamp
+                        })
+                        
+                        // API now always returns results array, even if empty
+                        if (apiData.results && Array.isArray(apiData.results)) {
+                          // Only update if we successfully got fresh data
+                          localStorage.setItem("quizResults", JSON.stringify(apiData.results))
+                          setResults(apiData.results)
+                          setLastUpdated(new Date())
+                          setDataSource('api')
+                          setConnectionStatus('connected')
+                          console.log("Analytics force refreshed with latest data from server")
+                          return
+                        }
+                      } else {
+                        setConnectionStatus('disconnected')
+                        const errorText = await response.text()
+                        console.error('Force refresh API error:', errorText)
+                      }
+                    } catch (error) {
+                      console.error("API refresh failed:", error)
+                    }
+                  }
+                  
+                  // If API fails, inform user but don't touch localStorage
+                  console.warn("Unable to refresh from server - keeping existing data")
+                } finally {
+                  setRefreshing(false)
+                }
+              }}
+              disabled={refreshing}
+              className="flex items-center gap-2 whitespace-nowrap"
+            >
+              {refreshing ? "Force Refreshing..." : "Force Refresh"}
+            </Button>
+            <ThemeToggle />
           </div>
         </div>
+      </div>
 
         {/* Mobile-Responsive Data Status Information */}
         <div className="mb-4 p-3 bg-muted/50 rounded-lg border">
+          {/* Mobile Layout */}
           <div className="sm:hidden">
             <div className="flex flex-col space-y-2 text-sm">
               <div className="flex items-center justify-between">
@@ -375,6 +496,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
           
+          {/* Desktop Layout */}
           <div className="hidden sm:block">
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-4">
@@ -461,6 +583,18 @@ export default function AnalyticsPage() {
                   >
                     {refreshing ? "Checking..." : "Check Again"}
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const user = JSON.parse(localStorage.getItem('user') || '{}');
+                      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+                      alert(`Account: ${user.name || 'Unknown'} (${user.email || 'No email'})\nToken: ${token ? 'Present' : 'Missing'}\nConnection: ${connectionStatus}\nData Source: ${dataSource}`);
+                    }}
+                    className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                  >
+                    Check Account
+                  </Button>
                 </div>
               </div>
             </div>
@@ -480,9 +614,36 @@ export default function AnalyticsPage() {
             <h3 className="font-semibold mb-2">Debug Info:</h3>
             <p>Results count: {results.length}</p>
             <p>User authenticated: {user ? 'Yes' : 'No'}</p>
+            <p>Auth token: {localStorage.getItem('authToken') ? 'Present (authToken)' : localStorage.getItem('token') ? 'Present (token)' : 'Missing'}</p>
+            <p>Token format: {localStorage.getItem('authToken') || localStorage.getItem('token') ? 'Valid' : 'Invalid'}</p>
             <p>Data source: {dataSource}</p>
             <p>Last updated: {lastUpdated ? lastUpdated.toISOString() : 'Never'}</p>
             <p>Refresh status: {refreshing ? 'In progress...' : 'Ready'}</p>
+            {results.length > 0 && (
+              <details className="mt-2">
+                <summary className="cursor-pointer">View raw data</summary>
+                <pre className="text-xs mt-2 overflow-auto max-h-40">
+                  {JSON.stringify(results.slice(0, 2), null, 2)}
+                </pre>
+              </details>
+            )}
+            <div className="mt-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  console.log('Debug - localStorage contents:')
+                  console.log('authToken:', localStorage.getItem('authToken'))
+                  console.log('token:', localStorage.getItem('token'))
+                  console.log('user:', localStorage.getItem('user'))
+                  console.log('quizResults count:', JSON.parse(localStorage.getItem('quizResults') || '[]').length)
+                  console.log('Current data source:', dataSource)
+                  console.log('Last updated:', lastUpdated)
+                }}
+              >
+                Log Debug Info
+              </Button>
+            </div>
           </div>
         )}
       </div>

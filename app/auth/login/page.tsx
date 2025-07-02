@@ -86,118 +86,138 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+    <div className="min-h-screen neu-surface flex items-center justify-center p-4">
       {/* Theme Toggle */}
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
+      <div className="absolute top-6 right-6">
+        <div className="neu-icon-button">
+          <ThemeToggle />
+        </div>
       </div>
       
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Welcome Back</CardTitle>
-          <CardDescription>Sign in to access your account</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="student" className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Student
-              </TabsTrigger>
-              <TabsTrigger value="admin" className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                Admin
-              </TabsTrigger>
-            </TabsList>
+      <div className="neu-card w-full max-w-md p-8">
+        <div className="text-center mb-8">
+          <div className="neu-card-inset p-6 rounded-2xl mb-6">
+            <h1 className="text-3xl font-bold neu-text-gradient mb-2">Welcome Back</h1>
+            <p className="text-muted-foreground">Sign in to access your account</p>
+          </div>
+        </div>
+        <div className="neu-card-inset p-6 rounded-2xl">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <div className="neu-card p-2 rounded-2xl">
+              <TabsList className="grid w-full grid-cols-2 bg-transparent border-0 p-1 gap-1">
+                <TabsTrigger 
+                  value="student" 
+                  className="neu-button flex items-center gap-2 data-[state=active]:neu-card-inset data-[state=active]:bg-background"
+                >
+                  <User className="h-4 w-4" />
+                  Student
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="admin" 
+                  className="neu-button flex items-center gap-2 data-[state=active]:neu-card-inset data-[state=active]:bg-background"
+                >
+                  <Shield className="h-4 w-4" />
+                  Admin
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+              <div className="neu-card-inset p-4 rounded-2xl border-destructive/20">
+                <Alert variant="destructive" className="border-0 bg-transparent">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              </div>
             )}
 
             {/* Student Login */}
-            <TabsContent value="student">
-              <form onSubmit={handleStudentLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="student-email">Email</Label>
-                  <Input
+            <TabsContent value="student" className="space-y-6">
+              <form onSubmit={handleStudentLogin} className="space-y-6">
+                <div className="space-y-3">
+                  <Label htmlFor="student-email" className="text-sm font-medium text-foreground">Email</Label>
+                  <input
                     id="student-email"
                     type="email"
                     placeholder="student@example.com"
                     value={studentData.email}
                     onChange={(e) => setStudentData((prev) => ({ ...prev, email: e.target.value }))}
                     required
+                    className="neu-input w-full"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="student-password">Password</Label>
-                  <Input
+                <div className="space-y-3">
+                  <Label htmlFor="student-password" className="text-sm font-medium text-foreground">Password</Label>
+                  <input
                     id="student-password"
                     type="password"
                     placeholder="Enter your password"
                     value={studentData.password}
                     onChange={(e) => setStudentData((prev) => ({ ...prev, password: e.target.value }))}
                     required
+                    className="neu-input w-full"
                   />
                 </div>
 
-                <Button type="submit" className="w-full" disabled={loading}>
+                <button type="submit" className="neu-button w-full py-4 font-medium text-primary" disabled={loading}>
                   {loading ? "Signing in..." : "Sign In as Student"}
-                </Button>
+                </button>
 
-                <div className="text-center text-sm text-muted-foreground">
-                  <p>Demo Student Account:</p>
-                  <p>Email: student@example.com | Password: password</p>
+                <div className="neu-card-inset p-4 rounded-2xl text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Demo Student Account:</p>
+                  <p className="text-xs text-muted-foreground">Email: student@example.com | Password: password</p>
                 </div>
               </form>
             </TabsContent>
 
             {/* Admin Login */}
-            <TabsContent value="admin">
-              <form onSubmit={handleAdminLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="admin-email">Admin Email</Label>
-                  <Input
+            <TabsContent value="admin" className="space-y-6">
+              <form onSubmit={handleAdminLogin} className="space-y-6">
+                <div className="space-y-3">
+                  <Label htmlFor="admin-email" className="text-sm font-medium text-foreground">Admin Email</Label>
+                  <input
                     id="admin-email"
                     type="email"
                     placeholder="admin@bank.com"
                     value={adminData.email}
                     onChange={(e) => setAdminData((prev) => ({ ...prev, email: e.target.value }))}
                     required
+                    className="neu-input w-full"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="admin-password">Admin Password</Label>
-                  <Input
+                <div className="space-y-3">
+                  <Label htmlFor="admin-password" className="text-sm font-medium text-foreground">Admin Password</Label>
+                  <input
                     id="admin-password"
                     type="password"
                     placeholder="Enter admin password"
                     value={adminData.password}
                     onChange={(e) => setAdminData((prev) => ({ ...prev, password: e.target.value }))}
                     required
+                    className="neu-input w-full"
                   />
                 </div>
 
-                <Button type="submit" className="w-full" disabled={loading}>
+                <button type="submit" className="neu-button w-full py-4 font-medium text-primary" disabled={loading}>
                   {loading ? "Signing in..." : "Sign In as Admin"}
-                </Button>
+                </button>
               </form>
             </TabsContent>
           </Tabs>
+        </div>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+        <div className="mt-8 text-center">
+          <div className="neu-card-inset p-4 rounded-2xl">
+            <p className="text-sm text-muted-foreground">
               {"Don't have an account? "}
-              <Link href="/auth/signup" className="text-blue-600 hover:underline">
+              <Link href="/auth/signup" className="text-primary hover:text-accent font-medium">
                 Sign up as Student
               </Link>
             </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }

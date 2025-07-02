@@ -207,37 +207,51 @@ export default function HistoryPage() {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8 w-full overflow-x-auto">
-          <div className="neu-card p-3 sm:p-6 bg-blue-50/50 dark:bg-blue-900/10 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <BookOpen className="h-5 w-5 text-blue-600 flex-shrink-0" />
-              <h3 className="text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-400 truncate">Total Attempts</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-blue-50 border-blue-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-blue-700">
+                <BookOpen className="h-5 w-5" />
+                Total Attempts
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-blue-800">{attempts.length}</div>
+            </CardContent>
+          </Card>
+
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div className="neu-card p-4 sm:p-6 bg-blue-50/50 dark:bg-blue-900/10">
+            <div className="flex items-center gap-2 mb-2">
+              <BookOpen className="h-5 w-5 text-blue-600" />
+              <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-400">Total Attempts</h3>
             </div>
-            <div className="text-xl sm:text-3xl font-bold text-blue-800 dark:text-blue-300 truncate">{attempts.length}</div>
+            <div className="text-2xl sm:text-3xl font-bold text-blue-800 dark:text-blue-300">{attempts.length}</div>
           </div>
 
-          <div className="neu-card p-3 sm:p-6 bg-green-50/50 dark:bg-green-900/10 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="h-5 w-5 text-green-600 flex-shrink-0" />
-              <h3 className="text-xs sm:text-sm font-semibold text-green-700 dark:text-green-400 truncate">Average Score</h3>
+          <div className="neu-card p-4 sm:p-6 bg-green-50/50 dark:bg-green-900/10">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="h-5 w-5 text-green-600" />
+              <h3 className="text-sm font-semibold text-green-700 dark:text-green-400">Average Score</h3>
             </div>
-            <div className="text-xl sm:text-3xl font-bold text-green-800 dark:text-green-300 truncate">{getAverageScore()}%</div>
+            <div className="text-2xl sm:text-3xl font-bold text-green-800 dark:text-green-300">{getAverageScore()}%</div>
           </div>
 
-          <div className="neu-card p-3 sm:p-6 bg-purple-50/50 dark:bg-purple-900/10 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <Target className="h-5 w-5 text-purple-600 flex-shrink-0" />
-              <h3 className="text-xs sm:text-sm font-semibold text-purple-700 dark:text-purple-400 truncate">Best Score</h3>
+          <div className="neu-card p-4 sm:p-6 bg-purple-50/50 dark:bg-purple-900/10">
+            <div className="flex items-center gap-2 mb-2">
+              <Target className="h-5 w-5 text-purple-600" />
+              <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-400">Best Score</h3>
             </div>
-            <div className="text-xl sm:text-3xl font-bold text-purple-800 dark:text-purple-300 truncate">{getBestScore()}%</div>
+            <div className="text-2xl sm:text-3xl font-bold text-purple-800 dark:text-purple-300">{getBestScore()}%</div>
           </div>
 
-          <div className="neu-card p-3 sm:p-6 bg-orange-50/50 dark:bg-orange-900/10 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <Clock className="h-5 w-5 text-orange-600 flex-shrink-0" />
-              <h3 className="text-xs sm:text-sm font-semibold text-orange-700 dark:text-orange-400 truncate">Avg Time</h3>
+          <div className="neu-card p-4 sm:p-6 bg-orange-50/50 dark:bg-orange-900/10">
+            <div className="flex items-center gap-2 mb-2">
+              <Clock className="h-5 w-5 text-orange-600" />
+              <h3 className="text-sm font-semibold text-orange-700 dark:text-orange-400">Total Time</h3>
             </div>
-            <div className="text-xl sm:text-3xl font-bold text-orange-800 dark:text-orange-300 truncate">{getTotalTimeSpent()}m</div>
+            <div className="text-2xl sm:text-3xl font-bold text-orange-800 dark:text-orange-300">{getTotalTimeSpent()}m</div>
           </div>
         </div>
 
@@ -259,33 +273,36 @@ export default function HistoryPage() {
                   className="neu-input pl-10"
                 />
               </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Filter by Score</label>
-              <Select value={scoreFilter} onValueChange={setScoreFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All scores" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Scores</SelectItem>
-                  <SelectItem value="excellent">Excellent (80%+)</SelectItem>
-                  <SelectItem value="good">Good (60-79%)</SelectItem>
-                  <SelectItem value="needsImprovement">Needs Improvement (&lt;60%)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Sort by</label>
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sort by date" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="date">Date (Latest First)</SelectItem>
-                  <SelectItem value="score">Score (Highest First)</SelectItem>
-                  <SelectItem value="quiz">Quiz Name (A-Z)</SelectItem>
-                </SelectContent>
-              </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Filter by Score</label>
+                <Select value={scoreFilter} onValueChange={setScoreFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All scores" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Scores</SelectItem>
+                    <SelectItem value="excellent">Excellent (80%+)</SelectItem>
+                    <SelectItem value="good">Good (60-79%)</SelectItem>
+                    <SelectItem value="needsImprovement">Needs Improvement (&lt;60%)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Sort by</label>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sort by date" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="date">Date (Latest First)</SelectItem>
+                    <SelectItem value="score">Score (Highest First)</SelectItem>
+                    <SelectItem value="quiz">Quiz Name (A-Z)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </div>
@@ -303,96 +320,97 @@ export default function HistoryPage() {
               }
             </p>
           </div>
-          {filteredAttempts.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground mb-4">
-                {searchTerm || scoreFilter !== "all" 
-                  ? "No quiz attempts match your filters"
-                  : "No quiz attempts yet"
-                }
-              </p>
-              {!searchTerm && scoreFilter === "all" && (
-                <Link href="/dashboard">
-                  <Button>Take Your First Quiz</Button>
-                </Link>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredAttempts.map((attempt, index) => {
-                const trend = getScoreTrend(index)
-                const scoreColor = attempt.totalScore >= 80 ? "bg-green-500" :
-                                 attempt.totalScore >= 60 ? "bg-yellow-500" : "bg-red-500"
+            {filteredAttempts.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">
+                  {searchTerm || scoreFilter !== "all" 
+                    ? "No quiz attempts match your filters"
+                    : "No quiz attempts yet"
+                  }
+                </p>
+                {!searchTerm && scoreFilter === "all" && (
+                  <Link href="/dashboard">
+                    <Button>Take Your First Quiz</Button>
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredAttempts.map((attempt, index) => {
+                  const trend = getScoreTrend(index)
+                  const scoreColor = attempt.totalScore >= 80 ? "bg-green-500" :
+                                   attempt.totalScore >= 60 ? "bg-yellow-500" : "bg-red-500"
 
-                return (
-                  <div
-                    key={attempt._id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors gap-4"
-                  >
-                    <div className="flex items-center gap-4 min-w-0">
-                      <div className={`w-12 h-12 aspect-square rounded-full flex items-center justify-center font-bold text-white text-lg sm:text-xl flex-shrink-0 shadow-md ${scoreColor}`}>
-                        {attempt.totalScore}%
-                      </div>
-                      <div className="min-w-0">
-                        <h4 className="font-semibold truncate max-w-[180px] sm:max-w-xs">{attempt.quizName || 'Unknown Quiz'}</h4>
-                        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
-                          <span>{new Date(attempt.date).toLocaleDateString()}</span>
-                          <span>✓ {attempt.correctAnswers} correct</span>
-                          <span>✗ {attempt.wrongAnswers} wrong</span>
-                          {attempt.unanswered > 0 && <span>⚪ {attempt.unanswered} unanswered</span>}
-                          {attempt.timeSpent && (
-                            <span>⏱ {Math.round(attempt.timeSpent / 60)}m</span>
-                          )}
+                  return (
+                    <div
+                      key={attempt._id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors gap-4"
+                    >
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className={`w-12 h-12 aspect-square rounded-full flex items-center justify-center font-bold text-white text-lg sm:text-xl flex-shrink-0 shadow-md ${scoreColor}`}>
+                          {attempt.totalScore}%
                         </div>
-                        {/* Section scores - always visible, wrap on mobile */}
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {attempt.sections.reasoning > 0 && (
-                            <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
-                              Reasoning: {attempt.sections.reasoning}%
-                            </Badge>
-                          )}
-                          {attempt.sections.quantitative > 0 && (
-                            <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
-                              Quant: {attempt.sections.quantitative}%
-                            </Badge>
-                          )}
-                          {attempt.sections.english > 0 && (
-                            <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
-                              English: {attempt.sections.english}%
-                            </Badge>
-                          )}
+                        <div className="min-w-0">
+                          <h4 className="font-semibold truncate max-w-[180px] sm:max-w-xs">{attempt.quizName || 'Unknown Quiz'}</h4>
+                          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
+                            <span>{new Date(attempt.date).toLocaleDateString()}</span>
+                            <span>✓ {attempt.correctAnswers} correct</span>
+                            <span>✗ {attempt.wrongAnswers} wrong</span>
+                            {attempt.unanswered > 0 && <span>⚪ {attempt.unanswered} unanswered</span>}
+                            {attempt.timeSpent && (
+                              <span>⏱ {Math.round(attempt.timeSpent / 60)}m</span>
+                            )}
+                          </div>
+                          {/* Section scores - always visible, wrap on mobile */}
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {attempt.sections.reasoning > 0 && (
+                              <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+                                Reasoning: {attempt.sections.reasoning}%
+                              </Badge>
+                            )}
+                            {attempt.sections.quantitative > 0 && (
+                              <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+                                Quant: {attempt.sections.quantitative}%
+                              </Badge>
+                            )}
+                            {attempt.sections.english > 0 && (
+                              <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+                                English: {attempt.sections.english}%
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Actions: badges, trend, button - stack/wrap on mobile */}
-                    <div className="flex flex-wrap sm:flex-nowrap flex-row sm:flex-col gap-2 items-start sm:items-end mt-2 sm:mt-0 min-w-[120px]">
-                      <Badge variant={
-                        attempt.totalScore >= 80 ? 'default' :
-                        attempt.totalScore >= 60 ? 'secondary' : 'destructive'
-                      } className="text-xs px-2 py-1 whitespace-nowrap">
-                        {attempt.totalScore >= 80 ? 'Excellent' :
-                         attempt.totalScore >= 60 ? 'Good' : 'Needs Work'}
-                      </Badge>
-                      {trend !== null && (
-                        <Badge variant={trend >= 0 ? "default" : "destructive"} className="text-xs px-2 py-1 whitespace-nowrap">
-                          {trend >= 0 ? "↗" : "↘"} {Math.abs(trend)}%
+                      {/* Actions: badges, trend, button - stack/wrap on mobile */}
+                      <div className="flex flex-wrap sm:flex-nowrap flex-row sm:flex-col gap-2 items-start sm:items-end mt-2 sm:mt-0 min-w-[120px]">
+                        <Badge variant={
+                          attempt.totalScore >= 80 ? 'default' :
+                          attempt.totalScore >= 60 ? 'secondary' : 'destructive'
+                        } className="text-xs px-2 py-1 whitespace-nowrap">
+                          {attempt.totalScore >= 80 ? 'Excellent' :
+                           attempt.totalScore >= 60 ? 'Good' : 'Needs Work'}
                         </Badge>
-                      )}
-                      {attempt.quizId && (
-                        <Link href={`/results/${attempt._id}`}>
-                          <button className="neu-button py-2 px-4 text-sm font-medium text-primary w-full sm:w-auto">
-                            <Eye className="h-4 w-4 mr-2" />
-                            Details
-                          </button>
-                        </Link>
-                      )}
+                        {trend !== null && (
+                          <Badge variant={trend >= 0 ? "default" : "destructive"} className="text-xs px-2 py-1 whitespace-nowrap">
+                            {trend >= 0 ? "↗" : "↘"} {Math.abs(trend)}%
+                          </Badge>
+                        )}
+                        {attempt.quizId && (
+                          <Link href={`/results/${attempt._id}`}>
+                            <button className="neu-button py-2 px-4 text-sm font-medium text-primary w-full sm:w-auto">
+                              <Eye className="h-4 w-4 mr-2" />
+                              Details
+                            </button>
+                          </Link>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

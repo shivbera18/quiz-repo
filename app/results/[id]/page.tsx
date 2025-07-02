@@ -238,16 +238,19 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">Loading results...</div>
+      <div className="min-h-screen neu-surface flex items-center justify-center">
+        <div className="neu-card p-8 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading results...</p>
+        </div>
       </div>
     )
   }
 
   if (error || !result) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen neu-surface flex items-center justify-center p-4">
+        <div className="neu-card p-8 text-center max-w-md w-full">
           <AlertTriangle className="h-12 w-12 mx-auto text-yellow-500 mb-4" />
           <p className="text-muted-foreground mb-4">
             {error || "Result not found"}
@@ -255,12 +258,16 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
           <p className="text-sm text-muted-foreground mb-6">
             This could happen if the result was not properly saved or the link is invalid.
           </p>
-          <div className="flex gap-4 justify-center">
+          <div className="grid grid-cols-1 gap-3">
             <Link href="/dashboard">
-              <Button>Back to Dashboard</Button>
+              <button className="neu-button py-3 px-6 text-sm font-medium text-primary w-full">
+                Back to Dashboard
+              </button>
             </Link>
             <Link href="/history">
-              <Button variant="outline">View History</Button>
+              <button className="neu-button py-3 px-6 text-sm font-medium text-muted-foreground w-full">
+                View History
+              </button>
             </Link>
           </div>
         </div>
@@ -271,29 +278,60 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
   const analysis = getPerformanceAnalysis()
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen neu-surface">
+      <div className="container mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 max-w-full overflow-x-hidden">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
-          <div className="w-full sm:w-auto">
-            <h1 className="text-3xl font-bold text-foreground">Quiz Results</h1>
-            <p className="text-muted-foreground">
-              {result.quizName} • Completed on {new Date(result.date).toLocaleDateString()}
-            </p>
+        <div className="mb-6">
+          {/* Mobile Header */}
+          <div className="md:hidden">
+            <div className="neu-card p-4 mb-4">
+              <h1 className="text-xl sm:text-2xl font-bold neu-text-gradient break-words">Quiz Results</h1>
+              <p className="text-muted-foreground text-sm mt-1 break-words">
+                {result.quizName} • Completed on {new Date(result.date).toLocaleDateString()}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-2">
+              <Link href={`/quiz/${result.quizId}`}>
+                <button className="neu-button py-3 px-4 w-full text-sm font-medium text-primary">
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Retake Quiz
+                </button>
+              </Link>
+              <Link href="/dashboard">
+                <button className="neu-button py-3 px-4 w-full text-sm font-medium text-primary">
+                  <Home className="h-4 w-4 mr-2" />
+                  Dashboard
+                </button>
+              </Link>
+            </div>
           </div>
-          <div className="flex flex-col xs:flex-row gap-2 w-full sm:w-auto justify-end">
-            <Link href={`/quiz/${result.quizId}`} className="w-full xs:w-auto">
-              <Button variant="outline" className="w-full xs:w-auto">
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Retake Quiz
-              </Button>
-            </Link>
-            <Link href="/dashboard" className="w-full xs:w-auto">
-              <Button className="w-full xs:w-auto">
-                <Home className="h-4 w-4 mr-2" />
-                Dashboard
-              </Button>
-            </Link>
+
+          {/* Desktop Header */}
+          <div className="hidden md:block">
+            <div className="neu-card p-6">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-2xl lg:text-3xl font-bold neu-text-gradient truncate">Quiz Results</h1>
+                  <p className="text-muted-foreground text-sm lg:text-base break-words">
+                    {result.quizName} • Completed on {new Date(result.date).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <Link href={`/quiz/${result.quizId}`}>
+                    <button className="neu-button py-2 px-4 text-sm font-medium text-primary whitespace-nowrap">
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Retake Quiz
+                    </button>
+                  </Link>
+                  <Link href="/dashboard">
+                    <button className="neu-button py-2 px-4 text-sm font-medium text-primary whitespace-nowrap">
+                      <Home className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -308,40 +346,32 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
         )}
 
         {/* Score Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="md:col-span-2 lg:col-span-1">
-            <CardHeader className="text-center">
-              <CardTitle className="text-4xl font-bold text-blue-600">{result.totalScore}%</CardTitle>
-              <CardDescription>Final Score</CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              {result.rawScore !== undefined && (
-                <div className="space-y-1 text-sm">
-                  <p>Raw Score: {result.rawScore.toFixed(2)}</p>
-                  {result.negativeMarking && result.negativeMarks && result.negativeMarks > 0 && (
-                    <p className="text-red-600">Penalty: -{result.negativeMarks}</p>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                Correct
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-green-600">
-                {result.correctAnswers || (Array.isArray(result.questions) ? result.questions.filter((q) => q.isCorrect).length : 0)}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div className="neu-card md:col-span-2 lg:col-span-1 p-6 text-center">
+            <h2 className="text-3xl sm:text-4xl font-bold text-blue-600 mb-2">{result.totalScore}%</h2>
+            <p className="text-muted-foreground text-sm">Final Score</p>
+            {result.rawScore !== undefined && (
+              <div className="mt-4 space-y-1 text-sm">
+                <p>Raw Score: {result.rawScore.toFixed(2)}</p>
+                {result.negativeMarking && result.negativeMarks && result.negativeMarks > 0 && (
+                  <p className="text-red-600">Penalty: -{result.negativeMarks}</p>
+                )}
               </div>
-              <p className="text-sm text-muted-foreground">
-                +{result.positiveMarks || (Array.isArray(result.questions) ? result.questions.filter((q) => q.isCorrect).length : 0)} marks
-              </p>
-            </CardContent>
-          </Card>
+            )}
+          </div>
+
+          <div className="neu-card p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <h3 className="text-lg font-semibold">Correct</h3>
+            </div>
+            <div className="text-2xl sm:text-3xl font-bold text-green-600">
+              {result.correctAnswers || (Array.isArray(result.questions) ? result.questions.filter((q) => q.isCorrect).length : 0)}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              +{result.positiveMarks || (Array.isArray(result.questions) ? result.questions.filter((q) => q.isCorrect).length : 0)} marks
+            </p>
+          </div>
 
           <Card>
             <CardHeader>

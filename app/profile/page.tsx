@@ -254,94 +254,112 @@ export default function ProfilePage() {
   const recentActivity = getRecentActivity()
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+    <div className="min-h-screen neu-surface">
+      <div className="container mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 max-w-full overflow-x-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard">
-              <Button variant="outline" size="icon">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Profile</h1>
-              <p className="text-muted-foreground">Your learning journey and achievements</p>
+        <div className="mb-6">
+          {/* Mobile Header */}
+          <div className="md:hidden">
+            <div className="neu-card p-4 mb-4">
+              <div className="flex items-center gap-3 mb-3">
+                <Link href="/dashboard">
+                  <button className="neu-icon-button p-2">
+                    <ArrowLeft className="h-4 w-4" />
+                  </button>
+                </Link>
+                <div className="neu-icon-button p-2">
+                  <ThemeToggle />
+                </div>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-bold neu-text-gradient break-words">Profile</h1>
+              <p className="text-muted-foreground text-sm mt-1 break-words">Your learning journey and achievements</p>
             </div>
           </div>
-          <ThemeToggle />
+
+          {/* Desktop Header */}
+          <div className="hidden md:block">
+            <div className="neu-card p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Link href="/dashboard">
+                    <button className="neu-icon-button p-3">
+                      <ArrowLeft className="h-5 w-5" />
+                    </button>
+                  </Link>
+                  <div>
+                    <h1 className="text-2xl lg:text-3xl font-bold neu-text-gradient">Profile</h1>
+                    <p className="text-muted-foreground text-sm lg:text-base">Your learning journey and achievements</p>
+                  </div>
+                </div>
+                <div className="neu-icon-button p-2">
+                  <ThemeToggle />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Profile Overview */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-4 sm:space-y-6">
             {/* User Info Card */}
-            <Card>
-              <CardHeader className="text-center">
-                <Avatar className="w-24 h-24 mx-auto mb-4">
-                  <AvatarImage src="/placeholder-user.jpg" />
-                  <AvatarFallback>
-                    <User className="w-12 h-12" />
-                  </AvatarFallback>
-                </Avatar>
-                <CardTitle>{user?.name || "Quiz Learner"}</CardTitle>
-                <CardDescription>{user?.email || "learner@quiz.com"}</CardDescription>
-                <div className="flex items-center justify-center gap-2 mt-2">
-                  <Shield className="w-4 h-4" />
-                  <span className="text-sm font-medium">Level {stats.level}</span>
+            <div className="neu-card p-6 text-center">
+              <Avatar className="w-20 sm:w-24 h-20 sm:h-24 mx-auto mb-4">
+                <AvatarImage src="/placeholder-user.jpg" />
+                <AvatarFallback>
+                  <User className="w-10 sm:w-12 h-10 sm:h-12" />
+                </AvatarFallback>
+              </Avatar>
+              <h2 className="text-lg sm:text-xl font-bold neu-text-gradient mb-1">{user?.name || "Quiz Learner"}</h2>
+              <p className="text-muted-foreground text-sm mb-3">{user?.email || "learner@quiz.com"}</p>
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Shield className="w-4 h-4" />
+                <span className="text-sm font-medium">Level {stats.level}</span>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>Experience</span>
+                    <span>{progressExp}/{requiredExp} XP</span>
+                  </div>
+                  <Progress value={(progressExp / requiredExp) * 100} className="h-2" />
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+                
+                <div className="grid grid-cols-2 gap-4 text-center">
                   <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Experience</span>
-                      <span>{progressExp}/{requiredExp} XP</span>
-                    </div>
-                    <Progress value={(progressExp / requiredExp) * 100} className="h-2" />
+                    <div className="text-xl sm:text-2xl font-bold text-primary">{stats.totalQuizzes}</div>
+                    <div className="text-xs text-muted-foreground">Quizzes</div>
                   </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 text-center">
-                    <div>
-                      <div className="text-2xl font-bold text-primary">{stats.totalQuizzes}</div>
-                      <div className="text-xs text-muted-foreground">Quizzes</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-primary">{stats.averageScore}%</div>
-                      <div className="text-xs text-muted-foreground">Avg Score</div>
-                    </div>
+                  <div>
+                    <div className="text-xl sm:text-2xl font-bold text-primary">{stats.averageScore}%</div>
+                    <div className="text-xs text-muted-foreground">Avg Score</div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             {/* Badges */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Star className="w-5 h-5" />
-                  Badges Earned
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {stats.badges.length > 0 ? stats.badges.map((badge, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {badge}
-                    </Badge>
-                  )) : (
-                    <p className="text-sm text-muted-foreground">No badges earned yet. Keep quizzing!</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <div className="neu-card p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Star className="w-5 h-5" />
+                <h3 className="text-lg font-semibold">Badges Earned</h3>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {stats.badges.length > 0 ? stats.badges.map((badge, index) => (
+                  <Badge key={index} variant="secondary" className="text-xs">
+                    {badge}
+                  </Badge>
+                )) : (
+                  <p className="text-sm text-muted-foreground">No badges earned yet. Keep quizzing!</p>
+                )}
+              </div>
+            </div>
 
             {/* Quick Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Stats</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <div className="neu-card p-6">
+              <h3 className="text-lg font-semibold mb-4">Quick Stats</h3>
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Trophy className="w-4 h-4 text-yellow-500" />
@@ -365,110 +383,125 @@ export default function ProfilePage() {
                   </div>
                   <span className="font-medium">{stats.streakDays} days</span>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
 
           {/* Main Content */}
           <div className="lg:col-span-2">
-            <Tabs defaultValue="achievements" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="achievements">Achievements</TabsTrigger>
-                <TabsTrigger value="activity">Recent Activity</TabsTrigger>
-              </TabsList>
+            <Tabs defaultValue="achievements" className="space-y-4 sm:space-y-6">
+              {/* Mobile Dropdown for tabs */}
+              <div className="sm:hidden">
+                <select 
+                  className="neu-input w-full p-3 text-sm"
+                  onChange={(e) => {
+                    // Handle tab change for mobile
+                    const value = e.target.value;
+                    document.querySelector(`[data-state="active"]`)?.setAttribute('data-state', 'inactive');
+                    document.querySelector(`[value="${value}"]`)?.setAttribute('data-state', 'active');
+                  }}
+                >
+                  <option value="achievements">Achievements</option>
+                  <option value="activity">Recent Activity</option>
+                </select>
+              </div>
+              
+              {/* Desktop TabsList */}
+              <div className="hidden sm:block">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="achievements">Achievements</TabsTrigger>
+                  <TabsTrigger value="activity">Recent Activity</TabsTrigger>
+                </TabsList>
+              </div>
 
-              <TabsContent value="achievements" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Award className="w-5 h-5" />
-                      Achievements
-                    </CardTitle>
-                    <CardDescription>
-                      Track your progress and unlock new achievements
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {achievements.map((achievement) => {
-                        const Icon = achievement.icon
-                        return (
-                          <div
-                            key={achievement.id}
-                            className={`p-4 border rounded-lg ${
-                              achievement.unlocked 
-                                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
-                                : 'bg-gray-50 dark:bg-gray-900/20'
-                            }`}
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className={`p-2 rounded-lg ${
-                                achievement.unlocked ? 'bg-green-100 dark:bg-green-800' : 'bg-gray-100 dark:bg-gray-800'
-                              }`}>
-                                <Icon className={`w-5 h-5 ${
-                                  achievement.unlocked ? 'text-green-600 dark:text-green-400' : 'text-gray-500'
-                                }`} />
-                              </div>
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <h4 className="font-medium">{achievement.title}</h4>
-                                  {achievement.unlocked && (
-                                    <Badge variant="secondary" className="text-xs">Unlocked</Badge>
-                                  )}
-                                </div>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  {achievement.description}
-                                </p>
-                                {!achievement.unlocked && (
-                                  <div className="mt-2">
-                                    <div className="flex justify-between text-xs mb-1">
-                                      <span>Progress</span>
-                                      <span>{achievement.progress}/{achievement.requirement}</span>
-                                    </div>
-                                    <Progress 
-                                      value={(achievement.progress / achievement.requirement) * 100} 
-                                      className="h-1"
-                                    />
-                                  </div>
+              <TabsContent value="achievements" className="space-y-4 sm:space-y-6">
+                <div className="neu-card p-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Award className="w-5 h-5" />
+                    <h3 className="text-lg font-semibold">Achievements</h3>
+                  </div>
+                  <p className="text-muted-foreground text-sm mb-6">
+                    Track your progress and unlock new achievements
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {achievements.map((achievement) => {
+                      const Icon = achievement.icon
+                      return (
+                        <div
+                          key={achievement.id}
+                          className={`neu-input-surface p-4 rounded-lg ${
+                            achievement.unlocked 
+                              ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
+                              : 'opacity-60'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`p-2 rounded-lg ${
+                              achievement.unlocked ? 'bg-green-100 dark:bg-green-800' : 'bg-gray-100 dark:bg-gray-800'
+                            }`}>
+                              <Icon className={`w-5 h-5 ${
+                                achievement.unlocked ? 'text-green-600 dark:text-green-400' : 'text-gray-500'
+                              }`} />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-medium">{achievement.title}</h4>
+                                {achievement.unlocked && (
+                                  <Badge variant="secondary" className="text-xs">Unlocked</Badge>
                                 )}
                               </div>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {achievement.description}
+                              </p>
+                              {!achievement.unlocked && (
+                                <div className="mt-2">
+                                  <div className="flex justify-between text-xs mb-1">
+                                    <span>Progress</span>
+                                    <span>{achievement.progress}/{achievement.requirement}</span>
+                                  </div>
+                                  <Progress 
+                                    value={(achievement.progress / achievement.requirement) * 100} 
+                                    className="h-1"
+                                  />
+                                </div>
+                              )}
                             </div>
                           </div>
-                        )
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
               </TabsContent>
 
-              <TabsContent value="activity" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="w-5 h-5" />
-                      Recent Activity
-                    </CardTitle>
-                    <CardDescription>
-                      Your latest quiz attempts and performance
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
+              <TabsContent value="activity" className="space-y-4 sm:space-y-6">
+                <div className="neu-card p-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="w-5 h-5" />
+                    <h3 className="text-lg font-semibold">Recent Activity</h3>
+                  </div>
+                  <p className="text-muted-foreground text-sm mb-6">
+                    Your latest quiz attempts and performance
+                  </p>
+                  <div>
                     {recentActivity.length > 0 ? (
                       <div className="space-y-4">
                         {recentActivity.map((activity: ActivityItem, index: number) => (
-                          <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                            <div className="flex-1">
-                              <h4 className="font-medium">{activity.quizName}</h4>
-                              <p className="text-sm text-muted-foreground">
-                                Score: {activity.totalScore}% • {activity.timeAgo}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <Badge 
-                                variant={activity.totalScore >= 80 ? "default" : activity.totalScore >= 60 ? "secondary" : "destructive"}
-                              >
-                                {activity.totalScore}%
-                              </Badge>
+                          <div key={index} className="neu-input-surface p-4 rounded-lg">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-medium truncate">{activity.quizName}</h4>
+                                <p className="text-sm text-muted-foreground">
+                                  Score: {activity.totalScore}% • {activity.timeAgo}
+                                </p>
+                              </div>
+                              <div className="text-right ml-4">
+                                <Badge 
+                                  variant={activity.totalScore >= 80 ? "default" : activity.totalScore >= 60 ? "secondary" : "destructive"}
+                                >
+                                  {activity.totalScore}%
+                                </Badge>
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -479,8 +512,8 @@ export default function ProfilePage() {
                         <p className="text-muted-foreground">No recent activity. Take a quiz to get started!</p>
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
           </div>

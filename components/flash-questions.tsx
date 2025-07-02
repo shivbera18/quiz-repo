@@ -3,558 +3,689 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { X, Zap, Check, AlertCircle } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { X, Zap, Check, AlertCircle, ChevronLeft, ChevronRight, Timer, RotateCcw } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Loader2 } from "lucide-react"
-import MathRenderer from "@/components/math-renderer"
 
 interface Question {
   id: string
   question: string
+  answer: number
   options: string[]
-  correctAnswer: number
-  section: string
+    correctOptionIndex: number
+  operation: string
+  difficulty: "2-digit" | "3-digit"
 }
 
 interface FlashQuestionsProps {
   isOpen: boolean
   onClose: () => void
-  questions: Question[]
 }
 
-const mathChapters = [
-  "Addition",
-  "Subtraction", 
-  "Multiplication",
-  "Division"
-]
+const operations = ["Addition", "Subtraction", "Multiplication", "Division"]
 
-// Function to generate simple arithmetic questions
-const generateArithmeticQuestion = (type: string): Question => {
-  const id = Math.random().toString(36).slice(2)
-  let question = ""
-  let correctAnswer = 0
-  let options: string[] = []
-  
-  switch (type) {
-    case "Addition": {
-      const a = Math.floor(Math.random() * 50) + 1
-      const b = Math.floor(Math.random() * 50) + 1
-      const result = a + b
-      question = `What is ${a} + ${b}?`
-      correctAnswer = result
-      // Generate 3 wrong answers
-      const wrongAnswers = [
-        result + Math.floor(Math.random() * 10) + 1,
-        result - Math.floor(Math.random() * 10) - 1,
-        result + Math.floor(Math.random() * 20) + 10
-      ]
-      options = [result, ...wrongAnswers].map(n => n.toString())
-      break
-    }
-    case "Subtraction": {
-      const a = Math.floor(Math.random() * 50) + 25 // Ensure positive result
-      const b = Math.floor(Math.random() * (a - 1)) + 1
-      const result = a - b
-      question = `What is ${a} - ${b}?`
-      correctAnswer = result
-      const wrongAnswers = [
-        result + Math.floor(Math.random() * 10) + 1,
-        result - Math.floor(Math.random() * 10) - 1,
-        Math.abs(result - Math.floor(Math.random() * 15) - 5)
-      ]
-      options = [result, ...wrongAnswers].map(n => n.toString())
-      break
-    }
-    case "Multiplication": {
-      const a = Math.floor(Math.random() * 12) + 2
-      const b = Math.floor(Math.random() * 12) + 2
-      const result = a * b
-      question = `What is ${a} × ${b}?`
-      correctAnswer = result
-      const wrongAnswers = [
-        result + a,
-        result - b,
-        result + Math.floor(Math.random() * 20) + 5
-      ]
-      options = [result, ...wrongAnswers].map(n => n.toString())
-      break
-    }
-    case "Division": {
-      const b = Math.floor(Math.random() * 10) + 2
-      const result = Math.floor(Math.random() * 15) + 2
-      const a = b * result // Ensure clean division
-      question = `What is ${a} ÷ ${b}?`
-      correctAnswer = result
-      const wrongAnswers = [
-        result + 1,
-        result - 1,
-        result + Math.floor(Math.random() * 5) + 2
-      ]
-      options = [result, ...wrongAnswers].map(n => n.toString())
-      break
-    }
-    default:
-      // Fallback to addition
-      const a = Math.floor(Math.random() * 20) + 1
-      const b = Math.floor(Math.random() * 20) + 1
-      const result = a + b
-      question = `What is ${a} + ${b}?`
-      correctAnswer = result
-      options = [result, result + 1, result - 1, result + 5].map(n => n.toString())
-  }
-  
-  // Shuffle options and find correct index
-  const correctAnswerStr = correctAnswer.toString()
-  const shuffledOptions = [...options].sort(() => Math.random() - 0.5)
-  const correctIndex = shuffledOptions.indexOf(correctAnswerStr)
-  
-  return {
-    id,
-    question,
-    options: shuffledOptions,
-    correctAnswer: correctIndex,
-    section: type
-  }
-}
+// Generate arithmetic questions using Gemini API
+const generateQuestionsWithGemini = async (
+  operation: string, 
+  difficulty: "2-digit" | "3-digit" | "mixed", 
+  count: number = 10
+): Promise<Question[]> => {
+  try {
+    const prompt = difficulty === "mixed" 
+      ? `Generate ${count} simple ${operation.toLowerCase()} problems mixing 2-digit and 3-digit numbers for speed calculation practice. For each problem, also generate 4 multiple choice options (3 wrong answers + 1 correct). Return only the problems in JSON format as an array of objects with: {question: "12 + 45", answer: 57, options: ["54", "57", "59", "62"], correctOptionIndex: 1, operation: "${operation}", difficulty: "2-digit" or "3-digit"}. Keep numbers reasonable for mental math and make wrong options plausible.`
+      : `Generate ${count} simple ${operation.toLowerCase()} problems using ${difficulty} numbers for speed calculation practice. For each problem, also generate 4 multiple choice options (3 wrong answers + 1 correct). Return only the problems in JSON format as an array of objects with: {question: "12 + 45", answer: 57, options: ["54", "57", "59", "62"], correctOptionIndex: 1, operation: "${operation}", difficulty: "${difficulty}"}. Keep numbers reasonable for mental math and make wrong options plausible.`
 
-export function FlashQuestions({ isOpen, onClose, questions: _questions = [] }: FlashQuestionsProps) {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
-  const [score, setScore] = useState(0)
-  const [isAnimating, setIsAnimating] = useState(false)
-  const [showResult, setShowResult] = useState(false)
-  const [answeredQuestions, setAnsweredQuestions] = useState<number[]>([])
-  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right')
-  const [chapter, setChapter] = useState(mathChapters[0])
-  const [difficulty, setDifficulty] = useState("medium")
-  const [showSpeedPrompt, setShowSpeedPrompt] = useState(true)
-  const [loadingAI, setLoadingAI] = useState(false)
-  const [aiError, setAIError] = useState("")
-  const [questions, setQuestions] = useState<Question[]>(_questions)
+    const response = await fetch('/api/generate-flashcards', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        prompt,
+        operation,
+        difficulty,
+        count 
+      }),
+    })
 
-  // Generate initial arithmetic questions only if no questions are provided
-  useEffect(() => {
-    if (isOpen) {
-      if (_questions && _questions.length > 0) {
-        // Use provided questions
-        setQuestions(_questions)
-        setShowSpeedPrompt(false)
-      } else if (questions.length === 0) {
-        // Generate new questions if none provided
-        try {
-          generateNewQuestions()
-        } catch (error) {
-          console.error('Error generating initial questions:', error)
-          setAIError('Failed to generate questions. Please try again.')
-          setShowSpeedPrompt(true)
+    if (!response.ok) {
+      throw new Error('Failed to generate questions')
+    }
+
+    const data = await response.json()
+    const questions = data.questions || []
+    
+    // Ensure all questions have proper options array
+    return questions.map((q: any, index: number) => {
+      if (!q.options || !Array.isArray(q.options) || q.options.length !== 4) {
+        // Generate options locally if API didn't provide them
+        const localQ = generateLocalQuestions(q.operation || operation, q.difficulty || difficulty, 1)[0]
+        return {
+          ...q,
+          options: localQ.options,
+          correctOptionIndex: localQ.correctOptionIndex
         }
       }
-    }
-  }, [isOpen, _questions])
-
-  const generateNewQuestions = () => {
-    const newQuestions: Question[] = []
-    const questionTypes = ["Addition", "Subtraction", "Multiplication", "Division"]
-    
-    // Generate 10 random arithmetic questions
-    for (let i = 0; i < 10; i++) {
-      const randomType = questionTypes[Math.floor(Math.random() * questionTypes.length)]
-      newQuestions.push(generateArithmeticQuestion(randomType))
-    }
-    
-    setQuestions(newQuestions)
-    setCurrentQuestionIndex(0)
-    setSelectedAnswer(null)
-    setScore(0)
-    setShowResult(false)
-    setAnsweredQuestions([])
-    setShowSpeedPrompt(false)
+      
+      // Validate that the correct option index is actually correct
+      const correctOptionIndex = q.correctOptionIndex || 0
+      const correctAnswer = q.answer?.toString()
+      
+      if (!correctAnswer || q.options[correctOptionIndex] !== correctAnswer) {
+        const actualCorrectIndex = q.options.findIndex((opt: string) => opt === correctAnswer)
+        return {
+          ...q,
+          correctOptionIndex: actualCorrectIndex >= 0 ? actualCorrectIndex : 0
+        }
+      }
+      
+      return q
+    })
+  } catch (error) {
+    console.error('Error generating questions with Gemini:', error)
+    // Fallback to local generation
+    return generateLocalQuestions(operation, difficulty, count)
   }
+}
 
-  // useEffect hooks must be called before any early returns to avoid React hook rule violations
-  useEffect(() => {
-    if (!isOpen) {
-      // Reset state when modal closes
-      setCurrentQuestionIndex(0)
-      setSelectedAnswer(null)
-      setScore(0)
-      setShowResult(false)
-      setAnsweredQuestions([])
-      setQuestions([])
-      setShowSpeedPrompt(true)
+// Fallback local question generation
+const generateLocalQuestions = (
+  operation: string, 
+  difficulty: "2-digit" | "3-digit" | "mixed", 
+  count: number = 10
+): Question[] => {
+  const questions: Question[] = []
+  
+  for (let i = 0; i < count; i++) {
+    const currentDifficulty = difficulty === "mixed" 
+      ? Math.random() > 0.5 ? "2-digit" : "3-digit"
+      : difficulty as "2-digit" | "3-digit"
+    
+    const range = currentDifficulty === "2-digit" ? [10, 99] : [100, 999]
+    let question = ""
+    let answer = 0
+    
+    switch (operation) {
+      case "Addition": {
+        const a = Math.floor(Math.random() * (range[1] - range[0] + 1)) + range[0]
+        const b = Math.floor(Math.random() * (range[1] - range[0] + 1)) + range[0]
+        answer = a + b
+        question = `${a} + ${b}`
+        break
+      }
+      case "Subtraction": {
+        const a = Math.floor(Math.random() * (range[1] - range[0] + 1)) + range[0]
+        const b = Math.floor(Math.random() * a) + (range[0] / 2) // Ensure positive result
+        answer = a - b
+        question = `${a} - ${b}`
+        break
+      }
+      case "Multiplication": {
+        const maxRange = currentDifficulty === "2-digit" ? [2, 25] : [2, 50]
+        const a = Math.floor(Math.random() * (maxRange[1] - maxRange[0] + 1)) + maxRange[0]
+        const b = Math.floor(Math.random() * (maxRange[1] - maxRange[0] + 1)) + maxRange[0]
+        answer = a * b
+        question = `${a} × ${b}`
+        break
+      }
+      case "Division": {
+        const divisor = Math.floor(Math.random() * 20) + 2
+        const quotient = currentDifficulty === "2-digit" 
+          ? Math.floor(Math.random() * 50) + 2
+          : Math.floor(Math.random() * 200) + 2
+        const dividend = divisor * quotient
+        answer = quotient
+        question = `${dividend} ÷ ${divisor}`
+        break
+      }
     }
-  }, [isOpen])
+    
+    // Generate 4 options with one correct answer
+    const options: string[] = []
+    
+    // Generate 3 wrong answers first
+    const wrongAnswers = new Set<number>()
+    let attempts = 0
+    while (wrongAnswers.size < 3 && attempts < 50) {
+      let wrongAnswer: number
+      const variance = Math.floor(Math.random() * 21) - 10 // -10 to +10
+      
+      switch (operation) {
+        case "Addition":
+          // For addition, generate answers that are close but wrong
+          wrongAnswer = answer + variance
+          if (variance === 0) wrongAnswer = answer + (Math.random() > 0.5 ? 5 : -5)
+          break
+        case "Subtraction":
+          wrongAnswer = answer + variance
+          if (variance === 0) wrongAnswer = answer + (Math.random() > 0.5 ? 3 : -3)
+          break
+        case "Multiplication":
+          // For multiplication, generate more varied wrong answers
+          const multVariance = Math.floor(Math.random() * 51) - 25 // -25 to +25
+          wrongAnswer = answer + multVariance
+          if (multVariance === 0) wrongAnswer = answer + (Math.random() > 0.5 ? 10 : -10)
+          break
+        case "Division":
+          wrongAnswer = answer + Math.floor(Math.random() * 11) - 5 // -5 to +5
+          if (wrongAnswer === answer) wrongAnswer = answer + (Math.random() > 0.5 ? 2 : -2)
+          break
+        default:
+          wrongAnswer = answer + variance
+          if (variance === 0) wrongAnswer = answer + (Math.random() > 0.5 ? 5 : -5)
+      }
+      
+      // Ensure wrong answer is positive and different from correct answer
+      if (wrongAnswer > 0 && wrongAnswer !== answer && !wrongAnswers.has(wrongAnswer)) {
+        wrongAnswers.add(wrongAnswer)
+      }
+      attempts++
+    }
+    
+    // If we still don't have 3 wrong answers, add some basic ones
+    while (wrongAnswers.size < 3) {
+      const baseWrong = answer + (wrongAnswers.size + 1) * (Math.random() > 0.5 ? 1 : -1)
+      if (baseWrong > 0 && baseWrong !== answer && !wrongAnswers.has(baseWrong)) {
+        wrongAnswers.add(baseWrong)
+      }
+    }
+    
+    // Add all wrong answers to options array
+    wrongAnswers.forEach(wa => options.push(wa.toString()))
+    
+    // Add correct answer to options array
+    options.push(answer.toString())
+    
+    // Shuffle all options
+    const shuffledOptions = [...options].sort(() => Math.random() - 0.5)
+    
+    // Find the index of the correct answer after shuffling
+    const correctOptionIndex = shuffledOptions.findIndex(option => parseInt(option) === answer)
+    
+    questions.push({
+      id: `${operation}-${currentDifficulty}-${i}`,
+      question,
+      answer,
+      options: shuffledOptions,
+      correctOptionIndex,
+      operation,
+      difficulty: currentDifficulty
+    })
+  }
+  
+  return questions
+}
+
+export function FlashQuestions({ isOpen, onClose }: FlashQuestionsProps) {
+  const [currentSection, setCurrentSection] = useState<"2-digit" | "3-digit" | "mixed">("2-digit")
+  const [currentOperation, setCurrentOperation] = useState("Addition")
+  const [questions, setQuestions] = useState<Question[]>([])
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  const [userAnswer, setUserAnswer] = useState("")
+  const [selectedOption, setSelectedOption] = useState<number | null>(null)
+  const [showAnswer, setShowAnswer] = useState(false)
+  const [score, setScore] = useState(0)
+  const [totalAnswered, setTotalAnswered] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const [startTime, setStartTime] = useState<number | null>(null)
+  const [questionStartTime, setQuestionStartTime] = useState<number | null>(null)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [showFinalResults, setShowFinalResults] = useState(false)
+  const [answerHistory, setAnswerHistory] = useState<Array<{
+    question: string
+    userAnswer: string
+    correctAnswer: string
+    isCorrect: boolean
+    timeTaken: number
+  }>>([])
 
   const currentQuestion = questions[currentQuestionIndex]
+  const totalQuestions = 15
 
-  // If modal is not open, return null early (after hooks are called)
-  if (!isOpen) {
-    return null
+  // Generate questions when section or operation changes
+  useEffect(() => {
+    if (isOpen) {
+      generateQuestions()
+    }
+  }, [isOpen, currentSection, currentOperation])
+
+  // Start timer when question appears
+  useEffect(() => {
+    if (currentQuestion && !showAnswer) {
+      setQuestionStartTime(Date.now())
+    }
+  }, [currentQuestionIndex, showAnswer])
+
+  const generateQuestions = async () => {
+    setIsGenerating(true)
+    setLoading(true)
+    try {
+      const newQuestions = await generateQuestionsWithGemini(currentOperation, currentSection, totalQuestions)
+      setQuestions(newQuestions)
+      setCurrentQuestionIndex(0)
+      setUserAnswer("")
+      setSelectedOption(null)
+      setShowAnswer(false)
+      setScore(0)
+      setTotalAnswered(0)
+      setShowFinalResults(false)
+      setAnswerHistory([])
+      setStartTime(Date.now())
+    } catch (error) {
+      console.error('Error generating questions:', error)
+    } finally {
+      setLoading(false)
+      setIsGenerating(false)
+    }
   }
 
-  // Safety check for question data - handle gracefully without returning null
-  const hasValidQuestion = currentQuestion && Array.isArray(currentQuestion.options) && currentQuestion.options.length > 0
-  
-  if (!hasValidQuestion && questions.length > 0) {
-    console.error('Invalid question data at index', currentQuestionIndex, ':', currentQuestion)
-  }
-
-  const handleAnswerSelect = (answerIndex: number) => {
-    if (selectedAnswer !== null) return // Prevent multiple selections
-
-    // Validate question data
-    if (!currentQuestion || !Array.isArray(currentQuestion.options) || currentQuestion.options.length === 0) {
-      console.error('Invalid question data:', currentQuestion)
-      return
+  const handleOptionSelect = (optionIndex: number) => {
+    if (showAnswer) return
+    setSelectedOption(optionIndex)
+    
+    // Calculate time taken for this question
+    const timeTaken = questionStartTime ? Date.now() - questionStartTime : 0
+    
+    // Automatically submit the answer when option is selected
+    const isCorrect = optionIndex === currentQuestion.correctOptionIndex
+    const selectedAnswer = currentQuestion.options[optionIndex]
+    
+    // Add to answer history
+    const newAnswerRecord = {
+      question: currentQuestion.question,
+      userAnswer: selectedAnswer,
+      correctAnswer: currentQuestion.answer.toString(),
+      isCorrect,
+      timeTaken: Math.floor(timeTaken / 1000) // Convert to seconds
     }
-
-    // Validate answer index
-    if (typeof currentQuestion.correctAnswer !== 'number' || 
-        currentQuestion.correctAnswer < 0 || 
-        currentQuestion.correctAnswer >= currentQuestion.options.length) {
-      console.error('Invalid correctAnswer:', currentQuestion.correctAnswer, 'for options:', currentQuestion.options)
-      return
-    }
-
-    setSelectedAnswer(answerIndex)
-    setIsAnimating(true)
-    setSlideDirection('right')
-
-    // Check if answer is correct with extra validation
-    const isCorrect = answerIndex === currentQuestion.correctAnswer
+    
+    setAnswerHistory(prev => [...prev, newAnswerRecord])
     
     if (isCorrect) {
       setScore(prev => prev + 1)
     }
+    
+    setTotalAnswered(prev => prev + 1)
+    setShowAnswer(true)
+  }
 
-    // Add to answered questions
-    setAnsweredQuestions(prev => [...prev, currentQuestionIndex])
+  const handleNext = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1)
+      setUserAnswer("")
+      setSelectedOption(null)
+      setShowAnswer(false)
+    } else {
+      // End of questions, show final results
+      setShowFinalResults(true)
+    }
+  }
 
-    // Move to next question after animation
-    setTimeout(() => {
-      if (currentQuestionIndex < questions.length - 1) {
-        setSlideDirection('left') // Slide in from left for next question
-        setCurrentQuestionIndex(prev => prev + 1)
-        setSelectedAnswer(null)
-        
-        // Reset animation after slide-in
-        setTimeout(() => {
-          setIsAnimating(false)
-          setSlideDirection('right') // Prepare for next slide-out
-        }, 100)
-      } else {
-        // Show final results
-        setShowResult(true)
-        setIsAnimating(false)
+  const handlePrevious = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1)
+      setUserAnswer("")
+      setSelectedOption(null)
+      setShowAnswer(false)
+    }
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && showAnswer) {
+      handleNext()
+    } else if (!showAnswer && ['1', '2', '3', '4'].includes(e.key)) {
+      const optionIndex = parseInt(e.key) - 1
+      if (optionIndex >= 0 && optionIndex < 4 && currentQuestion?.options) {
+        handleOptionSelect(optionIndex)
       }
-    }, 800)
-  }
-
-  const handleClose = () => {
-    setIsAnimating(true)
-    setTimeout(() => {
-      onClose()
-      setIsAnimating(false)
-    }, 300)
-  }
-
-  // Generate a single new arithmetic question
-  const handleGenerateAIQuestion = () => {
-    setLoadingAI(true)
-    setAIError("")
-    
-    try {
-      const newQuestion = generateArithmeticQuestion(chapter)
-      
-      // Add new question to the start of the flash questions
-      setQuestions(prev => [newQuestion, ...prev])
-      setCurrentQuestionIndex(0)
-      setSelectedAnswer(null)
-      setShowResult(false)
-      setAnsweredQuestions([])
-    } catch (err: any) {
-      setAIError("Failed to generate question. Please try again.")
-    } finally {
-      setLoadingAI(false)
+    } else if (!showAnswer && ['a', 'b', 'c', 'd'].includes(e.key.toLowerCase())) {
+      const optionIndex = e.key.toLowerCase().charCodeAt(0) - 97
+      if (optionIndex >= 0 && optionIndex < 4 && currentQuestion?.options) {
+        handleOptionSelect(optionIndex)
+      }
     }
   }
 
-  // Generate arithmetic questions for speed practice
-  const startSpeedCalculation = () => {
-    setLoadingAI(true)
-    setAIError("")
-    
-    try {
-      generateNewQuestions()
-      setShowSpeedPrompt(false)
-    } catch (err: any) {
-      setAIError("Failed to generate questions. Please try again.")
-    } finally {
-      setLoadingAI(false)
-    }
+  const resetSession = () => {
+    setScore(0)
+    setTotalAnswered(0)
+    setCurrentQuestionIndex(0)
+    setUserAnswer("")
+    setSelectedOption(null)
+    setShowAnswer(false)
+    setShowFinalResults(false)
+    setAnswerHistory([])
+    setStartTime(Date.now())
+    generateQuestions()
+  }
+
+  const getElapsedTime = () => {
+    if (!startTime) return 0
+    return Math.floor((Date.now() - startTime) / 1000)
+  }
+
+  const getQuestionTime = () => {
+    if (!questionStartTime) return 0
+    return Math.floor((Date.now() - questionStartTime) / 1000)
   }
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className={`relative w-full max-w-2xl mx-auto transition-all duration-500 ${
-        isAnimating 
-          ? slideDirection === 'right'
-            ? 'transform translate-x-full opacity-0'
-            : 'transform -translate-x-full opacity-0'
-          : 'transform translate-x-0 opacity-100'
-      }`}>
-        <Card className="bg-gradient-to-br from-purple-900 via-purple-800 to-purple-900 border-purple-600 text-white shadow-2xl">
-          <CardContent className="p-4 sm:p-8">
-            {showSpeedPrompt ? (
-              <div className="flex flex-col items-center justify-center min-h-[300px] gap-6">
-                <h2 className="text-xl sm:text-2xl font-bold text-center">Ready for arithmetic speed practice?</h2>
-                <p className="text-purple-200 text-center">Practice addition, subtraction, multiplication, and division</p>
-                <Button onClick={startSpeedCalculation} disabled={loadingAI} className="flex items-center gap-2 text-lg">
-                  {loadingAI ? <Loader2 className="h-5 w-5 animate-spin" /> : <Zap className="h-5 w-5" />}
-                  Start Arithmetic Practice
-                </Button>
-                {aiError && <div className="text-red-300 text-xs mt-2">{aiError}</div>}
-                <Button onClick={onClose} variant="destructive" className="mt-4">Cancel</Button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4">
+      <div className="relative w-full max-w-4xl mx-auto max-h-screen overflow-y-auto">
+        <Card className="neu-card bg-gradient-to-br from-card via-card to-background/95 border border-border/20" 
+              onKeyDown={handleKeyPress} 
+              tabIndex={0}>
+          <CardContent className="p-3 sm:p-6">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="neu-icon-button p-2 sm:p-3">
+                  <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-lg sm:text-2xl font-bold neu-text-gradient">Speed Calculation</h2>
+                  <p className="text-muted-foreground text-xs sm:text-sm">Click any option for instant results</p>
+                  <p className="text-muted-foreground text-xs hidden sm:block">Use A/B/C/D or 1/2/3/4 keys</p>
+                </div>
               </div>
-            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="neu-button h-8 w-8 sm:h-10 sm:w-10"
+              >
+                <X className="h-4 w-4 sm:h-6 sm:w-6" />
+              </Button>
+            </div>
+
+            {/* Section Selector */}
+            <div className="flex flex-wrap gap-1 sm:gap-2 mb-4 sm:mb-6">
+              {(["2-digit", "3-digit", "mixed"] as const).map((section) => (
+                <Button
+                  key={section}
+                  variant={currentSection === section ? "default" : "outline"}
+                  onClick={() => setCurrentSection(section)}
+                  className={`${currentSection === section ? "neu-button-active" : "neu-button"} text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2`}
+                  disabled={isGenerating}
+                >
+                  {section === "mixed" ? "Mixed" : `${section.split('-')[0]}D`}
+                </Button>
+              ))}
+            </div>
+
+            {/* Operation Selector */}
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-1 sm:gap-2 mb-4 sm:mb-6">
+              {operations.map((operation) => (
+                <Button
+                  key={operation}
+                  variant={currentOperation === operation ? "default" : "outline"}
+                  onClick={() => setCurrentOperation(operation)}
+                  className={`${currentOperation === operation ? "neu-button-active" : "neu-button"} text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2`}
+                  disabled={isGenerating}
+                >
+                  {operation.charAt(0) + operation.slice(1, 4)}
+                </Button>
+              ))}
+            </div>
+
+            {/* Stats */}
+            {!showFinalResults && (
               <>
-                {/* Chapter & Difficulty Selectors + AI Button */}
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4 items-center w-full">
-                  <Select value={chapter} onValueChange={setChapter}>
-                    <SelectTrigger className="w-full sm:w-48 min-w-0 max-w-xs">
-                      <SelectValue placeholder="Math Chapter" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {mathChapters.map((ch) => (
-                        <SelectItem key={ch} value={ch}>{ch}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={difficulty} onValueChange={setDifficulty}>
-                    <SelectTrigger className="w-full sm:w-32 min-w-0 max-w-xs">
-                      <SelectValue placeholder="Difficulty" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="easy">Easy</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="hard">Hard</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button onClick={handleGenerateAIQuestion} disabled={loadingAI} className="flex items-center gap-2 w-full sm:w-auto">
-                    {loadingAI ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-                    Add New Question
-                  </Button>
-                </div>
-                {aiError && <div className="text-red-300 text-xs mb-2">{aiError}</div>}
-
-                {/* Header */}
-                <div className="flex items-center justify-between mb-4 sm:mb-6">
-                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                    <div className="p-2 bg-purple-700 rounded-full flex-shrink-0">
-                      <Zap className="h-4 w-4 sm:h-6 sm:w-6 text-yellow-400" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h2 className="text-lg sm:text-2xl font-bold truncate">Flash Questions</h2>
-                      <p className="text-purple-200 text-xs sm:text-sm">Quick rapid-fire practice</p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleClose}
-                    className="text-purple-200 hover:text-white hover:bg-purple-700 flex-shrink-0"
-                  >
-                    <X className="h-5 w-5 sm:h-6 sm:w-6" />
-                  </Button>
-                </div>
-
                 {/* Progress Bar */}
                 <div className="mb-4 sm:mb-6">
-                  <div className="flex items-center justify-between text-xs sm:text-sm text-purple-200 mb-2">
-                    <span>Question {currentQuestionIndex + 1} of {questions.length}</span>
-                    <span>Score: {score}/{answeredQuestions.length}</span>
+                  <div className="flex justify-between text-xs sm:text-sm text-muted-foreground mb-2">
+                    <span>Progress</span>
+                    <span>{totalAnswered} / {totalQuestions}</span>
                   </div>
-                  <div className="w-full bg-purple-800 rounded-full h-2">
+                  <div className="w-full bg-muted rounded-full h-2">
                     <div 
-                      className="bg-gradient-to-r from-yellow-400 to-orange-400 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
+                      className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${(totalAnswered / totalQuestions) * 100}%` }}
                     ></div>
                   </div>
                 </div>
 
-                {!showResult ? (
-                  <>
-                    {/* Progress */}
-                    <div className="mb-6">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-purple-200">
-                          Question {currentQuestionIndex + 1} of {questions.length}
-                        </span>
-                        <span className="text-sm text-purple-200">
-                          Score: {score}/{answeredQuestions.length}
-                        </span>
-                      </div>
-                      <div className="w-full bg-purple-700 rounded-full h-2">
-                        <div 
-                          className="bg-gradient-to-r from-yellow-400 to-orange-400 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
-                        />
-                      </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
+                  <div className="bg-card/50 border border-border rounded-lg p-2 sm:p-4 text-center">
+                    <div className="text-lg sm:text-2xl font-bold text-primary">{score}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Correct</div>
+                  </div>
+                  <div className="bg-card/50 border border-border rounded-lg p-2 sm:p-4 text-center">
+                    <div className="text-lg sm:text-2xl font-bold text-accent">{totalAnswered}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Answered</div>
+                  </div>
+                  <div className="bg-card/50 border border-border rounded-lg p-2 sm:p-4 text-center">
+                    <div className="text-lg sm:text-2xl font-bold text-purple-600">
+                      {totalAnswered > 0 ? Math.round((score / totalAnswered) * 100) : 0}%
                     </div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Accuracy</div>
+                  </div>
+                  <div className="bg-card/50 border border-border rounded-lg p-2 sm:p-4 text-center">
+                    <div className="text-lg sm:text-2xl font-bold text-orange-600">{getElapsedTime()}s</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Total Time</div>
+                  </div>
+                </div>
+              </>
+            )}
 
-                    {/* Question or Error State */}
-                    {hasValidQuestion ? (
-                      <div className={`transition-all duration-500 ${isAnimating ? 'opacity-50 scale-95' : 'opacity-100 scale-100'}`}>
-                        <div className="mb-4 sm:mb-6">
-                          <div className="text-xs text-purple-300 mb-2 uppercase tracking-wide">
-                            {currentQuestion.section}
-                          </div>
-                          <h3 className="text-lg sm:text-xl font-semibold leading-relaxed">
-                            <MathRenderer text={currentQuestion.question} />
-                          </h3>
-                        </div>
-
-                        {/* Options */}
-                        <div className="grid gap-2 sm:gap-3">
-                          {currentQuestion.options.map((option, index) => (
-                          <button
-                            key={index}
-                            onClick={() => handleAnswerSelect(index)}
-                            disabled={selectedAnswer !== null}
-                            className={`p-3 sm:p-4 text-left rounded-lg border-2 transition-all duration-200 ${
-                              selectedAnswer === null
-                                ? 'border-purple-600 bg-purple-800/50 hover:border-purple-400 hover:bg-purple-700/50 cursor-pointer'
-                                : selectedAnswer === index
-                                  ? index === currentQuestion.correctAnswer
-                                    ? 'border-green-400 bg-green-500/30 text-green-100 shadow-lg shadow-green-500/20'
-                                    : 'border-red-400 bg-red-500/30 text-red-100 shadow-lg shadow-red-500/20'
-                                  : index === currentQuestion.correctAnswer
-                                    ? 'border-green-400 bg-green-500/30 text-green-100 shadow-lg shadow-green-500/20'
-                                    : 'border-purple-600 bg-purple-800/20 opacity-40 cursor-not-allowed'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 sm:gap-3">
-                              <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all ${
-                                selectedAnswer === null
-                                  ? 'border-purple-400 text-purple-300 bg-transparent'
-                                  : selectedAnswer === index
-                                    ? index === currentQuestion.correctAnswer
-                                      ? 'border-green-300 bg-green-400 text-green-900 shadow-lg'
-                                      : 'border-red-300 bg-red-400 text-red-900 shadow-lg'
-                                    : index === currentQuestion.correctAnswer
-                                      ? 'border-green-300 bg-green-400 text-green-900 shadow-lg'
-                                      : 'border-purple-600 text-purple-500 bg-transparent'
-                              }`}>
-                                {String.fromCharCode(65 + index)}
-                              </div>
-                              <span className="flex-1 text-sm sm:text-base">
-                                <MathRenderer text={option} />
-                              </span>
-                              {selectedAnswer !== null && (
-                                <>
-                                  {selectedAnswer === index && index === currentQuestion.correctAnswer && (
-                                    <Check className="h-4 w-4 sm:h-5 sm:w-5 text-green-400 flex-shrink-0" />
-                                  )}
-                                  {selectedAnswer === index && index !== currentQuestion.correctAnswer && (
-                                    <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-400 flex-shrink-0" />
-                                  )}
-                                  {selectedAnswer !== index && index === currentQuestion.correctAnswer && (
-                                    <Check className="h-4 w-4 sm:h-5 sm:w-5 text-green-400 flex-shrink-0" />
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          </button>
-                        ))}
-                        </div>
-                      </div>
-                    ) : (
-                      /* Error State for Invalid Question */
-                      <div className="text-center py-8">
-                        <div className="mb-4">
-                          <AlertCircle className="h-12 w-12 mx-auto text-red-400 mb-4" />
-                          <h3 className="text-xl font-bold mb-2">Question Error</h3>
-                          <p className="text-purple-200 mb-4">
-                            There was an issue loading the current question.
-                          </p>
-                        </div>
-                        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                          <Button
-                            onClick={() => {
-                              try {
-                                generateNewQuestions()
-                              } catch (error) {
-                                console.error('Error regenerating questions:', error)
-                                setAIError('Failed to generate new questions')
-                              }
-                            }}
-                            className="bg-purple-600 hover:bg-purple-700"
-                          >
-                            Generate New Questions
-                          </Button>
-                          <Button
-                            onClick={handleClose}
-                            variant="outline"
-                            className="border-purple-400 text-purple-300 hover:bg-purple-700"
-                          >
-                            Close
-                          </Button>
-                        </div>
-                        {aiError && <div className="text-red-300 text-xs mt-2">{aiError}</div>}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  /* Results */
-                  <div className="text-center py-4 sm:py-8">
-                    <div className="mb-4 sm:mb-6">
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Zap className="h-8 w-8 sm:h-10 sm:w-10 text-purple-900" />
-                      </div>
-                      <h3 className="text-xl sm:text-3xl font-bold mb-2">Flash Round Complete!</h3>
-                      <p className="text-purple-200 text-sm sm:text-base">Great job on your rapid-fire practice</p>
+            {/* Question Area */}
+            {showFinalResults ? (
+              <div className="neu-card p-4 sm:p-8 mb-4 sm:mb-6">
+                <div className="text-center mb-6">
+                  <h3 className="text-2xl sm:text-3xl font-bold neu-text-gradient mb-4">Quiz Complete!</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                    <div className="bg-card/50 border border-border rounded-lg p-3 text-center">
+                      <div className="text-xl sm:text-2xl font-bold text-primary">{score}</div>
+                      <div className="text-xs sm:text-sm text-muted-foreground">Correct</div>
                     </div>
-
-                    <div className="bg-purple-800/50 rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
-                      <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
-                        <div>
-                          <div className="text-xl sm:text-2xl font-bold text-yellow-400">{score}</div>
-                          <div className="text-xs sm:text-sm text-purple-200">Correct</div>
-                        </div>
-                        <div>
-                          <div className="text-xl sm:text-2xl font-bold text-red-400">{questions.length - score}</div>
-                          <div className="text-xs sm:text-sm text-purple-200">Incorrect</div>
-                        </div>
-                        <div>
-                          <div className="text-xl sm:text-2xl font-bold text-purple-300">{Math.round((score / questions.length) * 100)}%</div>
-                          <div className="text-xs sm:text-sm text-purple-200">Accuracy</div>
-                        </div>
-                      </div>
+                    <div className="bg-card/50 border border-border rounded-lg p-3 text-center">
+                      <div className="text-xl sm:text-2xl font-bold text-red-500">{totalQuestions - score}</div>
+                      <div className="text-xs sm:text-sm text-muted-foreground">Incorrect</div>
                     </div>
-
-                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                      <Button
-                        onClick={() => {
-                          generateNewQuestions()
-                        }}
-                        className="bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto"
-                      >
-                        Try Again
-                      </Button>
-                      <Button
-                        onClick={handleClose}
-                        variant="outline"
-                        className="border-purple-400 text-purple-300 hover:bg-purple-700 w-full sm:w-auto"
-                      >
-                        Close
-                      </Button>
+                    <div className="bg-card/50 border border-border rounded-lg p-3 text-center">
+                      <div className="text-xl sm:text-2xl font-bold text-purple-600">
+                        {Math.round((score / totalQuestions) * 100)}%
+                      </div>
+                      <div className="text-xs sm:text-sm text-muted-foreground">Accuracy</div>
+                    </div>
+                    <div className="bg-card/50 border border-border rounded-lg p-3 text-center">
+                      <div className="text-xl sm:text-2xl font-bold text-orange-600">{getElapsedTime()}s</div>
+                      <div className="text-xs sm:text-sm text-muted-foreground">Total Time</div>
                     </div>
                   </div>
-                )}
-              </>
+                </div>
+
+                {/* Detailed Results */}
+                <div className="max-h-64 sm:max-h-80 overflow-y-auto mb-6">
+                  <h4 className="text-lg font-semibold mb-3">Detailed Results:</h4>
+                  <div className="space-y-2">
+                    {answerHistory.map((record, index) => (
+                      <div
+                        key={index}
+                        className={`p-3 rounded-lg border text-sm flex items-center justify-between ${
+                          record.isCorrect
+                            ? "bg-green-50 border-green-200 text-green-800"
+                            : "bg-red-50 border-red-200 text-red-800"
+                        }`}
+                      >
+                        <div className="flex-1">
+                          <span className="font-medium">{record.question} = </span>
+                          <span className={record.isCorrect ? "text-green-700" : "text-red-700"}>
+                            {record.userAnswer}
+                          </span>
+                          {!record.isCorrect && (
+                            <span className="text-green-700"> (Correct: {record.correctAnswer})</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs">{record.timeTaken}s</span>
+                          {record.isCorrect ? (
+                            <Check className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <AlertCircle className="h-4 w-4 text-red-600" />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button onClick={resetSession} className="neu-button flex-1">
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Try Again
+                  </Button>
+                  <Button onClick={onClose} variant="outline" className="neu-button flex-1">
+                    <X className="h-4 w-4 mr-2" />
+                    Close
+                  </Button>
+                </div>
+              </div>
+            ) : loading || isGenerating ? (
+              <div className="flex items-center justify-center py-10 sm:py-20">
+                <div className="text-center">
+                  <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin mx-auto mb-4 text-primary" />
+                  <p className="text-muted-foreground text-sm sm:text-base">Generating questions...</p>
+                </div>
+              </div>
+            ) : currentQuestion ? (
+              <div className="neu-card p-4 sm:p-8 mb-4 sm:mb-6">
+                <div className="text-center mb-4 sm:mb-6">
+                  <Badge variant="outline" className="mb-2 sm:mb-4 text-xs sm:text-sm">
+                    {currentQuestion.operation} • {currentQuestion.difficulty}
+                  </Badge>
+                  <div className="text-2xl sm:text-4xl font-bold mb-3 sm:mb-4 neu-text-gradient">
+                    {currentQuestion.question}
+                  </div>
+                  <div className="text-sm sm:text-lg text-muted-foreground mb-2 sm:mb-4">
+                    Question {currentQuestionIndex + 1} of {totalQuestions}
+                  </div>
+                  {questionStartTime && !showAnswer && (
+                    <div className="text-xs sm:text-sm text-muted-foreground">
+                      <Timer className="inline h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      {getQuestionTime()}s
+                    </div>
+                  )}
+                </div>
+
+                <div className="max-w-lg mx-auto">
+                  {!showAnswer ? (
+                    <div className="space-y-3 sm:space-y-4">
+                      {/* Multiple Choice Options */}
+                      <div className="grid grid-cols-1 gap-2 sm:gap-3">
+                        {currentQuestion.options && currentQuestion.options.length === 4 ? (
+                          currentQuestion.options.map((option, index) => (
+                            <Button
+                              key={index}
+                              variant={selectedOption === index ? "default" : "outline"}
+                              onClick={() => handleOptionSelect(index)}
+                              className={`neu-button h-12 sm:h-14 text-base sm:text-lg font-medium transition-all ${
+                                selectedOption === index ? "neu-button-active" : ""
+                              }`}
+                              disabled={showAnswer}
+                            >
+                              <span className="mr-2 sm:mr-3 w-6 h-6 sm:w-8 sm:h-8 rounded-full border border-current flex items-center justify-center text-xs sm:text-sm font-bold">
+                                {String.fromCharCode(65 + index)}
+                              </span>
+                              {option}
+                            </Button>
+                          ))
+                        ) : (
+                          <div className="text-center py-6 sm:py-8">
+                            <p className="text-muted-foreground text-sm sm:text-base">Loading options...</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center space-y-3 sm:space-y-4">
+                      <div className="flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
+                        <div className="text-lg sm:text-2xl">
+                          Your answer: <span className="font-bold">
+                            {selectedOption !== null ? currentQuestion.options[selectedOption] : "None"}
+                          </span>
+                        </div>
+                        {selectedOption === currentQuestion.correctOptionIndex ? (
+                          <Check className="h-6 w-6 sm:h-8 sm:w-8 text-green-500" />
+                        ) : (
+                          <AlertCircle className="h-6 w-6 sm:h-8 sm:w-8 text-red-500" />
+                        )}
+                      </div>
+                      <div className="text-base sm:text-xl text-muted-foreground">
+                        Correct answer: <span className="font-bold text-primary">{currentQuestion.answer}</span>
+                      </div>
+                      {/* Show all options with correct/incorrect styling */}
+                      <div className="space-y-2 mt-3 sm:mt-4">
+                        {currentQuestion.options && currentQuestion.options.length === 4 ? (
+                          currentQuestion.options.map((option, index) => (
+                            <div
+                              key={index}
+                              className={`p-2 sm:p-3 rounded-lg border text-left flex items-center gap-2 sm:gap-3 ${
+                                index === currentQuestion.correctOptionIndex
+                                  ? "bg-green-50 border-green-200 text-green-800"
+                                  : index === selectedOption
+                                  ? "bg-red-50 border-red-200 text-red-800"
+                                  : "bg-muted/50 border-border text-muted-foreground"
+                              }`}
+                            >
+                              <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border flex items-center justify-center text-xs font-bold">
+                                {String.fromCharCode(65 + index)}
+                              </span>
+                              <span className="text-sm sm:text-base">{option}</span>
+                              {index === currentQuestion.correctOptionIndex && (
+                                <Check className="h-3 w-3 sm:h-4 sm:w-4 ml-auto text-green-600" />
+                              )}
+                              {index === selectedOption && index !== currentQuestion.correctOptionIndex && (
+                                <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 ml-auto text-red-600" />
+                              )}
+                            </div>
+                          ))
+                        ) : null}
+                      </div>
+                      <Button onClick={handleNext} className="neu-button w-full py-2 sm:py-3 text-sm sm:text-base">
+                        {currentQuestionIndex < totalQuestions - 1 ? "Next Question" : "Show Results"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : null}
+
+            {/* Navigation */}
+            {!showFinalResults && (
+              <div className="flex justify-between items-center gap-2 sm:gap-4">
+                <Button
+                  onClick={handlePrevious}
+                  disabled={currentQuestionIndex === 0 || isGenerating}
+                  variant="outline"
+                  className="neu-button flex-1 sm:flex-none text-xs sm:text-sm px-2 sm:px-4 py-2"
+                >
+                  <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  Previous
+                </Button>
+
+                <Button
+                  onClick={resetSession}
+                  disabled={isGenerating}
+                  variant="outline" 
+                  className="neu-button flex-1 sm:flex-none text-xs sm:text-sm px-2 sm:px-4 py-2"
+                >
+                  <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  Reset
+                </Button>
+
+                <Button
+                  onClick={handleNext}
+                  disabled={!showAnswer || isGenerating}
+                  variant="outline"
+                  className="neu-button flex-1 sm:flex-none text-xs sm:text-sm px-2 sm:px-4 py-2"
+                >
+                  {currentQuestionIndex < totalQuestions - 1 ? "Next" : "Results"}
+                  <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>
