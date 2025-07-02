@@ -66,15 +66,6 @@
     --neu-shadow-light: 225 25% 16%;
     --neu-shadow-dark: 225 25% 2%;
   }
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-  }
 
   /* Ocean Blue Theme */
   .blue {
@@ -307,6 +298,7 @@
     --neon-glow-strong: 0 0 30px rgba(0, 255, 255, 0.8);
     --noise-opacity: 0.03;
   }
+}
 
 @layer utilities {
   .scrollbar-hide {
@@ -333,6 +325,13 @@
     box-shadow: 
       inset 20px 20px 60px hsl(var(--neu-shadow-dark)),
       inset -20px -20px 60px hsl(var(--neu-shadow-light));
+  }
+
+  .neu-card-soft {
+    @apply bg-background border-0 rounded-2xl;
+    box-shadow: 
+      8px 8px 25px hsl(var(--neu-shadow-dark)),
+      -8px -8px 25px hsl(var(--neu-shadow-light));
   }
   
   .neu-button {

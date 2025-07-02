@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -9,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar, TrendingUp, Eye, Search, Filter, ArrowLeft, Clock, Target, BookOpen } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
+import { staggerContainer, staggerItem } from "@/components/page-transition"
 
 interface HistoryAttempt {
   _id: string
@@ -207,39 +209,59 @@ export default function HistoryPage() {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8 w-full overflow-x-auto">
-          <div className="neu-card p-3 sm:p-6 bg-blue-50/50 dark:bg-blue-900/10 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <BookOpen className="h-5 w-5 text-blue-600 flex-shrink-0" />
-              <h3 className="text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-400 truncate">Total Attempts</h3>
-            </div>
-            <div className="text-xl sm:text-3xl font-bold text-blue-800 dark:text-blue-300 truncate">{attempts.length}</div>
-          </div>
-
-          <div className="neu-card p-3 sm:p-6 bg-green-50/50 dark:bg-green-900/10 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="h-5 w-5 text-green-600 flex-shrink-0" />
-              <h3 className="text-xs sm:text-sm font-semibold text-green-700 dark:text-green-400 truncate">Average Score</h3>
-            </div>
-            <div className="text-xl sm:text-3xl font-bold text-green-800 dark:text-green-300 truncate">{getAverageScore()}%</div>
-          </div>
-
-          <div className="neu-card p-3 sm:p-6 bg-purple-50/50 dark:bg-purple-900/10 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <Target className="h-5 w-5 text-purple-600 flex-shrink-0" />
-              <h3 className="text-xs sm:text-sm font-semibold text-purple-700 dark:text-purple-400 truncate">Best Score</h3>
-            </div>
-            <div className="text-xl sm:text-3xl font-bold text-purple-800 dark:text-purple-300 truncate">{getBestScore()}%</div>
-          </div>
-
-          <div className="neu-card p-3 sm:p-6 bg-orange-50/50 dark:bg-orange-900/10 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <Clock className="h-5 w-5 text-orange-600 flex-shrink-0" />
-              <h3 className="text-xs sm:text-sm font-semibold text-orange-700 dark:text-orange-400 truncate">Avg Time</h3>
-            </div>
-            <div className="text-xl sm:text-3xl font-bold text-orange-800 dark:text-orange-300 truncate">{getTotalTimeSpent()}m</div>
-          </div>
-        </div>
+        {attempts.length > 0 && (
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-8 w-full overflow-x-auto"
+          >
+            <motion.div variants={staggerItem} className="bg-card/80 backdrop-blur-sm border border-border/20 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 p-3 sm:p-4 md:p-6 min-w-0 hover-lift">
+              <div className="flex items-center gap-2 sm:gap-4">
+                <div className="bg-primary/10 p-2 sm:p-3 rounded-lg flex-shrink-0">
+                  <BookOpen className="h-4 w-4 sm:h-6 sm:w-6 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground font-medium truncate">Total Attempts</p>
+                  <p className="text-lg sm:text-2xl md:text-3xl font-bold neu-text-gradient truncate">{attempts.length}</p>
+                </div>
+              </div>
+            </motion.div>
+            <motion.div variants={staggerItem} className="bg-card/80 backdrop-blur-sm border border-border/20 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 p-3 sm:p-4 md:p-6 min-w-0 hover-lift">
+              <div className="flex items-center gap-2 sm:gap-4">
+                <div className="bg-primary/10 p-2 sm:p-3 rounded-lg flex-shrink-0">
+                  <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 text-accent" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground font-medium truncate">Average Score</p>
+                  <p className="text-lg sm:text-2xl md:text-3xl font-bold neu-text-gradient truncate">{getAverageScore()}%</p>
+                </div>
+              </div>
+            </motion.div>
+            <motion.div variants={staggerItem} className="bg-card/80 backdrop-blur-sm border border-border/20 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 p-3 sm:p-4 md:p-6 min-w-0 hover-lift">
+              <div className="flex items-center gap-2 sm:gap-4">
+                <div className="bg-primary/10 p-2 sm:p-3 rounded-lg flex-shrink-0">
+                  <Target className="h-4 w-4 sm:h-6 sm:w-6 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground font-medium truncate">Best Score</p>
+                  <p className="text-lg sm:text-2xl md:text-3xl font-bold neu-text-gradient truncate">{getBestScore()}%</p>
+                </div>
+              </div>
+            </motion.div>
+            <motion.div variants={staggerItem} className="bg-card/80 backdrop-blur-sm border border-border/20 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 p-3 sm:p-4 md:p-6 min-w-0 hover-lift">
+              <div className="flex items-center gap-2 sm:gap-4">
+                <div className="bg-primary/10 p-2 sm:p-3 rounded-lg flex-shrink-0">
+                  <Clock className="h-4 w-4 sm:h-6 sm:w-6 text-accent" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground font-medium truncate">Avg Time</p>
+                  <p className="text-lg sm:text-2xl md:text-3xl font-bold neu-text-gradient truncate">{getTotalTimeSpent()}m</p>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
 
         {/* Filters and Search */}
         <div className="neu-card p-6 mb-6">
