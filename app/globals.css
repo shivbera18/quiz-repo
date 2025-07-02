@@ -308,9 +308,6 @@
     --noise-opacity: 0.03;
   }
 
-  /* ...existing code... */
-}
-
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;  /* Internet Explorer 10+ */
