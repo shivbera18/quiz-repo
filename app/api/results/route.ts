@@ -234,18 +234,25 @@ export async function GET(request: NextRequest) {
     console.log('✅ Returning transformed results:', transformedResults.length)
     
     // Always return results array, even if empty
-    return NextResponse.json({ 
+    const response = NextResponse.json({ 
       results: transformedResults,
       success: true,
       timestamp: new Date().toISOString(),
       count: transformedResults.length
     })
 
+    // Add no-cache headers to ensure fresh data
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    
+    return response
+
   } catch (error) {
     console.error("❌ Error fetching quiz results:", error)
     
     // Return empty results array instead of error for better UX
-    return NextResponse.json({ 
+    const errorResponse = NextResponse.json({ 
       results: [],
       success: false,
       message: "Failed to fetch quiz results",
@@ -253,5 +260,12 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
       count: 0
     }, { status: 500 })
+
+    // Add no-cache headers even for error responses
+    errorResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+    errorResponse.headers.set('Pragma', 'no-cache')
+    errorResponse.headers.set('Expires', '0')
+    
+    return errorResponse
   }
 }

@@ -46,10 +46,10 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
-  const [dataSource, setDataSource] = useState<'api' | 'localStorage' | 'unknown'>('unknown')
+  const [dataSource, setDataSource] = useState<'api' | 'disconnected' | 'loading'>('loading')
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking')
 
-  // Function to refresh analytics data
+  // Function to refresh analytics data - always fetch fresh
   const refreshData = async (force = false) => {
     setRefreshing(true)
     try {
@@ -58,12 +58,15 @@ export default function AnalyticsPage() {
         console.log('Refreshing analytics data...', { hasUser: !!user, hasToken: !!token, force })
         
         if (token) {
-          const url = force ? `/api/analytics?_t=${Date.now()}` : '/api/analytics'
+          // Always force fresh data with cache busting
+          const url = `/api/analytics?_t=${Date.now()}`
           
           const response = await fetch(url, {
             headers: {
               'Authorization': `Bearer ${token}`,
-              'Cache-Control': force ? 'no-cache' : 'default'
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0'
             }
           })
           
@@ -80,20 +83,22 @@ export default function AnalyticsPage() {
             
             if (apiData.results && Array.isArray(apiData.results)) {
               setResults(apiData.results)
-              localStorage.setItem("quizResults", JSON.stringify(apiData.results))
               setLastUpdated(new Date())
               setDataSource('api')
               setConnectionStatus('connected')
-              console.log('Analytics data updated successfully')
+              console.log('Analytics data updated successfully with fresh data')
             }
           } else {
             setConnectionStatus('disconnected')
             console.error('Analytics API response not ok:', response.status, response.statusText)
             
-            const fallbackResponse = await fetch(force ? `/api/results?_t=${Date.now()}` : '/api/results', {
+            // Try fallback results API with fresh data
+            const fallbackResponse = await fetch(`/api/results?_t=${Date.now()}`, {
               headers: {
                 'Authorization': `Bearer ${token}`,
-                'Cache-Control': force ? 'no-cache' : 'default'
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
               }
             })
             
@@ -101,24 +106,16 @@ export default function AnalyticsPage() {
               const fallbackData = await fallbackResponse.json()
               if (fallbackData.results && Array.isArray(fallbackData.results)) {
                 setResults(fallbackData.results)
-                localStorage.setItem("quizResults", JSON.stringify(fallbackData.results))
                 setLastUpdated(new Date())
                 setDataSource('api')
                 setConnectionStatus('connected')
-                console.log('Fallback to results API successful')
+                console.log('Fallback to results API successful with fresh data')
               }
             } else {
-              const storedResults = localStorage.getItem("quizResults")
-              if (storedResults) {
-                const parsedResults = JSON.parse(storedResults)
-                const normalizedResults = parsedResults.map((result: any) => ({
-                  ...result,
-                  answers: result.answers || []
-                }))
-                setResults(normalizedResults)
-                setDataSource('localStorage')
-                console.log('Fallback to localStorage during refresh')
-              }
+              console.error('Both analytics and results APIs failed')
+              setResults([])
+              setDataSource('disconnected')
+              setConnectionStatus('disconnected')
             }
           }
         } else {
@@ -139,25 +136,29 @@ export default function AnalyticsPage() {
       try {
         if (typeof window === 'undefined') return
         
-        console.log('Loading analytics results...', { hasUser: !!user })
+        console.log('Loading analytics results (ALWAYS FRESH)...', { hasUser: !!user })
         
         if (user) {
-          try {
-            const token = localStorage.getItem('authToken') || localStorage.getItem('token')
-            console.log('Attempting analytics API fetch...', { hasToken: !!token })
-            
-            if (token) {
-              const response = await fetch('/api/analytics', {
+          const token = localStorage.getItem('authToken') || localStorage.getItem('token')
+          console.log('Attempting fresh analytics API fetch...', { hasToken: !!token })
+          
+          if (token) {
+            try {
+              // Always fetch fresh data with cache busting
+              const response = await fetch(`/api/analytics?_t=${Date.now()}`, {
                 headers: {
-                  'Authorization': `Bearer ${token}`
+                  'Authorization': `Bearer ${token}`,
+                  'Cache-Control': 'no-cache, no-store, must-revalidate',
+                  'Pragma': 'no-cache',
+                  'Expires': '0'
                 }
               })
               
-              console.log('Initial analytics API response:', response.status)
+              console.log('Fresh analytics API response:', response.status)
               
               if (response.ok) {
                 const apiData = await response.json()
-                console.log('Initial analytics API data:', { 
+                console.log('Fresh analytics API data:', { 
                   resultsCount: apiData.results?.length,
                   success: apiData.success,
                   timestamp: apiData.timestamp,
@@ -166,20 +167,22 @@ export default function AnalyticsPage() {
                 
                 if (apiData.results && Array.isArray(apiData.results)) {
                   setResults(apiData.results)
-                  localStorage.setItem("quizResults", JSON.stringify(apiData.results))
                   setLastUpdated(new Date())
                   setDataSource('api')
                   setConnectionStatus('connected')
-                  console.log('Initial load from analytics API successful')
+                  console.log('Fresh analytics data loaded successfully')
                   setLoading(false)
                   return
                 }
               } else {
-                console.warn('Analytics API response not ok, falling back to results API')
+                console.warn('Analytics API failed, trying results API with fresh data')
                 
-                const fallbackResponse = await fetch('/api/results', {
+                const fallbackResponse = await fetch(`/api/results?_t=${Date.now()}`, {
                   headers: {
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${token}`,
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
                   }
                 })
                 
@@ -187,44 +190,38 @@ export default function AnalyticsPage() {
                   const fallbackData = await fallbackResponse.json()
                   if (fallbackData.results && Array.isArray(fallbackData.results)) {
                     setResults(fallbackData.results)
-                    localStorage.setItem("quizResults", JSON.stringify(fallbackData.results))
                     setLastUpdated(new Date())
                     setDataSource('api')
                     setConnectionStatus('connected')
-                    console.log('Fallback to results API successful')
+                    console.log('Fresh results API data loaded successfully')
                     setLoading(false)
                     return
                   }
                 }
                 
+                console.error('Both analytics and results APIs failed')
                 setConnectionStatus('disconnected')
-                console.warn('Both APIs failed, falling back to localStorage')
+                setResults([])
               }
-            } else {
-              console.warn('No auth token, falling back to localStorage')
+            } catch (apiError) {
+              console.error("Failed to fetch fresh analytics data:", apiError)
+              setDataSource('disconnected')
+              setConnectionStatus('disconnected')
+              setResults([])
             }
-          } catch (apiError) {
-            console.warn("Failed to fetch from analytics APIs, falling back to localStorage:", apiError)
+          } else {
+            console.warn('No auth token available')
+            setResults([])
+            setDataSource('disconnected')
+            setConnectionStatus('disconnected')
           }
-        }
-        
-        console.log('Loading from localStorage...')
-        const storedResults = localStorage.getItem("quizResults")
-        if (storedResults) {
-          const parsedResults = JSON.parse(storedResults)
-          const normalizedResults = parsedResults.map((result: any) => ({
-            ...result,
-            answers: result.answers || []
-          }))
-          setResults(normalizedResults)
-          setDataSource('localStorage')
-          setConnectionStatus('disconnected')
-          console.log('Loaded from localStorage:', { resultsCount: normalizedResults.length })
         } else {
-          console.log('No data in localStorage')
+          console.log('No user authenticated')
+          setResults([])
         }
       } catch (error) {
-        console.error("Error loading quiz results:", error)
+        console.error("Error loading fresh quiz results:", error)
+        setResults([])
       } finally {
         setLoading(false)
       }
@@ -236,15 +233,15 @@ export default function AnalyticsPage() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && user) {
-        console.log('Page became visible, refreshing data...')
-        refreshData()
+        console.log('Page became visible, refreshing data with fresh fetch...')
+        refreshData(true) // Always force fresh data
       }
     }
 
     const intervalId = setInterval(() => {
       if (!document.hidden && user) {
-        console.log('Periodic refresh...')
-        refreshData()
+        console.log('Periodic refresh with fresh data...')
+        refreshData(true) // Always force fresh data
       }
     }, 15000)
 
@@ -351,12 +348,12 @@ export default function AnalyticsPage() {
                 <span className={`px-2 py-1 rounded text-xs font-medium ${
                   dataSource === 'api' 
                     ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                    : dataSource === 'localStorage'
-                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                    : dataSource === 'disconnected'
+                    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                     : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
                 }`}>
-                  {dataSource === 'api' ? '🟢 Live' : 
-                   dataSource === 'localStorage' ? '🟡 Cached' : '🔄 Loading'}
+                  {dataSource === 'api' ? '🟢 Fresh Data' : 
+                   dataSource === 'disconnected' ? '� No Connection' : '🔄 Loading'}
                 </span>
                 <span className={`px-2 py-1 rounded text-xs font-medium ${
                   connectionStatus === 'connected'
@@ -389,12 +386,12 @@ export default function AnalyticsPage() {
                 <span className={`px-2 py-1 rounded text-xs font-medium ${
                   dataSource === 'api' 
                     ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                    : dataSource === 'localStorage'
-                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                    : dataSource === 'disconnected'
+                    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                     : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
                 }`}>
-                  {dataSource === 'api' ? '🟢 Live Data' : 
-                   dataSource === 'localStorage' ? '🟡 Cached Data' : '🔄 Loading...'}
+                  {dataSource === 'api' ? '🟢 Fresh Data' : 
+                   dataSource === 'disconnected' ? '� No Connection' : '🔄 Loading...'}
                 </span>
                 <span className={`px-2 py-1 rounded text-xs font-medium ${
                   connectionStatus === 'connected'

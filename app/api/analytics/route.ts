@@ -229,7 +229,7 @@ export async function GET(request: NextRequest) {
 
     console.log('✅ Student analytics calculated successfully')
     
-    return NextResponse.json({ 
+    const response = NextResponse.json({ 
       success: true,
       results: transformedResults,
       analytics: {
@@ -249,10 +249,17 @@ export async function GET(request: NextRequest) {
       userId: decoded.userId
     })
 
+    // Add no-cache headers to ensure fresh data
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    
+    return response
+
   } catch (error) {
     console.error("❌ Error fetching student analytics:", error)
     
-    return NextResponse.json({ 
+    const errorResponse = NextResponse.json({ 
       success: false,
       results: [],
       analytics: null,
@@ -260,5 +267,12 @@ export async function GET(request: NextRequest) {
       error: error instanceof Error ? error.message : "Unknown error",
       timestamp: new Date().toISOString()
     }, { status: 500 })
+
+    // Add no-cache headers even for error responses
+    errorResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+    errorResponse.headers.set('Pragma', 'no-cache')
+    errorResponse.headers.set('Expires', '0')
+    
+    return errorResponse
   }
 }
