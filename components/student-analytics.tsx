@@ -894,7 +894,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                 <Timer className="h-5 w-5" />
                 Quiz Time Analysis
               </CardTitle>
-              <CardDescription>Click on a quiz to view detailed time analysis and results</CardDescription>
+              <CardDescription>Click on a quiz to view detailed time analysis</CardDescription>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[400px]">
@@ -910,7 +910,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                     return (
                       <Link 
                         key={result._id || quizIdx} 
-                        href={`/results/${result._id || result.id}`}
+                        href={`/analytics/time/${result._id || result.id}`}
                         className="block"
                       >
                         <div className="border rounded-lg p-4 hover:bg-muted/50 hover:border-primary/50 transition-all cursor-pointer group">
