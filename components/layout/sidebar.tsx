@@ -157,8 +157,8 @@ export function Sidebar() {
 
                 {/* Footer */}
                 <div className="border-t p-4">
-                    <div className={cn("flex items-center gap-3", isCollapsed ? "justify-center" : "justify-between")}>
-                        {!isCollapsed && <ThemeToggle />}
+                    <div className={cn("flex items-center gap-3", isCollapsed ? "flex-col justify-center" : "justify-between")}>
+                        <ThemeToggle />
                         <Button 
                             variant="ghost" 
                             size="icon" 
