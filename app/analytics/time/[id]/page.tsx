@@ -131,7 +131,10 @@ export default function TimeAnalysisPage() {
         }
 
         const data = await response.json()
-        setResult(data)
+        // API returns { result: {...} }, extract the result object
+        const resultData = data.result || data
+        console.log("Fetched result data:", resultData) // Debug log
+        setResult(resultData)
       } catch (err) {
         console.error("Error fetching result:", err)
         setError("Failed to load time analysis data")
@@ -179,46 +182,63 @@ export default function TimeAnalysisPage() {
 
   // Process time data
   const questions = result.questions || result.answers || []
-  const questionsWithTime = questions.filter((q) => q.timeSpent !== undefined && q.timeSpent > 0)
   
   // Handle case where time might be in seconds or milliseconds
   const normalizeTime = (time: number) => {
+    if (!time || time <= 0) return 0
     // If time is less than 500, it's likely in seconds, convert to ms
     return time < 500 ? time * 1000 : time
   }
   
-  const normalizedQuestions = questionsWithTime.map((q, idx) => ({
+  // Check if we have per-question time data
+  const hasPerQuestionTime = questions.some((q: any) => q.timeSpent && q.timeSpent > 0)
+  
+  // Calculate estimated time per question if no per-question time data
+  const totalTimeMs = (result.timeSpent || 0) * 1000 // result.timeSpent is in seconds
+  const estimatedTimePerQuestion = questions.length > 0 ? totalTimeMs / questions.length : 0
+  
+  // Normalize all questions - use actual time if available, otherwise estimate
+  const normalizedQuestions = questions.map((q: any, idx: number) => ({
     ...q,
+    id: q.id || `q-${idx}`,
     questionNumber: idx + 1,
-    timeSpent: normalizeTime(q.timeSpent || 0),
+    question: q.question || q.questionText || `Question ${idx + 1}`,
+    timeSpent: hasPerQuestionTime 
+      ? normalizeTime(q.timeSpent || 0)
+      : estimatedTimePerQuestion, // Use estimated time when no per-question data
+    isCorrect: q.isCorrect,
+    selectedAnswer: q.selectedAnswer ?? q.userAnswer ?? null,
+    correctAnswer: q.correctAnswer ?? 0,
+    section: q.section || q.category || "General",
+    isEstimated: !q.timeSpent || q.timeSpent <= 0, // Flag to show if time is estimated
   }))
 
-  const totalTime = normalizedQuestions.reduce((sum, q) => sum + q.timeSpent, 0)
+  const totalTime = normalizedQuestions.reduce((sum: number, q: any) => sum + q.timeSpent, 0)
   const avgTime = normalizedQuestions.length > 0 ? totalTime / normalizedQuestions.length : 0
-  const maxTime = normalizedQuestions.length > 0 ? Math.max(...normalizedQuestions.map((q) => q.timeSpent)) : 0
-  const minTime = normalizedQuestions.length > 0 ? Math.min(...normalizedQuestions.map((q) => q.timeSpent)) : 0
+  const maxTime = normalizedQuestions.length > 0 ? Math.max(...normalizedQuestions.map((q: any) => q.timeSpent)) : 0
+  const minTime = normalizedQuestions.length > 0 ? Math.min(...normalizedQuestions.map((q: any) => q.timeSpent)) : 0
   
-  const slowestQuestion = normalizedQuestions.find((q) => q.timeSpent === maxTime)
-  const fastestQuestion = normalizedQuestions.find((q) => q.timeSpent === minTime)
+  const slowestQuestion = normalizedQuestions.find((q: any) => q.timeSpent === maxTime)
+  const fastestQuestion = normalizedQuestions.find((q: any) => q.timeSpent === minTime)
 
   // Time by correctness
-  const correctQuestions = normalizedQuestions.filter((q) => q.isCorrect === true)
-  const wrongQuestions = normalizedQuestions.filter((q) => q.isCorrect === false)
-  const unansweredQuestions = normalizedQuestions.filter((q) => q.selectedAnswer === null || q.selectedAnswer === undefined)
+  const correctQuestions = normalizedQuestions.filter((q: any) => q.isCorrect === true)
+  const wrongQuestions = normalizedQuestions.filter((q: any) => q.isCorrect === false)
+  const unansweredQuestions = normalizedQuestions.filter((q: any) => q.selectedAnswer === null || q.selectedAnswer === undefined)
   
   const avgTimeCorrect = correctQuestions.length > 0 
-    ? correctQuestions.reduce((sum, q) => sum + q.timeSpent, 0) / correctQuestions.length 
+    ? correctQuestions.reduce((sum: number, q: any) => sum + q.timeSpent, 0) / correctQuestions.length 
     : 0
   const avgTimeWrong = wrongQuestions.length > 0 
-    ? wrongQuestions.reduce((sum, q) => sum + q.timeSpent, 0) / wrongQuestions.length 
+    ? wrongQuestions.reduce((sum: number, q: any) => sum + q.timeSpent, 0) / wrongQuestions.length 
     : 0
   const avgTimeUnanswered = unansweredQuestions.length > 0 
-    ? unansweredQuestions.reduce((sum, q) => sum + q.timeSpent, 0) / unansweredQuestions.length 
+    ? unansweredQuestions.reduce((sum: number, q: any) => sum + q.timeSpent, 0) / unansweredQuestions.length 
     : 0
 
   // Section-wise time analysis
   const sectionTimes: { [key: string]: { total: number; count: number; correct: number; wrong: number } } = {}
-  normalizedQuestions.forEach((q) => {
+  normalizedQuestions.forEach((q: any) => {
     const section = q.section || "General"
     if (!sectionTimes[section]) {
       sectionTimes[section] = { total: 0, count: 0, correct: 0, wrong: 0 }
@@ -238,13 +258,14 @@ export default function TimeAnalysisPage() {
   }))
 
   // Chart data for per-question time
-  const chartData = normalizedQuestions.map((q, idx) => ({
+  const chartData = normalizedQuestions.map((q: any, idx: number) => ({
     name: `Q${idx + 1}`,
     time: Math.round(q.timeSpent / 1000), // Convert to seconds for display
     timeMs: q.timeSpent,
     status: q.isCorrect === true ? "correct" : q.isCorrect === false ? "wrong" : "unanswered",
     isCorrect: q.isCorrect,
     section: q.section || "General",
+    isEstimated: q.isEstimated || false,
   }))
 
   // Time distribution buckets
@@ -256,7 +277,7 @@ export default function TimeAnalysisPage() {
     { range: "2m+", min: 120000, max: Infinity, count: 0, correct: 0 },
   ]
   
-  normalizedQuestions.forEach((q) => {
+  normalizedQuestions.forEach((q: any) => {
     const bucket = timeDistribution.find((b) => q.timeSpent >= b.min && q.timeSpent < b.max)
     if (bucket) {
       bucket.count += 1
@@ -298,6 +319,97 @@ export default function TimeAnalysisPage() {
             <Button variant="outline">View Full Results</Button>
           </Link>
         </div>
+
+        {/* Estimated Time Notice */}
+        {!hasPerQuestionTime && (
+          <Card className="mb-6 border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                <div>
+                  <p className="font-medium text-yellow-800 dark:text-yellow-200">Estimated Time Data</p>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    Per-question time tracking wasn&apos;t available for this quiz. Showing estimated time ({formatTimeMs(estimatedTimePerQuestion)}) 
+                    per question based on your total time of {formatTimeSec(result.timeSpent)}.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Question-wise Time Breakdown - FIRST PRIORITY */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Timer className="h-5 w-5" />
+              Time per Question
+            </CardTitle>
+            <CardDescription>
+              {hasPerQuestionTime 
+                ? "Detailed time spent on each question" 
+                : "Estimated time per question based on total quiz duration"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[400px]">
+              <div className="space-y-2">
+                {normalizedQuestions.map((q: any, idx: number) => {
+                  const timeVsAvg = q.timeSpent - avgTime
+                  const percentDiff = avgTime > 0 ? Math.round((timeVsAvg / avgTime) * 100) : 0
+                  
+                  return (
+                    <div 
+                      key={q.id || idx} 
+                      className="flex items-center gap-4 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted font-semibold">
+                        {idx + 1}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(q.isCorrect === true ? "correct" : q.isCorrect === false ? "wrong" : "unanswered")}
+                          <span className="text-sm font-medium capitalize">
+                            {q.isCorrect === true ? "Correct" : q.isCorrect === false ? "Wrong" : "Unanswered"}
+                          </span>
+                          {q.section && q.section !== "General" && (
+                            <Badge variant="outline" className="text-xs">{q.section}</Badge>
+                          )}
+                          {q.isEstimated && (
+                            <Badge variant="secondary" className="text-xs">~estimated</Badge>
+                          )}
+                        </div>
+                        {q.question && (
+                          <p className="text-xs text-muted-foreground mt-1 truncate">
+                            {q.question.substring(0, 100)}{q.question.length > 100 ? '...' : ''}
+                          </p>
+                        )}
+                      </div>
+                      
+                      <div className="text-right">
+                        <div className="font-semibold text-lg">{formatTimeMs(q.timeSpent)}</div>
+                        {hasPerQuestionTime && (
+                          <div className={`text-xs flex items-center justify-end gap-1 ${
+                            timeVsAvg > 0 ? "text-orange-500" : timeVsAvg < 0 ? "text-green-500" : "text-muted-foreground"
+                          }`}>
+                            {timeVsAvg > 0 ? (
+                              <><TrendingUp className="h-3 w-3" /> +{percentDiff}% vs avg</>
+                            ) : timeVsAvg < 0 ? (
+                              <><TrendingDown className="h-3 w-3" /> {percentDiff}% vs avg</>
+                            ) : (
+                              "avg"
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -528,62 +640,6 @@ export default function TimeAnalysisPage() {
             </CardContent>
           </Card>
         )}
-
-        {/* Detailed Question Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Question-wise Breakdown</CardTitle>
-            <CardDescription>Detailed time analysis for each question</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[400px]">
-              <div className="space-y-2">
-                {normalizedQuestions.map((q, idx) => {
-                  const timeVsAvg = q.timeSpent - avgTime
-                  const percentDiff = avgTime > 0 ? Math.round((timeVsAvg / avgTime) * 100) : 0
-                  
-                  return (
-                    <div 
-                      key={q.id || idx} 
-                      className="flex items-center gap-4 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted font-semibold">
-                        {idx + 1}
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(q.isCorrect === true ? "correct" : q.isCorrect === false ? "wrong" : "unanswered")}
-                          <span className="text-sm capitalize text-muted-foreground">
-                            {q.section || "General"}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1 truncate">
-                          {q.question?.substring(0, 80)}...
-                        </p>
-                      </div>
-                      
-                      <div className="text-right">
-                        <div className="font-semibold">{formatTimeMs(q.timeSpent)}</div>
-                        <div className={`text-xs flex items-center justify-end gap-1 ${
-                          timeVsAvg > 0 ? "text-orange-500" : timeVsAvg < 0 ? "text-green-500" : "text-muted-foreground"
-                        }`}>
-                          {timeVsAvg > 0 ? (
-                            <><TrendingUp className="h-3 w-3" /> +{percentDiff}%</>
-                          ) : timeVsAvg < 0 ? (
-                            <><TrendingDown className="h-3 w-3" /> {percentDiff}%</>
-                          ) : (
-                            "avg"
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
 
         {/* Insights */}
         <Card className="mt-6">
