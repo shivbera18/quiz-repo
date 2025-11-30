@@ -8,9 +8,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer"
-import { Plus, Trash2, Edit, Search, BookOpen, ArrowLeft, LogOut, Shield, Save, X, Sparkles, Menu } from "lucide-react"
+import { AdminBreadcrumb } from "@/components/ui/admin-breadcrumb"
+import { Plus, Trash2, Edit, Search, BookOpen, Save, X, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/hooks/use-auth"
 import AIQuestionGenerator from "./ai-generator"
@@ -350,89 +349,19 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
   return (
     <div className="min-h-screen bg-background mobile-header-safe-zone">
       <div className="container mx-auto px-4 py-8">
+        {/* Breadcrumb */}
+        <AdminBreadcrumb />
+        
         {/* Header */}
-        <div className="flex flex-col gap-4 mb-8">
-          {/* Mobile header */}
-          <div className="flex items-center justify-between sm:hidden">
-            <div className="flex items-center gap-2">
-              <Link href="/admin">
-                <Button variant="ghost" size="icon">
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-              </Link>
-              <BookOpen className="h-6 w-6 text-purple-600" />
-              <h1 className="text-lg font-bold text-foreground truncate">Question Bank</h1>
-            </div>
-            <Drawer>
-              <DrawerTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </DrawerTrigger>
-              <DrawerContent>
-                <DrawerHeader>
-                  <DrawerTitle>Menu</DrawerTitle>
-                </DrawerHeader>
-                <div className="flex flex-col gap-4 p-4">
-                  <div className="flex items-center gap-2 p-2 border-b">
-                    <Shield className="h-4 w-4" />
-                    <span className="text-sm font-medium">Administrator</span>
-                  </div>
-                  <Link href="/admin">
-                    <Button variant="ghost" className="w-full justify-start">
-                      <ArrowLeft className="h-4 w-4 mr-2" />
-                      Admin Home
-                    </Button>
-                  </Link>
-                  <ThemeToggle />
-                  <Button onClick={logout} variant="destructive" className="w-full justify-start">
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Logout
-                  </Button>
-                  <DrawerClose asChild>
-                    <Button variant="outline" className="w-full mt-2">Close</Button>
-                  </DrawerClose>
-                </div>
-              </DrawerContent>
-            </Drawer>
-          </div>
-
-          {/* Mobile description */}
-          <div className="text-center sm:hidden">
-            <p className="text-xs text-muted-foreground">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2">
+              <BookOpen className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
+              Question Bank
+            </h1>
+            <p className="text-muted-foreground text-sm sm:text-base">
               Centralized repository for all quiz questions
             </p>
-          </div>
-
-          {/* Desktop header */}
-          <div className="hidden sm:flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <Link href="/admin">
-                <Button variant="ghost" size="icon">
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-                  <BookOpen className="h-8 w-8 text-purple-600" />
-                  Question Bank
-                </h1>
-                <p className="text-muted-foreground">
-                  Centralized repository for all quiz questions
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Badge variant="outline" className="flex items-center gap-1">
-                <Shield className="h-3 w-3" />
-                Administrator
-              </Badge>
-              <ThemeToggle />
-              <Button variant="outline" onClick={logout}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-            </div>
           </div>
         </div>
 

@@ -7,8 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { ArrowLeft, Users, Search, Mail, Calendar, TrendingUp, Download, RefreshCw } from "lucide-react"
+import { AdminBreadcrumb } from "@/components/ui/admin-breadcrumb"
+import { Users, Search, Mail, Calendar, TrendingUp, Download, RefreshCw } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/hooks/use-auth"
 
@@ -198,28 +198,23 @@ export default function AdminUsersPage() {
   return (
     <div className="min-h-screen bg-background mobile-header-safe-zone">
       <div className="container mx-auto px-4 py-8">
+        {/* Breadcrumb */}
+        <AdminBreadcrumb />
+        
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-4">
-            <Link href="/admin">
-              <Button variant="outline" size="icon">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">User Management</h1>
-              <p className="text-muted-foreground">Manage and monitor user accounts and performance</p>
-            </div>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">User Management</h1>
+            <p className="text-muted-foreground text-sm sm:text-base">Manage and monitor user accounts</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={fetchUsers}>
+            <Button variant="outline" size="sm" onClick={fetchUsers}>
               <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
             </Button>
-            <ThemeToggle />
-            <Button onClick={exportUserData}>
+            <Button size="sm" onClick={exportUserData}>
               <Download className="h-4 w-4 mr-2" />
-              Export Users
+              <span className="hidden sm:inline">Export</span>
             </Button>
           </div>
         </div>

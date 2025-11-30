@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/theme-toggle"
+import { AdminBreadcrumb } from "@/components/ui/admin-breadcrumb"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, Users } from "lucide-react"
+import { Users } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import StudentAnalytics from "@/components/student-analytics"
 
@@ -186,25 +186,20 @@ export default function AdvancedAnalyticsPage() {
   return (
     <div className="min-h-screen bg-background mobile-header-safe-zone">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        {/* Breadcrumb */}
+        <AdminBreadcrumb />
+        
         {/* Header */}
-        <div className="flex flex-col gap-4 mb-6">
-          {/* Mobile header */}
-          <div className="flex items-center justify-between sm:hidden">
-            <div className="flex items-center gap-2">
-              <Link href="/admin/analytics">
-                <Button variant="outline" size="icon">
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-              </Link>
-              <h1 className="text-lg font-bold text-foreground truncate">Advanced Analytics</h1>
-            </div>
-            <ThemeToggle />
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Advanced Analytics</h1>
+            <p className="text-muted-foreground text-sm sm:text-base">Comprehensive performance analysis</p>
           </div>
-
-          {/* Mobile user filter */}
-          <div className="sm:hidden">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+            {/* User Filter */}
             <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full sm:w-[250px]">
+                <Users className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Select User" />
               </SelectTrigger>
               <SelectContent>
@@ -216,47 +211,14 @@ export default function AdvancedAnalyticsPage() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          {/* Desktop header */}
-          <div className="hidden sm:flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/admin/analytics">
-                <Button variant="outline" size="icon">
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">Advanced Analytics</h1>
-                <p className="text-muted-foreground">Comprehensive insights and performance analysis</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* User Filter */}
-              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                <SelectTrigger className="w-[250px]">
-                  <Users className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Select User" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Users ({uniqueUsers.length})</SelectItem>
-                  {uniqueUsers.map(u => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.name} ({u.quizCount} quizzes)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button 
-                variant="outline" 
-                onClick={fetchAnalytics}
-                disabled={isLoading}
-                className="flex items-center gap-2"
-              >
-                {isLoading ? "Refreshing..." : "🔄 Refresh Data"}
-              </Button>
-              <ThemeToggle />
-            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={fetchAnalytics}
+              disabled={isLoading}
+            >
+              {isLoading ? "Refreshing..." : "🔄 Refresh"}
+            </Button>
           </div>
         </div>
 

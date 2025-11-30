@@ -9,9 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer"
-import { Plus, Trash2, Users, BarChart3, Edit, Eye, Clock, BookOpen, LogOut, Shield, Sparkles, Trophy, FileText, Menu, Brain, Hash, Pencil, Palette, Music } from "lucide-react"
+import { Plus, Trash2, Users, BarChart3, Edit, Eye, Clock, BookOpen, Shield, Sparkles, Trophy, FileText, Brain, Hash, Pencil, Palette, Music } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/hooks/use-auth"
 import AIQuizGenerator from "./ai-quiz-generator"
@@ -789,100 +787,30 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-background mobile-header-safe-zone">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
+        {/* Header - Simplified, navigation is now in sidebar */}
         <div className="flex flex-col gap-4 mb-8">
-          {/* Mobile header */}
-          <div className="flex items-center justify-between sm:hidden">
-            <div className="flex items-center gap-2">
-              <Shield className="h-6 w-6 text-blue-600" />
-              <h1 className="text-xl font-bold text-foreground">Admin Panel</h1>
-            </div>
-            <Drawer>
-              <DrawerTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </DrawerTrigger>
-              <DrawerContent>
-                <DrawerHeader>
-                  <DrawerTitle>Admin Menu</DrawerTitle>
-                </DrawerHeader>
-                <div className="flex flex-col gap-4 p-4">
-                  <div className="flex items-center gap-2 p-2 border-b">
-                    <Shield className="h-4 w-4" />
-                    <span className="text-sm font-medium">Administrator</span>
-                  </div>
-                  <Link href="/dashboard">
-                    <Button variant="ghost" className="w-full justify-start">
-                      <Users className="h-4 w-4 mr-2" />
-                      Student Dashboard
-                    </Button>
-                  </Link>
-                  <Link href="/admin/analytics">
-                    <Button variant="ghost" className="w-full justify-start">
-                      <BarChart3 className="h-4 w-4 mr-2" />
-                      Analytics
-                    </Button>
-                  </Link>
-                  <Link href="/admin/question-bank">
-                    <Button variant="ghost" className="w-full justify-start">
-                      <BookOpen className="h-4 w-4 mr-2" />
-                      Question Bank
-                    </Button>
-                  </Link>
-                  <ThemeToggle />
-                  <Button onClick={logout} variant="destructive" className="w-full justify-start">
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Logout
-                  </Button>
-                  <DrawerClose asChild>
-                    <Button variant="outline" className="w-full mt-2">Close</Button>
-                  </DrawerClose>
-                </div>
-              </DrawerContent>
-            </Drawer>
-          </div>
-
-          {/* Mobile welcome text */}
-          <div className="text-center sm:hidden">
+          {/* Mobile header - Clean title only */}
+          <div className="sm:hidden">
+            <h1 className="text-2xl font-bold text-foreground">Admin Panel</h1>
             <p className="text-sm text-muted-foreground">
               Welcome, {user.name}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Manage quizzes and questions
             </p>
           </div>
 
           {/* Desktop header */}
           <div className="hidden sm:flex sm:justify-between sm:items-center">
             <div>
-              <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-                <Shield className="h-8 w-8 text-blue-600" />
-                Admin Panel
-              </h1>
+              <h1 className="text-3xl font-bold text-foreground">Admin Panel</h1>
               <p className="text-muted-foreground">
                 Welcome, {user.name} - Manage individual quizzes and their questions
               </p>
             </div>
 
-            {/* Desktop navigation */}
-            <div className="flex gap-2">
-              <Badge variant="outline" className="flex items-center gap-1">
-                <Shield className="h-3 w-3" />
-                Administrator
-              </Badge>
-              <ThemeToggle />
-              <Link href="/dashboard">
-                <Button variant="outline" size="sm">
-                  <Users className="h-4 w-4 mr-2" />
-                  Student Dashboard
-                </Button>
-              </Link>
-              <Button variant="outline" size="sm" onClick={logout}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-            </div>
+            {/* Desktop: Only show role badge */}
+            <Badge variant="outline" className="flex items-center gap-1 h-fit">
+              <Shield className="h-3 w-3" />
+              Administrator
+            </Badge>
           </div>
         </div>
 

@@ -11,8 +11,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { ArrowLeft, Plus, Trash2, Edit, Save, X, Clock, BookOpen, Upload, ImageIcon, Download } from "lucide-react"
+import { AdminBreadcrumb } from "@/components/ui/admin-breadcrumb"
+import { Plus, Trash2, Edit, Save, X, Clock, BookOpen, Upload, ImageIcon, Download } from "lucide-react"
 import Link from "next/link"
 import BulkManager from "./bulk-manager"
 import QuestionBankImporter from "./question-bank-importer"
@@ -468,32 +468,27 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
   return (
     <div className="min-h-screen bg-background mobile-header-safe-zone">
       <div className="container mx-auto px-4 py-8">
+        {/* Breadcrumb */}
+        <AdminBreadcrumb currentPageTitle={quiz.title} />
+        
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-4">
-            <Link href="/admin">
-              <Button variant="outline" size="icon">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">{quiz.title}</h1>
-              <p className="text-muted-foreground">Manage questions for this quiz</p>
-            </div>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{quiz.title}</h1>
+            <p className="text-muted-foreground text-sm sm:text-base">Manage questions for this quiz</p>
           </div>
-          <div className="flex gap-2">
-            <ThemeToggle />
-            <Button variant="outline" onClick={() => setShowQuestionBankImporter(true)}>
-              <Download className="h-4 w-4 mr-2" />
-              Import from Bank
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowQuestionBankImporter(true)}>
+              <Download className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Import</span>
             </Button>
-            <Button variant="outline" onClick={() => setShowBulkManager(true)}>
-              <Upload className="h-4 w-4 mr-2" />
-              Bulk Manager
+            <Button variant="outline" size="sm" onClick={() => setShowBulkManager(true)}>
+              <Upload className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Bulk</span>
             </Button>
-            <Button onClick={() => setShowQuestionForm(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Question
+            <Button size="sm" onClick={() => setShowQuestionForm(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add
             </Button>
           </div>
         </div>

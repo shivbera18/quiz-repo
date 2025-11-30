@@ -15,6 +15,10 @@ import {
     ChevronLeft,
     ChevronRight,
     Shield,
+    Users,
+    Database,
+    FileText,
+    ArrowLeftFromLine,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -22,11 +26,21 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { useSidebar } from "./sidebar-context"
 import { useAuth } from "@/hooks/use-auth"
 
-const baseSidebarItems = [
+// Student navigation items
+const studentSidebarItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
     { icon: BookOpen, label: "Quizzes", href: "/dashboard/full-mock-tests" },
     { icon: BarChart2, label: "Analytics", href: "/analytics" },
     { icon: Settings, label: "Profile", href: "/profile" },
+]
+
+// Admin navigation items
+const adminSidebarItems = [
+    { icon: LayoutDashboard, label: "Overview", href: "/admin" },
+    { icon: Users, label: "Users", href: "/admin/users" },
+    { icon: Database, label: "Question Bank", href: "/admin/question-bank" },
+    { icon: BarChart2, label: "Analytics", href: "/admin/analytics" },
+    { icon: FileText, label: "Manage Quizzes", href: "/admin", hash: "#quizzes" },
 ]
 
 
@@ -56,14 +70,25 @@ export function Sidebar() {
         return () => window.removeEventListener('scroll', handleScroll)
     }, [])
 
-    // Add admin link if user is admin
+    // Determine if we're in admin section
+    const isAdminSection = pathname.startsWith('/admin')
+    const isAdmin = user?.isAdmin || user?.userType === 'admin'
+
+    // Get appropriate sidebar items based on current section
     const sidebarItems = React.useMemo(() => {
-        const items = [...baseSidebarItems]
-        if (user?.isAdmin || user?.userType === 'admin') {
+        if (isAdminSection && isAdmin) {
+            return adminSidebarItems
+        }
+        const items = [...studentSidebarItems]
+        if (isAdmin) {
             items.push({ icon: Shield, label: "Admin Panel", href: "/admin" })
         }
         return items
-    }, [user])
+    }, [isAdminSection, isAdmin])
+
+    // Title based on section
+    const sidebarTitle = isAdminSection ? "Admin" : "Quizzy"
+    const exitLink = isAdminSection ? { href: "/dashboard", label: "Exit Admin", icon: ArrowLeftFromLine } : null
 
     return (
         <>
@@ -128,9 +153,10 @@ export function Sidebar() {
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: -20 }}
-                                className="text-2xl font-bold tracking-tight"
+                                className="flex items-center gap-2"
                             >
-                                Quizzy
+                                {isAdminSection && <Shield className="h-5 w-5 text-blue-600" />}
+                                <span className="text-2xl font-bold tracking-tight">{sidebarTitle}</span>
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -144,12 +170,30 @@ export function Sidebar() {
                     </Button>
                 </div>
 
+                {/* Exit Admin Link (when in admin section) */}
+                {exitLink && (
+                    <div className="px-4 pb-2">
+                        <Link href={exitLink.href}>
+                            <div
+                                className={cn(
+                                    "flex items-center gap-3 rounded-xl px-4 py-2 text-sm font-medium transition-all bg-muted/50 hover:bg-muted text-muted-foreground",
+                                    isCollapsed && "justify-center px-2"
+                                )}
+                            >
+                                <exitLink.icon className="h-4 w-4" />
+                                {!isCollapsed && <span>{exitLink.label}</span>}
+                            </div>
+                        </Link>
+                    </div>
+                )}
+
                 {/* Nav Items */}
                 <nav className="flex-1 space-y-2 px-4 py-6">
                     {sidebarItems.map((item) => {
-                        const isActive = pathname === item.href
+                        const isActive = pathname === item.href || 
+                            (item.href !== '/admin' && pathname.startsWith(item.href))
                         return (
-                            <Link key={item.href} href={item.href}>
+                            <Link key={item.href + (item.label)} href={item.href}>
                                 <div
                                     className={cn(
                                         "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground",
@@ -192,17 +236,33 @@ export function Sidebar() {
                         className="fixed inset-y-0 left-0 z-50 w-72 border-r bg-card md:hidden flex flex-col"
                     >
                         <div className="flex h-16 items-center justify-between px-6 shrink-0">
-                            <span className="text-2xl font-bold tracking-tight">Quizzy</span>
+                            <div className="flex items-center gap-2">
+                                {isAdminSection && <Shield className="h-5 w-5 text-blue-600" />}
+                                <span className="text-2xl font-bold tracking-tight">{sidebarTitle}</span>
+                            </div>
                             <Button variant="ghost" size="icon" onClick={() => setIsMobileOpen(false)}>
                                 <X className="h-5 w-5" />
                             </Button>
                         </div>
 
+                        {/* Exit Admin Link (when in admin section) */}
+                        {exitLink && (
+                            <div className="px-4 pb-2">
+                                <Link href={exitLink.href} onClick={() => setIsMobileOpen(false)}>
+                                    <div className="flex items-center gap-3 rounded-xl px-4 py-2 text-sm font-medium transition-all bg-muted/50 hover:bg-muted text-muted-foreground">
+                                        <exitLink.icon className="h-4 w-4" />
+                                        <span>{exitLink.label}</span>
+                                    </div>
+                                </Link>
+                            </div>
+                        )}
+
                         <nav className="flex-1 space-y-2 px-4 py-6 overflow-y-auto">
                             {sidebarItems.map((item) => {
-                                const isActive = pathname === item.href
+                                const isActive = pathname === item.href ||
+                                    (item.href !== '/admin' && pathname.startsWith(item.href))
                                 return (
-                                    <Link key={item.href} href={item.href} onClick={() => setIsMobileOpen(false)}>
+                                    <Link key={item.href + (item.label)} href={item.href} onClick={() => setIsMobileOpen(false)}>
                                         <div
                                             className={cn(
                                                 "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground",
