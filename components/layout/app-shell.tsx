@@ -9,8 +9,15 @@ import { cn } from "@/lib/utils"
 function AppShellContent({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
     const { isCollapsed } = useSidebar()
+    
+    // Pages where sidebar should be completely hidden (focused/immersive experiences)
     const isAuthPage = pathname?.startsWith("/auth")
-    const isQuizPage = pathname?.startsWith("/quiz/") // Hide sidebar during active quiz
+    const isQuizPage = pathname?.startsWith("/quiz/") // Active quiz taking
+    const isResultsPage = pathname?.startsWith("/results/") // Reviewing quiz results
+    const isHomePage = pathname === "/" // Home redirect page
+    
+    // Check if this is a focused page (no sidebar needed)
+    const isFocusedPage = isAuthPage || isQuizPage || isResultsPage || isHomePage
 
     // Auth pages - centered layout, no sidebar
     if (isAuthPage) {
@@ -21,8 +28,8 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         )
     }
 
-    // Quiz pages - full screen, no sidebar (to avoid distractions during tests)
-    if (isQuizPage) {
+    // Focused pages (quiz, results, home) - full screen, no sidebar
+    if (isFocusedPage) {
         return (
             <div className="min-h-screen bg-background">
                 {children}
