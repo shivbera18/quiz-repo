@@ -1,10 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { PrismaClient } from "@/lib/generated/prisma"
-
-// Initialize Prisma client with error handling
-const prisma = new PrismaClient({
-  errorFormat: 'pretty',
-})
+import { prisma } from "@/lib/prisma"
 
 export async function POST(request: NextRequest) {
   try {

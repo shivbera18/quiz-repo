@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@/lib/generated/prisma';
+import { prisma } from '@/lib/prisma';
 import { parseJsonField } from '@/lib/database-utils';
-
-const prisma = new PrismaClient();
 
 export async function GET(
   request: Request,

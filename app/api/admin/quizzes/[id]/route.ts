@@ -1,8 +1,6 @@
-import { PrismaClient } from "@/lib/generated/prisma"
+import { prisma } from "@/lib/prisma"
 import { type NextRequest, NextResponse } from "next/server"
 import { parseJsonField, stringifyForDatabase } from "@/lib/database-utils"
-
-const prisma = new PrismaClient()
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {

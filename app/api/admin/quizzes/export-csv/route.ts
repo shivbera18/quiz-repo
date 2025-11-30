@@ -1,8 +1,6 @@
-import { PrismaClient } from "@/lib/generated/prisma"
+import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 import { parse } from "json2csv"
-
-const prisma = new PrismaClient()
 
 export async function GET() {
   try {
