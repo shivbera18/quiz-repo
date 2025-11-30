@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 
 interface User {
@@ -11,16 +11,43 @@ interface User {
   token?: string // Add token property for API auth
 }
 
+// Helper to get initial user from localStorage (runs synchronously)
+function getInitialUser(): User | null {
+  if (typeof window === 'undefined') return null
+  
+  try {
+    const token = localStorage.getItem("token")
+    const userData = localStorage.getItem("user")
+    
+    if (!token || !userData) return null
+    
+    // Simple token validation
+    if (!token.includes("-") || token.length < 10) {
+      localStorage.removeItem("token")
+      localStorage.removeItem("user")
+      return null
+    }
+    
+    const parsedUser = JSON.parse(userData)
+    parsedUser.token = token
+    return parsedUser
+  } catch {
+    return null
+  }
+}
+
 export function useAuth(requireAdmin = false) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  // Initialize with localStorage data immediately (no loading flash)
+  const [user, setUser] = useState<User | null>(() => getInitialUser())
+  const [loading, setLoading] = useState(() => typeof window === 'undefined')
   const router = useRouter()
 
   useEffect(() => {
-    const token = localStorage.getItem("token")
-    const userData = localStorage.getItem("user")
-
-    if (!token || !userData) {
+    // Re-check on mount in case localStorage changed
+    const currentUser = getInitialUser()
+    
+    if (!currentUser) {
+      setUser(null)
       setLoading(false)
       if (requireAdmin) {
         router.push("/auth/login")
@@ -28,36 +55,14 @@ export function useAuth(requireAdmin = false) {
       return
     }
 
-    try {
-      const parsedUser = JSON.parse(userData)
-      // Attach token to user object
-      parsedUser.token = token
-      // Simple token validation (check if it looks like our format)
-      if (!token.includes("-") || token.length < 10) {
-        localStorage.removeItem("token")
-        localStorage.removeItem("user")
-        setLoading(false)
-        if (requireAdmin) {
-          router.push("/auth/login")
-        }
-        return
-      }
-
-      if (requireAdmin && (!parsedUser.isAdmin || parsedUser.userType !== "admin")) {
-        router.push("/dashboard")
-        return
-      }
-
-      setUser(parsedUser)
-    } catch (error) {
-      localStorage.removeItem("token")
-      localStorage.removeItem("user")
-      if (requireAdmin) {
-        router.push("/auth/login")
-      }
-    } finally {
-      setLoading(false)
+    // Admin check
+    if (requireAdmin && (!currentUser.isAdmin || currentUser.userType !== "admin")) {
+      router.push("/dashboard")
+      return
     }
+
+    setUser(currentUser)
+    setLoading(false)
   }, [requireAdmin, router])
 
   const logout = () => {
