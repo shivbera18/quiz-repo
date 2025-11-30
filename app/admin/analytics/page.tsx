@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { AdminBreadcrumb } from "@/components/ui/admin-breadcrumb"
+import { AdminSubNav } from "@/components/layout/admin-sub-nav"
 import { TrendingUp, Users, BookOpen, Clock, Target, Download, Filter, BarChart3, Trash2, Eye, User } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
@@ -537,8 +538,8 @@ export default function AdminAnalyticsPage() {
   return (
     <div className="min-h-screen bg-background mobile-header-safe-zone">
       <div className="container w-full max-w-full px-2 sm:px-4 py-4 sm:py-8">
-        {/* Breadcrumb */}
-        <AdminBreadcrumb />
+        {/* Admin Sub Navigation */}
+        <AdminSubNav />
         
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
