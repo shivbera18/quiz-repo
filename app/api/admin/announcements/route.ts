@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma-client"
 
+export const dynamic = 'force-dynamic'
+
 // Helper function to validate token and get user
 async function validateTokenAndGetUser(token: string) {
   try {

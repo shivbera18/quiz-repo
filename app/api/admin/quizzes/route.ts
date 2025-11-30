@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { prisma, VercelPrismaClient } from "@/lib/prisma-client"
 import { parseJsonField, stringifyForDatabase } from "@/lib/database-utils"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get("authorization")
