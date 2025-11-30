@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion } from "framer-motion"
@@ -22,7 +22,12 @@ export default function SignupPage() {
   })
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
@@ -76,28 +81,17 @@ export default function SignupPage() {
     }
   }
 
-  return (
-    <div className="relative flex min-h-screen w-full items-center justify-center bg-background p-4">
-      {/* Theme Toggle */}
-      <div className="absolute top-6 right-6">
-        <ThemeToggle />
+  const content = (
+    <div className="w-full max-w-md">
+      <div className="mb-8 text-center">
+        <h1 className="text-4xl font-bold tracking-tight text-foreground">Quizzy</h1>
+        <p className="mt-2 text-muted-foreground">Join the community</p>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className="w-full max-w-md"
-      >
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-foreground">Quizzy</h1>
-          <p className="mt-2 text-muted-foreground">Join the community</p>
-        </div>
-
-        <Card className="border-border/50 shadow-medium">
-          <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl">Create an account</CardTitle>
-            <CardDescription>
+      <Card className="border-border/50 shadow-medium">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl">Create an account</CardTitle>
+          <CardDescription>
               Enter your details to get started
             </CardDescription>
           </CardHeader>
@@ -191,7 +185,27 @@ export default function SignupPage() {
             </div>
           </CardFooter>
         </Card>
-      </motion.div>
+      </div>
+  )
+
+  return (
+    <div className="relative flex min-h-screen w-full items-center justify-center bg-background p-4">
+      {/* Theme Toggle */}
+      <div className="absolute top-6 right-6">
+        <ThemeToggle />
+      </div>
+
+      {mounted ? (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        >
+          {content}
+        </motion.div>
+      ) : (
+        content
+      )}
     </div>
   )
 }

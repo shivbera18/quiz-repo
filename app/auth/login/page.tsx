@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion } from "framer-motion"
@@ -20,7 +20,12 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("student")
+  const [mounted, setMounted] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleStudentLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -86,33 +91,23 @@ export default function LoginPage() {
     }
   }
 
-  return (
-    <div className="relative flex min-h-screen w-full items-center justify-center bg-background p-4">
-      {/* Theme Toggle */}
-      <div className="absolute top-6 right-6">
-        <ThemeToggle />
+  // Render static version during SSR to prevent hydration mismatch
+  const content = (
+    <div className="w-full max-w-md">
+      <div className="mb-8 text-center">
+        <h1 className="text-4xl font-bold tracking-tight text-foreground">Quizzy</h1>
+        <p className="mt-2 text-muted-foreground">Master your banking exams</p>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className="w-full max-w-md"
-      >
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-foreground">Quizzy</h1>
-          <p className="mt-2 text-muted-foreground">Master your banking exams</p>
-        </div>
-
-        <Card className="border-border/50 shadow-medium">
-          <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl">Welcome back</CardTitle>
-            <CardDescription>
-              Enter your credentials to access your account
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Card className="border-border/50 shadow-medium">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl">Welcome back</CardTitle>
+          <CardDescription>
+            Enter your credentials to access your account
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               {/* Both options always visible on login for clarity */}
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="student" className="gap-2">
@@ -222,7 +217,27 @@ export default function LoginPage() {
             )}
           </CardFooter>
         </Card>
-      </motion.div>
+      </div>
+  )
+
+  return (
+    <div className="relative flex min-h-screen w-full items-center justify-center bg-background p-4">
+      {/* Theme Toggle */}
+      <div className="absolute top-6 right-6">
+        <ThemeToggle />
+      </div>
+
+      {mounted ? (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        >
+          {content}
+        </motion.div>
+      ) : (
+        content
+      )}
     </div>
   )
 }
