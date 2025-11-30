@@ -4,9 +4,10 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { ArrowLeft } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ArrowLeft, Users } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
-import AdvancedAnalytics from "@/components/advanced-analytics"
+import StudentAnalytics from "@/components/student-analytics"
 
 interface QuizResult {
   _id: string
@@ -14,9 +15,6 @@ interface QuizResult {
   quizName: string
   quizId: string
   totalScore: number
-  rawScore: number
-  positiveMarks: number
-  negativeMarks: number
   correctAnswers: number
   wrongAnswers: number
   unanswered: number
@@ -24,18 +22,20 @@ interface QuizResult {
     reasoning?: number
     quantitative?: number
     english?: number
+    [key: string]: number | undefined
   }
   answers: Array<{
     questionId: string
-    selectedAnswer: string | number
+    selectedAnswer: number | null
     isCorrect: boolean
+    section?: string
     question?: string
     options?: string[]
-    correctAnswer?: number | string
+    correctAnswer?: number
+    timeSpent?: number
+    isUnanswered?: boolean
   }>
   timeSpent: number
-  negativeMarking: boolean
-  negativeMarkValue: number
   user?: {
     id: string
     name: string
@@ -52,6 +52,32 @@ export default function AdvancedAnalyticsPage() {
   const [results, setResults] = useState<QuizResult[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedUserId, setSelectedUserId] = useState<string>('all')
+
+  // Extract unique users from results - more robust extraction
+  const uniqueUsers = results.reduce((acc, result) => {
+    const userId = result.user?.id
+    if (!userId) return acc
+    
+    // Check if user already exists in accumulator
+    if (acc.find(u => u.id === userId)) return acc
+    
+    const userName = result.user?.name || result.user?.email || `User ${userId.slice(0, 8)}`
+    const userEmail = result.user?.email || ''
+    
+    acc.push({ 
+      id: userId, 
+      name: userName,
+      email: userEmail,
+      quizCount: results.filter(r => r.user?.id === userId).length
+    })
+    return acc
+  }, [] as { id: string; name: string; email: string; quizCount: number }[])
+
+  // Filter results by selected user
+  const filteredResults = selectedUserId === 'all' 
+    ? results 
+    : results.filter(r => r.user?.id === selectedUserId)
 
   useEffect(() => {
     if (!loading && user) {
@@ -108,23 +134,35 @@ export default function AdvancedAnalyticsPage() {
           quizName: result.quiz?.title || result.quizName || 'Unknown Quiz',
           quizId: result.quizId || result.quiz?.id || '',
           totalScore: result.totalScore || 0,
-          rawScore: result.totalScore || 0, // Use totalScore as rawScore
-          positiveMarks: sections.reasoning + sections.quantitative + sections.english,
-          negativeMarks: Math.max(0, (sections.reasoning + sections.quantitative + sections.english) - (result.totalScore || 0)),
-          correctAnswers: answers.filter(a => a.isCorrect).length,
-          wrongAnswers: answers.filter(a => !a.isCorrect && a.selectedAnswer !== null && a.selectedAnswer !== undefined).length,
-          unanswered: answers.filter(a => a.selectedAnswer === null || a.selectedAnswer === undefined).length,
+          correctAnswers: answers.filter((a: any) => a.isCorrect).length,
+          wrongAnswers: answers.filter((a: any) => !a.isCorrect && !a.isUnanswered && a.selectedAnswer !== null && a.selectedAnswer !== undefined).length,
+          unanswered: answers.filter((a: any) => a.isUnanswered || a.selectedAnswer === null || a.selectedAnswer === undefined).length,
           sections,
-          answers,
+          answers: answers.map((a: any) => ({
+            questionId: a.questionId,
+            selectedAnswer: a.selectedAnswer,
+            isCorrect: a.isCorrect,
+            section: a.section,
+            question: a.question,
+            options: a.options,
+            correctAnswer: a.correctAnswer,
+            timeSpent: a.timeSpent,
+            isUnanswered: a.isUnanswered
+          })),
           timeSpent: result.timeSpent || 0,
-          negativeMarking: true, // Default value
-          negativeMarkValue: 0.25, // Default value
-          user: result.user,
+          user: result.user || {
+            id: result.userId,
+            name: result.userName || 'Anonymous',
+            email: result.userEmail || ''
+          },
           quiz: result.quiz
         }
       })
       
-      console.log(`📊 Advanced Analytics: Transformed ${transformedResults.length} results`)
+      // Log user info for debugging
+      const usersFound = transformedResults.filter((r: any) => r.user?.id).length
+      console.log(`📊 Advanced Analytics: Transformed ${transformedResults.length} results, ${usersFound} with user data`)
+      console.log(`👥 Unique users:`, [...new Set(transformedResults.map((r: any) => r.user?.name || r.user?.email).filter(Boolean))])
       setResults(transformedResults)
       
     } catch (error) {
@@ -139,14 +177,14 @@ export default function AdvancedAnalyticsPage() {
 
   if (loading || isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center pt-16 md:pt-0">
         <div className="text-center">Loading advanced analytics...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-16 md:pt-0">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Header */}
         <div className="flex flex-col gap-4 mb-6">
@@ -163,11 +201,21 @@ export default function AdvancedAnalyticsPage() {
             <ThemeToggle />
           </div>
 
-          {/* Mobile description */}
-          <div className="text-center sm:hidden">
-            <p className="text-xs text-muted-foreground">
-              Comprehensive insights and performance analysis
-            </p>
+          {/* Mobile user filter */}
+          <div className="sm:hidden">
+            <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select User" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Users ({uniqueUsers.length})</SelectItem>
+                {uniqueUsers.map(u => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.name} ({u.quizCount} quizzes)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Desktop header */}
@@ -184,6 +232,21 @@ export default function AdvancedAnalyticsPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {/* User Filter */}
+              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                <SelectTrigger className="w-[250px]">
+                  <Users className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Select User" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Users ({uniqueUsers.length})</SelectItem>
+                  {uniqueUsers.map(u => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.name} ({u.quizCount} quizzes)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button 
                 variant="outline" 
                 onClick={fetchAnalytics}
@@ -199,9 +262,9 @@ export default function AdvancedAnalyticsPage() {
 
         {/* Error Display */}
         {error && (
-          <div className="mb-6 p-4 border border-red-200 rounded-lg bg-red-50">
+          <div className="mb-6 p-4 border border-red-200 rounded-lg bg-red-50 dark:bg-red-950/30">
             <div className="flex items-center gap-2">
-              <div className="text-red-600">{error}</div>
+              <div className="text-red-600 dark:text-red-400">{error}</div>
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -214,13 +277,13 @@ export default function AdvancedAnalyticsPage() {
           </div>
         )}
 
-        {/* Advanced Analytics Component */}
-        {results.length > 0 ? (
-          <AdvancedAnalytics results={results} />
+        {/* Advanced Analytics Component - Now using StudentAnalytics */}
+        {filteredResults.length > 0 ? (
+          <StudentAnalytics results={filteredResults} />
         ) : (
           <div className="text-center py-12">
             <div className="text-muted-foreground mb-4">
-              {error ? "Analytics Error" : "No analytics data available"}
+              {error ? "Analytics Error" : selectedUserId !== 'all' ? "No data for selected user" : "No analytics data available"}
             </div>
             <div className="text-sm text-muted-foreground mb-6">
               {error ? "Unable to display analytics. Please try refreshing the page." : "Create some quiz results to see advanced analytics"}

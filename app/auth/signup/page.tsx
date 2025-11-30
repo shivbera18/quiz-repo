@@ -4,12 +4,14 @@ import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { User } from "lucide-react"
+import { User, Mail, Lock, CheckCircle2 } from "lucide-react"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -75,105 +77,121 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen neu-surface flex items-center justify-center p-4">
-      <div className="neu-card w-full max-w-md p-8">
-        <div className="text-center mb-8">
-          <div className="neu-card-inset p-6 rounded-2xl mb-6">
-            <h1 className="text-3xl font-bold neu-text-gradient mb-2 flex items-center justify-center gap-3">
-              <div className="neu-icon-button p-2">
-                <User className="h-6 w-6 text-primary" />
-              </div>
-              Join Our Community
-            </h1>
-            <p className="text-muted-foreground">Create your student account and start your banking exam journey</p>
-          </div>
+    <div className="relative flex min-h-screen w-full items-center justify-center bg-background p-4">
+      {/* Theme Toggle */}
+      <div className="absolute top-6 right-6">
+        <ThemeToggle />
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="w-full max-w-md"
+      >
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold tracking-tight text-foreground">Quizzy</h1>
+          <p className="mt-2 text-muted-foreground">Join the community</p>
         </div>
-        <div className="neu-card-inset p-6 rounded-2xl">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="neu-card-inset p-4 rounded-2xl border-destructive/20">
-                <Alert variant="destructive" className="border-0 bg-transparent">
+
+        <Card className="border-border/50 shadow-medium">
+          <CardHeader className="space-y-1 text-center">
+            <CardTitle className="text-2xl">Create an account</CardTitle>
+            <CardDescription>
+              Enter your details to get started
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="name"
+                    name="name"
+                    type="text"
+                    placeholder="John Doe"
+                    className="pl-10"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
               </div>
-            )}
 
-            <div className="space-y-3">
-              <Label htmlFor="name" className="text-sm font-medium text-foreground">Full Name</Label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                placeholder="Enter your full name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className="neu-input w-full"
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="john@example.com"
+                    className="pl-10"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
 
-            <div className="space-y-3">
-              <Label htmlFor="email" className="text-sm font-medium text-foreground">Email Address</Label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="your.email@example.com"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                className="neu-input w-full"
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    placeholder="••••••••"
+                    className="pl-10"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
 
-            <div className="space-y-3">
-              <Label htmlFor="password" className="text-sm font-medium text-foreground">Password</Label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Create a password (min 6 characters)"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                className="neu-input w-full"
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="relative">
+                  <CheckCircle2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    className="pl-10"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
 
-            <div className="space-y-3">
-              <Label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">Confirm Password</Label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                placeholder="Confirm your password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                className="neu-input w-full"
-              />
-            </div>
-
-            <button type="submit" className="neu-button w-full py-4 font-medium text-primary" disabled={loading}>
-              {loading ? "Creating account..." : "Create Student Account"}
-            </button>
-          </form>
-        </div>
-
-        <div className="mt-8 space-y-4">
-          <div className="neu-card-inset p-4 rounded-2xl text-center">
-            <p className="text-sm text-muted-foreground">
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Creating account..." : "Create Account"}
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-4 border-t bg-muted/20 p-6">
+            <div className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link href="/auth/login" className="text-primary hover:text-accent font-medium">
+              <Link href="/auth/login" className="font-medium text-primary hover:underline">
                 Sign in
               </Link>
-            </p>
-          </div>
-          <div className="neu-card-inset p-3 rounded-2xl text-center">
-            <p className="text-xs text-muted-foreground">Admin accounts are created by system administrators only</p>
-          </div>
-        </div>
-      </div>
+            </div>
+          </CardFooter>
+        </Card>
+      </motion.div>
     </div>
   )
 }

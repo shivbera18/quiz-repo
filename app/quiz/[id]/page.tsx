@@ -2,14 +2,11 @@
 
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { Clock, ArrowLeft, AlertTriangle, Home } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Clock, ArrowLeft, Send, ChevronLeft, ChevronRight, X, Bookmark, CheckCheck, Grid3x3, Save } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,9 +18,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import Link from "next/link"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { useAuth } from "@/hooks/use-auth"
 import MathRenderer from "@/components/math-renderer"
+import { cn } from "@/lib/utils"
 
 interface Quiz {
   id: string
@@ -50,130 +48,103 @@ interface Question {
 
 interface Answer {
   questionId: string
-  selectedAnswer: number
+  selectedAnswer: number | null
+}
+
+interface QuestionStatus {
+  answered: boolean
+  markedForReview: boolean
 }
 
 export default function QuizPage({ params }: { params: { id: string } }) {
   const [quiz, setQuiz] = useState<Quiz | null>(null)
   const [answers, setAnswers] = useState<Answer[]>([])
+  const [questionStatuses, setQuestionStatuses] = useState<Record<string, QuestionStatus>>({})
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [timeLeft, setTimeLeft] = useState(0)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [showNavigator, setShowNavigator] = useState(false)
+  // Time tracking per question
+  const [questionTimes, setQuestionTimes] = useState<Record<string, number>>({})
+  const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now())
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, loading: authLoading } = useAuth()
 
-  // Enhanced back navigation logic
   const getBackUrl = () => {
-    // Check if user came from sectional tests via URL parameters
     const fromSubject = searchParams.get('fromSubject')
     const fromChapter = searchParams.get('fromChapter')
-    
-    if (fromSubject && fromChapter) {
-      return `/dashboard/sectional-tests/${fromSubject}/${fromChapter}`
-    } else if (fromSubject) {
-      return `/dashboard/sectional-tests/${fromSubject}`
-    }
-    
-    // Check if user came from sectional tests via referrer
-    if (typeof window !== 'undefined') {
-      const referrer = document.referrer
-      if (referrer.includes('sectional-tests')) {
-        const match = referrer.match(/sectional-tests\/([^\/]+)(?:\/([^\/]+))?/)
-        if (match) {
-          const [, subjectId, chapterId] = match
-          if (chapterId) {
-            return `/dashboard/sectional-tests/${subjectId}/${chapterId}`
-          }
-          return `/dashboard/sectional-tests/${subjectId}`
-        }
-        return '/dashboard/sectional-tests'
-      }
-    }
-    
-    // Default to dashboard
+    if (fromSubject && fromChapter) return `/dashboard/sectional-tests/${fromSubject}/${fromChapter}`
+    else if (fromSubject) return `/dashboard/sectional-tests/${fromSubject}`
     return '/dashboard'
   }
 
-  const getBackButtonText = () => {
-    const backUrl = getBackUrl()
-    if (backUrl.includes('sectional-tests')) {
-      if (backUrl.split('/').length === 5) { // Has chapter
-        return 'Back to Chapter'
-      } else if (backUrl.split('/').length === 4) { // Has subject
-        return 'Back to Subject'
-      }
-      return 'Back to Sectional Tests'
-    }
-    return 'Back to Dashboard'
-  }
-
-  const handleBackNavigation = () => {
-    router.push(getBackUrl())
-  }
-
   useEffect(() => {
-    // Wait for auth to load and check if user is authenticated
-    if (authLoading) return
-    
-    if (!user) {
-      alert("Please log in to take the quiz")
-      router.push("/auth/login")
-      return
-    }
-
-    // Fetch quiz from backend API with authentication
     const fetchQuiz = async () => {
       try {
-        const res = await fetch(`/api/quizzes/${params.id}`, {
-          headers: {
-            Authorization: `Bearer ${user.token || "student-token-placeholder"}`,
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            "Pragma": "no-cache",
-            "Expires": "0",
-          },
+        const response = await fetch(`/api/quizzes/${params.id}`, {
+          headers: { Authorization: `Bearer ${user?.token || "student-token-placeholder"}` },
         })
-        
-        if (!res.ok) {
-          throw new Error("Quiz not found or inactive")
-        }
-        const data = await res.json()
-        const foundQuiz = data.quiz
+        if (!response.ok) throw new Error("Failed to fetch quiz")
+        const data = await response.json()
+        // API returns { quiz: { ... } } — support both shapes for compatibility
+        const quizData = (data && data.quiz) ? data.quiz : data
+        setQuiz(quizData)
+        setTimeLeft((quizData.duration || quizData.timeLimit || 0) * 60)
 
-        if (!foundQuiz || !foundQuiz.isActive) {
-          throw new Error("Quiz not found or inactive")
-        }
-
-        // Add negative marking properties if not present (for backward compatibility)
-        const quizWithNegativeMarking = {
-          ...foundQuiz,
-          negativeMarking: foundQuiz.negativeMarking ?? true,
-          negativeMarkValue: foundQuiz.negativeMarkValue ?? 0.25,
-        }
-
-        setQuiz(quizWithNegativeMarking)
-        setTimeLeft(foundQuiz.duration * 60) // Convert minutes to seconds
+        // Initialize question statuses
+        const statuses: Record<string, QuestionStatus> = {}
+        ;(quizData.questions || []).forEach((q: Question) => {
+          statuses[q.id] = { answered: false, markedForReview: false }
+        })
+        setQuestionStatuses(statuses)
       } catch (error) {
-        console.error("Error loading quiz:", error)
-        alert("Quiz not found or inactive")
+        console.error(error)
         router.push("/dashboard")
       } finally {
         setLoading(false)
       }
     }
 
-    fetchQuiz()
-  }, [params.id, router, user, authLoading])
+    if (!authLoading && user) fetchQuiz()
+  }, [params.id, user, authLoading, router])
 
   useEffect(() => {
-    if (timeLeft > 0 && !loading && quiz?.duration !== 0) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000)
-      return () => clearTimeout(timer)
-    } else if (timeLeft === 0 && quiz?.duration !== 0) {
-      handleSubmit()
-    }
-  }, [timeLeft, loading, quiz])
+    if (!quiz || timeLeft <= 0) return
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          handleSubmit()
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [quiz, timeLeft])
+
+  // Record time spent on current question before moving to another
+  const recordTimeOnCurrentQuestion = () => {
+    if (!quiz) return
+    const currentQuestion = quiz.questions[currentQuestionIndex]
+    const timeSpentOnQuestion = Date.now() - questionStartTime
+    
+    setQuestionTimes(prev => ({
+      ...prev,
+      [currentQuestion.id]: (prev[currentQuestion.id] || 0) + timeSpentOnQuestion
+    }))
+    
+    // Reset start time for next question
+    setQuestionStartTime(Date.now())
+  }
+
+  // Navigate to a specific question index with time tracking
+  const navigateToQuestion = (newIndex: number) => {
+    if (newIndex === currentQuestionIndex) return
+    recordTimeOnCurrentQuestion()
+    setCurrentQuestionIndex(newIndex)
+  }
 
   const handleAnswerChange = (questionId: string, selectedAnswer: number) => {
     setAnswers((prev) => {
@@ -183,134 +154,137 @@ export default function QuizPage({ params }: { params: { id: string } }) {
       }
       return [...prev, { questionId, selectedAnswer }]
     })
+
+    // Update status to answered
+    setQuestionStatuses(prev => ({
+      ...prev,
+      [questionId]: { ...prev[questionId], answered: true }
+    }))
   }
 
-  const calculateScore = () => {
-    if (!quiz) return { totalScore: 0, rawScore: 0, negativeMarks: 0 }
+  const handleMarkForReview = () => {
+    const currentQuestion = quiz!.questions[currentQuestionIndex]
+    setQuestionStatuses(prev => ({
+      ...prev,
+      [currentQuestion.id]: { ...prev[currentQuestion.id], markedForReview: true }
+    }))
+    // Auto-advance to next question with time tracking
+    if (currentQuestionIndex < quiz!.questions.length - 1) {
+      navigateToQuestion(currentQuestionIndex + 1)
+    }
+  }
 
-    let correctAnswers = 0
-    let wrongAnswers = 0
-    let unanswered = 0
+  const handleSaveAndMarkForReview = () => {
+    const currentQuestion = quiz!.questions[currentQuestionIndex]
+    const userAnswer = answers.find(a => a.questionId === currentQuestion.id)
 
-    for (const question of quiz.questions) {
-      const userAnswer = answers.find((a) => a.questionId === question.id)
-
-      if (!userAnswer || userAnswer.selectedAnswer === -1) {
-        unanswered++
-      } else if (userAnswer.selectedAnswer === question.correctAnswer) {
-        correctAnswers++
-      } else {
-        wrongAnswers++
+    if (userAnswer) {
+      setQuestionStatuses(prev => ({
+        ...prev,
+        [currentQuestion.id]: { ...prev[currentQuestion.id], markedForReview: true }
+      }))
+      // Auto-advance to next question with time tracking
+      if (currentQuestionIndex < quiz!.questions.length - 1) {
+        navigateToQuestion(currentQuestionIndex + 1)
       }
     }
+  }
 
-    const positiveMarks = correctAnswers * 1 // 1 mark per correct answer
-    const negativeMarks = quiz.negativeMarking ? wrongAnswers * quiz.negativeMarkValue : 0
-    const rawScore = positiveMarks - negativeMarks
-    const totalScore = Math.max(0, Math.round((rawScore / quiz.questions.length) * 100))
+  const handleClearResponse = () => {
+    const currentQuestion = quiz!.questions[currentQuestionIndex]
+    setAnswers(prev => prev.filter(a => a.questionId !== currentQuestion.id))
+    setQuestionStatuses(prev => ({
+      ...prev,
+      [currentQuestion.id]: { ...prev[currentQuestion.id], answered: false }
+    }))
+  }
 
-    return {
-      totalScore,
-      rawScore,
-      positiveMarks,
-      negativeMarks,
-      correctAnswers,
-      wrongAnswers,
-      unanswered,
+  const handleSaveAndNext = () => {
+    // Only advance if there's an answer (already saved/green)
+    if (userAnswer && currentQuestionIndex < quiz!.questions.length - 1) {
+      navigateToQuestion(currentQuestionIndex + 1)
     }
   }
 
   const handleSubmit = async () => {
-    if (!quiz) return
+    if (!quiz || submitting) return
     setSubmitting(true)
 
-    const scoreData = calculateScore()
+    // Record time for the current question before submitting
+    recordTimeOnCurrentQuestion()
 
-    // Calculate section-wise scores with negative marking
-    const sectionScores = { reasoning: 0, quantitative: 0, english: 0 }
-    const sectionTotals = { reasoning: 0, quantitative: 0, english: 0 }
-    const sectionCorrect = { reasoning: 0, quantitative: 0, english: 0 }
-    const sectionWrong = { reasoning: 0, quantitative: 0, english: 0 }
-    const questionResults = []
+    // Get final time data
+    const finalQuestionTimes = { ...questionTimes }
+    // Add time for current question if not already recorded
+    const currentQuestion = quiz.questions[currentQuestionIndex]
+    if (!finalQuestionTimes[currentQuestion.id]) {
+      finalQuestionTimes[currentQuestion.id] = Date.now() - questionStartTime
+    }
 
-    for (const question of quiz.questions) {
+    const scoreData = {
+      correctAnswers: 0,
+      wrongAnswers: 0,
+      unanswered: 0,
+      totalScore: 0,
+      rawScore: 0,
+    }
+
+    const sectionPercentages: Record<string, number> = {}
+    const sectionStats: Record<string, { correct: number; total: number }> = {}
+    const questionResults: any[] = []
+
+    quiz.questions.forEach((question) => {
+      if (!sectionStats[question.section]) {
+        sectionStats[question.section] = { correct: 0, total: 0 }
+      }
+      sectionStats[question.section].total++
+    })
+
+    quiz.questions.forEach((question) => {
       const userAnswer = answers.find((a) => a.questionId === question.id)
-      const isCorrect = userAnswer && userAnswer.selectedAnswer === question.correctAnswer
-      const isWrong =
-        userAnswer && userAnswer.selectedAnswer !== question.correctAnswer && userAnswer.selectedAnswer !== -1
+      const hasAnswered = userAnswer && userAnswer.selectedAnswer !== null && userAnswer.selectedAnswer !== undefined
+      const isCorrect = hasAnswered && userAnswer.selectedAnswer === question.correctAnswer
 
-      if (isCorrect) {
-        sectionCorrect[question.section as keyof typeof sectionCorrect]++
-      } else if (isWrong) {
-        sectionWrong[question.section as keyof typeof sectionWrong]++
+      if (!hasAnswered) {
+        // Question was not answered (unanswered/skipped)
+        scoreData.unanswered++
+      } else if (isCorrect) {
+        scoreData.correctAnswers++
+        scoreData.rawScore++
+        sectionStats[question.section].correct++
+      } else {
+        // Answered but wrong
+        scoreData.wrongAnswers++
+        if (quiz.negativeMarking) {
+          scoreData.rawScore -= quiz.negativeMarkValue
+        }
       }
 
-      sectionTotals[question.section as keyof typeof sectionTotals]++
-
       questionResults.push({
+        questionId: question.id,
         question: question.question,
-        options: question.options,
-        selectedAnswer: userAnswer?.selectedAnswer ?? -1,
+        userAnswer: hasAnswered ? userAnswer.selectedAnswer : null,
         correctAnswer: question.correctAnswer,
-        isCorrect,
+        isCorrect: isCorrect || false,
+        isUnanswered: !hasAnswered,
         section: question.section,
-        explanation: question.explanation,
-        image: question.image,
+        timeSpent: finalQuestionTimes[question.id] || 0, // Time in milliseconds
       })
-    }
+    })
 
-    // Calculate section percentages with negative marking
-    const sectionPercentages = {
-      reasoning:
-        sectionTotals.reasoning > 0
-          ? Math.max(
-              0,
-              Math.round(
-                ((sectionCorrect.reasoning -
-                  (quiz.negativeMarking ? sectionWrong.reasoning * quiz.negativeMarkValue : 0)) /
-                  sectionTotals.reasoning) *
-                  100,
-              ),
-            )
-          : 0,
-      quantitative:
-        sectionTotals.quantitative > 0
-          ? Math.max(
-              0,
-              Math.round(
-                ((sectionCorrect.quantitative -
-                  (quiz.negativeMarking ? sectionWrong.quantitative * quiz.negativeMarkValue : 0)) /
-                  sectionTotals.quantitative) *
-                  100,
-              ),
-            )
-          : 0,
-      english:
-        sectionTotals.english > 0
-          ? Math.max(
-              0,
-              Math.round(
-                ((sectionCorrect.english - (quiz.negativeMarking ? sectionWrong.english * quiz.negativeMarkValue : 0)) /
-                  sectionTotals.english) *
-                  100,
-              ),
-            )
-          : 0,
-    }
+    Object.keys(sectionStats).forEach((section) => {
+      const { correct, total } = sectionStats[section]
+      sectionPercentages[section] = total > 0 ? (correct / total) * 100 : 0
+    })
 
-    // Store result in localStorage AND send to database
+    scoreData.totalScore = Math.max(0, (scoreData.rawScore / quiz.questions.length) * 100)
+
     const result = {
       _id: Date.now().toString(),
-      date: new Date().toISOString(),
-      quizName: quiz.title,
       quizId: quiz.id,
-      totalScore: scoreData.totalScore,
-      rawScore: scoreData.rawScore,
-      positiveMarks: scoreData.positiveMarks,
-      negativeMarks: scoreData.negativeMarks,
-      correctAnswers: scoreData.correctAnswers,
-      wrongAnswers: scoreData.wrongAnswers,
-      unanswered: scoreData.unanswered,
+      quizName: quiz.title,
+      date: new Date().toISOString(),
+      ...scoreData,
       sections: sectionPercentages,
       questions: questionResults,
       timeSpent: quiz.duration ? quiz.duration * 60 - timeLeft : 0,
@@ -318,12 +292,10 @@ export default function QuizPage({ params }: { params: { id: string } }) {
       negativeMarkValue: quiz.negativeMarkValue,
     }
 
-    // Save to localStorage for immediate access
     const existingResults = JSON.parse(localStorage.getItem("quizResults") || "[]")
     existingResults.push(result)
     localStorage.setItem("quizResults", JSON.stringify(existingResults))
 
-    // Send to database
     try {
       const saveResponse = await fetch("/api/results", {
         method: "POST",
@@ -334,13 +306,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
         body: JSON.stringify({
           quizId: quiz.id,
           quizName: quiz.title,
-          totalScore: scoreData.totalScore,
-          rawScore: scoreData.rawScore,
-          positiveMarks: scoreData.positiveMarks,
-          negativeMarks: scoreData.negativeMarks,
-          correctAnswers: scoreData.correctAnswers,
-          wrongAnswers: scoreData.wrongAnswers,
-          unanswered: scoreData.unanswered,
+          ...scoreData,
           sections: sectionPercentages,
           questions: questionResults,
           timeSpent: quiz.duration ? quiz.duration * 60 - timeLeft : 0,
@@ -351,14 +317,10 @@ export default function QuizPage({ params }: { params: { id: string } }) {
 
       if (saveResponse.ok) {
         const saveData = await saveResponse.json()
-        console.log("✅ Quiz result saved to database:", saveData.result._id)
-        // Update result with database ID
         result._id = saveData.result._id
-      } else {
-        console.warn("⚠️ Failed to save to database, using localStorage only")
       }
     } catch (error) {
-      console.warn("⚠️ Database save failed, using localStorage only:", error)
+      console.warn("Database save failed", error)
     }
 
     router.push(`/results/${result._id}`)
@@ -370,418 +332,405 @@ export default function QuizPage({ params }: { params: { id: string } }) {
     return `${mins}:${secs.toString().padStart(2, "0")}`
   }
 
-  const getProgress = () => {
-    if (!quiz) return 0
-    return ((currentQuestionIndex + 1) / quiz.questions.length) * 100
-  }
+  const getQuestionStatusColor = (questionId: string) => {
+    const status = questionStatuses[questionId]
+    const isAnswered = answers.some(a => a.questionId === questionId)
 
-  const getAnsweredCount = () => {
-    return answers.length
-  }
-
-  const nextQuestion = () => {
-    if (quiz && currentQuestionIndex < quiz.questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1)
+    if (isAnswered && status?.markedForReview) {
+      return "bg-purple-500 text-white border-purple-600" // Purple with tick: saved & marked
+    } else if (status?.markedForReview) {
+      return "bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500" // Purple: marked for review
+    } else if (isAnswered) {
+      return "bg-green-500 text-white border-green-600" // Green: saved
+    } else {
+      return "bg-red-500/20 text-red-700 dark:text-red-400 border-red-500" // Red: not visited
     }
   }
 
-  const prevQuestion = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1)
-    }
-  }
-
-  if (loading || authLoading) {
+  if (loading || authLoading || !quiz) {
     return (
-      <div className="min-h-screen neu-surface flex items-center justify-center">
-        <div className="neu-card p-8 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading quiz...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen neu-surface flex items-center justify-center p-4">
-        <div className="neu-card p-8 text-center max-w-md w-full">
-          <p className="text-muted-foreground mb-4">Please log in to take the quiz</p>
-          <Link href="/auth/login">
-            <button className="neu-button py-3 px-6 text-sm font-medium text-primary w-full">
-              Go to Login
-            </button>
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
-  if (!quiz) {
-    return (
-      <div className="min-h-screen neu-surface flex items-center justify-center p-4">
-        <div className="neu-card p-8 text-center max-w-md w-full">
-          <p className="text-muted-foreground mb-4">Quiz not found or inactive</p>
-          <Link href="/dashboard">
-            <button className="neu-button py-3 px-6 text-sm font-medium text-primary w-full">
-              Back to Dashboard
-            </button>
-          </Link>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     )
   }
 
   const currentQuestion = quiz.questions[currentQuestionIndex]
   const userAnswer = answers.find((a) => a.questionId === currentQuestion.id)
+  const currentStatus = questionStatuses[currentQuestion.id]
+
+  const answeredCount = Object.values(questionStatuses).filter(s => s.answered).length
+  const markedCount = Object.values(questionStatuses).filter(s => s.markedForReview).length
 
   return (
-    <div className="min-h-screen neu-surface">
-      <div className="container mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 max-w-full overflow-x-hidden">
-        {/* Header */}
-        <div className="mb-6">
-          {/* Mobile Header */}
-          <div className="flex flex-col space-y-4 md:hidden">
-            <div className="neu-card p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <button className="neu-icon-button p-2">
-                        <ArrowLeft className="h-4 w-4" />
-                      </button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Leave Quiz?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to leave this quiz? Your progress will be lost and you'll need to start over.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Continue Quiz</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleBackNavigation}>
-                          Yes, Leave Quiz
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                  <div className="neu-icon-button p-2">
-                    <ThemeToggle />
-                  </div>
-                </div>
-                {quiz.duration > 0 && (
-                  <div className="flex items-center gap-2 text-lg font-semibold">
-                    <Clock className="h-5 w-5" />
-                    <span className={timeLeft < 60 ? "text-red-600 dark:text-red-400" : "text-foreground"}>
-                      {formatTime(timeLeft)}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold neu-text-gradient break-words">{quiz.title}</h1>
-                <p className="text-muted-foreground text-sm mt-1 break-words">{quiz.description}</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-2">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <button className="neu-button py-3 px-4 w-full text-sm font-medium text-primary">
-                    <Home className="h-4 w-4 mr-2" />
-                    {getBackButtonText()}
-                  </button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Leave Quiz?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to leave this quiz? Your progress will be lost and you'll need to start over.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Continue Quiz</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleBackNavigation}>
-                      Yes, Leave Quiz
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-              <button 
-                onClick={handleSubmit} 
-                disabled={submitting} 
-                className="neu-button py-3 px-4 w-full text-sm font-medium text-primary disabled:opacity-50"
-              >
-                {submitting ? "Submitting..." : "Submit Quiz"}
-              </button>
+    <div className="min-h-screen bg-background">
+      {/* Top Bar */}
+      <div className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur">
+        <div className="container flex h-16 sm:h-14 items-center justify-between px-4">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-10 w-10 sm:h-9 sm:w-9">
+                  <ArrowLeft className="h-5 w-5 sm:h-4 sm:w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="max-w-[calc(100%-2rem)] sm:max-w-lg">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Quit Quiz?</AlertDialogTitle>
+                  <AlertDialogDescription>Your progress will be lost.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
+                  <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => router.push(getBackUrl())} className="w-full sm:w-auto">Quit</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <div className="font-semibold truncate max-w-[120px] sm:max-w-[200px] lg:max-w-md text-sm sm:text-base">
+              {quiz.title}
             </div>
           </div>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className={cn(
+              "flex items-center gap-1.5 sm:gap-2 font-mono text-xs sm:text-sm font-medium px-2 sm:px-3 py-1 rounded-full bg-muted",
+              timeLeft < 60 && "text-destructive bg-destructive/10"
+            )}>
+              <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              {formatTime(timeLeft)}
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="default" size="sm" className="gap-1.5 h-9 sm:h-8">
+                  <Send className="h-4 w-4" />
+                  <span className="hidden sm:inline text-sm">Submit</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="max-w-[calc(100%-2rem)] sm:max-w-lg">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Submit Quiz?</AlertDialogTitle>
+                  <AlertDialogDescription className="text-sm space-y-2">
+                    <p>Answered: {answeredCount}/{quiz.questions.length} | Marked for Review: {markedCount}</p>
+                    {answeredCount < quiz.questions.length && <p className="text-destructive">Warning: {quiz.questions.length - answeredCount} questions unanswered</p>}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
+                  <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleSubmit} disabled={submitting} className="w-full sm:w-auto">
+                    {submitting ? "Submitting..." : "Submit Quiz"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+        <Progress value={((currentQuestionIndex + 1) / quiz.questions.length) * 100} className="h-1" />
+      </div>
 
-          {/* Desktop Header */}
-          <div className="hidden md:block">
-            <div className="neu-card p-6">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                <div className="flex items-center gap-4 min-w-0 flex-1">
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <button className="neu-icon-button p-3 flex-shrink-0">
-                        <ArrowLeft className="h-5 w-5" />
-                      </button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Leave Quiz?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to leave this quiz? Your progress will be lost and you'll need to start over.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Continue Quiz</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleBackNavigation}>
-                          Yes, Leave Quiz
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                  <div className="min-w-0">
-                    <h1 className="text-2xl lg:text-3xl font-bold neu-text-gradient truncate">{quiz.title}</h1>
-                    <p className="text-muted-foreground text-sm lg:text-base break-words">{quiz.description}</p>
+      <div className="flex">
+        {/* Main Content */}
+        <div className="flex-1 pb-40 sm:pb-32">
+          <div className="container max-w-5xl py-4 sm:py-6 px-4 lg:px-8">
+            <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6">
+              <span className="font-medium">Question {currentQuestionIndex + 1} of {quiz.questions.length}</span>
+              <div className="flex items-center gap-2 sm:gap-4">
+                <span className="capitalize hidden sm:inline">{currentQuestion.section}</span>
+                <Sheet open={showNavigator} onOpenChange={setShowNavigator}>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-9 gap-2">
+                      <Grid3x3 className="h-4 w-4" />
+                      <span className="hidden xs:inline">Questions</span>
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-full sm:w-96 overflow-y-auto">
+                    <SheetHeader>
+                      <SheetTitle>Question Palette</SheetTitle>
+                    </SheetHeader>
+                    <div className="mt-6 space-y-4">
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="flex items-center gap-2">
+                          <div className="h-6 w-6 rounded bg-green-500" />
+                          <span>Answered</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-6 w-6 rounded bg-red-500/20 border border-red-500" />
+                          <span>Not Answered</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-6 w-6 rounded bg-purple-500/20 border border-purple-500" />
+                          <span>Marked</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-6 w-6 rounded bg-purple-500 flex items-center justify-center">
+                            <CheckCheck className="h-3 w-3 text-white" />
+                          </div>
+                          <span>Answered & Marked</span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-5 gap-2">
+                        {quiz.questions.map((q, idx) => {
+                          const isCurrent = idx === currentQuestionIndex
+                          const isAnswered = answers.some(a => a.questionId === q.id)
+                          const status = questionStatuses[q.id]
+
+                          return (
+                            <button
+                              key={idx}
+                              onClick={() => {
+                                navigateToQuestion(idx)
+                                setShowNavigator(false)
+                              }}
+                              className={cn(
+                                "relative h-12 w-full rounded-lg border-2 font-medium transition-all flex items-center justify-center",
+                                isCurrent && "ring-2 ring-primary ring-offset-2",
+                                getQuestionStatusColor(q.id)
+                              )}
+                            >
+                              {idx + 1}
+                              {isAnswered && status?.markedForReview && (
+                                <CheckCheck className="absolute bottom-0.5 right-0.5 h-3 w-3" />
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
+            </div>
+
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentQuestion.id}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Card className="border-none shadow-none bg-transparent">
+                  <div className="text-lg sm:text-xl lg:text-2xl font-medium leading-relaxed mb-6 sm:mb-8">
+                    <MathRenderer text={currentQuestion.question} />
                   </div>
-                </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <button className="neu-button py-2 px-4 text-sm font-medium text-primary whitespace-nowrap">
-                        <Home className="h-4 w-4 mr-2" />
-                        {getBackButtonText()}
-                      </button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Leave Quiz?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to leave this quiz? Your progress will be lost and you'll need to start over.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Continue Quiz</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleBackNavigation}>
-                          Yes, Leave Quiz
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                  <div className="neu-icon-button p-2">
-                    <ThemeToggle />
-                  </div>
-                  {quiz.duration > 0 && (
-                    <div className="flex items-center gap-2 text-lg font-semibold">
-                      <Clock className="h-5 w-5" />
-                      <span className={timeLeft < 60 ? "text-red-600 dark:text-red-400" : "text-foreground"}>
-                        {formatTime(timeLeft)}
-                      </span>
+
+                  {currentQuestion.image && (
+                    <div className="mb-6 sm:mb-8 rounded-xl overflow-hidden border">
+                      <img
+                        src={currentQuestion.image}
+                        alt="Question"
+                        className="w-full h-auto object-contain max-h-[300px] sm:max-h-[400px]"
+                      />
                     </div>
                   )}
-                  <button 
-                    onClick={handleSubmit} 
-                    disabled={submitting}
-                    className="neu-button py-2 px-4 text-sm font-medium text-primary whitespace-nowrap disabled:opacity-50"
-                  >
-                    {submitting ? "Submitting..." : "Submit Quiz"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Negative Marking Warning */}
-        {quiz.negativeMarking && (
-          <Alert className="mb-6">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Negative Marking:</strong> Each wrong answer will deduct {quiz.negativeMarkValue} marks.
-              Unanswered questions carry no penalty.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Progress and Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          <div className="neu-card p-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium">Progress</span>
-              <span className="text-xs text-muted-foreground">
-                {currentQuestionIndex + 1}/{quiz.questions.length}
-              </span>
-            </div>
-            <Progress value={getProgress()} className="h-2" />
-          </div>
-
-          <div className="neu-card p-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium">Answered</span>
-              <span className="text-xs text-muted-foreground">
-                {getAnsweredCount()}/{quiz.questions.length}
-              </span>
-            </div>
-            <Progress value={(getAnsweredCount() / quiz.questions.length) * 100} className="h-2" />
-          </div>
-        </div>
-
-        {/* Question */}
-        <div className="neu-card mb-6">
-          <div className="p-6 pb-4">
-            <h2 className="text-lg sm:text-xl font-semibold flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">
-              <span>Question {currentQuestionIndex + 1}</span>
-              <span className="text-sm font-normal text-muted-foreground">({currentQuestion.section})</span>
-            </h2>
-            <div className="text-sm sm:text-base text-muted-foreground">
-              <MathRenderer text={currentQuestion.question} />
-            </div>
-          </div>
-          <div className="px-6 pb-6">
-            {/* Question Image */}
-            {currentQuestion.image && (
-              <div className="mb-4">
-                <img
-                  src={currentQuestion.image || "/placeholder.svg"}
-                  alt="Question illustration"
-                  className="max-w-full h-auto rounded border"
-                />
-              </div>
-            )}
-
-            <RadioGroup
-              value={userAnswer?.selectedAnswer?.toString() || ""}
-              onValueChange={(value) => handleAnswerChange(currentQuestion.id, Number.parseInt(value))}
-              className="space-y-3"
-            >
-              {currentQuestion.options.map((option, optionIndex) => (
-                <div key={optionIndex} className="neu-input-surface p-3 rounded-lg hover:neu-hover transition-all duration-200">
-                  <div className="flex items-start space-x-3">
-                    <RadioGroupItem 
-                      value={optionIndex.toString()} 
-                      id={`${currentQuestion.id}-${optionIndex}`} 
-                      className="mt-0.5 flex-shrink-0"
-                    />
-                    <Label 
-                      htmlFor={`${currentQuestion.id}-${optionIndex}`} 
-                      className="cursor-pointer flex-1 text-sm sm:text-base leading-relaxed"
-                    >
-                      <MathRenderer text={option} />
-                    </Label>
+                  <div className="space-y-3">
+                    {currentQuestion.options.map((option, idx) => {
+                      const isSelected = userAnswer?.selectedAnswer === idx
+                      return (
+                        <div
+                          key={idx}
+                          onClick={() => handleAnswerChange(currentQuestion.id, idx)}
+                          className={cn(
+                            "flex items-center gap-3 sm:gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 active:scale-[0.99]",
+                            isSelected
+                              ? "border-primary bg-primary/5 shadow-sm"
+                              : "border-muted hover:border-primary/50 hover:bg-muted/50"
+                          )}
+                        >
+                          <div className={cn(
+                            "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                            isSelected ? "border-primary bg-primary" : "border-muted-foreground/30"
+                          )}>
+                            {isSelected && <div className="h-3 w-3 rounded-full bg-white" />}
+                          </div>
+                          <div className="flex-1 text-sm sm:text-base">
+                            <MathRenderer text={option} />
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
-                </div>
-              ))}
-            </RadioGroup>
-
-            {/* Clear Answer Option */}
-            <div className="mt-4">
-              <button
-                onClick={() => {
-                  setAnswers((prev) => prev.filter((a) => a.questionId !== currentQuestion.id))
-                }}
-                disabled={!userAnswer}
-                className="neu-button py-2 px-4 text-sm font-medium text-muted-foreground disabled:opacity-50"
-              >
-                Clear Answer
-              </button>
-            </div>
+                </Card>
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
 
-        {/* Navigation */}
-        <div className="space-y-4">
-          {/* Mobile Navigation */}
-          <div className="md:hidden">
-            {/* Previous/Next Buttons */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <button
-                onClick={prevQuestion} 
-                disabled={currentQuestionIndex === 0}
-                className="neu-button py-3 px-4 text-sm font-medium text-primary disabled:opacity-50"
-              >
-                Previous
-              </button>
-              <button
-                onClick={nextQuestion}
-                disabled={currentQuestionIndex === quiz.questions.length - 1}
-                className="neu-button py-3 px-4 text-sm font-medium text-primary disabled:opacity-50"
-              >
-                Next
-              </button>
+        {/* Desktop Question Navigator - Right Side */}
+        <div className="hidden lg:block w-80 border-l h-[calc(100vh-57px)] sticky top-[57px] overflow-y-auto bg-muted/30">
+          <div className="p-4 space-y-4">
+            <div>
+              <h3 className="font-semibold mb-1">Question Palette</h3>
+              <p className="text-xs text-muted-foreground">
+                {answeredCount} answered • {markedCount} marked
+              </p>
             </div>
-            
-            {/* Question Numbers Grid */}
-            <div className="neu-card p-4">
-              <h3 className="text-sm font-medium mb-3 text-muted-foreground">Jump to Question:</h3>
-              <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
-                {quiz.questions.map((_, index) => {
-                  const questionAnswer = answers.find((a) => a.questionId === quiz.questions[index].id)
-                  const isAnswered = questionAnswer !== undefined
-                  const isCurrent = index === currentQuestionIndex
 
-                  return (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentQuestionIndex(index)}
-                      className={`neu-button-sm h-10 text-xs font-medium ${
-                        isCurrent ? "neu-button-active" : ""
-                      } ${
-                        isAnswered ? "bg-green-100 dark:bg-green-900 border-green-300 dark:border-green-700" : ""
-                      }`}
-                    >
-                      {index + 1}
-                    </button>
-                  )
-                })}
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="h-5 w-5 rounded bg-green-500" />
+                <span>Answered</span>
               </div>
+              <div className="flex items-center gap-2">
+                <div className="h-5 w-5 rounded bg-red-500/20 border border-red-500" />
+                <span>Not Answered</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-5 w-5 rounded bg-purple-500/20 border border-purple-500" />
+                <span>Marked</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-5 w-5 rounded bg-purple-500 flex items-center justify-center">
+                  <CheckCheck className="h-3 w-3 text-white" />
+                </div>
+                <span>Ans & Marked</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-5 gap-2">
+              {quiz.questions.map((q, idx) => {
+                const isCurrent = idx === currentQuestionIndex
+                const isAnswered = answers.some(a => a.questionId === q.id)
+                const status = questionStatuses[q.id]
+
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => navigateToQuestion(idx)}
+                    className={cn(
+                      "relative h-10 w-full rounded-lg border-2 text-sm font-medium transition-all flex items-center justify-center",
+                      isCurrent && "ring-2 ring-primary ring-offset-2",
+                      getQuestionStatusColor(q.id)
+                    )}
+                  >
+                    {idx + 1}
+                    {isAnswered && status?.markedForReview && (
+                      <CheckCheck className="absolute bottom-0.5 right-0.5 h-2.5 w-2.5" />
+                    )}
+                  </button>
+                )
+              })}
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:block">
-            <div className="neu-card p-6">
-              <div className="flex justify-between items-center">
-                <button 
-                  onClick={prevQuestion} 
-                  disabled={currentQuestionIndex === 0}
-                  className="neu-button py-2 px-6 text-sm font-medium text-primary disabled:opacity-50"
-                >
-                  Previous
-                </button>
+      {/* Bottom Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 lg:right-80 border-t bg-background/95 backdrop-blur p-3 sm:p-4 z-30">
+        <div className="container max-w-5xl">
+          {/* Desktop Layout */}
+          <div className="hidden sm:flex items-center justify-between gap-4">
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                onClick={() => navigateToQuestion(Math.max(0, currentQuestionIndex - 1))}
+                disabled={currentQuestionIndex === 0}
+                className="h-10 px-4"
+              >
+                <ChevronLeft className="mr-2 h-4 w-4" /> Previous
+              </Button>
+            </div>
 
-                <div className="flex gap-2 flex-wrap justify-center max-w-2xl overflow-x-auto px-4">
-                  {quiz.questions.map((_, index) => {
-                    const questionAnswer = answers.find((a) => a.questionId === quiz.questions[index].id)
-                    const isAnswered = questionAnswer !== undefined
-                    const isCurrent = index === currentQuestionIndex
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleClearResponse}
+                disabled={!userAnswer}
+                className="h-10"
+              >
+                Clear
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleMarkForReview}
+                className="h-10 gap-2"
+              >
+                <Bookmark className="h-4 w-4" />
+                Mark for Review
+              </Button>
+              <Button
+                variant="default"
+                onClick={handleSaveAndMarkForReview}
+                disabled={!userAnswer}
+                className="h-10 gap-2 bg-purple-600 hover:bg-purple-700"
+              >
+                <CheckCheck className="h-4 w-4" />
+                Save & Mark
+              </Button>
+              <Button
+                variant="default"
+                onClick={handleSaveAndNext}
+                disabled={!userAnswer || currentQuestionIndex === quiz.questions.length - 1}
+                className="h-10 gap-2 bg-green-600 hover:bg-green-700"
+              >
+                <Save className="h-4 w-4" />
+                Save & Next
+              </Button>
+            </div>
 
-                    return (
-                      <button
-                        key={index}
-                        onClick={() => setCurrentQuestionIndex(index)}
-                        className={`neu-button-sm w-10 h-10 text-xs font-medium flex-shrink-0 ${
-                          isCurrent ? "neu-button-active" : ""
-                        } ${
-                          isAnswered ? "bg-green-100 dark:bg-green-900 border-green-300 dark:border-green-700" : ""
-                        }`}
-                      >
-                        {index + 1}
-                      </button>
-                    )
-                  })}
-                </div>
+            <Button
+              onClick={() => navigateToQuestion(Math.min(quiz.questions.length - 1, currentQuestionIndex + 1))}
+              disabled={currentQuestionIndex === quiz.questions.length - 1}
+              className="h-10 px-4"
+            >
+              Next <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
 
-                <button
-                  onClick={nextQuestion}
-                  disabled={currentQuestionIndex === quiz.questions.length - 1}
-                  className="neu-button py-2 px-6 text-sm font-medium text-primary disabled:opacity-50"
-                >
-                  Next
-                </button>
-              </div>
+          {/* Mobile Layout */}
+          <div className="sm:hidden space-y-2">
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleClearResponse}
+                disabled={!userAnswer}
+                className="flex-1 h-11"
+              >
+                Clear
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleMarkForReview}
+                className="flex-1 h-11 gap-2"
+              >
+                <Bookmark className="h-4 w-4" />
+                Mark
+              </Button>
+              <Button
+                variant="default"
+                onClick={handleSaveAndMarkForReview}
+                disabled={!userAnswer}
+                className="flex-1 h-11 gap-2 bg-purple-600 hover:bg-purple-700"
+              >
+                <CheckCheck className="h-4 w-4" />
+                Save & Mark
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="default"
+                onClick={handleSaveAndNext}
+                disabled={!userAnswer || currentQuestionIndex === quiz.questions.length - 1}
+                className="flex-1 h-11 gap-2 bg-green-600 hover:bg-green-700"
+              >
+                <Save className="h-4 w-4" />
+                Save & Next
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                onClick={() => navigateToQuestion(Math.max(0, currentQuestionIndex - 1))}
+                disabled={currentQuestionIndex === 0}
+                className="flex-1 h-11"
+              >
+                <ChevronLeft className="mr-2 h-4 w-4" /> Prev
+              </Button>
+              <Button
+                onClick={() => navigateToQuestion(Math.min(quiz.questions.length - 1, currentQuestionIndex + 1))}
+                disabled={currentQuestionIndex === quiz.questions.length - 1}
+                className="flex-1 h-11"
+              >
+                Next <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
             </div>
           </div>
         </div>

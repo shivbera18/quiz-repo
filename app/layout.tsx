@@ -5,6 +5,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { PageTransition } from "@/components/page-transition"
 import PWAHandler from "@/components/pwa-handler"
+import { AppShell } from "@/components/layout/app-shell"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -58,15 +59,17 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Quizzy" />
       </head>
       <body className={inter.className}>
-        <ThemeProvider 
-          attribute="class" 
-          defaultTheme="light" 
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
           enableSystem
           themes={['light', 'dark', 'system', 'blue', 'green', 'purple', 'orange', 'red', 'pink', 'teal']}
           disableTransitionOnChange
         >
           <PageTransition>
-            {children}
+            <AppShell>
+              {children}
+            </AppShell>
           </PageTransition>
           {/* <PWAHandler /> */}
         </ThemeProvider>

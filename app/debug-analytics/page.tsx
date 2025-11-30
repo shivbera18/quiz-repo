@@ -83,7 +83,7 @@ export default function DebugAnalyticsPage() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-background p-8">
+      <div className="min-h-screen bg-background p-8 pt-20 md:pt-8">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold mb-8">Analytics Connection Debug</h1>
           <div className="border rounded-lg p-6">
@@ -97,7 +97,7 @@ export default function DebugAnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-8">
+    <div className="min-h-screen bg-background p-8 pt-20 md:pt-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Analytics Connection Debug</h1>
         

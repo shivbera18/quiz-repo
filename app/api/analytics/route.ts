@@ -137,9 +137,9 @@ export async function GET(request: NextRequest) {
         rawScore: result.totalScore,
         positiveMarks: sections.reasoning + sections.quantitative + sections.english,
         negativeMarks: Math.max(0, (sections.reasoning + sections.quantitative + sections.english) - result.totalScore),
-        correctAnswers: answers.filter(a => a.isCorrect).length,
-        wrongAnswers: answers.filter(a => !a.isCorrect && a.selectedAnswer !== null && a.selectedAnswer !== undefined).length,
-        unanswered: answers.filter(a => a.selectedAnswer === null || a.selectedAnswer === undefined).length,
+        correctAnswers: answers.filter(a => a.isCorrect === true).length,
+        wrongAnswers: answers.filter(a => a.isCorrect === false && !a.isUnanswered && a.userAnswer !== null && a.userAnswer !== undefined).length,
+        unanswered: answers.filter(a => a.isUnanswered === true || a.userAnswer === null || a.userAnswer === undefined).length,
         sections,
         questions: [], // Not stored in results
         answers,

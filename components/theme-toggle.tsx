@@ -1,72 +1,70 @@
 "use client"
-import { Moon, Sun, Palette, Monitor, Sunset, Leaf, Zap, Droplets, Flame, Heart, Sparkles } from "lucide-react"
+import { Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
+import { useEffect, useState } from "react"
+import { motion } from "framer-motion"
 
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 
-const themes = [
-  { name: "light", label: "Light", icon: Sun, description: "Clean light theme" },
-  { name: "dark", label: "Dark", icon: Moon, description: "Classic dark theme" },
-  { name: "system", label: "System", icon: Monitor, description: "Follow system preference" },
-  { name: "blue", label: "Ocean Blue", icon: Droplets, description: "Calming blue theme" },
-  { name: "green", label: "Forest Green", icon: Leaf, description: "Natural green theme" },
-  { name: "purple", label: "Royal Purple", icon: Zap, description: "Elegant purple theme" },
-  { name: "orange", label: "Sunset Orange", icon: Sunset, description: "Warm orange theme" },
-  { name: "red", label: "Fire Red", icon: Flame, description: "Bold red theme" },
-  { name: "pink", label: "Rose Pink", icon: Heart, description: "Soft pink theme" },
-  { name: "teal", label: "Teal Cyan", icon: Sparkles, description: "Cool teal theme" }
-]
+const iconVariants = {
+  initial: { scale: 0, rotate: -180, opacity: 0 },
+  animate: { scale: 1, rotate: 0, opacity: 1 },
+  exit: { scale: 0, rotate: 180, opacity: 0 }
+}
+
+const transition = {
+  type: "spring",
+  stiffness: 200,
+  damping: 15,
+  duration: 0.4
+}
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme()
-  
-  const currentTheme = themes.find(t => t.name === theme) || themes[0]
-  const CurrentIcon = currentTheme.icon
+  const { resolvedTheme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const toggleTheme = () => {
+    setTheme(resolvedTheme === "dark" ? "light" : "dark")
+  }
+
+  if (!mounted) {
+    return (
+      <Button variant="outline" size="icon">
+        <span className="h-[1.2rem] w-[1.2rem]" />
+        <span className="sr-only">Toggle theme</span>
+      </Button>
+    )
+  }
+
+  const isDark = resolvedTheme === "dark"
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon">
-          <CurrentIcon className="h-[1.2rem] w-[1.2rem] transition-all" />
-          <span className="sr-only">Toggle theme</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="flex items-center gap-2">
-          <Palette className="h-4 w-4" />
-          Choose Theme
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {themes.map((themeOption) => {
-          const Icon = themeOption.icon
-          return (
-            <DropdownMenuItem
-              key={themeOption.name}
-              onClick={() => setTheme(themeOption.name)}
-              className={`flex items-start gap-3 p-3 cursor-pointer ${
-                theme === themeOption.name ? "bg-accent" : ""
-              }`}
-            >
-              <Icon className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <div className="font-medium">{themeOption.label}</div>
-                <div className="text-xs text-muted-foreground">{themeOption.description}</div>
-              </div>
-              {theme === themeOption.name && (
-                <div className="h-2 w-2 rounded-full bg-primary" />
-              )}
-            </DropdownMenuItem>
-          )
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Button 
+      variant="outline" 
+      size="icon" 
+      onClick={toggleTheme}
+      className="relative overflow-hidden"
+    >
+      <motion.div
+        key={isDark ? "moon" : "sun"}
+        variants={iconVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        transition={transition}
+        className="flex items-center justify-center"
+      >
+        {isDark ? (
+          <Moon className="h-[1.2rem] w-[1.2rem]" />
+        ) : (
+          <Sun className="h-[1.2rem] w-[1.2rem]" />
+        )}
+      </motion.div>
+      <span className="sr-only">Toggle theme</span>
+    </Button>
   )
 }

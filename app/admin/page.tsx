@@ -68,6 +68,7 @@ export default function AdminPage() {
   const [success, setSuccess] = useState("")
   const [showQuizForm, setShowQuizForm] = useState(false)
   const [showAIQuizGenerator, setShowAIQuizGenerator] = useState(false)
+  const [selectedAdminTab, setSelectedAdminTab] = useState("overview")
   const [analytics, setAnalytics] = useState({
     totalUsers: 0,
     totalAttempts: 0,
@@ -766,7 +767,7 @@ export default function AdminPage() {
 
   if (loading || adminLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center pt-16 md:pt-0">
         <div className="text-center">Loading admin panel...</div>
       </div>
     )
@@ -774,7 +775,7 @@ export default function AdminPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center pt-16 md:pt-0">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">Admin access required</p>
           <Link href="/auth/login">
@@ -786,7 +787,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-16 md:pt-0">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex flex-col gap-4 mb-8">
@@ -885,8 +886,22 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 h-auto">
+        <Tabs value={selectedAdminTab} onValueChange={setSelectedAdminTab} className="space-y-6">
+          {/* Mobile: Dropdown selector */}
+          <div className="md:hidden">
+            <Select value={selectedAdminTab} onValueChange={setSelectedAdminTab}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select section" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="overview">📊 Overview & Stats</SelectItem>
+                <SelectItem value="quizzes">📝 Manage Quizzes</SelectItem>
+                <SelectItem value="subjects">📚 Subjects & Chapters</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Desktop: Tab list */}
+          <TabsList className="hidden md:grid w-full grid-cols-3 h-auto">
             <TabsTrigger value="overview" className="text-xs sm:text-sm py-2">
               Overview & Stats
             </TabsTrigger>

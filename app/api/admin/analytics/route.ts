@@ -93,7 +93,13 @@ export async function GET(request: Request) {
         quiz: quiz ? {
           id: quiz.id,
           title: quiz.title
-        } : null
+        } : null,
+        // Add user data for filtering in advanced analytics
+        user: {
+          id: result.userId,
+          name: result.userName || 'Anonymous',
+          email: result.userEmail
+        }
       }
     })
     

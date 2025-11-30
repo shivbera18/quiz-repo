@@ -218,9 +218,9 @@ export async function GET(request: NextRequest) {
         rawScore: result.totalScore, // Use totalScore as rawScore since we don't have separate field
         positiveMarks: sections.reasoning + sections.quantitative + sections.english,
         negativeMarks: 0, // Calculate from answers if needed
-        correctAnswers: answers.filter(a => a.isCorrect).length,
-        wrongAnswers: answers.filter(a => !a.isCorrect && a.selectedAnswer !== null).length,
-        unanswered: answers.filter(a => a.selectedAnswer === null || a.selectedAnswer === undefined).length,
+        correctAnswers: answers.filter(a => a.isCorrect === true).length,
+        wrongAnswers: answers.filter(a => a.isCorrect === false && !a.isUnanswered && a.userAnswer !== null && a.userAnswer !== undefined).length,
+        unanswered: answers.filter(a => a.isUnanswered === true || a.userAnswer === null || a.userAnswer === undefined).length,
         sections,
         questions: [], // Not stored in results
         answers,

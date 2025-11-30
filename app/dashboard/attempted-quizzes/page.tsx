@@ -72,14 +72,14 @@ export default function AttemptedQuizzesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center pt-16 md:pt-0">
         <div className="text-center">Loading attempted quizzes...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-16 md:pt-0">
       <div className="container mx-auto px-4 py-8 relative">
         {/* Theme Toggle Top Right */}
         <div className="absolute right-4 top-4 z-10">

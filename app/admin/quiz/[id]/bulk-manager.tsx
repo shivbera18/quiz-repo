@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Upload, Download, Trash2, Edit, X, Check } from "lucide-react"
 import { processJsonUpload } from "@/lib/json-upload-processor"
 import MathRenderer from "@/components/math-renderer"
@@ -49,6 +50,7 @@ export default function BulkManager({ quiz, onQuizUpdate, onClose }: BulkManager
   const [selectedQuestions, setSelectedQuestions] = useState<string[]>([])
   const [editingBulk, setEditingBulk] = useState(false)
   const [bulkEditData, setBulkEditData] = useState("")
+  const [selectedBulkTab, setSelectedBulkTab] = useState("upload")
 
   const handleBulkUpload = async () => {
     if (!uploadFile) return
@@ -365,8 +367,23 @@ export default function BulkManager({ quiz, onQuizUpdate, onClose }: BulkManager
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="upload" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+        <Tabs value={selectedBulkTab} onValueChange={setSelectedBulkTab} className="space-y-4">
+          {/* Mobile: Dropdown selector */}
+          <div className="sm:hidden">
+            <Select value={selectedBulkTab} onValueChange={setSelectedBulkTab}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select action" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="upload">📤 Upload</SelectItem>
+                <SelectItem value="manage">📋 Manage</SelectItem>
+                <SelectItem value="edit">✏️ Bulk Edit</SelectItem>
+                <SelectItem value="export">📥 Export</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Desktop: Tab list */}
+          <TabsList className="hidden sm:grid w-full grid-cols-4">
             <TabsTrigger value="upload">Upload</TabsTrigger>
             <TabsTrigger value="manage">Manage</TabsTrigger>
             <TabsTrigger value="edit">Bulk Edit</TabsTrigger>
