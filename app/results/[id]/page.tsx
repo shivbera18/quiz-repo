@@ -631,7 +631,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                         )}
 
                         <div className="space-y-2">
-                          {question.options.map((option, optionIndex) => {
+                          {(question.options || []).map((option, optionIndex) => {
                             const isSelected = optionIndex === question.selectedAnswer
                             const isCorrect = optionIndex === question.correctAnswer
 

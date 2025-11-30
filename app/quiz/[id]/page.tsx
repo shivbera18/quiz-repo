@@ -407,9 +407,11 @@ export default function QuizPage({ params }: { params: { id: string } }) {
               <AlertDialogContent className="max-w-[calc(100%-2rem)] sm:max-w-lg">
                 <AlertDialogHeader>
                   <AlertDialogTitle>Submit Quiz?</AlertDialogTitle>
-                  <AlertDialogDescription className="text-sm space-y-2">
-                    <p>Answered: {answeredCount}/{quiz.questions.length} | Marked for Review: {markedCount}</p>
-                    {answeredCount < quiz.questions.length && <p className="text-destructive">Warning: {quiz.questions.length - answeredCount} questions unanswered</p>}
+                  <AlertDialogDescription asChild>
+                    <div className="text-sm space-y-2 text-muted-foreground">
+                      <p>Answered: {answeredCount}/{quiz.questions.length} | Marked for Review: {markedCount}</p>
+                      {answeredCount < quiz.questions.length && <p className="text-destructive">Warning: {quiz.questions.length - answeredCount} questions unanswered</p>}
+                    </div>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
