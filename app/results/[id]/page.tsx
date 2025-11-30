@@ -17,6 +17,8 @@ import {
   ChevronDown,
   ChevronRight,
   TrendingUp,
+  Clock,
+  Timer,
 } from "lucide-react"
 import MathRenderer from "@/components/math-renderer"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -32,6 +34,15 @@ interface QuestionResult {
   section: string
   explanation?: string
   image?: string
+  timeSpent?: number // Time spent on this question in milliseconds
+}
+
+// Helper function to format milliseconds to mm:ss format
+const formatTime = (ms: number): string => {
+  const totalSeconds = Math.round(ms / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
 }
 
 interface Result {
@@ -528,6 +539,138 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
           </Card>
         )}
 
+        {/* Time Analysis */}
+        {(() => {
+          const questionsWithTime = result.questions.filter((q: QuestionResult) => q.timeSpent !== undefined && q.timeSpent > 0)
+          if (questionsWithTime.length === 0) return null
+          
+          const totalTime = questionsWithTime.reduce((sum: number, q: QuestionResult) => sum + (q.timeSpent || 0), 0)
+          const avgTime = totalTime / questionsWithTime.length
+          const maxTime = Math.max(...questionsWithTime.map((q: QuestionResult) => q.timeSpent || 0))
+          const minTime = Math.min(...questionsWithTime.map((q: QuestionResult) => q.timeSpent || 0))
+          const maxTimeQuestion = questionsWithTime.find((q: QuestionResult) => q.timeSpent === maxTime)
+          
+          // Group by section
+          const sectionTimes: { [key: string]: { total: number; count: number } } = {}
+          questionsWithTime.forEach((q: QuestionResult) => {
+            const section = q.section || 'unknown'
+            if (!sectionTimes[section]) {
+              sectionTimes[section] = { total: 0, count: 0 }
+            }
+            sectionTimes[section].total += q.timeSpent || 0
+            sectionTimes[section].count += 1
+          })
+          
+          return (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Timer className="h-5 w-5" />
+                  Time Analysis
+                </CardTitle>
+                <CardDescription>Detailed breakdown of time spent on each question</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Time Stats Overview */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="p-4 bg-muted rounded-lg text-center">
+                    <div className="text-2xl font-bold">{formatTime(totalTime)}</div>
+                    <div className="text-xs text-muted-foreground">Total Time</div>
+                  </div>
+                  <div className="p-4 bg-muted rounded-lg text-center">
+                    <div className="text-2xl font-bold">{formatTime(avgTime)}</div>
+                    <div className="text-xs text-muted-foreground">Avg per Question</div>
+                  </div>
+                  <div className="p-4 bg-muted rounded-lg text-center">
+                    <div className="text-2xl font-bold text-blue-500">{formatTime(minTime)}</div>
+                    <div className="text-xs text-muted-foreground">Fastest</div>
+                  </div>
+                  <div className="p-4 bg-muted rounded-lg text-center">
+                    <div className="text-2xl font-bold text-orange-500">{formatTime(maxTime)}</div>
+                    <div className="text-xs text-muted-foreground">Slowest</div>
+                  </div>
+                </div>
+                
+                {/* Time by Section */}
+                {Object.keys(sectionTimes).length > 1 && (
+                  <div>
+                    <h4 className="font-semibold mb-3">Time by Section</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {Object.entries(sectionTimes).map(([section, data]) => (
+                        <div key={section} className="p-3 border rounded-lg">
+                          <div className="text-sm font-medium capitalize">{section}</div>
+                          <div className="text-lg font-bold">{formatTime(data.total / data.count)}</div>
+                          <div className="text-xs text-muted-foreground">avg • {data.count} questions</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Per Question Time Table */}
+                <div>
+                  <h4 className="font-semibold mb-3">Time per Question</h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-2 px-2 font-medium">Q#</th>
+                          <th className="text-left py-2 px-2 font-medium">Time</th>
+                          <th className="text-left py-2 px-2 font-medium">Status</th>
+                          <th className="text-left py-2 px-2 font-medium">vs Avg</th>
+                          <th className="text-left py-2 px-2 font-medium hidden sm:table-cell">Section</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {result.questions.map((q: QuestionResult, idx: number) => {
+                          const timeSpent = q.timeSpent || 0
+                          const timeDiff = timeSpent - avgTime
+                          const timeDiffPercent = avgTime > 0 ? Math.round((timeDiff / avgTime) * 100) : 0
+                          const isUnanswered = q.selectedAnswer === -1
+                          
+                          return (
+                            <tr key={idx} className="border-b border-dashed last:border-0">
+                              <td className="py-2 px-2 font-mono">{idx + 1}</td>
+                              <td className="py-2 px-2">
+                                <span className={`font-medium ${timeSpent > avgTime * 1.5 ? 'text-orange-500' : timeSpent < avgTime * 0.5 && timeSpent > 0 ? 'text-blue-500' : ''}`}>
+                                  {timeSpent > 0 ? formatTime(timeSpent) : '-'}
+                                </span>
+                              </td>
+                              <td className="py-2 px-2">
+                                {isUnanswered ? (
+                                  <Badge variant="outline" className="text-xs">Skipped</Badge>
+                                ) : q.isCorrect ? (
+                                  <Badge variant="default" className="text-xs bg-green-500">✓ Correct</Badge>
+                                ) : (
+                                  <Badge variant="destructive" className="text-xs">✗ Wrong</Badge>
+                                )}
+                              </td>
+                              <td className="py-2 px-2">
+                                {timeSpent > 0 ? (
+                                  timeDiff > 0 ? (
+                                    <span className="text-orange-500 text-xs">+{formatTime(Math.abs(timeDiff))} ({timeDiffPercent > 0 ? '+' : ''}{timeDiffPercent}%)</span>
+                                  ) : (
+                                    <span className="text-blue-500 text-xs">-{formatTime(Math.abs(timeDiff))} ({timeDiffPercent}%)</span>
+                                  )
+                                ) : (
+                                  <span className="text-muted-foreground text-xs">-</span>
+                                )}
+                              </td>
+                              <td className="py-2 px-2 hidden sm:table-cell">
+                                <span className="text-xs text-muted-foreground capitalize">{q.section || '-'}</span>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })()}
+
         {/* Section Filter */}
         <Card className="mb-6">
           <CardHeader>
@@ -596,6 +739,12 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                               <Badge variant="outline" className="ml-2 whitespace-nowrap">
                                 {question.section}
                               </Badge>
+                              {question.timeSpent !== undefined && question.timeSpent > 0 && (
+                                <Badge variant="secondary" className="ml-2 whitespace-nowrap text-xs px-2 py-1">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  {formatTime(question.timeSpent)}
+                                </Badge>
+                              )}
                               {isWrong && result.negativeMarking && (
                                 <Badge variant="destructive" className="ml-2 whitespace-nowrap text-xs px-2 py-1">
                                   -{result.negativeMarkValue} marks

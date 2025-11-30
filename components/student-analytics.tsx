@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -17,7 +18,7 @@ import {
   Trophy, TrendingUp, TrendingDown, Target, Clock, BookOpen,
   Activity, CheckCircle2, XCircle, MinusCircle, Zap, Award,
   Calendar, BarChart3, PieChart as PieChartIcon, Flame, Brain,
-  ArrowUp, ArrowDown, Minus, Timer, ChevronDown
+  ArrowUp, ArrowDown, Minus, Timer, ChevronDown, ChevronRight, ExternalLink
 } from "lucide-react"
 import { format, subDays, differenceInDays } from "date-fns"
 
@@ -891,94 +892,96 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Timer className="h-5 w-5" />
-                Question-wise Time Breakdown
+                Quiz Time Analysis
               </CardTitle>
-              <CardDescription>Time spent on each question in recent quizzes (newest first)</CardDescription>
+              <CardDescription>Click on a quiz to view detailed time analysis and results</CardDescription>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[400px]">
-                <div className="space-y-6">
+                <div className="space-y-3">
                   {filteredResults.slice(0, 10).map((result, quizIdx) => {
                     const answersWithTime = result.answers.filter(a => a.timeSpent !== undefined && a.timeSpent > 0)
-                    const avgTime = answersWithTime.length > 0 
+                    const avgTimePerQ = answersWithTime.length > 0 
                       ? answersWithTime.reduce((sum, a) => sum + (a.timeSpent || 0), 0) / answersWithTime.length 
-                      : result.timeSpent / result.answers.length
+                      : (result.timeSpent * 1000) / result.answers.length
+                    const maxTime = result.answers.reduce((max, a) => Math.max(max, a.timeSpent || 0), 0)
+                    const minTime = result.answers.filter(a => a.timeSpent && a.timeSpent > 0).reduce((min, a) => Math.min(min, a.timeSpent || Infinity), Infinity)
                     
                     return (
-                      <div key={result._id || quizIdx} className="border rounded-lg p-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                          <div>
-                            <h4 className="font-semibold">{result.quizName}</h4>
-                            <p className="text-xs text-muted-foreground">
-                              {format(new Date(result.date), 'MMM dd, yyyy')} • {result.answers.length} questions • {Math.round(result.timeSpent / 60)} min total
-                            </p>
+                      <Link 
+                        key={result._id || quizIdx} 
+                        href={`/results/${result._id || result.id}`}
+                        className="block"
+                      >
+                        <div className="border rounded-lg p-4 hover:bg-muted/50 hover:border-primary/50 transition-all cursor-pointer group">
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-semibold truncate group-hover:text-primary transition-colors">{result.quizName}</h4>
+                                <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {format(new Date(result.date), 'MMM dd, yyyy')} • {result.answers.length} questions
+                              </p>
+                            </div>
+                            
+                            <div className="flex items-center gap-3 sm:gap-6">
+                              {/* Time Stats */}
+                              <div className="hidden sm:flex items-center gap-4 text-xs">
+                                <div className="text-center">
+                                  <div className="font-semibold text-sm">{Math.round(result.timeSpent / 60)}m</div>
+                                  <div className="text-muted-foreground">Total</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="font-semibold text-sm">{formatTime(avgTimePerQ)}</div>
+                                  <div className="text-muted-foreground">Avg/Q</div>
+                                </div>
+                                {answersWithTime.length > 0 && (
+                                  <div className="text-center">
+                                    <div className="font-semibold text-sm text-orange-500">{formatTime(maxTime)}</div>
+                                    <div className="text-muted-foreground">Max</div>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Accuracy Badge */}
+                              <Badge variant={result.correctAnswers / result.answers.length >= 0.7 ? "default" : result.correctAnswers / result.answers.length >= 0.5 ? "secondary" : "destructive"}>
+                                {Math.round((result.correctAnswers / result.answers.length) * 100)}%
+                              </Badge>
+                              
+                              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                            </div>
                           </div>
-                          <Badge variant={result.correctAnswers / result.answers.length >= 0.7 ? "default" : result.correctAnswers / result.answers.length >= 0.5 ? "secondary" : "destructive"}>
-                            {Math.round((result.correctAnswers / result.answers.length) * 100)}% accuracy
-                          </Badge>
+                          
+                          {/* Mobile time stats */}
+                          <div className="flex sm:hidden items-center gap-4 mt-3 pt-3 border-t text-xs">
+                            <div className="flex-1 text-center">
+                              <div className="font-semibold">{Math.round(result.timeSpent / 60)}m</div>
+                              <div className="text-muted-foreground">Total</div>
+                            </div>
+                            <div className="flex-1 text-center">
+                              <div className="font-semibold">{formatTime(avgTimePerQ)}</div>
+                              <div className="text-muted-foreground">Avg/Q</div>
+                            </div>
+                            {answersWithTime.length > 0 && (
+                              <div className="flex-1 text-center">
+                                <div className="font-semibold text-orange-500">{formatTime(maxTime)}</div>
+                                <div className="text-muted-foreground">Max</div>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        
-                        {answersWithTime.length > 0 ? (
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr className="border-b">
-                                  <th className="text-left py-2 px-2 font-medium">Q#</th>
-                                  <th className="text-left py-2 px-2 font-medium">Time</th>
-                                  <th className="text-left py-2 px-2 font-medium">Status</th>
-                                  <th className="text-left py-2 px-2 font-medium">vs Avg</th>
-                                  <th className="text-left py-2 px-2 font-medium hidden sm:table-cell">Section</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {result.answers.map((answer, qIdx) => {
-                                  const timeSpent = answer.timeSpent || 0
-                                  const timeDiff = timeSpent - avgTime
-                                  const timeDiffPercent = avgTime > 0 ? Math.round((timeDiff / avgTime) * 100) : 0
-                                  
-                                  return (
-                                    <tr key={answer.questionId || qIdx} className="border-b border-dashed last:border-0">
-                                      <td className="py-2 px-2 font-mono">{qIdx + 1}</td>
-                                      <td className="py-2 px-2">
-                                        <span className={`font-medium ${timeSpent > avgTime * 1.5 ? 'text-orange-500' : timeSpent < avgTime * 0.5 ? 'text-blue-500' : ''}`}>
-                                          {formatTime(timeSpent)}
-                                        </span>
-                                      </td>
-                                      <td className="py-2 px-2">
-                                        {answer.isUnanswered ? (
-                                          <Badge variant="outline" className="text-xs">Skipped</Badge>
-                                        ) : answer.isCorrect ? (
-                                          <Badge variant="default" className="text-xs bg-green-500">✓ Correct</Badge>
-                                        ) : (
-                                          <Badge variant="destructive" className="text-xs">✗ Wrong</Badge>
-                                        )}
-                                      </td>
-                                      <td className="py-2 px-2">
-                                        {timeDiff > 0 ? (
-                                          <span className="text-orange-500 text-xs">{formatTimeDiff(timeDiff)} ({timeDiffPercent > 0 ? '+' : ''}{timeDiffPercent}%)</span>
-                                        ) : (
-                                          <span className="text-blue-500 text-xs">{formatTimeDiff(timeDiff)} ({timeDiffPercent}%)</span>
-                                        )}
-                                      </td>
-                                      <td className="py-2 px-2 hidden sm:table-cell">
-                                        <span className="text-xs text-muted-foreground capitalize">{answer.section || '-'}</span>
-                                      </td>
-                                    </tr>
-                                  )
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        ) : (
-                          <div className="text-center py-4 text-sm text-muted-foreground">
-                            <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                            Per-question time data not available for this quiz
-                            <p className="text-xs mt-1">Older quizzes may not have detailed time tracking</p>
-                          </div>
-                        )}
-                      </div>
+                      </Link>
                     )
                   })}
+                  
+                  {filteredResults.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>No quiz results yet</p>
+                      <p className="text-sm mt-1">Complete some quizzes to see your time analysis</p>
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
             </CardContent>
