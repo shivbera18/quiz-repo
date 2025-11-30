@@ -115,7 +115,7 @@ export function TopHeader() {
   if (!user) return null
 
   return (
-    <div className="fixed top-4 right-4 z-40 flex items-center gap-3">
+    <div className="flex items-center justify-end gap-3 px-4 sm:px-6 md:px-8 pt-4 pb-2">
       {/* Announcements Bell */}
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
