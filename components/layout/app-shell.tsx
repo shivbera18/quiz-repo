@@ -3,6 +3,7 @@
 import * as React from "react"
 import { usePathname } from "next/navigation"
 import { Sidebar } from "./sidebar"
+import { TopHeader } from "./top-header"
 import { SidebarProvider, useSidebar } from "./sidebar-context"
 import { cn } from "@/lib/utils"
 
@@ -20,6 +21,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     const isQuizPage = pathname?.startsWith("/quiz/") // Active quiz taking
     const isResultsPage = pathname?.startsWith("/results/") // Reviewing quiz results
     const isHomePage = pathname === "/" // Home redirect page
+    const isAdminPage = pathname?.startsWith("/admin") // Admin pages don't need TopHeader
     
     // Check if this is a focused page (no sidebar needed)
     const isFocusedPage = isAuthPage || isQuizPage || isResultsPage || isHomePage
@@ -54,6 +56,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     return (
         <>
             <Sidebar />
+            {!isAdminPage && <TopHeader />}
             <main
                 className={cn(
                     "min-h-screen",

@@ -95,3 +95,24 @@
     }
   }
 }
+
+/* React Day Picker v9 Styles */
+.rdp-root {
+  --rdp-accent-color: hsl(var(--primary));
+  --rdp-accent-background-color: hsl(var(--primary) / 0.1);
+}
+
+.rdp-day_button:hover {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+.rdp-selected .rdp-day_button {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.rdp-today:not(.rdp-selected) .rdp-day_button {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}

@@ -122,35 +122,20 @@ export function Sidebar() {
                 }}
             >
                 {/* Header */}
-                <div className="flex h-20 items-center justify-between px-6">
-                    <div className="flex items-center gap-3 overflow-hidden">
-                        {/* App Icon - Always visible */}
-                        <div 
-                            className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-xl"
-                            style={{ background: 'linear-gradient(to bottom right, #7c3aed, #2563eb)' }}
-                        >
-                            Q
-                        </div>
-                        {/* Text - Animated */}
-                        <div 
-                            className={cn(
-                                "overflow-hidden whitespace-nowrap transition-all duration-250 ease-out",
-                                isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
-                            )}
-                            style={{ 
-                                transition: "width 250ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms ease-out"
-                            }}
-                        >
-                            <span className="text-2xl font-bold tracking-tight">uizzy</span>
-                        </div>
-                    </div>
+                <div className={cn(
+                    "flex h-20 items-center",
+                    isCollapsed ? "justify-center px-2" : "justify-between px-6"
+                )}>
+                    {/* App Name - Text only (hidden when collapsed) */}
+                    {!isCollapsed && (
+                        <span className="text-2xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent">
+                            Quizzy
+                        </span>
+                    )}
                     <Button
                         variant="ghost"
                         size="icon"
-                        className={cn(
-                            "hidden md:flex transition-opacity duration-200",
-                            isCollapsed && "absolute right-2"
-                        )}
+                        className="hidden md:flex h-10 w-10"
                         onClick={() => setIsCollapsed(!isCollapsed)}
                     >
                         {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
@@ -158,31 +143,29 @@ export function Sidebar() {
                 </div>
 
                 {/* Nav Items */}
-                <nav className="flex-1 space-y-2 px-4 py-6 overflow-hidden">
+                <nav className={cn(
+                    "flex-1 space-y-2 py-6 overflow-hidden flex flex-col",
+                    isCollapsed ? "items-center px-0" : "items-stretch px-4"
+                )}>
                     {sidebarItems.map((item) => {
                         const isActive = pathname === item.href || 
                             (item.href !== '/dashboard' && item.href !== '/admin' && pathname.startsWith(item.href)) ||
                             (item.href === '/admin' && pathname.startsWith('/admin'))
                         return (
-                            <Link key={item.href} href={item.href}>
+                            <Link key={item.href} href={item.href} className={isCollapsed ? "" : "w-full"}>
                                 <div
                                     className={cn(
-                                        "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground",
+                                        "flex items-center rounded-xl text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground",
                                         isActive && "bg-primary/10 text-primary hover:bg-primary/15",
-                                        isCollapsed && "justify-center px-2"
+                                        isCollapsed ? "h-12 w-12 justify-center" : "gap-3 px-4 py-3 w-full"
                                     )}
-                                    style={{ transition: "padding 250ms cubic-bezier(0.4, 0, 0.2, 1), background-color 150ms ease" }}
                                 >
                                     <item.icon className={cn("h-5 w-5 flex-shrink-0", isActive && "text-primary")} />
-                                    <span 
-                                        className={cn(
-                                            "whitespace-nowrap overflow-hidden transition-all",
-                                            isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
-                                        )}
-                                        style={{ transition: "width 250ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms ease" }}
-                                    >
-                                        {item.label}
-                                    </span>
+                                    {!isCollapsed && (
+                                        <span className="whitespace-nowrap">
+                                            {item.label}
+                                        </span>
+                                    )}
                                 </div>
                             </Link>
                         )
@@ -220,13 +203,7 @@ export function Sidebar() {
                     >
                         <div className="flex h-16 items-center justify-between px-6 shrink-0">
                             <div className="flex items-center gap-3">
-                                <div 
-                                    className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-lg"
-                                    style={{ background: 'linear-gradient(to bottom right, #7c3aed, #2563eb)' }}
-                                >
-                                    Q
-                                </div>
-                                <span className="text-2xl font-bold tracking-tight">uizzy</span>
+                                <span className="text-2xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent">Quizzy</span>
                             </div>
                             <Button variant="ghost" size="icon" onClick={() => setIsMobileOpen(false)}>
                                 <X className="h-5 w-5" />

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Trash2, Users, BarChart3, Edit, Eye, Clock, BookOpen, Shield, Sparkles, Trophy, FileText, Brain, Hash, Pencil, Palette, Music } from "lucide-react"
+import { Plus, Trash2, Users, BarChart3, Edit, Eye, Clock, BookOpen, Shield, Sparkles, Trophy, FileText, Brain, Hash, Pencil, Palette, Music, Megaphone } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/hooks/use-auth"
 import AIQuizGenerator from "./ai-quiz-generator"
@@ -917,7 +917,7 @@ export default function AdminPage() {
             </div>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                 <Link href="/admin/analytics">
                   <CardHeader className="text-center pb-2">
@@ -951,6 +951,20 @@ export default function AdminPage() {
                   <CardContent>
                     <CardDescription className="text-center text-xs">
                       Centralized question repository for all quizzes
+                    </CardDescription>
+                  </CardContent>
+                </Link>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                <Link href="/admin/announcements">
+                  <CardHeader className="text-center pb-2">
+                    <Megaphone className="h-8 w-8 md:h-12 md:w-12 mx-auto text-pink-600 mb-2" />
+                    <CardTitle className="text-sm md:text-base">Announcements</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <CardDescription className="text-center text-xs">
+                      Create and manage announcements for users
                     </CardDescription>
                   </CardContent>
                 </Link>
