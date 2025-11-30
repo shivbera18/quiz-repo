@@ -15,6 +15,7 @@ interface User {
 let cachedUser: User | null = null
 let cachedToken: string | null = null
 let cachedUserData: string | null = null
+let isHydrated = false
 
 // Storage subscription for useSyncExternalStore
 function subscribe(callback: () => void) {
@@ -29,6 +30,9 @@ function subscribe(callback: () => void) {
 
 // Get snapshot of user from localStorage - must return stable reference
 function getSnapshot(): User | null {
+  // Mark as hydrated once we're on client
+  isHydrated = true
+  
   try {
     const token = localStorage.getItem("token")
     const userData = localStorage.getItem("user")
@@ -70,8 +74,20 @@ function getServerSnapshot(): User | null {
   return null
 }
 
+// Check if we're hydrated
+export function useIsHydrated() {
+  const [hydrated, setHydrated] = useState(false)
+  
+  useEffect(() => {
+    setHydrated(true)
+  }, [])
+  
+  return hydrated
+}
+
 export function useAuth(requireAdmin = false) {
   const router = useRouter()
+  const [isLoading, setIsLoading] = useState(true)
   
   // Use useSyncExternalStore for reliable cross-navigation state
   const user = useSyncExternalStore(
