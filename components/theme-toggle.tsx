@@ -4,8 +4,6 @@ import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 
-import { Button } from "@/components/ui/button"
-
 const iconVariants = {
   initial: { scale: 0, rotate: -180, opacity: 0 },
   animate: { scale: 1, rotate: 0, opacity: 1 },
@@ -33,21 +31,19 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <Button variant="outline" size="icon">
-        <span className="h-[1.2rem] w-[1.2rem]" />
-        <span className="sr-only">Toggle theme</span>
-      </Button>
+      <div className="h-9 w-9 flex items-center justify-center">
+        <span className="h-5 w-5" />
+      </div>
     )
   }
 
   const isDark = resolvedTheme === "dark"
 
   return (
-    <Button 
-      variant="outline" 
-      size="icon" 
+    <button 
       onClick={toggleTheme}
-      className="relative overflow-hidden"
+      className="h-9 w-9 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+      aria-label="Toggle theme"
     >
       <motion.div
         key={isDark ? "moon" : "sun"}
@@ -59,12 +55,11 @@ export function ThemeToggle() {
         className="flex items-center justify-center"
       >
         {isDark ? (
-          <Moon className="h-[1.2rem] w-[1.2rem]" />
+          <Moon className="h-5 w-5" />
         ) : (
-          <Sun className="h-[1.2rem] w-[1.2rem]" />
+          <Sun className="h-5 w-5" />
         )}
       </motion.div>
-      <span className="sr-only">Toggle theme</span>
-    </Button>
+    </button>
   )
 }
