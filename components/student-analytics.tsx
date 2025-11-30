@@ -29,8 +29,25 @@ interface QuizAnswer {
   question?: string
   options?: string[]
   correctAnswer?: number
-  timeSpent?: number // Time spent on this question in seconds
+  timeSpent?: number // Time spent on this question in milliseconds
   isUnanswered?: boolean // Whether question was left unanswered
+}
+
+// Helper function to format milliseconds to mm:ss or m:ss format
+const formatTime = (ms: number): string => {
+  const totalSeconds = Math.round(ms / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
+}
+
+// Helper function to format time difference
+const formatTimeDiff = (diffMs: number): string => {
+  const totalSeconds = Math.round(Math.abs(diffMs) / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  const sign = diffMs >= 0 ? '+' : '-'
+  return `${sign}${minutes}:${seconds.toString().padStart(2, '0')}`
 }
 
 interface QuizResult {
@@ -819,22 +836,22 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                   <div className="p-4 bg-muted rounded-lg text-center">
                     <div className="text-2xl font-bold">
                       {filteredResults.length > 0 && filteredResults[0].answers.length > 0
-                        ? Math.round(filteredResults.reduce((acc, r) => {
+                        ? formatTime(filteredResults.reduce((acc, r) => {
                             const avgQTime = r.answers.filter(a => a.timeSpent).length > 0
                               ? r.answers.filter(a => a.timeSpent).reduce((sum, a) => sum + (a.timeSpent || 0), 0) / r.answers.filter(a => a.timeSpent).length
                               : r.timeSpent / r.answers.length
                             return acc + avgQTime
                           }, 0) / filteredResults.length)
-                        : 0}s
+                        : '0:00'}
                     </div>
                     <div className="text-xs text-muted-foreground">Avg per Question</div>
                   </div>
                   <div className="p-4 bg-muted rounded-lg text-center">
                     <div className="text-2xl font-bold">
-                      {filteredResults.reduce((max, r) => {
+                      {formatTime(filteredResults.reduce((max, r) => {
                         const maxTime = r.answers.reduce((m, a) => Math.max(m, a.timeSpent || 0), 0)
                         return Math.max(max, maxTime)
-                      }, 0)}s
+                      }, 0))}
                     </div>
                     <div className="text-xs text-muted-foreground">Max on Single Q</div>
                   </div>
@@ -924,7 +941,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                                       <td className="py-2 px-2 font-mono">{qIdx + 1}</td>
                                       <td className="py-2 px-2">
                                         <span className={`font-medium ${timeSpent > avgTime * 1.5 ? 'text-orange-500' : timeSpent < avgTime * 0.5 ? 'text-blue-500' : ''}`}>
-                                          {timeSpent}s
+                                          {formatTime(timeSpent)}
                                         </span>
                                       </td>
                                       <td className="py-2 px-2">
@@ -938,9 +955,9 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                                       </td>
                                       <td className="py-2 px-2">
                                         {timeDiff > 0 ? (
-                                          <span className="text-orange-500 text-xs">+{Math.round(timeDiff)}s ({timeDiffPercent > 0 ? '+' : ''}{timeDiffPercent}%)</span>
+                                          <span className="text-orange-500 text-xs">{formatTimeDiff(timeDiff)} ({timeDiffPercent > 0 ? '+' : ''}{timeDiffPercent}%)</span>
                                         ) : (
-                                          <span className="text-blue-500 text-xs">{Math.round(timeDiff)}s ({timeDiffPercent}%)</span>
+                                          <span className="text-blue-500 text-xs">{formatTimeDiff(timeDiff)} ({timeDiffPercent}%)</span>
                                         )}
                                       </td>
                                       <td className="py-2 px-2 hidden sm:table-cell">
@@ -993,7 +1010,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                     .filter(([section]) => section !== 'unknown')
                     .map(([section, data]) => ({
                       section: section.charAt(0).toUpperCase() + section.slice(1),
-                      avgTime: data.count > 0 ? Math.round(data.total / data.count) : 0,
+                      avgTime: data.count > 0 ? Math.round((data.total / data.count) / 1000) : 0,
                       questions: data.count
                     }))
                 })()}>
