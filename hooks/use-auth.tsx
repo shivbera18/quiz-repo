@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useCallback, useSyncExternalStore } from "react"
 import { useRouter } from "next/navigation"
 
 interface User {
@@ -8,13 +8,17 @@ interface User {
   email: string
   isAdmin: boolean
   userType: "admin" | "student"
-  token?: string // Add token property for API auth
+  token?: string
 }
 
-// Helper to get initial user from localStorage (runs synchronously)
-function getInitialUser(): User | null {
-  if (typeof window === 'undefined') return null
-  
+// Storage subscription for useSyncExternalStore
+function subscribe(callback: () => void) {
+  window.addEventListener("storage", callback)
+  return () => window.removeEventListener("storage", callback)
+}
+
+// Get snapshot of user from localStorage
+function getSnapshot(): User | null {
   try {
     const token = localStorage.getItem("token")
     const userData = localStorage.getItem("user")
@@ -36,41 +40,52 @@ function getInitialUser(): User | null {
   }
 }
 
+// Server snapshot (always null)
+function getServerSnapshot(): User | null {
+  return null
+}
+
 export function useAuth(requireAdmin = false) {
-  // Initialize with localStorage data immediately (no loading flash)
-  const [user, setUser] = useState<User | null>(() => getInitialUser())
-  const [loading, setLoading] = useState(() => typeof window === 'undefined')
   const router = useRouter()
-
+  
+  // Use useSyncExternalStore for reliable cross-navigation state
+  const user = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot
+  )
+  
+  // Track if we've done initial hydration
+  const [isHydrated, setIsHydrated] = useState(false)
+  
   useEffect(() => {
-    // Re-check on mount in case localStorage changed
-    const currentUser = getInitialUser()
+    setIsHydrated(true)
+  }, [])
+
+  // Handle redirects
+  useEffect(() => {
+    if (!isHydrated) return
     
-    if (!currentUser) {
-      setUser(null)
-      setLoading(false)
-      if (requireAdmin) {
-        router.push("/auth/login")
-      }
+    if (!user && requireAdmin) {
+      router.push("/auth/login")
       return
     }
 
-    // Admin check
-    if (requireAdmin && (!currentUser.isAdmin || currentUser.userType !== "admin")) {
+    if (user && requireAdmin && (!user.isAdmin || user.userType !== "admin")) {
       router.push("/dashboard")
-      return
     }
+  }, [user, requireAdmin, router, isHydrated])
 
-    setUser(currentUser)
-    setLoading(false)
-  }, [requireAdmin, router])
-
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem("token")
     localStorage.removeItem("user")
-    setUser(null)
+    // Trigger storage event for other tabs
+    window.dispatchEvent(new StorageEvent("storage", { key: "token" }))
     router.push("/auth/login")
-  }
+  }, [router])
+
+  // Loading is true only during server-side render
+  const loading = !isHydrated
 
   return { user, loading, logout }
 }
