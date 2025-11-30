@@ -7,21 +7,21 @@ interface SidebarContextType {
     setIsCollapsed: (value: boolean) => void
     isMobileOpen: boolean
     setIsMobileOpen: (value: boolean) => void
+    isHydrated: boolean
 }
 
 const SidebarContext = React.createContext<SidebarContextType | undefined>(undefined)
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
-    const [isCollapsed, setIsCollapsedState] = React.useState(false)
+    // Initialize with null to indicate "not yet loaded"
+    const [isCollapsed, setIsCollapsedState] = React.useState<boolean | null>(null)
     const [isMobileOpen, setIsMobileOpen] = React.useState(false)
     const [isHydrated, setIsHydrated] = React.useState(false)
 
     // Load collapsed state from localStorage on mount
     React.useEffect(() => {
         const stored = localStorage.getItem("sidebar-collapsed")
-        if (stored !== null) {
-            setIsCollapsedState(stored === "true")
-        }
+        setIsCollapsedState(stored === "true")
         setIsHydrated(true)
     }, [])
 
@@ -31,12 +31,13 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem("sidebar-collapsed", String(value))
     }, [])
 
-    // Prevent hydration mismatch by not rendering until hydrated
     const contextValue = React.useMemo(() => ({
-        isCollapsed: isHydrated ? isCollapsed : false,
+        // Use false as default only after hydration
+        isCollapsed: isCollapsed ?? false,
         setIsCollapsed,
         isMobileOpen,
         setIsMobileOpen,
+        isHydrated,
     }), [isCollapsed, isHydrated, setIsCollapsed, isMobileOpen])
 
     return (

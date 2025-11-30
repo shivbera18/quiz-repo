@@ -32,7 +32,7 @@ const baseSidebarItems = [
 
 export function Sidebar() {
     const pathname = usePathname()
-    const { isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen } = useSidebar()
+    const { isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen, isHydrated } = useSidebar()
     const { user, logout } = useAuth()
     
     // Scroll-based hamburger visibility (only show at top)
@@ -101,14 +101,18 @@ export function Sidebar() {
             </AnimatePresence>
 
             {/* Desktop Sidebar - Floating Design */}
-            <motion.aside
+            <aside
                 className={cn(
-                    "fixed top-4 left-4 z-40 border rounded-2xl bg-card/80 backdrop-blur-xl shadow-xl transition-all duration-300 ease-in-out hidden md:flex flex-col",
-                    isCollapsed ? "w-20" : "w-[280px]"
+                    "fixed top-4 left-4 z-40 border rounded-2xl bg-card/80 backdrop-blur-xl shadow-xl hidden md:flex flex-col",
+                    isCollapsed ? "w-20" : "w-[280px]",
+                    // Hide until hydrated to prevent flash
+                    !isHydrated && "invisible"
                 )}
-                style={{ height: "calc(100vh - 32px)" }}
-                initial={false}
-                animate={{ width: isCollapsed ? 80 : 280 }}
+                style={{ 
+                    height: "calc(100vh - 32px)",
+                    // Only animate after hydration
+                    transition: isHydrated ? "width 300ms ease-in-out" : "none"
+                }}
             >
                 {/* Header */}
                 <div className="flex h-20 items-center justify-between px-6">
@@ -169,7 +173,7 @@ export function Sidebar() {
                         </Button>
                     </div>
                 </div>
-            </motion.aside>
+            </aside>
 
             {/* Mobile Sidebar */}
             <AnimatePresence>
