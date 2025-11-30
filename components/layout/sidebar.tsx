@@ -41,7 +41,13 @@ export function Sidebar() {
     React.useEffect(() => {
         const handleScroll = () => {
             // Show hamburger only when at top (within 50px threshold)
-            setIsAtTop(window.scrollY <= 50)
+            const atTop = window.scrollY <= 50
+            setIsAtTop(atTop)
+            // Update CSS variable for dynamic padding
+            document.documentElement.style.setProperty(
+                '--mobile-header-padding', 
+                atTop ? '4rem' : '0rem'
+            )
         }
         
         window.addEventListener('scroll', handleScroll, { passive: true })

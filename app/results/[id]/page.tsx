@@ -238,7 +238,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen neu-surface flex items-center justify-center pt-16 md:pt-0">
+      <div className="min-h-screen neu-surface flex items-center justify-center mobile-header-safe-zone">
         <div className="neu-card p-8 text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading results...</p>
@@ -249,7 +249,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
 
   if (error || !result) {
     return (
-      <div className="min-h-screen neu-surface flex items-center justify-center p-4 pt-16 md:pt-0">
+      <div className="min-h-screen neu-surface flex items-center justify-center p-4 mobile-header-safe-zone">
         <div className="neu-card p-8 text-center max-w-md w-full">
           <AlertTriangle className="h-12 w-12 mx-auto text-yellow-500 mb-4" />
           <p className="text-muted-foreground mb-4">
@@ -278,7 +278,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
   const analysis = getPerformanceAnalysis()
 
   return (
-    <div className="min-h-screen neu-surface pt-16 md:pt-0">
+    <div className="min-h-screen neu-surface mobile-header-safe-zone">
       <div className="container mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 max-w-full overflow-x-hidden">
         {/* Header */}
         <div className="mb-6">

@@ -144,7 +144,7 @@ export default function HistoryPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen neu-surface flex items-center justify-center pt-16 md:pt-0">
+      <div className="min-h-screen neu-surface flex items-center justify-center mobile-header-safe-zone">
         <div className="neu-card p-8 text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading quiz history...</p>
@@ -155,7 +155,7 @@ export default function HistoryPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen neu-surface flex items-center justify-center p-4 pt-16 md:pt-0">
+      <div className="min-h-screen neu-surface flex items-center justify-center p-4 mobile-header-safe-zone">
         <div className="neu-card p-8 text-center max-w-md w-full">
           <p className="text-muted-foreground mb-4">Please log in to view your quiz history</p>
           <Link href="/auth/login">
@@ -169,7 +169,7 @@ export default function HistoryPage() {
   }
 
   return (
-    <div className="min-h-screen neu-surface pt-16 md:pt-0">
+    <div className="min-h-screen neu-surface mobile-header-safe-zone">
       <div className="container mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 max-w-full overflow-x-hidden">
         {/* Header */}
         <div className="mb-6">

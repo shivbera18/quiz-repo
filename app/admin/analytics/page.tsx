@@ -529,14 +529,14 @@ export default function AdminAnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center pt-16 md:pt-0">
+      <div className="min-h-screen bg-background flex items-center justify-center mobile-header-safe-zone">
         <div className="text-center">Loading analytics...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background pt-16 md:pt-0">
+    <div className="min-h-screen bg-background mobile-header-safe-zone">
       <div className="container w-full max-w-full px-2 sm:px-4 py-4 sm:py-8">
         {/* Header */}
         <div className="flex flex-col gap-4 mb-8">

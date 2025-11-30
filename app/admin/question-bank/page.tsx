@@ -328,7 +328,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
 
   if (loading || adminLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center pt-16 md:pt-0">
+      <div className="min-h-screen bg-background flex items-center justify-center mobile-header-safe-zone">
         <div className="text-center">Loading question bank...</div>
       </div>
     )
@@ -336,7 +336,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center pt-16 md:pt-0">
+      <div className="min-h-screen bg-background flex items-center justify-center mobile-header-safe-zone">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">Admin access required</p>
           <Link href="/auth/login">
@@ -348,7 +348,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
   }
 
   return (
-    <div className="min-h-screen bg-background pt-16 md:pt-0">
+    <div className="min-h-screen bg-background mobile-header-safe-zone">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex flex-col gap-4 mb-8">

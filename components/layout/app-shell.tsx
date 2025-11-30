@@ -43,7 +43,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
             <main
                 className={cn(
                     "min-h-screen transition-all duration-300 ease-in-out",
-                    "pt-16 md:pt-0", // Top padding on mobile for hamburger menu safe zone
+                    "mobile-header-safe-zone", // Dynamic top padding based on hamburger visibility
                     "md:pl-[300px]", // 280px sidebar + 16px left margin + 4px gap
                     isCollapsed && "md:pl-[100px]" // 80px collapsed + 16px left margin + 4px gap
                 )}
