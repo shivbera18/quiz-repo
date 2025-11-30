@@ -20,7 +20,29 @@ import {
   Calendar, BarChart3, PieChart as PieChartIcon, Flame, Brain,
   ArrowUp, ArrowDown, Minus, Timer, ChevronDown, ChevronRight, ExternalLink
 } from "lucide-react"
-import { format, subDays, differenceInDays } from "date-fns"
+import { format, subDays, differenceInDays, isValid } from "date-fns"
+
+// Safe date parser helper
+const safeParseDate = (dateStr: string | undefined | null): Date | null => {
+  if (!dateStr) return null
+  try {
+    const date = new Date(dateStr)
+    return isValid(date) ? date : null
+  } catch {
+    return null
+  }
+}
+
+// Safe date formatter helper
+const formatDateSafe = (dateStr: string | undefined | null, formatStr: string): string => {
+  const date = safeParseDate(dateStr)
+  if (!date) return "Unknown"
+  try {
+    return format(date, formatStr)
+  } catch {
+    return "Unknown"
+  }
+}
 
 interface QuizAnswer {
   questionId: string
@@ -129,13 +151,21 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
     const improvementTrend = secondHalfAvg - firstHalfAvg
 
     // Streak calculation
-    const sortedDates = [...new Set(filteredResults.map(r => format(new Date(r.date), 'yyyy-MM-dd')))].sort()
+    const sortedDates = [...new Set(
+      filteredResults
+        .map(r => safeParseDate(r.date))
+        .filter((d): d is Date => d !== null)
+        .map(d => format(d, 'yyyy-MM-dd'))
+    )].sort()
     let currentStreak = 0
     let maxStreak = 0
     let tempStreak = 1
     
     for (let i = 1; i < sortedDates.length; i++) {
-      const diff = differenceInDays(new Date(sortedDates[i]), new Date(sortedDates[i-1]))
+      const date1 = safeParseDate(sortedDates[i])
+      const date2 = safeParseDate(sortedDates[i-1])
+      if (!date1 || !date2) continue
+      const diff = differenceInDays(date1, date2)
       if (diff === 1) {
         tempStreak++
       } else {
@@ -147,8 +177,8 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
     
     // Check if last quiz was today or yesterday for current streak
     if (sortedDates.length > 0) {
-      const lastDate = new Date(sortedDates[sortedDates.length - 1])
-      const daysSinceLastQuiz = differenceInDays(new Date(), lastDate)
+      const lastDate = safeParseDate(sortedDates[sortedDates.length - 1])
+      const daysSinceLastQuiz = lastDate ? differenceInDays(new Date(), lastDate) : Infinity
       if (daysSinceLastQuiz <= 1) {
         currentStreak = tempStreak
       }
@@ -255,11 +285,12 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
   // ============ PERFORMANCE TREND DATA ============
   const performanceTrend = useMemo(() => {
     return [...filteredResults]
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .filter(r => safeParseDate(r.date) !== null)
+      .sort((a, b) => (safeParseDate(a.date)?.getTime() || 0) - (safeParseDate(b.date)?.getTime() || 0))
       .map((r, i) => ({
         name: `Q${i + 1}`,
         fullName: r.quizName,
-        date: format(new Date(r.date), 'MMM d'),
+        date: formatDateSafe(r.date, 'MMM d'),
         score: r.totalScore,
         accuracy: (r.correctAnswers || 0) + (r.wrongAnswers || 0) > 0 
           ? Math.round((r.correctAnswers || 0) / ((r.correctAnswers || 0) + (r.wrongAnswers || 0)) * 100)
@@ -272,7 +303,9 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
     const dailyData: { [key: string]: { quizzes: number; avgScore: number; scores: number[] } } = {}
     
     filteredResults.forEach(result => {
-      const day = format(new Date(result.date), 'yyyy-MM-dd')
+      const parsedDate = safeParseDate(result.date)
+      if (!parsedDate) return
+      const day = format(parsedDate, 'yyyy-MM-dd')
       if (!dailyData[day]) {
         dailyData[day] = { quizzes: 0, avgScore: 0, scores: [] }
       }
@@ -283,11 +316,12 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
     return Object.entries(dailyData)
       .map(([date, data]) => ({
         date,
-        displayDate: format(new Date(date), 'MMM d'),
+        displayDate: formatDateSafe(date, 'MMM d'),
         quizzes: data.quizzes,
         avgScore: Math.round(data.scores.reduce((a, b) => a + b, 0) / data.scores.length)
       }))
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .filter(d => safeParseDate(d.date) !== null)
+      .sort((a, b) => (safeParseDate(a.date)?.getTime() || 0) - (safeParseDate(b.date)?.getTime() || 0))
       .slice(-14) // Last 14 days
   }, [filteredResults])
 
@@ -748,7 +782,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                             <h4 className="font-medium line-clamp-1">{quiz.name}</h4>
                             <div className="flex flex-wrap gap-2 mt-1">
                               <Badge variant="outline" className="text-xs">
-                                {format(new Date(quiz.date), 'MMM d, yyyy')}
+                                {formatDateSafe(quiz.date, 'MMM d, yyyy')}
                               </Badge>
                               <Badge variant="secondary" className="text-xs">
                                 {quiz.subject}
@@ -921,7 +955,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                                 <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                               </div>
                               <p className="text-xs text-muted-foreground mt-1">
-                                {format(new Date(result.date), 'MMM dd, yyyy')} • {result.answers.length} questions
+                                {formatDateSafe(result.date, 'MMM dd, yyyy')} • {result.answers.length} questions
                               </p>
                             </div>
                             

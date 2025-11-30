@@ -69,7 +69,8 @@ interface ResultData {
 
 // Format time from milliseconds
 function formatTimeMs(ms: number): string {
-  if (ms < 1000) return `${ms}ms`
+  if (!ms || isNaN(ms) || ms <= 0) return "0s"
+  if (ms < 1000) return `${Math.round(ms)}ms`
   const seconds = ms / 1000
   if (seconds < 60) return `${seconds.toFixed(1)}s`
   const minutes = Math.floor(seconds / 60)
@@ -79,10 +80,23 @@ function formatTimeMs(ms: number): string {
 
 // Format time from seconds
 function formatTimeSec(sec: number): string {
+  if (!sec || isNaN(sec)) return "0s"
   if (sec < 60) return `${Math.round(sec)}s`
   const minutes = Math.floor(sec / 60)
   const remainingSeconds = Math.round(sec % 60)
   return `${minutes}m ${remainingSeconds}s`
+}
+
+// Safe date formatter
+function formatDateSafe(dateStr: string | undefined | null, formatStr: string = "MMMM d, yyyy"): string {
+  if (!dateStr) return "Unknown date"
+  try {
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return "Unknown date"
+    return format(date, formatStr)
+  } catch {
+    return "Unknown date"
+  }
 }
 
 export default function TimeAnalysisPage() {
@@ -275,9 +289,9 @@ export default function TimeAnalysisPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold">{result.quizName}</h1>
+            <h1 className="text-2xl font-bold">{result.quizName || "Quiz"}</h1>
             <p className="text-muted-foreground text-sm">
-              Time Analysis • {format(new Date(result.date), "MMMM d, yyyy")}
+              Time Analysis • {formatDateSafe(result.date)}
             </p>
           </div>
           <Link href={`/results/${resultId}`}>
