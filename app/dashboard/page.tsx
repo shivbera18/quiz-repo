@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -50,12 +51,20 @@ interface Quiz {
 
 export default function DashboardPage() {
   const { user, loading } = useAuth()
+  const router = useRouter()
   const [recentAttempts, setRecentAttempts] = useState<RecentAttempt[]>([])
   const [allAttempts, setAllAttempts] = useState<RecentAttempt[]>([])
   const [availableQuizzes, setAvailableQuizzes] = useState<Quiz[]>([])
   const [loadingAttempts, setLoadingAttempts] = useState(true)
   const [showFlashQuestions, setShowFlashQuestions] = useState(false)
   const [flashQuestions, setFlashQuestions] = useState<any[]>([])
+
+  // Redirect to login if not authenticated (after hydration)
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/auth/login")
+    }
+  }, [loading, user, router])
 
   useEffect(() => {
     if (!loading && user) {
@@ -145,11 +154,14 @@ export default function DashboardPage() {
     )
   }
 
+  // If not authenticated after hydration, show brief loading while redirecting
   if (!user) {
-    // Show loading state briefly while useAuth initializes
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">Redirecting to login...</p>
+        </div>
       </div>
     )
   }
