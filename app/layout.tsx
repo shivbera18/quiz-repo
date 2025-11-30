@@ -13,7 +13,6 @@ export const metadata: Metadata = {
   title: "Banking Exam Preparation",
   description: "Comprehensive banking exam preparation platform",
   generator: 'v0.dev',
-  manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',

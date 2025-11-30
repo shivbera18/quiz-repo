@@ -12,18 +12,35 @@ interface SidebarContextType {
 const SidebarContext = React.createContext<SidebarContextType | undefined>(undefined)
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
-    const [isCollapsed, setIsCollapsed] = React.useState(false)
+    const [isCollapsed, setIsCollapsedState] = React.useState(false)
     const [isMobileOpen, setIsMobileOpen] = React.useState(false)
+    const [isHydrated, setIsHydrated] = React.useState(false)
+
+    // Load collapsed state from localStorage on mount
+    React.useEffect(() => {
+        const stored = localStorage.getItem("sidebar-collapsed")
+        if (stored !== null) {
+            setIsCollapsedState(stored === "true")
+        }
+        setIsHydrated(true)
+    }, [])
+
+    // Persist collapsed state to localStorage
+    const setIsCollapsed = React.useCallback((value: boolean) => {
+        setIsCollapsedState(value)
+        localStorage.setItem("sidebar-collapsed", String(value))
+    }, [])
+
+    // Prevent hydration mismatch by not rendering until hydrated
+    const contextValue = React.useMemo(() => ({
+        isCollapsed: isHydrated ? isCollapsed : false,
+        setIsCollapsed,
+        isMobileOpen,
+        setIsMobileOpen,
+    }), [isCollapsed, isHydrated, setIsCollapsed, isMobileOpen])
 
     return (
-        <SidebarContext.Provider
-            value={{
-                isCollapsed,
-                setIsCollapsed,
-                isMobileOpen,
-                setIsMobileOpen,
-            }}
-        >
+        <SidebarContext.Provider value={contextValue}>
             {children}
         </SidebarContext.Provider>
     )
