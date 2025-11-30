@@ -15,7 +15,7 @@ import { useAuth } from "@/hooks/use-auth"
 import AIQuizGenerator from "./ai-quiz-generator"
 import ManageQuizzesPage from "./manage-quizzes"
 import QuizManagementSection from "./QuizManagementSection"
-import { AdminSubNav } from "@/components/layout/admin-sub-nav"
+
 
 interface Quiz {
   id: string
@@ -788,9 +788,6 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-background mobile-header-safe-zone">
       <div className="container mx-auto px-4 py-8">
-        {/* Admin Sub Navigation */}
-        <AdminSubNav />
-
         {/* Header - Simplified, navigation is now in sidebar */}
         <div className="flex flex-col gap-4 mb-8">
           {/* Mobile header - Clean title only */}

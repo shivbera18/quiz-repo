@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AdminBreadcrumb } from "@/components/ui/admin-breadcrumb"
-import { AdminSubNav } from "@/components/layout/admin-sub-nav"
+
 import { Users, Search, Mail, Calendar, TrendingUp, Download, RefreshCw } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/hooks/use-auth"
@@ -199,9 +199,6 @@ export default function AdminUsersPage() {
   return (
     <div className="min-h-screen bg-background mobile-header-safe-zone">
       <div className="container mx-auto px-4 py-8">
-        {/* Admin Sub Navigation */}
-        <AdminSubNav />
-        
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
