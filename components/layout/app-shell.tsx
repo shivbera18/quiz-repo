@@ -56,11 +56,14 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
             <Sidebar />
             <main
                 className={cn(
-                    "min-h-screen transition-all duration-300 ease-in-out",
+                    "min-h-screen",
                     "mobile-header-safe-zone", // Dynamic top padding based on hamburger visibility
                     "md:pl-[300px]", // 280px sidebar + 16px left margin + 4px gap
                     isCollapsed && "md:pl-[100px]" // 80px collapsed + 16px left margin + 4px gap
                 )}
+                style={{
+                    transition: isHydrated ? "padding-left 250ms cubic-bezier(0.4, 0, 0.2, 1)" : "none"
+                }}
             >
                 <div className="container mx-auto p-4 sm:p-6 md:p-8">
                     {children}
