@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -21,6 +22,16 @@ const adminNavItems = [
 
 export function AdminSubNav() {
     const pathname = usePathname()
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    // Don't render until mounted to avoid hydration mismatch
+    if (!mounted) {
+        return <div className="mb-6 h-12" /> // Placeholder to prevent layout shift
+    }
 
     // Only show on admin pages
     if (!pathname?.startsWith('/admin')) {

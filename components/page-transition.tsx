@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion"
 import { usePathname } from "next/navigation"
-import { ReactNode } from "react"
+import { ReactNode, useState, useEffect } from "react"
 
 interface PageTransitionProps {
   children: ReactNode
@@ -34,6 +34,17 @@ const pageTransition = {
 
 export function PageTransition({ children }: PageTransitionProps) {
   const pathname = usePathname()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // During SSR and initial hydration, render children directly without animation
+  // This prevents hydration mismatch errors
+  if (!mounted) {
+    return <div className="min-h-screen">{children}</div>
+  }
 
   return (
     <AnimatePresence mode="wait" initial={false}>

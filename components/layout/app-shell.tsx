@@ -8,7 +8,12 @@ import { cn } from "@/lib/utils"
 
 function AppShellContent({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
-    const { isCollapsed } = useSidebar()
+    const { isCollapsed, isHydrated } = useSidebar()
+    const [mounted, setMounted] = React.useState(false)
+
+    React.useEffect(() => {
+        setMounted(true)
+    }, [])
     
     // Pages where sidebar should be completely hidden (focused/immersive experiences)
     const isAuthPage = pathname?.startsWith("/auth")
@@ -18,6 +23,15 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     
     // Check if this is a focused page (no sidebar needed)
     const isFocusedPage = isAuthPage || isQuizPage || isResultsPage || isHomePage
+
+    // During SSR, render a simple container to prevent hydration mismatch
+    if (!mounted) {
+        return (
+            <div className="min-h-screen bg-background">
+                {children}
+            </div>
+        )
+    }
 
     // Auth pages - centered layout, no sidebar
     if (isAuthPage) {
