@@ -76,6 +76,27 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     })
 
     if (dbResult) {
+      // Parse JSON strings from database
+      let parsedAnswers = [];
+      try {
+        parsedAnswers = typeof dbResult.answers === 'string' 
+          ? JSON.parse(dbResult.answers) 
+          : dbResult.answers || [];
+      } catch (e) {
+        console.error("Error parsing answers:", e);
+        parsedAnswers = [];
+      }
+
+      let parsedSections: any = {};
+      try {
+        parsedSections = typeof dbResult.sections === 'string' 
+          ? JSON.parse(dbResult.sections) 
+          : dbResult.sections || {};
+      } catch (e) {
+        console.error("Error parsing sections:", e);
+        parsedSections = {};
+      }
+
       // Transform database result to match frontend format
       const result = {
         _id: dbResult.id,
@@ -83,21 +104,21 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         quizName: dbResult.quiz?.title || 'Unknown Quiz',
         quizId: dbResult.quizId,
         totalScore: dbResult.totalScore,
-        rawScore: (dbResult.sections as any)?.rawScore || dbResult.totalScore,
-        positiveMarks: (dbResult.sections as any)?.positiveMarks || 0,
-        negativeMarks: (dbResult.sections as any)?.negativeMarks || 0,
-        correctAnswers: (dbResult.sections as any)?.correctAnswers || 0,
-        wrongAnswers: (dbResult.sections as any)?.wrongAnswers || 0,
-        unanswered: (dbResult.sections as any)?.unanswered || 0,
+        rawScore: parsedSections?.rawScore || dbResult.totalScore,
+        positiveMarks: parsedSections?.positiveMarks || 0,
+        negativeMarks: parsedSections?.negativeMarks || 0,
+        correctAnswers: parsedSections?.correctAnswers || 0,
+        wrongAnswers: parsedSections?.wrongAnswers || 0,
+        unanswered: parsedSections?.unanswered || 0,
         sections: {
-          reasoning: (dbResult.sections as any)?.reasoning || 0,
-          quantitative: (dbResult.sections as any)?.quantitative || 0,
-          english: (dbResult.sections as any)?.english || 0
+          reasoning: parsedSections?.reasoning || 0,
+          quantitative: parsedSections?.quantitative || 0,
+          english: parsedSections?.english || 0
         },
-        questions: dbResult.answers || [],
+        questions: parsedAnswers,
         timeSpent: dbResult.timeSpent,
-        negativeMarking: (dbResult.sections as any)?.negativeMarking || true,
-        negativeMarkValue: (dbResult.sections as any)?.negativeMarkValue || 0.25,
+        negativeMarking: parsedSections?.negativeMarking || true,
+        negativeMarkValue: parsedSections?.negativeMarkValue || 0.25,
         userId: dbResult.userId
       }
 

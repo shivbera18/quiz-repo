@@ -78,21 +78,31 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
 
   // Helper function to safely parse questions data
   const parseResultData = (resultData: any): Result => {
+    const rawQuestions = (() => {
+      if (Array.isArray(resultData.questions)) {
+        return resultData.questions;
+      } else if (typeof resultData.questions === 'string') {
+        try {
+          const parsed = JSON.parse(resultData.questions);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    })();
+
     return {
       ...resultData,
-      questions: (() => {
-        if (Array.isArray(resultData.questions)) {
-          return resultData.questions;
-        } else if (typeof resultData.questions === 'string') {
-          try {
-            const parsed = JSON.parse(resultData.questions);
-            return Array.isArray(parsed) ? parsed : [];
-          } catch {
-            return [];
-          }
-        }
-        return [];
-      })(),
+      questions: rawQuestions.map((q: any) => {
+        // Handle both property names: selectedAnswer (legacy/interface) and userAnswer (saved by quiz page)
+        const answer = q.selectedAnswer !== undefined ? q.selectedAnswer : q.userAnswer;
+        
+        return {
+          ...q,
+          selectedAnswer: (answer === null || answer === undefined) ? -1 : answer
+        };
+      }),
       sections: typeof resultData.sections === 'string' 
         ? (() => {
             try { return JSON.parse(resultData.sections); } 
