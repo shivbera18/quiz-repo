@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState, useCallback, useSyncExternalStore } from "react"
+import { useEffect, useState, useCallback, useSyncExternalStore, useRef } from "react"
 import { useRouter } from "next/navigation"
 
 interface User {
@@ -11,31 +11,56 @@ interface User {
   token?: string
 }
 
+// Cache for the user object to prevent infinite loops
+let cachedUser: User | null = null
+let cachedToken: string | null = null
+let cachedUserData: string | null = null
+
 // Storage subscription for useSyncExternalStore
 function subscribe(callback: () => void) {
   window.addEventListener("storage", callback)
-  return () => window.removeEventListener("storage", callback)
+  // Also listen for custom auth events
+  window.addEventListener("auth-change", callback)
+  return () => {
+    window.removeEventListener("storage", callback)
+    window.removeEventListener("auth-change", callback)
+  }
 }
 
-// Get snapshot of user from localStorage
+// Get snapshot of user from localStorage - must return stable reference
 function getSnapshot(): User | null {
   try {
     const token = localStorage.getItem("token")
     const userData = localStorage.getItem("user")
     
-    if (!token || !userData) return null
+    // Return cached value if nothing changed
+    if (token === cachedToken && userData === cachedUserData) {
+      return cachedUser
+    }
+    
+    // Update cache keys
+    cachedToken = token
+    cachedUserData = userData
+    
+    if (!token || !userData) {
+      cachedUser = null
+      return null
+    }
     
     // Simple token validation
     if (!token.includes("-") || token.length < 10) {
       localStorage.removeItem("token")
       localStorage.removeItem("user")
+      cachedUser = null
       return null
     }
     
     const parsedUser = JSON.parse(userData)
     parsedUser.token = token
-    return parsedUser
+    cachedUser = parsedUser
+    return cachedUser
   } catch {
+    cachedUser = null
     return null
   }
 }
@@ -79,8 +104,13 @@ export function useAuth(requireAdmin = false) {
   const logout = useCallback(() => {
     localStorage.removeItem("token")
     localStorage.removeItem("user")
-    // Trigger storage event for other tabs
+    // Reset cache
+    cachedUser = null
+    cachedToken = null
+    cachedUserData = null
+    // Trigger storage event for other tabs and this tab
     window.dispatchEvent(new StorageEvent("storage", { key: "token" }))
+    window.dispatchEvent(new Event("auth-change"))
     router.push("/auth/login")
   }, [router])
 
@@ -88,4 +118,5 @@ export function useAuth(requireAdmin = false) {
   const loading = !isHydrated
 
   return { user, loading, logout }
+}
 }
