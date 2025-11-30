@@ -119,4 +119,3 @@ export function useAuth(requireAdmin = false) {
 
   return { user, loading, logout }
 }
-}
