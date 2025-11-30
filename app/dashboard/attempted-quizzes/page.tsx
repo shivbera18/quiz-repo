@@ -5,9 +5,9 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { ArrowLeft, History, Eye, TrendingUp, BookOpen, Target, Clock } from "lucide-react"
+import { ArrowLeft, History, Eye, TrendingUp, BookOpen, Target, Clock, CheckCircle2, XCircle, MinusCircle } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
+import { cn } from "@/lib/utils"
 
 interface RecentAttempt {
   _id: string
@@ -80,32 +80,26 @@ export default function AttemptedQuizzesPage() {
 
   return (
     <div className="min-h-screen bg-background pt-16 md:pt-0">
-      <div className="container mx-auto px-4 py-8 relative">
-        {/* Theme Toggle Top Right */}
-        <div className="absolute right-4 top-4 z-10">
-          <ThemeToggle />
-        </div>
+      <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-2 mb-8">
-          <div className="flex items-center gap-4 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 mb-8">
+          <div className="flex items-center gap-4">
             <Link href="/dashboard">
-              <Button variant="outline" size="icon">
-                <ArrowLeft className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="rounded-xl">
+                <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Attempted Quizzes</h1>
-              <p className="text-muted-foreground">Review all your quiz attempts and performance</p>
+              <h1 className="text-2xl sm:text-3xl font-bold">Attempted Quizzes</h1>
+              <p className="text-sm text-muted-foreground">Review your quiz history and performance</p>
             </div>
           </div>
-          <div className="flex flex-col xs:flex-row gap-2 w-full sm:w-auto">
-            <Link href="/history" className="w-full xs:w-auto">
-              <Button variant="outline" className="w-full xs:w-auto">
-                <History className="h-4 w-4 mr-2" />
-                Full History
-              </Button>
-            </Link>
-          </div>
+          <Link href="/history">
+            <Button variant="outline" size="sm" className="gap-2">
+              <History className="h-4 w-4" />
+              Full History
+            </Button>
+          </Link>
         </div>
 
         {loadingAttempts ? (
@@ -128,123 +122,144 @@ export default function AttemptedQuizzesPage() {
         ) : (
           <div className="space-y-6">
             {/* Summary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card className="bg-blue-50 border-blue-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5 text-blue-600" />
-                    <div>
-                      <p className="text-sm text-blue-600 font-medium">Total Attempts</p>
-                      <p className="text-2xl font-bold text-blue-700">{allAttempts.length}</p>
-                    </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="p-4 rounded-xl bg-card border">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-500/10">
+                    <BookOpen className="h-5 w-5 text-blue-500" />
                   </div>
-                </CardContent>
-              </Card>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Total Attempts</p>
+                    <p className="text-xl font-bold">{allAttempts.length}</p>
+                  </div>
+                </div>
+              </div>
               
-              <Card className="bg-green-50 border-green-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-green-600" />
-                    <div>
-                      <p className="text-sm text-green-600 font-medium">Average Score</p>
-                      <p className="text-2xl font-bold text-green-700">
-                        {Math.round(allAttempts.reduce((sum, a) => sum + a.totalScore, 0) / allAttempts.length)}%
-                      </p>
-                    </div>
+              <div className="p-4 rounded-xl bg-card border">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-green-500/10">
+                    <TrendingUp className="h-5 w-5 text-green-500" />
                   </div>
-                </CardContent>
-              </Card>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Average Score</p>
+                    <p className="text-xl font-bold">
+                      {Math.round(allAttempts.reduce((sum, a) => sum + a.totalScore, 0) / allAttempts.length)}%
+                    </p>
+                  </div>
+                </div>
+              </div>
               
-              <Card className="bg-purple-50 border-purple-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2">
-                    <Target className="h-5 w-5 text-purple-600" />
-                    <div>
-                      <p className="text-sm text-purple-600 font-medium">Best Score</p>
-                      <p className="text-2xl font-bold text-purple-700">
-                        {Math.max(...allAttempts.map(a => a.totalScore))}%
-                      </p>
-                    </div>
+              <div className="p-4 rounded-xl bg-card border">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-500/10">
+                    <Target className="h-5 w-5 text-purple-500" />
                   </div>
-                </CardContent>
-              </Card>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Best Score</p>
+                    <p className="text-xl font-bold">
+                      {Math.max(...allAttempts.map(a => a.totalScore))}%
+                    </p>
+                  </div>
+                </div>
+              </div>
               
-              <Card className="bg-orange-50 border-orange-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-orange-600" />
-                    <div>
-                      <p className="text-sm text-orange-600 font-medium">Avg Time</p>
-                      <p className="text-2xl font-bold text-orange-700">
-                        {Math.round(allAttempts.reduce((sum, a) => sum + (a.timeSpent || 0), 0) / allAttempts.length / 60)}m
-                      </p>
-                    </div>
+              <div className="p-4 rounded-xl bg-card border">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-orange-500/10">
+                    <Clock className="h-5 w-5 text-orange-500" />
                   </div>
-                </CardContent>
-              </Card>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Avg Time</p>
+                    <p className="text-xl font-bold">
+                      {Math.round(allAttempts.reduce((sum, a) => sum + (a.timeSpent || 0), 0) / allAttempts.length / 60)}m
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* All Attempts List */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">All Quiz Attempts</CardTitle>
-                <CardDescription>Complete history of your quiz performances</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 overflow-x-auto">
-                  {allAttempts.map((attempt, index) => (
-                    <div key={attempt._id} className="flex flex-col sm:flex-row sm:items-center justify-between p-2 sm:p-4 border rounded-lg hover:bg-muted/50 transition-colors min-w-[320px] max-w-full overflow-x-auto">
-                      <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 aspect-square rounded-full flex items-center justify-center font-bold text-white text-base sm:text-xl flex-shrink-0 shadow-md"
-                          style={{ backgroundColor: attempt.totalScore >= 80 ? '#22c55e' : attempt.totalScore >= 60 ? '#eab308' : '#ef4444' }}>
-                          {attempt.totalScore}%
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="font-semibold truncate max-w-[120px] xs:max-w-[160px] sm:max-w-xs">{attempt.quizName || 'Unknown Quiz'}</h4>
-                          <div className="flex flex-wrap gap-2 text-xs sm:text-sm text-muted-foreground">
-                            <span>{new Date(attempt.date).toLocaleDateString()}</span>
-                            <span>✓ {attempt.correctAnswers} correct</span>
-                            <span>✗ {attempt.wrongAnswers} wrong</span>
-                            <span>— {attempt.unanswered} unanswered</span>
-                            {attempt.timeSpent && (
-                              <span>⏱ {Math.round(attempt.timeSpent / 60)}m</span>
-                            )}
+            <div>
+              <h2 className="text-lg font-semibold mb-4">All Attempts</h2>
+              <div className="space-y-3">
+                {allAttempts.map((attempt) => {
+                  const scoreColor = attempt.totalScore >= 80 ? 'text-green-500' : 
+                                     attempt.totalScore >= 60 ? 'text-yellow-500' : 'text-red-500'
+                  const scoreBg = attempt.totalScore >= 80 ? 'bg-green-500/10' : 
+                                  attempt.totalScore >= 60 ? 'bg-yellow-500/10' : 'bg-red-500/10'
+                  
+                  return (
+                    <div 
+                      key={attempt._id} 
+                      className="group p-4 rounded-xl bg-card border hover:border-primary/30 hover:shadow-sm transition-all"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        {/* Left: Score & Info */}
+                        <div className="flex items-start gap-4 min-w-0 flex-1">
+                          {/* Score Circle */}
+                          <div className={cn(
+                            "w-14 h-14 rounded-xl flex flex-col items-center justify-center shrink-0",
+                            scoreBg
+                          )}>
+                            <span className={cn("text-lg font-bold", scoreColor)}>
+                              {Math.round(attempt.totalScore)}
+                            </span>
+                            <span className={cn("text-[10px] font-medium", scoreColor)}>%</span>
                           </div>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            <Badge variant="outline" className="text-[10px] sm:text-xs whitespace-nowrap px-2 py-1">
-                              R: {attempt.sections.reasoning}%
-                            </Badge>
-                            <Badge variant="outline" className="text-[10px] sm:text-xs whitespace-nowrap px-2 py-1">
-                              Q: {attempt.sections.quantitative}%
-                            </Badge>
-                            <Badge variant="outline" className="text-[10px] sm:text-xs whitespace-nowrap px-2 py-1">
-                              E: {attempt.sections.english}%
-                            </Badge>
+                          
+                          {/* Quiz Details */}
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-semibold truncate">
+                              {attempt.quizName || 'Unknown Quiz'}
+                            </h3>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {new Date(attempt.date).toLocaleDateString('en-US', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                              })}
+                              {attempt.timeSpent && ` • ${Math.round(attempt.timeSpent / 60)} min`}
+                            </p>
+                            
+                            {/* Stats Row */}
+                            <div className="flex items-center gap-3 mt-2 text-xs">
+                              <span className="flex items-center gap-1 text-green-600">
+                                <CheckCircle2 className="h-3 w-3" />
+                                {attempt.correctAnswers}
+                              </span>
+                              <span className="flex items-center gap-1 text-red-500">
+                                <XCircle className="h-3 w-3" />
+                                {attempt.wrongAnswers}
+                              </span>
+                              <span className="flex items-center gap-1 text-muted-foreground">
+                                <MinusCircle className="h-3 w-3" />
+                                {attempt.unanswered}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex flex-wrap sm:flex-nowrap items-center gap-1 sm:gap-2 mt-2 sm:mt-0 flex-shrink-0">
-                        <Badge variant={
-                          attempt.totalScore >= 80 ? 'default' :
-                          attempt.totalScore >= 60 ? 'secondary' : 'destructive'
-                        } className="text-xs px-2 py-1 whitespace-nowrap">
-                          {attempt.totalScore >= 80 ? 'Excellent' :
-                            attempt.totalScore >= 60 ? 'Good' : ''}
-                        </Badge>
-                        {attempt.quizId && (
-                          <Link href={`/results/${attempt._id}`} className="w-full sm:w-auto">
-                            <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                              <Eye className="h-4 w-4 mr-2" />
-                              Details
-                            </Button>
-                          </Link>
-                        )}
+                        
+                        {/* Right: Action */}
+                        <div className="shrink-0">
+                          {attempt.quizId && (
+                            <Link href={`/results/${attempt._id}`}>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="gap-2 opacity-60 group-hover:opacity-100 transition-opacity"
+                              >
+                                <Eye className="h-4 w-4" />
+                                <span className="hidden sm:inline">View</span>
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  )
+                })}
+              </div>
+            </div>
           </div>
         )}
       </div>
