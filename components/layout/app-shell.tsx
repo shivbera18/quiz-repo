@@ -27,15 +27,6 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     // Check if this is a focused page (no sidebar needed)
     const isFocusedPage = isAuthPage || isQuizPage || isResultsPage || isHomePage
 
-    // During SSR, render a simple container to prevent hydration mismatch
-    if (!mounted) {
-        return (
-            <div className="min-h-screen bg-background">
-                {children}
-            </div>
-        )
-    }
-
     // Auth pages - centered layout, no sidebar
     if (isAuthPage) {
         return (
@@ -54,21 +45,23 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         )
     }
 
+    // For dashboard pages with sidebar - show content immediately
+    // Sidebar will handle its own hydration
     return (
         <>
-            <Sidebar />
+            {mounted && <Sidebar />}
             <main
                 className={cn(
-                    "min-h-screen",
+                    "min-h-screen bg-background",
                     "mobile-header-safe-zone", // Dynamic top padding based on hamburger visibility
-                    "md:pl-[300px]", // 280px sidebar + 16px left margin + 4px gap
-                    isCollapsed && "md:pl-[100px]" // 80px collapsed + 16px left margin + 4px gap
+                    mounted && "md:pl-[300px]", // Only apply sidebar padding after mount
+                    mounted && isCollapsed && "md:pl-[100px]" // 80px collapsed + 16px left margin + 4px gap
                 )}
                 style={{
                     transition: isHydrated ? "padding-left 250ms cubic-bezier(0.4, 0, 0.2, 1)" : "none"
                 }}
             >
-                {isMainDashboard && <TopHeader />}
+                {isMainDashboard && mounted && <TopHeader />}
                 <div className="container mx-auto p-4 sm:p-6 md:p-8">
                     {children}
                 </div>

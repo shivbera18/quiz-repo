@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion"
 import { usePathname } from "next/navigation"
-import { ReactNode, useState, useEffect } from "react"
+import { ReactNode, useState, useEffect, useRef } from "react"
 
 interface PageTransitionProps {
   children: ReactNode
@@ -35,14 +35,30 @@ const pageTransition = {
 export function PageTransition({ children }: PageTransitionProps) {
   const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
+  const isFirstRender = useRef(true)
+  const previousPathname = useRef(pathname)
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // During SSR and initial hydration, render children directly without animation
-  // This prevents hydration mismatch errors
+  // Track if pathname changed (actual navigation vs initial load)
+  useEffect(() => {
+    if (mounted && previousPathname.current !== pathname) {
+      isFirstRender.current = false
+    }
+    previousPathname.current = pathname
+  }, [pathname, mounted])
+
+  // During SSR and initial hydration, render children directly without animation wrapper
+  // This ensures server HTML matches initial client HTML
   if (!mounted) {
+    return <>{children}</>
+  }
+
+  // On first render after mount, don't animate - just show content
+  // Only animate on subsequent navigations
+  if (isFirstRender.current) {
     return <div className="min-h-screen">{children}</div>
   }
 
