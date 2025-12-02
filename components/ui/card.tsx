@@ -10,7 +10,7 @@ const Card = React.forwardRef<
     ref={ref}
     className={cn(
       variant === 'neobrutalist'
-        ? "rounded-xl border-2 border-black bg-card shadow-[3px_3px_0px_0px_#000] transition-all duration-200 hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_#000] dark:border-white/30 dark:shadow-[3px_3px_0px_0px_#444] dark:hover:shadow-[4px_4px_0px_0px_#444] p-4 sm:p-6"
+        ? "rounded-xl border-2 border-black bg-white shadow-[4px_4px_0px_0px_#000] transition-all duration-200 hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:border-white/30 dark:bg-zinc-800 dark:shadow-[4px_4px_0px_0px_#555] dark:hover:shadow-[6px_6px_0px_0px_#555] p-5 sm:p-6"
         : "rounded-2xl border bg-card/50 backdrop-blur-sm text-card-foreground shadow-sm hover:shadow-md transition-all duration-300",
       className
     )}
