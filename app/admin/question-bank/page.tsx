@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
-import { AdminBreadcrumb } from "@/components/ui/admin-breadcrumb"
+
+import { MobilePageHeader } from "@/components/layout/mobile-page-header"
 
 import { Plus, Trash2, Edit, Search, BookOpen, Save, X, Sparkles } from "lucide-react"
 import Link from "next/link"
@@ -277,7 +278,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
       console.log('Sample question data:', generatedQuestions[0])
       
       // Save all generated questions to the database
-      const savedQuestions = []
+      const savedQuestions = [] as QuestionBankItem[]
       for (const questionData of generatedQuestions) {
         console.log('Saving question:', questionData.question.substring(0, 50) + '...')
         
@@ -326,17 +327,19 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
   const startIndex = (currentPage - 1) * questionsPerPage
   const paginatedQuestions = filteredQuestions.slice(startIndex, startIndex + questionsPerPage)
 
+
   if (loading || adminLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center mobile-header-safe-zone">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">Loading question bank...</div>
       </div>
     )
   }
 
+
   if (!user) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center mobile-header-safe-zone">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">Admin access required</p>
           <Link href="/auth/login">
@@ -348,22 +351,13 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
   }
 
   return (
-    <div className="min-h-screen bg-background mobile-header-safe-zone">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-foreground flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-400 border-2 border-black">
-                <BookOpen className="h-6 w-6 text-black" />
-              </div>
-              Question Bank
-            </h1>
-            <p className="text-muted-foreground text-sm sm:text-base font-medium">
-              Centralized repository for all quiz questions
-            </p>
-          </div>
-        </div>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-4">
+        <MobilePageHeader
+          title={"Question Bank"}
+          subtitle={"Centralized repository for all quiz questions"}
+          backHref="/admin"
+        />
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6">

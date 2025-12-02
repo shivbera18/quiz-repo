@@ -11,13 +11,15 @@ interface MobilePageHeaderProps {
   title: string
   subtitle: string
   backHref?: string
+  /** Hide the back button (useful for top-level pages like admin) */
+  hideBackButton?: boolean
   /** Action button to show in header - renders in both mobile and desktop */
   action?: React.ReactNode
   /** Mobile-specific action (icon only) - if provided, overrides action on mobile */
   mobileAction?: React.ReactNode
 }
 
-export function MobilePageHeader({ title, subtitle, backHref = "/dashboard", action, mobileAction }: MobilePageHeaderProps) {
+export function MobilePageHeader({ title, subtitle, backHref = "/dashboard", hideBackButton = false, action, mobileAction }: MobilePageHeaderProps) {
   const { isMobileOpen, setIsMobileOpen } = useSidebar()
   const [isAtTop, setIsAtTop] = React.useState(true)
 
@@ -65,18 +67,21 @@ export function MobilePageHeader({ title, subtitle, backHref = "/dashboard", act
             {mobileActionElement && <div className="shrink-0">{mobileActionElement}</div>}
           </div>
           
-          {/* Row 2: Back button + Subheading */}
+          {/* Row 2: Back button + Subheading (or just subheading if hideBackButton) */}
           <div className="flex items-center gap-3 mt-2">
-            <Link href={backHref}>
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className="h-10 w-10 shrink-0 rounded-lg border-4 border-black dark:border-white/65 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.75)] bg-yellow-300 dark:bg-yellow-400 hover:bg-yellow-400 dark:hover:bg-yellow-500 transition-all"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <p className="text-sm text-muted-foreground font-medium truncate">{subtitle}</p>
+            {!hideBackButton && (
+              <Link href={backHref}>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="h-10 w-10 shrink-0 rounded-lg border-4 border-black dark:border-white/65 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.75)] bg-yellow-300 dark:bg-yellow-400 hover:bg-yellow-400 dark:hover:bg-yellow-500 transition-all"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </Link>
+            )}
+            {/* Add left padding when no back button to align with hamburger */}
+            <p className={`text-sm text-muted-foreground font-medium truncate ${hideBackButton ? 'pl-[52px]' : ''}`}>{subtitle}</p>
           </div>
         </div>
       </motion.div>
@@ -89,15 +94,17 @@ export function MobilePageHeader({ title, subtitle, backHref = "/dashboard", act
       {/* Desktop Header - static, with back button and action */}
       <div className="hidden md:flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Link href={backHref}>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="h-10 w-10 shrink-0 rounded-lg border-4 border-black dark:border-white/65 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.75)] bg-yellow-300 dark:bg-yellow-400 hover:bg-yellow-400 dark:hover:bg-yellow-500 transition-all"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
+          {!hideBackButton && (
+            <Link href={backHref}>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-10 w-10 shrink-0 rounded-lg border-4 border-black dark:border-white/65 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.75)] bg-yellow-300 dark:bg-yellow-400 hover:bg-yellow-400 dark:hover:bg-yellow-500 transition-all"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+          )}
           <div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">{title}</h1>
             <p className="text-sm text-muted-foreground font-medium">{subtitle}</p>

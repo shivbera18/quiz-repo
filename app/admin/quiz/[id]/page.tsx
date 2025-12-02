@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
-import { AdminBreadcrumb } from "@/components/ui/admin-breadcrumb"
+
+import { MobilePageHeader } from "@/components/layout/mobile-page-header"
 
 import { Plus, Trash2, Edit, Save, X, Clock, BookOpen, Upload, ImageIcon, Download } from "lucide-react"
 import Link from "next/link"
@@ -432,17 +433,19 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
     setSuccess(`${newQuestions.length} question${newQuestions.length !== 1 ? 's' : ''} imported successfully!`)
   }
 
+
   if (loading || quizLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center mobile-header-safe-zone">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">Loading quiz...</div>
       </div>
     )
   }
 
+
   if (!user) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center mobile-header-safe-zone">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">Admin access required</p>
           <Link href="/auth/login">
@@ -453,9 +456,10 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
     )
   }
 
+
   if (!quiz) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center mobile-header-safe-zone">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">Quiz not found</p>
           <Link href="/admin">
@@ -467,29 +471,29 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
   }
 
   return (
-    <div className="min-h-screen bg-background mobile-header-safe-zone">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-foreground">{quiz.title}</h1>
-            <p className="text-muted-foreground text-sm sm:text-base font-medium">Manage questions for this quiz</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowQuestionBankImporter(true)} className="border-2 border-black dark:border-white/65 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.75)] transition-all">
-              <Download className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline">Import</span>
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowBulkManager(true)} className="border-2 border-black dark:border-white/65 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.75)] transition-all">
-              <Upload className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline">Bulk</span>
-            </Button>
-            <Button variant="neobrutalist" size="sm" onClick={() => setShowQuestionForm(true)}>
-              <Plus className="h-4 w-4 mr-1" />
-              Add
-            </Button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-4">
+        <MobilePageHeader
+          title={quiz.title}
+          subtitle={"Manage questions for this quiz"}
+          backHref="/admin/quiz"
+          action={
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowQuestionBankImporter(true)} className="border-2 border-black dark:border-white/65 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.75)] transition-all">
+                <Download className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Import</span>
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setShowBulkManager(true)} className="border-2 border-black dark:border-white/65 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.75)] transition-all">
+                <Upload className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Bulk</span>
+              </Button>
+              <Button variant="neobrutalist" size="sm" onClick={() => setShowQuestionForm(true)}>
+                <Plus className="h-4 w-4 mr-1" />
+                Add
+              </Button>
+            </div>
+          }
+        />
 
         {/* Quiz Info */}
         <Card variant="neobrutalist" className="mb-6">

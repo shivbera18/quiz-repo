@@ -5,7 +5,8 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { AdminBreadcrumb } from "@/components/ui/admin-breadcrumb"
+
+import { MobilePageHeader } from "@/components/layout/mobile-page-header"
 
 import { TrendingUp, Users, BookOpen, Clock, Target, Download, Filter, BarChart3, Trash2, Eye, User } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -527,36 +528,37 @@ export default function AdminAnalyticsPage() {
   const scoreTrendData = getScoreTrendData()
   const sectionPerformanceData = getSectionPerformanceData()
 
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center mobile-header-safe-zone">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">Loading analytics...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background mobile-header-safe-zone">
+    <div className="min-h-screen bg-background">
       <div className="container w-full max-w-full px-2 sm:px-4 py-4 sm:py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Analytics Dashboard</h1>
-            <p className="text-muted-foreground text-sm sm:text-base">Performance insights and statistics</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link href="/admin/analytics/advanced">
-              <Button variant="neobrutalist" size="sm">
-                <BarChart3 className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Advanced</span>
+        <MobilePageHeader
+          title={"Analytics Dashboard"}
+          subtitle={"Performance insights and statistics"}
+          backHref="/admin"
+          action={
+            <div className="flex flex-wrap gap-2">
+              <Link href="/admin/analytics/advanced">
+                <Button variant="neobrutalist" size="sm">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Advanced</span>
+                </Button>
+              </Link>
+              <Button variant="neobrutalist" size="sm" onClick={exportAnalytics}>
+                <Download className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Export</span>
               </Button>
-            </Link>
-            <Button variant="neobrutalist" size="sm" onClick={exportAnalytics}>
-              <Download className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Export</span>
-            </Button>
-          </div>
-        </div>
+            </div>
+          }
+        />
 
         {/* Filters */}
         <Card variant="neobrutalist" className="mb-8">

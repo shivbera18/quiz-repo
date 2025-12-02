@@ -51,6 +51,7 @@ import {
 import { useAuth } from "@/hooks/use-auth"
 import { format, setHours, setMinutes } from "date-fns"
 import { cn } from "@/lib/utils"
+import { MobilePageHeader } from "@/components/layout/mobile-page-header"
 
 interface Announcement {
   id: string
@@ -278,188 +279,181 @@ export default function AdminAnnouncementsPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-4 sm:py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-foreground flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-400 border-2 border-black">
-                <Megaphone className="h-6 w-6 text-black" />
-              </div>
-              Announcements
-            </h1>
-            <p className="text-muted-foreground text-sm sm:text-base font-medium">
-              Create and manage announcements for all users
-            </p>
-          </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={openCreateDialog} variant="neobrutalist" className="gap-2">
-                <Plus className="h-4 w-4" />
-                New Announcement
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-[95vw] sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-lg sm:text-xl">
-                  {editingAnnouncement ? "Edit Announcement" : "Create Announcement"}
-                </DialogTitle>
-                <DialogDescription className="text-sm">
-                  {editingAnnouncement 
-                    ? "Update the announcement details below."
-                    : "Create a new announcement to notify all users."
-                  }
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-2 sm:py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Title</Label>
-                  <Input
-                    id="title"
-                    placeholder="Announcement title..."
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="content">Content</Label>
-                  <Textarea
-                    id="content"
-                    placeholder="Write your announcement..."
-                    rows={4}
-                    value={formData.content}
-                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  />
-                </div>
-                
-                {/* Priority Selection */}
-                <div className="space-y-2">
-                  <Label>Priority</Label>
-                  <Select
-                    value={formData.priority}
-                    onValueChange={(value) => setFormData({ ...formData, priority: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {priorityOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          <div className="flex items-center gap-2">
-                            <option.icon className={`h-4 w-4 ${option.color}`} />
-                            {option.label}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Modern Date & Time Picker */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label>Expiry Date & Time (Optional)</Label>
-                    {expiresDate && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive"
-                        onClick={clearExpiryDate}
-                      >
-                        <X className="h-3 w-3 mr-1" />
-                        Clear
-                      </Button>
-                    )}
+        <MobilePageHeader
+          title="Announcements"
+          subtitle="Create and manage announcements for all users"
+          backHref="/admin"
+          action={
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={openCreateDialog} variant="neobrutalist" className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  New Announcement
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-[95vw] sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="text-lg sm:text-xl">
+                    {editingAnnouncement ? "Edit Announcement" : "Create Announcement"}
+                  </DialogTitle>
+                  <DialogDescription className="text-sm">
+                    {editingAnnouncement 
+                      ? "Update the announcement details below."
+                      : "Create a new announcement to notify all users."
+                    }
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-2 sm:py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Title</Label>
+                    <Input
+                      id="title"
+                      placeholder="Announcement title..."
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="content">Content</Label>
+                    <Textarea
+                      id="content"
+                      placeholder="Write your announcement..."
+                      rows={4}
+                      value={formData.content}
+                      onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                    />
                   </div>
                   
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    {/* Date Picker */}
-                    <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full sm:flex-1 justify-start text-left font-normal text-sm",
-                            !expiresDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-                          <span className="truncate">{expiresDate ? format(expiresDate, "PPP") : "Pick a date"}</span>
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="center" side="bottom">
-                        <Calendar
-                          mode="single"
-                          selected={expiresDate}
-                          onSelect={(date) => {
-                            setExpiresDate(date)
-                            setIsDatePopoverOpen(false)
-                          }}
-                          disabled={(date) => date < new Date()}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                  {/* Priority Selection */}
+                  <div className="space-y-2">
+                    <Label>Priority</Label>
+                    <Select
+                      value={formData.priority}
+                      onValueChange={(value) => setFormData({ ...formData, priority: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {priorityOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            <div className="flex items-center gap-2">
+                              <option.icon className={`h-4 w-4 ${option.color}`} />
+                              {option.label}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                    {/* Time Picker */}
-                    <div className="flex gap-1 justify-center sm:justify-start">
-                      <Select
-                        value={expiresTime.hours}
-                        onValueChange={(value) => setExpiresTime({ ...expiresTime, hours: value })}
-                        disabled={!expiresDate}
-                      >
-                        <SelectTrigger className="w-[65px] sm:w-[70px]">
-                          <SelectValue placeholder="HH" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <ScrollArea className="h-[200px]">
-                            {hourOptions.map((hour) => (
-                              <SelectItem key={hour} value={hour}>
-                                {hour}
+                  {/* Modern Date & Time Picker */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label>Expiry Date & Time (Optional)</Label>
+                      {expiresDate && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive"
+                          onClick={clearExpiryDate}
+                        >
+                          <X className="h-3 w-3 mr-1" />
+                          Clear
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      {/* Date Picker */}
+                      <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full sm:flex-1 justify-start text-left font-normal text-sm",
+                              !expiresDate && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                            <span className="truncate">{expiresDate ? format(expiresDate, "PPP") : "Pick a date"}</span>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="center" side="bottom">
+                          <Calendar
+                            mode="single"
+                            selected={expiresDate}
+                            onSelect={(date) => {
+                              setExpiresDate(date)
+                              setIsDatePopoverOpen(false)
+                            }}
+                            disabled={(date) => date < new Date()}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+
+                      {/* Time Picker */}
+                      <div className="flex gap-1 justify-center sm:justify-start">
+                        <Select
+                          value={expiresTime.hours}
+                          onValueChange={(value) => setExpiresTime({ ...expiresTime, hours: value })}
+                          disabled={!expiresDate}
+                        >
+                          <SelectTrigger className="w-[65px] sm:w-[70px]">
+                            <SelectValue placeholder="HH" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <ScrollArea className="h-[200px]">
+                              {hourOptions.map((hour) => (
+                                <SelectItem key={hour} value={hour}>
+                                  {hour}
+                                </SelectItem>
+                              ))}
+                            </ScrollArea>
+                          </SelectContent>
+                        </Select>
+                        <span className="flex items-center text-muted-foreground">:</span>
+                        <Select
+                          value={expiresTime.minutes}
+                          onValueChange={(value) => setExpiresTime({ ...expiresTime, minutes: value })}
+                          disabled={!expiresDate}
+                        >
+                          <SelectTrigger className="w-[65px] sm:w-[70px]">
+                            <SelectValue placeholder="MM" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {minuteOptions.map((minute) => (
+                              <SelectItem key={minute} value={minute}>
+                                {minute}
                               </SelectItem>
                             ))}
-                          </ScrollArea>
-                        </SelectContent>
-                      </Select>
-                      <span className="flex items-center text-muted-foreground">:</span>
-                      <Select
-                        value={expiresTime.minutes}
-                        onValueChange={(value) => setExpiresTime({ ...expiresTime, minutes: value })}
-                        disabled={!expiresDate}
-                      >
-                        <SelectTrigger className="w-[65px] sm:w-[70px]">
-                          <SelectValue placeholder="MM" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {minuteOptions.map((minute) => (
-                            <SelectItem key={minute} value={minute}>
-                              {minute}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
+                    
+                    {expiresDate && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        Expires: {format(expiresDate, "MMMM d, yyyy")} at {expiresTime.hours}:{expiresTime.minutes}
+                      </p>
+                    )}
                   </div>
-                  
-                  {expiresDate && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      Expires: {format(expiresDate, "MMMM d, yyyy")} at {expiresTime.hours}:{expiresTime.minutes}
-                    </p>
-                  )}
                 </div>
-              </div>
-              <DialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-0">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
-                  Cancel
-                </Button>
-                <Button onClick={handleSubmit} disabled={submitting || !formData.title || !formData.content} className="w-full sm:w-auto">
-                  {submitting ? "Saving..." : (editingAnnouncement ? "Update" : "Create")}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+                <DialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-0">
+                  <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSubmit} disabled={submitting || !formData.title || !formData.content} className="w-full sm:w-auto">
+                    {submitting ? "Saving..." : (editingAnnouncement ? "Update" : "Create")}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          }
+        />
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">

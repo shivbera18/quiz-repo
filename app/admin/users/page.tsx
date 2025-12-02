@@ -1,18 +1,17 @@
 "use client"
 
+
 import { useEffect, useState } from "react"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { AdminBreadcrumb } from "@/components/ui/admin-breadcrumb"
-
 import { Users, Search, Mail, Calendar, TrendingUp, Download, RefreshCw } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
+import { MobilePageHeader } from "@/components/layout/mobile-page-header"
 
 interface User {
   id: string
@@ -175,9 +174,10 @@ export default function AdminUsersPage() {
 
   const stats = getOverallStats()
 
+
   if (loading || isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center mobile-header-safe-zone">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <div>Loading users...</div>
@@ -188,7 +188,7 @@ export default function AdminUsersPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center mobile-header-safe-zone">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-500 mb-4">Error: {error}</div>
           <Button onClick={fetchUsers}>Retry</Button>
@@ -197,31 +197,27 @@ export default function AdminUsersPage() {
     )
   }
 
+
   return (
-    <div className="min-h-screen bg-background mobile-header-safe-zone">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-foreground flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-400 border-2 border-black">
-                <Users className="h-6 w-6 text-black" />
-              </div>
-              User Management
-            </h1>
-            <p className="text-muted-foreground text-sm sm:text-base font-medium">Manage and monitor user accounts</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={fetchUsers} className="border-2 border-black dark:border-white/65 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.75)] transition-all">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Refresh</span>
-            </Button>
-            <Button variant="neobrutalist" size="sm" onClick={exportUserData}>
-              <Download className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Export</span>
-            </Button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-4">
+        <MobilePageHeader
+          title={"User Management"}
+          subtitle={"Manage and monitor user accounts"}
+          backHref="/admin"
+          action={
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={fetchUsers} className="border-2 border-black dark:border-white/65 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.75)] transition-all">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Refresh</span>
+              </Button>
+              <Button variant="neobrutalist" size="sm" onClick={exportUserData}>
+                <Download className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Export</span>
+              </Button>
+            </div>
+          }
+        />
 
         {/* Stats Overview */}
         <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">

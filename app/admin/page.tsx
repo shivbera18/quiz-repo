@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Trash2, Users, BarChart3, Edit, Eye, Clock, BookOpen, Shield, Sparkles, Trophy, FileText, Brain, Hash, Pencil, Palette, Music, Megaphone } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/hooks/use-auth"
+import { MobilePageHeader } from "@/components/layout/mobile-page-header"
 import AIQuizGenerator from "./ai-quiz-generator"
 import ManageQuizzesPage from "./manage-quizzes"
 import QuizManagementSection from "./QuizManagementSection"
@@ -767,31 +768,17 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col gap-4 mb-8">
-          {/* Mobile header - Clean title only */}
-          <div className="sm:hidden">
-            <h1 className="text-2xl font-bold text-foreground">Admin Panel</h1>
-            <p className="text-sm text-muted-foreground">
-              Welcome, {user.name}
-            </p>
-          </div>
-
-          {/* Desktop header */}
-          <div className="hidden sm:flex sm:justify-between sm:items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Admin Panel</h1>
-              <p className="text-muted-foreground">
-                Welcome, {user.name} - Manage individual quizzes and their questions
-              </p>
-            </div>
-
-            {/* Desktop: Only show role badge */}
+        <MobilePageHeader
+          title="Admin Panel"
+          subtitle={`Welcome, ${user.name} - Manage quizzes and questions`}
+          hideBackButton
+          action={
             <Badge variant="outline" className="flex items-center gap-1 h-fit">
               <Shield className="h-3 w-3" />
               Administrator
             </Badge>
-          </div>
-        </div>
+          }
+        />
 
         <Tabs value={selectedAdminTab} onValueChange={setSelectedAdminTab} className="space-y-6">
           {/* Mobile: Dropdown selector */}
@@ -888,7 +875,7 @@ export default function AdminPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-black">{stats.averageScore}%</div>
+                  <div className="text-2xl font-black">{Number(stats.averageScore).toFixed(2)}%</div>
                   <p className="text-xs text-muted-foreground font-medium">across all attempts</p>
                 </CardContent>
               </Card>
@@ -977,18 +964,18 @@ export default function AdminPage() {
                   <div className="space-y-3">
                     {analytics.recentActivity.map((activity: any, index: number) => (
                       <div key={index} className="flex justify-between items-center p-3 border-2 border-black dark:border-white/65 rounded-lg bg-card shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)]">
-                        <div>
-                          <div className="font-bold">{activity.quizName || 'Unknown Quiz'}</div>
+                        <div className="min-w-0 flex-1 mr-3">
+                          <div className="font-bold truncate">{activity.quizName || 'Unknown Quiz'}</div>
                           <div className="text-sm text-muted-foreground font-medium">
-                            Score: {activity.totalScore || 0}% • {new Date(activity.date || activity.createdAt).toLocaleDateString()}
+                            Score: {Number(activity.totalScore || 0).toFixed(2)}% • {new Date(activity.date || activity.createdAt).toLocaleDateString()}
                           </div>
                         </div>
                         <Badge className={cn(
-                          "border-2 border-black font-bold",
+                          "border-2 border-black font-bold shrink-0",
                           (activity.totalScore || 0) >= 80 ? "bg-green-400 text-black" :
                             (activity.totalScore || 0) >= 60 ? "bg-yellow-400 text-black" : "bg-red-400 text-black"
                         )}>
-                          {activity.totalScore || 0}%
+                          {Number(activity.totalScore || 0).toFixed(2)}%
                         </Badge>
                       </div>
                     ))}

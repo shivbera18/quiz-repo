@@ -32,6 +32,11 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         '/dashboard/attempted-quizzes',
         '/analytics',
         '/profile',
+        '/admin',
+        '/admin/users',
+        '/admin/question-bank',
+        '/admin/quiz',
+        '/admin/analytics',
     ]
     const hasMobilePageHeader = subpagesWithHeader.some(path => pathname?.startsWith(path))
 
