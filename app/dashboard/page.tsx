@@ -319,15 +319,10 @@ export default function DashboardPage() {
         <Card variant="neobrutalist">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-cyan-300 dark:bg-cyan-400 border-2 border-black">
-                  <Clock className="h-4 w-4 text-black" />
-                </div>
-                <CardTitle className="text-lg">Recent Attempts</CardTitle>
-              </div>
+              <CardTitle className="text-lg">Recent Attempts</CardTitle>
               {recentAttempts.length > 0 && (
                 <Link href="/dashboard/attempted-quizzes">
-                  <Button variant="neobrutalist" size="sm" className="text-xs gap-1">
+                  <Button variant="ghost" size="sm" className="text-xs gap-1">
                     View All <ArrowRight className="h-3 w-3" />
                   </Button>
                 </Link>
@@ -336,48 +331,38 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="pt-0">
             {recentAttempts.length > 0 ? (
-              <div className="space-y-3">
-                {recentAttempts.slice(0, 3).map((attempt) => {
-                  const scoreBg = attempt.totalScore >= 80 ? 'bg-green-400' : 
-                                  attempt.totalScore >= 60 ? 'bg-yellow-400' : 'bg-orange-400'
-                  return (
-                    <div 
-                      key={attempt._id} 
-                      className="flex items-center justify-between p-4 rounded-xl bg-white dark:bg-zinc-800 border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_#fff] transition-all"
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        {/* Score Badge */}
-                        <div className={`w-12 h-12 rounded-lg ${scoreBg} border-2 border-black flex items-center justify-center shrink-0`}>
-                          <span className="text-sm font-black text-black">{Math.round(attempt.totalScore)}%</span>
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-bold text-sm truncate">{attempt.quizName}</p>
-                          <p className="text-xs text-muted-foreground font-medium">
-                            {new Date(attempt.date).toLocaleDateString('en-US', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric'
-                            })}
-                          </p>
-                        </div>
-                      </div>
+              <div className="space-y-2">
+                {recentAttempts.slice(0, 3).map((attempt) => (
+                  <div key={attempt._id} className="flex items-center justify-between p-3 rounded-lg border-2 border-black dark:border-white bg-card hover:bg-accent/50 transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm truncate">{attempt.quizName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(attempt.date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        className={`text-xs font-bold ${
+                          attempt.totalScore >= 70 
+                            ? 'bg-green-400 text-black border-black' 
+                            : 'bg-orange-400 text-black border-black'
+                        }`}
+                      >
+                        {Math.round(attempt.totalScore)}%
+                      </Badge>
                       <Link href={`/results/${attempt._id}`}>
-                        <Button variant="neobrutalist" size="sm" className="gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
                           <Eye className="h-4 w-4" />
-                          <span className="hidden sm:inline">View</span>
                         </Button>
                       </Link>
                     </div>
-                  )
-                })}
+                  </div>
+                ))}
               </div>
             ) : (
-              <div className="text-center py-8 px-4 rounded-xl bg-white dark:bg-zinc-800 border-2 border-dashed border-black dark:border-white">
-                <History className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                <p className="text-sm text-muted-foreground font-medium">
-                  No attempts yet. Start a quiz to see your results here!
-                </p>
-              </div>
+              <p className="text-sm text-muted-foreground text-center py-6">
+                No attempts yet. Start a quiz to see your results here!
+              </p>
             )}
           </CardContent>
         </Card>
