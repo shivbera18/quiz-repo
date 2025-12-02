@@ -24,7 +24,7 @@ const validateToken = async (token: string) => {
     }
     
     // Check if token is not too old (24 hours)
-    const maxAge = 24 * 60 * 60 * 1000 // 24 hours in ms
+    const maxAge = 30 * 24 * 60 * 60 * 1000 // 30 days in ms
     if (Date.now() - timestamp > maxAge) {
       throw new Error('Token expired')
     }
