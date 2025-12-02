@@ -175,43 +175,43 @@ export default function DashboardPage() {
 
       {/* Quick Stats Bar - Neo Brutalism */}
       {!loadingAttempts && allAttempts.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="flex items-center gap-3 p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_#fff] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_#fff] transition-all">
-            <div className="p-3 rounded-lg bg-blue-300 dark:bg-blue-400 border-2 border-black dark:border-white">
-              <BookOpen className="h-6 w-6 text-black" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white shadow-[6px_6px_0px_0px_#000] sm:shadow-[8px_8px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#fff] sm:dark:shadow-[8px_8px_0px_0px_#fff] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_#fff] transition-all">
+            <div className="p-2 rounded-lg bg-blue-300 dark:bg-blue-400 border-2 border-black dark:border-white flex-shrink-0">
+              <BookOpen className="h-5 w-5 text-black" />
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="text-xs text-muted-foreground font-bold">Total Attempts</p>
-              <p className="text-2xl font-black">{allAttempts.length}</p>
+              <p className="text-xl sm:text-2xl font-black">{allAttempts.length}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_#fff] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_#fff] transition-all">
-            <div className="p-3 rounded-lg bg-green-300 dark:bg-green-400 border-2 border-black dark:border-white">
-              <TrendingUp className="h-6 w-6 text-black" />
+          <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white shadow-[6px_6px_0px_0px_#000] sm:shadow-[8px_8px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#fff] sm:dark:shadow-[8px_8px_0px_0px_#fff] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_#fff] transition-all">
+            <div className="p-2 rounded-lg bg-green-300 dark:bg-green-400 border-2 border-black dark:border-white flex-shrink-0">
+              <TrendingUp className="h-5 w-5 text-black" />
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="text-xs text-muted-foreground font-bold">Avg Score</p>
-              <p className="text-2xl font-black">
-                {(allAttempts.reduce((sum, a) => sum + a.totalScore, 0) / allAttempts.length).toFixed(2)}%
+              <p className="text-xl sm:text-2xl font-black truncate">
+                {(allAttempts.reduce((sum, a) => sum + a.totalScore, 0) / allAttempts.length).toFixed(0)}%
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3 p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_#fff] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_#fff] transition-all">
-            <div className="p-3 rounded-lg bg-yellow-300 dark:bg-yellow-400 border-2 border-black dark:border-white">
-              <Target className="h-6 w-6 text-black" />
+          <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white shadow-[6px_6px_0px_0px_#000] sm:shadow-[8px_8px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#fff] sm:dark:shadow-[8px_8px_0px_0px_#fff] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_#fff] transition-all">
+            <div className="p-2 rounded-lg bg-yellow-300 dark:bg-yellow-400 border-2 border-black dark:border-white flex-shrink-0">
+              <Target className="h-5 w-5 text-black" />
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="text-xs text-muted-foreground font-bold">Best Score</p>
-              <p className="text-2xl font-black">{Math.max(...allAttempts.map(a => a.totalScore)).toFixed(2)}%</p>
+              <p className="text-xl sm:text-2xl font-black truncate">{Math.max(...allAttempts.map(a => a.totalScore)).toFixed(0)}%</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_#fff] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_#fff] transition-all">
-            <div className="p-3 rounded-lg bg-purple-300 dark:bg-purple-400 border-2 border-black dark:border-white">
-              <Clock className="h-6 w-6 text-black" />
+          <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white shadow-[6px_6px_0px_0px_#000] sm:shadow-[8px_8px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#fff] sm:dark:shadow-[8px_8px_0px_0px_#fff] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_#fff] transition-all">
+            <div className="p-2 rounded-lg bg-purple-300 dark:bg-purple-400 border-2 border-black dark:border-white flex-shrink-0">
+              <Clock className="h-5 w-5 text-black" />
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="text-xs text-muted-foreground font-bold">Study Time</p>
-              <p className="text-2xl font-black">
+              <p className="text-xl sm:text-2xl font-black">
                 {(allAttempts.reduce((sum, a) => sum + (a.timeSpent || 0), 0) / 60).toFixed(0)}m
               </p>
             </div>
