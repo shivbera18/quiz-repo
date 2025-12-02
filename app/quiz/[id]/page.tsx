@@ -492,7 +492,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
                                 setShowNavigator(false)
                               }}
                               className={cn(
-                                "relative h-12 w-full rounded-lg border-2 font-bold transition-all flex items-center justify-center shadow-[2px_2px_0px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_#000] active:translate-x-[0px] active:translate-y-[0px] active:shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff] dark:hover:shadow-[4px_4px_0px_0px_#fff]",
+                                "relative h-12 w-full rounded-lg border-2 font-bold transition-all flex items-center justify-center shadow-[2px_2px_0px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_#000] active:translate-x-[0px] active:translate-y-[0px] active:shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.15)] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)]",
                                 isCurrent && "ring-2 ring-black ring-offset-2 dark:ring-white",
                                 getQuestionStatusColor(q.id)
                               )}
@@ -544,8 +544,8 @@ export default function QuizPage({ params }: { params: { id: string } }) {
                           className={cn(
                             "flex items-center gap-3 sm:gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 active:scale-[0.99]",
                             isSelected
-                              ? "border-black bg-primary/10 shadow-[4px_4px_0px_0px_#000] dark:border-white dark:shadow-[4px_4px_0px_0px_#fff]"
-                              : "border-black/20 hover:border-black hover:shadow-[4px_4px_0px_0px_#000] hover:bg-background dark:border-white/20 dark:hover:border-white dark:hover:shadow-[4px_4px_0px_0px_#fff]"
+                              ? "border-black bg-primary/10 shadow-[4px_4px_0px_0px_#000] dark:border-white dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.15)]"
+                              : "border-black/20 hover:border-black hover:shadow-[4px_4px_0px_0px_#000] hover:bg-background dark:border-white/20 dark:hover:border-white dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)]"
                           )}
                         >
                           <div className={cn(
@@ -609,7 +609,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
                     key={idx}
                     onClick={() => navigateToQuestion(idx)}
                     className={cn(
-                      "relative h-10 w-full rounded-lg border-2 text-sm font-bold transition-all flex items-center justify-center shadow-[2px_2px_0px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_#000] active:translate-x-[0px] active:translate-y-[0px] active:shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff] dark:hover:shadow-[4px_4px_0px_0px_#fff]",
+                      "relative h-10 w-full rounded-lg border-2 text-sm font-bold transition-all flex items-center justify-center shadow-[2px_2px_0px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_#000] active:translate-x-[0px] active:translate-y-[0px] active:shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.15)] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)]",
                       isCurrent && "ring-2 ring-black ring-offset-2 dark:ring-white",
                       getQuestionStatusColor(q.id)
                     )}

@@ -254,7 +254,7 @@ export function TopHeader() {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="relative h-10 w-10 rounded-lg border-4 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_#fff] bg-white dark:bg-zinc-900 transition-all"
+                  className="relative h-10 w-10 rounded-lg border-4 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.15)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.2)] bg-white dark:bg-zinc-900 transition-all"
                 >
                   <Bell className="h-5 w-5" />
                   {unreadCount > 0 && (
@@ -265,7 +265,7 @@ export function TopHeader() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent
-                className="w-[calc(100vw-2rem)] max-w-96 p-0 border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] rounded-lg mr-2"
+                className="w-[calc(100vw-2rem)] max-w-96 p-0 border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.15)] rounded-lg mr-2"
                 align="end"
                 sideOffset={8}
               >
@@ -295,7 +295,7 @@ export function TopHeader() {
             <Button
               variant="outline"
               size="icon"
-              className="relative h-10 w-10 rounded-lg border-2 border-black dark:border-white shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#fff] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[5px_5px_0px_0px_#000] dark:hover:shadow-[5px_5px_0px_0px_#fff] bg-white dark:bg-zinc-900 transition-all"
+              className="relative h-10 w-10 rounded-lg border-2 border-black dark:border-white shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.15)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[5px_5px_0px_0px_#000] dark:hover:shadow-[5px_5px_0px_0px_rgba(255,255,255,0.2)] bg-white dark:bg-zinc-900 transition-all"
             >
               <Bell className="h-5 w-5" />
               {unreadCount > 0 && (
@@ -306,7 +306,7 @@ export function TopHeader() {
             </Button>
           </PopoverTrigger>
           <PopoverContent
-            className="w-80 sm:w-96 p-0 border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] rounded-lg"
+            className="w-80 sm:w-96 p-0 border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.15)] rounded-lg"
             align="end"
             sideOffset={8}
           >
@@ -322,7 +322,7 @@ export function TopHeader() {
 
         {/* Profile Avatar - Desktop only - Neo Brutalism */}
         <Link href="/profile">
-          <Avatar className="h-10 w-10 border-2 border-black dark:border-white hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all cursor-pointer shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#fff] hover:shadow-[5px_5px_0px_0px_#000] dark:hover:shadow-[5px_5px_0px_0px_#fff]">
+          <Avatar className="h-10 w-10 border-2 border-black dark:border-white hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all cursor-pointer shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.15)] hover:shadow-[5px_5px_0px_0px_#000] dark:hover:shadow-[5px_5px_0px_0px_rgba(255,255,255,0.2)]">
             <AvatarImage src={user.avatar || undefined} alt={user.name} />
             <AvatarFallback className="bg-yellow-400 text-black font-bold text-sm">
               {getInitials(user.name || "User")}

@@ -88,7 +88,7 @@ export function Sidebar() {
                             variant="outline"
                             size="icon"
                             onClick={() => setIsMobileOpen(!isMobileOpen)}
-                            className="rounded-lg bg-white dark:bg-zinc-900 border-4 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_#fff] transition-all"
+                            className="rounded-lg bg-white dark:bg-zinc-900 border-4 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.15)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.2)] transition-all"
                         >
                             {isMobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                         </Button>
@@ -112,7 +112,7 @@ export function Sidebar() {
             {/* Desktop Sidebar - Neo Brutalism Design */}
             <aside
                 className={cn(
-                    "fixed top-4 left-4 z-40 border-4 border-black rounded-lg bg-white dark:bg-zinc-900 dark:border-white shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_#fff] hidden md:flex flex-col",
+                    "fixed top-4 left-4 z-40 border-4 border-black rounded-lg bg-white dark:bg-zinc-900 dark:border-white shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.15)] hidden md:flex flex-col",
                     isCollapsed ? "w-20" : "w-[280px]",
                     !isHydrated && "invisible"
                 )}
@@ -157,8 +157,8 @@ export function Sidebar() {
                                     className={cn(
                                         "flex items-center rounded-lg text-sm font-bold border-2 border-black dark:border-white transition-all duration-200",
                                         isActive 
-                                            ? "bg-yellow-300 dark:bg-yellow-400 text-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] translate-x-0 translate-y-0" 
-                                            : "bg-white dark:bg-zinc-800 hover:bg-blue-300 dark:hover:bg-blue-400 hover:shadow-[4px_4px_0px_0px_#000] dark:hover:shadow-[4px_4px_0px_0px_#fff] hover:translate-x-[-2px] hover:translate-y-[-2px]",
+                                            ? "bg-yellow-300 dark:bg-yellow-400 text-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.15)] translate-x-0 translate-y-0" 
+                                            : "bg-white dark:bg-zinc-800 hover:bg-blue-300 dark:hover:bg-blue-400 hover:shadow-[4px_4px_0px_0px_#000] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] hover:translate-x-[-2px] hover:translate-y-[-2px]",
                                         isCollapsed ? "h-12 w-12 justify-center" : "gap-3 px-4 py-3 w-full"
                                     )}
                                 >
@@ -203,7 +203,7 @@ export function Sidebar() {
                         animate={{ x: 0 }}
                         exit={{ x: "-100%" }}
                         transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                        className="fixed inset-y-0 left-0 z-50 w-72 border-r-4 border-black dark:border-white bg-white dark:bg-zinc-900 md:hidden flex flex-col shadow-[8px_0px_0px_0px_#000] dark:shadow-[8px_0px_0px_0px_#fff]"
+                        className="fixed inset-y-0 left-0 z-50 w-72 border-r-4 border-black dark:border-white bg-white dark:bg-zinc-900 md:hidden flex flex-col shadow-[8px_0px_0px_0px_#000] dark:shadow-[8px_0px_0px_0px_rgba(255,255,255,0.15)]"
                     >
                         <div className="flex h-16 items-center justify-between px-6 shrink-0 border-b-4 border-black dark:border-white">
                             <div className="flex items-center gap-3">
@@ -230,8 +230,8 @@ export function Sidebar() {
                                             className={cn(
                                                 "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-bold border-2 border-black dark:border-white transition-all",
                                                 isActive 
-                                                    ? "bg-yellow-300 dark:bg-yellow-400 text-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff]" 
-                                                    : "bg-white dark:bg-zinc-800 hover:bg-blue-300 dark:hover:bg-blue-400 hover:shadow-[4px_4px_0px_0px_#000] dark:hover:shadow-[4px_4px_0px_0px_#fff] hover:translate-x-[-2px] hover:translate-y-[-2px]"
+                                                    ? "bg-yellow-300 dark:bg-yellow-400 text-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.15)]" 
+                                                    : "bg-white dark:bg-zinc-800 hover:bg-blue-300 dark:hover:bg-blue-400 hover:shadow-[4px_4px_0px_0px_#000] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] hover:translate-x-[-2px] hover:translate-y-[-2px]"
                                             )}
                                         >
                                             <item.icon className={cn("h-5 w-5")} />

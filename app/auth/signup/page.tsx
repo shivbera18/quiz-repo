@@ -88,7 +88,7 @@ export default function SignupPage() {
         <p className="mt-2 text-muted-foreground">Join the community</p>
       </div>
 
-      <Card variant="neobrutalist" className="border-4 border-black shadow-[8px_8px_0px_0px_#000] dark:border-white/20 dark:shadow-[8px_8px_0px_0px_#fff]">
+      <Card variant="neobrutalist" className="border-4 border-black shadow-[8px_8px_0px_0px_#000] dark:border-white/20 dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.15)]">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl">Create an account</CardTitle>
           <CardDescription>

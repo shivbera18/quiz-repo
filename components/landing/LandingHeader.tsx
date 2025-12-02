@@ -41,7 +41,7 @@ export default function LandingHeader() {
     };
 
     return (
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b-4 border-black dark:border-white/20 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff]">
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b-4 border-black dark:border-white/20 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.15)]">
             <div className="container mx-auto px-4 md:px-6">
                 <div className="flex items-center justify-between h-16">
                     <Link href="/" className="flex items-center gap-2">

@@ -476,11 +476,11 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
             <p className="text-muted-foreground text-sm sm:text-base font-medium">Manage questions for this quiz</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowQuestionBankImporter(true)} className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_#fff] transition-all">
+            <Button variant="outline" size="sm" onClick={() => setShowQuestionBankImporter(true)} className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.15)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.2)] transition-all">
               <Download className="h-4 w-4 mr-1" />
               <span className="hidden sm:inline">Import</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowBulkManager(true)} className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_#fff] transition-all">
+            <Button variant="outline" size="sm" onClick={() => setShowBulkManager(true)} className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.15)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.2)] transition-all">
               <Upload className="h-4 w-4 mr-1" />
               <span className="hidden sm:inline">Bulk</span>
             </Button>
@@ -653,7 +653,7 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
                   <Save className="h-4 w-4 mr-2" />
                   {editingQuestion ? "Update Question" : "Add Question"}
                 </Button>
-                <Button variant="outline" onClick={resetForm} className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_#fff] transition-all">
+                <Button variant="outline" onClick={resetForm} className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.15)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.2)] transition-all">
                   Cancel
                 </Button>
               </div>
@@ -679,7 +679,7 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
             ) : (
               <div className="space-y-4">
                 {quiz.questions.map((question, index) => (
-                  <div key={question.id} className="border-2 border-black dark:border-white rounded-lg p-4 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff]">
+                  <div key={question.id} className="border-2 border-black dark:border-white rounded-lg p-4 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.15)]">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
