@@ -23,8 +23,8 @@ const validateToken = async (token: string) => {
       throw new Error('Invalid timestamp in token')
     }
     
-    // Check if token is not too old (24 hours)
-    const maxAge = 24 * 60 * 60 * 1000 // 24 hours in ms
+    // Allow tokens to stay valid for 30 days to prevent unexpected expiry loops
+    const maxAge = 30 * 24 * 60 * 60 * 1000 // 30 days in ms
     if (Date.now() - timestamp > maxAge) {
       throw new Error('Token expired')
     }
@@ -49,20 +49,26 @@ const validateToken = async (token: string) => {
   }
 }
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const authHeader = request.headers.get("authorization")
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      console.error("Missing or invalid authorization header")
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
     const token = authHeader.substring(7)
+    console.log("Validating token for results API...")
     const decoded = await validateToken(token)
+    console.log("Token validated successfully for user:", decoded.userId)
+
+    // Await params in Next.js 15
+    const { id } = await params
 
     // Find result in database
     const dbResult = await prisma.quizResult.findFirst({
       where: { 
-        id: params.id,
+        id: id,
         userId: decoded.userId 
       },
       include: {
@@ -75,70 +81,66 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       }
     })
 
-    if (dbResult) {
-      // Parse JSON strings from database
-      let parsedAnswers = [];
-      try {
-        parsedAnswers = typeof dbResult.answers === 'string' 
-          ? JSON.parse(dbResult.answers) 
-          : dbResult.answers || [];
-      } catch (e) {
-        console.error("Error parsing answers:", e);
-        parsedAnswers = [];
-      }
-
-      let parsedSections: any = {};
-      try {
-        parsedSections = typeof dbResult.sections === 'string' 
-          ? JSON.parse(dbResult.sections) 
-          : dbResult.sections || {};
-      } catch (e) {
-        console.error("Error parsing sections:", e);
-        parsedSections = {};
-      }
-
-      // Transform database result to match frontend format
-      const result = {
-        _id: dbResult.id,
-        date: dbResult.date.toISOString(),
-        quizName: dbResult.quiz?.title || 'Unknown Quiz',
-        quizId: dbResult.quizId,
-        totalScore: dbResult.totalScore,
-        rawScore: parsedSections?.rawScore || dbResult.totalScore,
-        positiveMarks: parsedSections?.positiveMarks || 0,
-        negativeMarks: parsedSections?.negativeMarks || 0,
-        correctAnswers: parsedSections?.correctAnswers || 0,
-        wrongAnswers: parsedSections?.wrongAnswers || 0,
-        unanswered: parsedSections?.unanswered || 0,
-        sections: {
-          reasoning: parsedSections?.reasoning || 0,
-          quantitative: parsedSections?.quantitative || 0,
-          english: parsedSections?.english || 0
-        },
-        questions: parsedAnswers,
-        timeSpent: dbResult.timeSpent,
-        negativeMarking: parsedSections?.negativeMarking || true,
-        negativeMarkValue: parsedSections?.negativeMarkValue || 0.25,
-        userId: dbResult.userId
-      }
-
-      return NextResponse.json({ result })
+    if (!dbResult) {
+      return NextResponse.json({ message: "Result not found" }, { status: 404 })
     }
 
-    // Fallback to localStorage if not found in database
-    if (typeof window !== "undefined") {
-      const localResults = JSON.parse(localStorage.getItem("quizResults") || "[]")
-      const result = localResults.find((r: any) => r._id === params.id && r.userId === decoded.userId)
-      
-      if (result) {
-        return NextResponse.json({ result })
-      }
+    // Parse JSON strings from database
+    let parsedAnswers = [];
+    try {
+      parsedAnswers = typeof dbResult.answers === 'string' 
+        ? JSON.parse(dbResult.answers) 
+        : dbResult.answers || [];
+    } catch (e) {
+      console.error("Error parsing answers:", e);
+      parsedAnswers = [];
     }
 
-    return NextResponse.json({ message: "Result not found" }, { status: 404 })
+    let parsedSections: any = {};
+    try {
+      parsedSections = typeof dbResult.sections === 'string' 
+        ? JSON.parse(dbResult.sections) 
+        : dbResult.sections || {};
+    } catch (e) {
+      console.error("Error parsing sections:", e);
+      parsedSections = {};
+    }
+
+    // Transform database result to match frontend format
+    const result = {
+      _id: dbResult.id,
+      date: dbResult.date.toISOString(),
+      quizName: dbResult.quiz?.title || 'Unknown Quiz',
+      quizId: dbResult.quizId,
+      totalScore: dbResult.totalScore,
+      rawScore: parsedSections?.rawScore || dbResult.totalScore,
+      positiveMarks: parsedSections?.positiveMarks || 0,
+      negativeMarks: parsedSections?.negativeMarks || 0,
+      correctAnswers: parsedSections?.correctAnswers || 0,
+      wrongAnswers: parsedSections?.wrongAnswers || 0,
+      unanswered: parsedSections?.unanswered || 0,
+      sections: {
+        reasoning: parsedSections?.reasoning || 0,
+        quantitative: parsedSections?.quantitative || 0,
+        english: parsedSections?.english || 0
+      },
+      questions: parsedAnswers,
+      timeSpent: dbResult.timeSpent,
+      negativeMarking: parsedSections?.negativeMarking || true,
+      negativeMarkValue: parsedSections?.negativeMarkValue || 0.25,
+      userId: dbResult.userId
+    }
+
+    return NextResponse.json({ result })
 
   } catch (error) {
     console.error("Error fetching quiz result:", error)
+    
+    // Check if it's a token validation error
+    if (error instanceof Error && error.message === 'Invalid token') {
+      return NextResponse.json({ message: "Invalid or expired token" }, { status: 401 })
+    }
+    
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }

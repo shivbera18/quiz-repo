@@ -1,0 +1,12 @@
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Light bulb -->
+  <circle cx="50" cy="45" r="20" stroke="currentColor" stroke-width="3" fill="none"/>
+  <path d="M 50 65 L 50 75" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 45 75 L 55 75" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 47 78 L 53 78" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Light rays -->
+  <path d="M 50 15 L 50 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <path d="M 75 30 L 80 25" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <path d="M 25 30 L 20 25" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+</svg>

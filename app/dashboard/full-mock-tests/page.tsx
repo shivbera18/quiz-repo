@@ -109,17 +109,21 @@ export default function FullMockTestsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sm:space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Link href="/dashboard">
-            <Button variant="outline" size="icon" className="rounded-full h-9 w-9">
-              <ArrowLeft className="h-4 w-4" />
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="rounded-lg h-11 w-11 border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_#fff] bg-white dark:bg-zinc-900 transition-all"
+            >
+              <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Full Mock Tests</h1>
-            <p className="text-sm text-muted-foreground mt-1">Comprehensive exams covering all sections</p>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Full Mock Tests</h1>
+            <p className="text-sm text-muted-foreground mt-1 font-medium">Comprehensive exams covering all sections</p>
           </div>
         </div>
         <QuizFilters

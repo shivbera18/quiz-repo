@@ -55,16 +55,25 @@ export default function AnalyticsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Link href="/dashboard">
-            <Button variant="outline" size="icon" className="rounded-full h-9 w-9">
-              <ArrowLeft className="h-4 w-4" />
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="rounded-lg h-11 w-11 border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_#fff] bg-white dark:bg-zinc-900 transition-all"
+            >
+              <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Analytics</h1>
-            <p className="text-sm text-muted-foreground mt-1">Detailed performance insights and progress tracking</p>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">My Analytics</h1>
+            <p className="text-sm text-muted-foreground mt-1 font-medium">Detailed performance insights and progress tracking</p>
           </div>
         </div>
-        <Button variant="outline" onClick={fetchData} disabled={refreshing} className="w-full sm:w-auto">
+        <Button 
+          variant="outline" 
+          onClick={fetchData} 
+          disabled={refreshing} 
+          className="w-full sm:w-auto border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_#fff] bg-blue-300 dark:bg-blue-400 hover:bg-blue-400 dark:hover:bg-blue-500 font-bold transition-all"
+        >
           <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
           Refresh
         </Button>

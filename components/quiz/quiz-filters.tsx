@@ -35,52 +35,52 @@ export function QuizFilters({ onFilterChange, activeFilters }: QuizFiltersProps)
     return (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-                <Button variant="outline" className="gap-2 relative">
+                <Button variant="neobrutalist" className="gap-2 relative font-bold">
                     <Filter className="h-4 w-4" />
                     Filters
                     {activeCount > 0 && (
-                        <Badge variant="secondary" className="ml-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                        <Badge className="ml-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs font-bold bg-orange-400 text-black border-2 border-black">
                             {activeCount}
                         </Badge>
                     )}
                 </Button>
             </SheetTrigger>
-            <SheetContent>
+            <SheetContent className="border-l-4 border-black dark:border-white">
                 <SheetHeader>
-                    <SheetTitle>Filter Quizzes</SheetTitle>
-                    <SheetDescription>
+                    <SheetTitle className="font-black text-xl">Filter Quizzes</SheetTitle>
+                    <SheetDescription className="font-medium">
                         Narrow down quizzes by difficulty, duration, and more.
                     </SheetDescription>
                 </SheetHeader>
                 <div className="grid gap-6 py-6">
                     <div className="space-y-4">
-                        <Label>Difficulty</Label>
+                        <Label className="font-bold text-base">Difficulty</Label>
                         <RadioGroup
                             value={localFilters.difficulty}
                             onValueChange={(val) => setLocalFilters({ ...localFilters, difficulty: val })}
                         >
                             <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="all" id="all" />
-                                <Label htmlFor="all">All Levels</Label>
+                                <Label htmlFor="all" className="font-medium">All Levels</Label>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="beginner" id="beginner" />
-                                <Label htmlFor="beginner">Beginner</Label>
+                                <Label htmlFor="beginner" className="font-medium">Beginner</Label>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="intermediate" id="intermediate" />
-                                <Label htmlFor="intermediate">Intermediate</Label>
+                                <Label htmlFor="intermediate" className="font-medium">Intermediate</Label>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="advanced" id="advanced" />
-                                <Label htmlFor="advanced">Advanced</Label>
+                                <Label htmlFor="advanced" className="font-medium">Advanced</Label>
                             </div>
                         </RadioGroup>
                     </div>
                     <div className="space-y-4">
                         <div className="flex justify-between">
-                            <Label>Max Duration (minutes)</Label>
-                            <span className="text-sm text-muted-foreground">{localFilters.duration[1]}m</span>
+                            <Label className="font-bold text-base">Max Duration (minutes)</Label>
+                            <span className="text-sm font-bold bg-blue-200 dark:bg-blue-400/30 px-2 py-0.5 rounded border-2 border-black dark:border-white/30">{localFilters.duration[1]}m</span>
                         </div>
                         <Slider
                             defaultValue={[120]}
@@ -92,8 +92,8 @@ export function QuizFilters({ onFilterChange, activeFilters }: QuizFiltersProps)
                     </div>
                 </div>
                 <div className="flex gap-2 mt-auto">
-                    <Button variant="outline" className="w-full" onClick={handleReset}>Reset</Button>
-                    <Button className="w-full" onClick={handleApply}>Apply Filters</Button>
+                    <Button variant="neobrutalist" className="w-full font-bold" onClick={handleReset}>Reset</Button>
+                    <Button variant="neobrutalistInverted" className="w-full font-bold" onClick={handleApply}>Apply Filters</Button>
                 </div>
             </SheetContent>
         </Sheet>

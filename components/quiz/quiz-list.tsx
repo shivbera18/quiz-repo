@@ -57,52 +57,52 @@ export function QuizList({ quizzes, emptyMessage = "No quizzes found." }: QuizLi
             {quizzes.map((quiz) => (
                 <motion.div key={quiz.id} variants={staggerItem}>
                     <Link href={`/quiz/${quiz.id}`} className="block group">
-                        <Card className="h-full flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-muted">
+                        <Card variant="neobrutalist" className="h-full flex flex-col">
                             <CardHeader className="pb-3">
                                 <div className="flex items-start justify-between mb-3">
-                                    <Badge variant="secondary" className="capitalize text-xs font-medium">
+                                    <Badge className="capitalize text-xs font-bold bg-yellow-300 text-black border-2 border-black hover:bg-yellow-400">
                                         {quiz.difficulty || "General"}
                                     </Badge>
                                     {quiz.sections.length > 1 && (
-                                        <Badge className="text-xs">Full Mock</Badge>
+                                        <Badge className="text-xs font-bold bg-blue-300 text-black border-2 border-black hover:bg-blue-400">Full Mock</Badge>
                                     )}
                                 </div>
-                                <CardTitle className="line-clamp-2 text-lg group-hover:text-primary transition-colors leading-tight">
+                                <CardTitle className="line-clamp-2 text-lg font-black group-hover:text-primary transition-colors leading-tight">
                                     {quiz.title}
                                 </CardTitle>
-                                <CardDescription className="line-clamp-2 text-sm mt-1.5">
+                                <CardDescription className="line-clamp-2 text-sm mt-1.5 font-medium">
                                     {quiz.description}
                                 </CardDescription>
                             </CardHeader>
 
                             <CardContent className="flex-grow pb-3">
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                                    <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-4 text-sm mb-4">
+                                    <div className="flex items-center gap-1.5 bg-green-200 dark:bg-green-400/30 px-2 py-1 rounded-lg border-2 border-black dark:border-white/30">
                                         <Clock className="h-3.5 w-3.5" />
-                                        <span className="text-xs font-medium">{quiz.duration}m</span>
+                                        <span className="text-xs font-bold">{quiz.duration}m</span>
                                     </div>
-                                    <div className="flex items-center gap-1.5">
+                                    <div className="flex items-center gap-1.5 bg-purple-200 dark:bg-purple-400/30 px-2 py-1 rounded-lg border-2 border-black dark:border-white/30">
                                         <BookOpen className="h-3.5 w-3.5" />
-                                        <span className="text-xs font-medium">{quiz.questions.length} Qs</span>
+                                        <span className="text-xs font-bold">{quiz.questions.length} Qs</span>
                                     </div>
                                 </div>
 
                                 <div className="flex flex-wrap gap-1.5">
                                     {quiz.sections.slice(0, 3).map((section) => (
-                                        <Badge key={section} variant="outline" className="text-xs font-normal px-2 py-0.5">
+                                        <Badge key={section} variant="outline" className="text-xs font-bold px-2 py-0.5 border-2 border-black dark:border-white/50 bg-white dark:bg-zinc-800">
                                             {section}
                                         </Badge>
                                     ))}
                                     {quiz.sections.length > 3 && (
-                                        <Badge variant="outline" className="text-xs font-normal px-2 py-0.5">
+                                        <Badge variant="outline" className="text-xs font-bold px-2 py-0.5 border-2 border-black dark:border-white/50 bg-white dark:bg-zinc-800">
                                             +{quiz.sections.length - 3}
                                         </Badge>
                                     )}
                                 </div>
                             </CardContent>
 
-                            <CardFooter className="pt-3 border-t bg-muted/30">
-                                <Button className="w-full group-hover:bg-primary/90 transition-colors text-sm h-9">
+                            <CardFooter className="pt-3 border-t-4 border-black dark:border-white/20 bg-orange-100 dark:bg-orange-400/20 rounded-b-xl">
+                                <Button variant="neobrutalistInverted" className="w-full text-sm font-bold">
                                     Start Quiz
                                     <ArrowRight className="ml-2 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
                                 </Button>

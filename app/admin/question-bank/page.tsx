@@ -353,11 +353,13 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2">
-              <BookOpen className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
+            <h1 className="text-2xl sm:text-3xl font-black text-foreground flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-purple-400 border-2 border-black">
+                <BookOpen className="h-6 w-6 text-black" />
+              </div>
               Question Bank
             </h1>
-            <p className="text-muted-foreground text-sm sm:text-base">
+            <p className="text-muted-foreground text-sm sm:text-base font-medium">
               Centralized repository for all quiz questions
             </p>
           </div>
@@ -365,55 +367,55 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6">
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs sm:text-sm">Total Questions</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-bold">Total Questions</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold">{questions.length}</div>
+              <div className="text-xl sm:text-2xl font-black">{questions.length}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs sm:text-sm">Filtered Results</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-bold">Filtered Results</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold">{filteredQuestions.length}</div>
+              <div className="text-xl sm:text-2xl font-black">{filteredQuestions.length}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs sm:text-sm">Sections</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-bold">Sections</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold">
+              <div className="text-xl sm:text-2xl font-black">
                 {new Set(questions.map(q => q.section)).size}
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs sm:text-sm">Total Tags</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-bold">Total Tags</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold">{allTags.length}</div>
+              <div className="text-xl sm:text-2xl font-black">{allTags.length}</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Controls */}
         <div className="space-y-4 mb-6">          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Questions</h2>
+            <h2 className="text-xl font-black">Questions</h2>
             <div className="flex gap-2">
               <Button 
-                variant="outline" 
+                variant="neobrutalist" 
                 onClick={() => setShowAIGenerator(true)}
-                className="bg-gradient-to-r from-purple-500 to-blue-500 text-white border-none hover:from-purple-600 hover:to-blue-600"
+                className="bg-gradient-to-r from-purple-400 to-blue-400"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
                 AI Generate
               </Button>
-              <Button onClick={() => setShowQuestionForm(true)}>
+              <Button variant="neobrutalist" onClick={() => setShowQuestionForm(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Question
               </Button>
@@ -421,9 +423,9 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
           </div>
 
           {/* Filters */}
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader>
-              <CardTitle className="text-lg">Filters & Search</CardTitle>
+              <CardTitle className="text-lg font-bold">Filters & Search</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid md:grid-cols-4 gap-4">                <div className="space-y-2">
@@ -523,10 +525,11 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                     setSearchQuery("")
                     setSelectedTags([])
                   }}
+                  className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_#fff] transition-all"
                 >
                   Clear Filters
                 </Button>
-                <Button variant="outline" onClick={fetchQuestions}>
+                <Button variant="neobrutalist" onClick={fetchQuestions}>
                   Refresh
                 </Button>
               </div>
@@ -549,11 +552,11 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
 
         {/* Question Form */}
         {showQuestionForm && (
-          <Card className="mb-6">
+          <Card variant="neobrutalist" className="mb-6">
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle>{editingQuestion ? "Edit Question" : "Add New Question"}</CardTitle>
-                <Button variant="ghost" size="icon" onClick={resetForm}>
+                <CardTitle className="font-bold">{editingQuestion ? "Edit Question" : "Add New Question"}</CardTitle>
+                <Button variant="ghost" size="icon" onClick={resetForm} className="border-2 border-black dark:border-white">
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -685,11 +688,11 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
               </div>
 
               <div className="flex gap-2">
-                <Button onClick={editingQuestion ? handleUpdateQuestion : handleCreateQuestion}>
+                <Button variant="neobrutalist" onClick={editingQuestion ? handleUpdateQuestion : handleCreateQuestion}>
                   <Save className="h-4 w-4 mr-2" />
                   {editingQuestion ? "Update Question" : "Create Question"}
                 </Button>
-                <Button variant="outline" onClick={resetForm}>
+                <Button variant="outline" onClick={resetForm} className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_#fff] transition-all">
                   Cancel
                 </Button>
               </div>
@@ -700,17 +703,17 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
         {/* Questions List */}
         <div className="space-y-4">
           {paginatedQuestions.length === 0 ? (
-            <Card>
+            <Card variant="neobrutalist">
               <CardContent className="text-center py-8">
                 <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No questions found</h3>
-                <p className="text-muted-foreground mb-4">
+                <h3 className="text-lg font-bold mb-2">No questions found</h3>
+                <p className="text-muted-foreground mb-4 font-medium">
                   {questions.length === 0 
                     ? "Start building your question bank by adding the first question."
                     : "Try adjusting your filters or search criteria."
                   }
                 </p>
-                <Button onClick={() => setShowQuestionForm(true)}>
+                <Button variant="neobrutalist" onClick={() => setShowQuestionForm(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add First Question
                 </Button>
@@ -719,27 +722,27 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
           ) : (
             <>
               {paginatedQuestions.map((question, index) => (
-                <Card key={question.id}>
+                <Card key={question.id} variant="neobrutalist">
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="outline">{question.section}</Badge>
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <Badge className="border-2 border-black bg-purple-400 text-black font-bold">{question.section}</Badge>
                           <Badge 
-                            variant={
-                              question.difficulty === 'easy' ? 'default' : 
-                              question.difficulty === 'medium' ? 'secondary' : 'destructive'
-                            }
+                            className={`border-2 border-black font-bold ${
+                              question.difficulty === 'easy' ? 'bg-green-400 text-black' : 
+                              question.difficulty === 'medium' ? 'bg-yellow-400 text-black' : 'bg-red-400 text-black'
+                            }`}
                           >
                             {question.difficulty}
                           </Badge>
                           {question.tags.map(tag => (
-                            <Badge key={tag} variant="outline" className="text-xs">
+                            <Badge key={tag} className="text-xs border-2 border-black bg-blue-400 text-black font-bold">
                               {tag}
                             </Badge>
                           ))}
                         </div>
-                        <CardTitle className="text-base">
+                        <CardTitle className="text-base font-bold">
                           Q{startIndex + index + 1}. <MathRenderer text={question.question} />
                         </CardTitle>
                       </div>
@@ -749,6 +752,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                           size="icon" 
                           onClick={() => handleEditQuestion(question)}
                           title="Edit Question"
+                          className="border-2 border-black dark:border-white"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -757,6 +761,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                           size="icon" 
                           onClick={() => handleDeleteQuestion(question.id)}
                           title="Delete Question"
+                          className="border-2 border-black dark:border-white text-red-500"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -769,35 +774,35 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                         {question.options.map((option, optIndex) => (
                           <div 
                             key={optIndex} 
-                            className={`p-2 rounded border ${
+                            className={`p-2 rounded-lg border-2 border-black dark:border-white ${
                               optIndex === question.correctAnswer 
-                                ? 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800' 
-                                : 'bg-muted'
+                                ? 'bg-green-400' 
+                                : 'bg-card'
                             }`}
                           >
-                            <span className="font-medium">
+                            <span className="font-bold">
                               {String.fromCharCode(65 + optIndex)}. 
                             </span>
                             <MathRenderer text={option} />
                             {optIndex === question.correctAnswer && (
-                              <Badge variant="default" className="ml-2 text-xs">Correct</Badge>
+                              <Badge className="ml-2 text-xs border-2 border-black bg-white text-black font-bold">Correct</Badge>
                             )}
                           </div>
                         ))}
                       </div>
                       
                       {question.explanation && (
-                        <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-800">
-                          <Label className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                        <div className="p-3 bg-blue-400 rounded-lg border-2 border-black">
+                          <Label className="text-sm font-bold text-black">
                             Explanation:
                           </Label>
-                          <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                          <p className="text-sm text-black mt-1 font-medium">
                             <MathRenderer text={question.explanation} />
                           </p>
                         </div>
                       )}
                       
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-xs text-muted-foreground font-medium">
                         Created: {new Date(question.createdAt).toLocaleDateString()} | 
                         Updated: {new Date(question.updatedAt).toLocaleDateString()}
                       </div>
@@ -813,6 +818,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                     variant="outline"
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
+                    className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_#fff] transition-all disabled:opacity-50"
                   >
                     Previous
                   </Button>
@@ -833,9 +839,10 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                       return (
                         <Button
                           key={pageNum}
-                          variant={currentPage === pageNum ? "default" : "outline"}
+                          variant={currentPage === pageNum ? "neobrutalist" : "outline"}
                           size="icon"
                           onClick={() => setCurrentPage(pageNum)}
+                          className={currentPage !== pageNum ? "border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff]" : ""}
                         >
                           {pageNum}
                         </Button>
@@ -847,6 +854,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                     variant="outline"
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
+                    className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_#fff] transition-all disabled:opacity-50"
                   >
                     Next
                   </Button>

@@ -472,19 +472,19 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{quiz.title}</h1>
-            <p className="text-muted-foreground text-sm sm:text-base">Manage questions for this quiz</p>
+            <h1 className="text-2xl sm:text-3xl font-black text-foreground">{quiz.title}</h1>
+            <p className="text-muted-foreground text-sm sm:text-base font-medium">Manage questions for this quiz</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowQuestionBankImporter(true)}>
+            <Button variant="outline" size="sm" onClick={() => setShowQuestionBankImporter(true)} className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_#fff] transition-all">
               <Download className="h-4 w-4 mr-1" />
               <span className="hidden sm:inline">Import</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowBulkManager(true)}>
+            <Button variant="outline" size="sm" onClick={() => setShowBulkManager(true)} className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_#fff] transition-all">
               <Upload className="h-4 w-4 mr-1" />
               <span className="hidden sm:inline">Bulk</span>
             </Button>
-            <Button size="sm" onClick={() => setShowQuestionForm(true)}>
+            <Button variant="neobrutalist" size="sm" onClick={() => setShowQuestionForm(true)}>
               <Plus className="h-4 w-4 mr-1" />
               Add
             </Button>
@@ -492,35 +492,37 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
         </div>
 
         {/* Quiz Info */}
-        <Card className="mb-6">
+        <Card variant="neobrutalist" className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 font-bold">
+              <div className="p-1.5 rounded-lg bg-blue-400 border-2 border-black">
+                <BookOpen className="h-4 w-4 text-black" />
+              </div>
               Quiz Information
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
-                <span className="text-muted-foreground text-sm">Duration:</span>
-                <p className="font-medium flex items-center gap-1">
+                <span className="text-muted-foreground text-sm font-bold">Duration:</span>
+                <p className="font-bold flex items-center gap-1">
                   <Clock className="h-4 w-4" />
                   {quiz.duration} minutes
                 </p>
               </div>
               <div>
-                <span className="text-muted-foreground text-sm">Total Questions:</span>
-                <p className="font-medium">{quiz.questions.length}</p>
+                <span className="text-muted-foreground text-sm font-bold">Total Questions:</span>
+                <p className="font-black">{quiz.questions.length}</p>
               </div>
               <div>
-                <span className="text-muted-foreground text-sm">Status:</span>
-                <Badge variant={quiz.isActive ? "default" : "secondary"}>{quiz.isActive ? "Active" : "Inactive"}</Badge>
+                <span className="text-muted-foreground text-sm font-bold">Status:</span>
+                <Badge className={`border-2 border-black font-bold ${quiz.isActive ? 'bg-green-400 text-black' : 'bg-gray-300 text-black'}`}>{quiz.isActive ? "Active" : "Inactive"}</Badge>
               </div>
               <div>
-                <span className="text-muted-foreground text-sm">Sections:</span>
-                <div className="flex gap-1 mt-1">
+                <span className="text-muted-foreground text-sm font-bold">Sections:</span>
+                <div className="flex gap-1 mt-1 flex-wrap">
                   {quiz.sections.map((section) => (
-                    <Badge key={section} variant="outline" className="text-xs">
+                    <Badge key={section} className="text-xs border-2 border-black bg-purple-400 text-black font-bold">
                       {section}
                     </Badge>
                   ))}
@@ -529,8 +531,8 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
             </div>
             {quiz.description && (
               <div className="mt-4">
-                <span className="text-muted-foreground text-sm">Description:</span>
-                <p className="text-sm mt-1">{quiz.description}</p>
+                <span className="text-muted-foreground text-sm font-bold">Description:</span>
+                <p className="text-sm mt-1 font-medium">{quiz.description}</p>
               </div>
             )}
           </CardContent>
@@ -544,15 +546,15 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
 
         {/* Question Form */}
         {showQuestionForm && (
-          <Card className="mb-6">
+          <Card variant="neobrutalist" className="mb-6">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
+              <CardTitle className="flex items-center justify-between font-bold">
                 <span>{editingQuestion ? "Edit Question" : "Add New Question"}</span>
-                <Button variant="ghost" size="icon" onClick={resetForm}>
+                <Button variant="ghost" size="icon" onClick={resetForm} className="border-2 border-black dark:border-white">
                   <X className="h-4 w-4" />
                 </Button>
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="font-medium">
                 {editingQuestion ? "Update question details" : "Add a new question to this quiz"}
               </CardDescription>
             </CardHeader>
@@ -647,11 +649,11 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
               </div>
 
               <div className="flex gap-2">
-                <Button onClick={editingQuestion ? handleUpdateQuestion : handleAddQuestion}>
+                <Button variant="neobrutalist" onClick={editingQuestion ? handleUpdateQuestion : handleAddQuestion}>
                   <Save className="h-4 w-4 mr-2" />
                   {editingQuestion ? "Update Question" : "Add Question"}
                 </Button>
-                <Button variant="outline" onClick={resetForm}>
+                <Button variant="outline" onClick={resetForm} className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_#fff] transition-all">
                   Cancel
                 </Button>
               </div>
@@ -660,16 +662,16 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
         )}
 
         {/* Questions List */}
-        <Card>
+        <Card variant="neobrutalist">
           <CardHeader>
-            <CardTitle>Questions ({quiz.questions.length})</CardTitle>
-            <CardDescription>All questions for this quiz</CardDescription>
+            <CardTitle className="font-bold">Questions ({quiz.questions.length})</CardTitle>
+            <CardDescription className="font-medium">All questions for this quiz</CardDescription>
           </CardHeader>
           <CardContent>
             {quiz.questions.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">No questions added yet</p>
-                <Button onClick={() => setShowQuestionForm(true)}>
+                <p className="text-muted-foreground mb-4 font-medium">No questions added yet</p>
+                <Button variant="neobrutalist" onClick={() => setShowQuestionForm(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add First Question
                 </Button>
@@ -677,15 +679,15 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
             ) : (
               <div className="space-y-4">
                 {quiz.questions.map((question, index) => (
-                  <div key={question.id} className="border rounded-lg p-4">
+                  <div key={question.id} className="border-2 border-black dark:border-white rounded-lg p-4 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff]">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="outline">{question.section}</Badge>
-                          <span className="text-sm text-muted-foreground">Question {index + 1}</span>
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <Badge className="border-2 border-black bg-purple-400 text-black font-bold">{question.section}</Badge>
+                          <span className="text-sm text-muted-foreground font-bold">Question {index + 1}</span>
                           {question.image && <ImageIcon className="h-4 w-4 text-muted-foreground" />}
                         </div>
-                        <p className="font-medium mb-2">
+                        <p className="font-bold mb-2">
                           <MathRenderer text={question.question} />
                         </p>
                         {question.image && (
@@ -693,7 +695,7 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
                             <img
                               src={question.image || "/placeholder.svg"}
                               alt="Question"
-                              className="max-w-sm rounded border"
+                              className="max-w-sm rounded-lg border-2 border-black"
                             />
                           </div>
                         )}
@@ -701,15 +703,15 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
                           {question.options.map((option, optionIndex) => (
                             <div
                               key={optionIndex}
-                              className={`text-sm p-2 rounded ${
+                              className={`text-sm p-2 rounded-lg border-2 border-black font-medium ${
                                 optionIndex === question.correctAnswer
-                                  ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                  : "bg-muted"
+                                  ? "bg-green-400 text-black"
+                                  : "bg-card"
                               }`}
                             >
                               {optionIndex + 1}. {option}
                               {optionIndex === question.correctAnswer && (
-                                <Badge variant="default" className="ml-2 text-xs">
+                                <Badge className="ml-2 text-xs border-2 border-black bg-white text-black font-bold">
                                   Correct
                                 </Badge>
                               )}
@@ -717,16 +719,16 @@ export default function QuizManagementPage({ params }: { params: { id: string } 
                           ))}
                         </div>
                         {question.explanation && (
-                          <div className="text-sm text-muted-foreground bg-muted p-2 rounded">
-                            <strong>Explanation:</strong> {question.explanation}
+                          <div className="text-sm bg-blue-400 p-2 rounded-lg border-2 border-black">
+                            <strong className="text-black">Explanation:</strong> <span className="text-black font-medium">{question.explanation}</span>
                           </div>
                         )}
                       </div>
                       <div className="flex gap-2 ml-4">
-                        <Button variant="ghost" size="icon" onClick={() => handleEditQuestion(question)}>
+                        <Button variant="ghost" size="icon" onClick={() => handleEditQuestion(question)} className="border-2 border-black dark:border-white">
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteQuestion(question.id)}>
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteQuestion(question.id)} className="border-2 border-black dark:border-white text-red-500">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>

@@ -169,50 +169,50 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user.name}</h1>
-        <p className="text-muted-foreground">Here&apos;s an overview of your progress.</p>
+        <h1 className="text-3xl font-black tracking-tight">Welcome back, {user.name}</h1>
+        <p className="text-muted-foreground font-medium">Here&apos;s an overview of your progress.</p>
       </div>
 
-      {/* Quick Stats Bar */}
+      {/* Quick Stats Bar - Neo Brutalism */}
       {!loadingAttempts && allAttempts.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-4 bg-muted/30 rounded-2xl border">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <BookOpen className="h-5 w-5 text-primary" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="flex items-center gap-3 p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_#fff] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_#fff] transition-all">
+            <div className="p-3 rounded-lg bg-blue-300 dark:bg-blue-400 border-2 border-black dark:border-white">
+              <BookOpen className="h-6 w-6 text-black" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Total Attempts</p>
-              <p className="text-xl font-bold">{allAttempts.length}</p>
+              <p className="text-xs text-muted-foreground font-bold">Total Attempts</p>
+              <p className="text-2xl font-black">{allAttempts.length}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <TrendingUp className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-3 p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_#fff] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_#fff] transition-all">
+            <div className="p-3 rounded-lg bg-green-300 dark:bg-green-400 border-2 border-black dark:border-white">
+              <TrendingUp className="h-6 w-6 text-black" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Avg Score</p>
-              <p className="text-xl font-bold">
-                {Math.round(allAttempts.reduce((sum, a) => sum + a.totalScore, 0) / allAttempts.length)}%
+              <p className="text-xs text-muted-foreground font-bold">Avg Score</p>
+              <p className="text-2xl font-black">
+                {(allAttempts.reduce((sum, a) => sum + a.totalScore, 0) / allAttempts.length).toFixed(2)}%
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Target className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-3 p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_#fff] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_#fff] transition-all">
+            <div className="p-3 rounded-lg bg-yellow-300 dark:bg-yellow-400 border-2 border-black dark:border-white">
+              <Target className="h-6 w-6 text-black" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Best Score</p>
-              <p className="text-xl font-bold">{Math.max(...allAttempts.map(a => a.totalScore))}%</p>
+              <p className="text-xs text-muted-foreground font-bold">Best Score</p>
+              <p className="text-2xl font-black">{Math.max(...allAttempts.map(a => a.totalScore)).toFixed(2)}%</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Clock className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-3 p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_#fff] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_#fff] transition-all">
+            <div className="p-3 rounded-lg bg-purple-300 dark:bg-purple-400 border-2 border-black dark:border-white">
+              <Clock className="h-6 w-6 text-black" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Study Time</p>
-              <p className="text-xl font-bold">
-                {Math.round(allAttempts.reduce((sum, a) => sum + (a.timeSpent || 0), 0) / 60)}m
+              <p className="text-xs text-muted-foreground font-bold">Study Time</p>
+              <p className="text-2xl font-black">
+                {(allAttempts.reduce((sum, a) => sum + (a.timeSpent || 0), 0) / 60).toFixed(0)}m
               </p>
             </div>
           </div>
@@ -220,7 +220,7 @@ export default function DashboardPage() {
       )}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+        <Card variant="neobrutalist" className="lg:col-span-2">
           {showFlashQuestions ? (
             <CardContent className="p-6">
               <Button
@@ -257,7 +257,7 @@ export default function DashboardPage() {
         </Card>
 
         <Link href="/dashboard/full-mock-tests">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+          <Card variant="neobrutalist" className="cursor-pointer h-full">
             <CardHeader>
               <div className="flex items-center gap-2 mb-2">
                 <BookOpen className="h-5 w-5 text-primary" />
@@ -272,7 +272,7 @@ export default function DashboardPage() {
         </Link>
 
         <Link href="/dashboard/sectional-tests">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+          <Card variant="neobrutalist" className="cursor-pointer h-full">
             <CardHeader>
               <div className="flex items-center gap-2 mb-2">
                 <Target className="h-5 w-5 text-primary" />
@@ -287,7 +287,7 @@ export default function DashboardPage() {
         </Link>
 
         <Link href="/dashboard/attempted-quizzes">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+          <Card variant="neobrutalist" className="cursor-pointer h-full">
             <CardHeader>
               <div className="flex items-center gap-2 mb-2">
                 <Clock className="h-5 w-5 text-primary" />
@@ -303,7 +303,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6">
-        <Card>
+        <Card variant="neobrutalist">
           <CardHeader>
             <CardTitle>Recent Attempts</CardTitle>
           </CardHeader>
@@ -342,3 +342,4 @@ export default function DashboardPage() {
     </div>
   )
 }
+

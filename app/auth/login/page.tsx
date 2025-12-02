@@ -99,7 +99,7 @@ export default function LoginPage() {
         <p className="mt-2 text-muted-foreground">Master your banking exams</p>
       </div>
 
-      <Card className="border-border/50 shadow-medium">
+      <Card variant="neobrutalist" className="border-4 border-black shadow-[8px_8px_0px_0px_#000] dark:border-white/20 dark:shadow-[8px_8px_0px_0px_#fff]">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl">Welcome back</CardTitle>
           <CardDescription>
@@ -108,120 +108,99 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              {/* Both options always visible on login for clarity */}
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="student" className="gap-2">
-                  <User className="h-4 w-4" />
-                  <span className="hidden sm:inline">Student</span>
-                </TabsTrigger>
-                <TabsTrigger value="admin" className="gap-2">
-                  <Shield className="h-4 w-4" />
-                  <span className="hidden sm:inline">Admin</span>
-                </TabsTrigger>
-              </TabsList>
+            {/* Both options always visible on login for clarity */}
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="student" className="gap-2">
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">Student</span>
+              </TabsTrigger>
+              <TabsTrigger value="admin" className="gap-2">
+                <Shield className="h-4 w-4" />
+                <span className="hidden sm:inline">Admin</span>
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="student">
+              <form onSubmit={handleStudentLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="m@example.com"
+                    required
+                    value={studentData.email}
+                    onChange={(e) => setStudentData({ ...studentData, email: e.target.value })}
+                    neobrutalist
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    required
+                    value={studentData.password}
+                    onChange={(e) => setStudentData({ ...studentData, password: e.target.value })}
+                    neobrutalist
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading} variant="neobrutalist">
+                  {loading ? "Logging in..." : "Login as Student"}
+                </Button>
+              </form>
+            </TabsContent>
 
-              {error && (
-                <Alert variant="destructive" className="mb-6">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              <TabsContent value="student">
-                <form onSubmit={handleStudentLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="student-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="student-email"
-                        type="email"
-                        placeholder="student@example.com"
-                        className="pl-10"
-                        value={studentData.email}
-                        onChange={(e) => setStudentData((prev) => ({ ...prev, email: e.target.value }))}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="student-password">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="student-password"
-                        type="password"
-                        placeholder="••••••••"
-                        className="pl-10"
-                        value={studentData.password}
-                        onChange={(e) => setStudentData((prev) => ({ ...prev, password: e.target.value }))}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Signing in..." : "Sign In"}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="admin">
-                <form onSubmit={handleAdminLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="admin-email">Admin Email</Label>
-                    <div className="relative">
-                      <Shield className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="admin-email"
-                        type="email"
-                        placeholder="admin@bank.com"
-                        className="pl-10"
-                        value={adminData.email}
-                        onChange={(e) => setAdminData((prev) => ({ ...prev, email: e.target.value }))}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="admin-password">Admin Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="admin-password"
-                        type="password"
-                        placeholder="••••••••"
-                        className="pl-10"
-                        value={adminData.password}
-                        onChange={(e) => setAdminData((prev) => ({ ...prev, password: e.target.value }))}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Signing in..." : "Sign In as Admin"}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4 border-t bg-muted/20 p-6">
-            <div className="text-center text-sm text-muted-foreground">
-              Don&apos;t have an account?{" "}
-              <Link href="/auth/signup" className="font-medium text-primary hover:underline">
-                Sign up
-              </Link>
+            <TabsContent value="admin">
+              <form onSubmit={handleAdminLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="admin-email">Email</Label>
+                  <Input
+                    id="admin-email"
+                    type="email"
+                    placeholder="admin@example.com"
+                    required
+                    value={adminData.email}
+                    onChange={(e) => setAdminData({ ...adminData, email: e.target.value })}
+                    neobrutalist
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-password">Password</Label>
+                  <Input
+                    id="admin-password"
+                    type="password"
+                    required
+                    value={adminData.password}
+                    onChange={(e) => setAdminData({ ...adminData, password: e.target.value })}
+                    neobrutalist
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading} variant="neobrutalist">
+                  {loading ? "Logging in..." : "Login as Admin"}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+        <CardFooter className="flex flex-col space-y-4">
+          <div className="text-center text-sm">
+            Don&apos;t have an account?{" "}
+            <Link href="/auth/signup" className="underline font-bold">
+              Sign up
+            </Link>
+          </div>
+          {activeTab === "student" && (
+            <div className="text-center text-xs text-muted-foreground">
+              Demo: student@example.com / password
             </div>
-            {activeTab === "student" && (
-              <div className="text-center text-xs text-muted-foreground">
-                Demo: student@example.com / password
-              </div>
-            )}
-          </CardFooter>
-        </Card>
-      </div>
+          )}
+        </CardFooter>
+      </Card>
+    </div >
   )
 
   return (
-    <div className="relative flex min-h-screen w-full items-center justify-center bg-background p-4">
+    <div className="relative flex min-h-screen w-full items-center justify-center p-4">
       {/* Theme Toggle */}
       <div className="absolute top-6 right-6">
         <ThemeToggle />

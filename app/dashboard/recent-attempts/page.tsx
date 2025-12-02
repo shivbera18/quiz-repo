@@ -141,13 +141,13 @@ export default function RecentAttemptsPage() {
                     <div>
                       <p className="text-sm text-muted-foreground">Average of last 5 attempts</p>
                       <p className="text-2xl font-bold text-blue-700">
-                        {Math.round(recentAttempts.slice(0, 5).reduce((sum, a) => sum + a.totalScore, 0) / Math.min(5, recentAttempts.length))}%
+                        {(recentAttempts.slice(0, 5).reduce((sum, a) => sum + a.totalScore, 0) / Math.min(5, recentAttempts.length)).toFixed(2)}%
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Best recent score</p>
                       <p className="text-2xl font-bold text-green-700">
-                        {Math.max(...recentAttempts.slice(0, 5).map(a => a.totalScore))}%
+                        {Math.max(...recentAttempts.slice(0, 5).map(a => a.totalScore)).toFixed(2)}%
                       </p>
                     </div>
                     <div>
@@ -175,7 +175,7 @@ export default function RecentAttemptsPage() {
                             attempt.totalScore >= 80 ? 'bg-green-500' :
                             attempt.totalScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
                           }`}>
-                            {attempt.totalScore}%
+                            {attempt.totalScore.toFixed(2)}%
                           </div>
                           <span className="text-[10px] sm:text-xs text-muted-foreground mt-1">#{index + 1}</span>
                         </div>
@@ -191,9 +191,9 @@ export default function RecentAttemptsPage() {
                             )}
                           </div>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            <Badge variant="outline" className="text-[10px] sm:text-xs">Reasoning: {attempt.sections.reasoning}%</Badge>
-                            <Badge variant="outline" className="text-[10px] sm:text-xs">Quantitative: {attempt.sections.quantitative}%</Badge>
-                            <Badge variant="outline" className="text-[10px] sm:text-xs">English: {attempt.sections.english}%</Badge>
+                            <Badge variant="outline" className="text-[10px] sm:text-xs">Reasoning: {attempt.sections.reasoning.toFixed(2)}%</Badge>
+                            <Badge variant="outline" className="text-[10px] sm:text-xs">Quantitative: {attempt.sections.quantitative.toFixed(2)}%</Badge>
+                            <Badge variant="outline" className="text-[10px] sm:text-xs">English: {attempt.sections.english.toFixed(2)}%</Badge>
                           </div>
                         </div>
                       </div>

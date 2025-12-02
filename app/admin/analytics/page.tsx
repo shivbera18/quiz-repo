@@ -215,7 +215,7 @@ export default function AdminAnalyticsPage() {
 
     const totalAttempts = filteredResults.length
     const totalScore = filteredResults.reduce((sum, result) => sum + (result.totalScore || 0), 0)
-    const averageScore = Math.round(totalScore / totalAttempts)
+    const averageScore = parseFloat((totalScore / totalAttempts).toFixed(2))
     const passRate = Math.round(
       (filteredResults.filter((r) => (r.totalScore || 0) >= 60).length / totalAttempts) * 100
     )
@@ -254,9 +254,9 @@ export default function AdminAnalyticsPage() {
         const quizResults = filteredResults.filter((r) => r.quizId === quiz.id)
         if (quizResults.length === 0) return null
 
-        const avgScore = Math.round(quizResults.reduce((sum, r) => sum + (r.totalScore || 0), 0) / quizResults.length)
+        const avgScore = parseFloat((quizResults.reduce((sum, r) => sum + (r.totalScore || 0), 0) / quizResults.length).toFixed(2))
         const attempts = quizResults.length
-        const passRate = Math.round((quizResults.filter((r) => (r.totalScore || 0) >= 60).length / attempts) * 100)
+        const passRate = parseFloat(((quizResults.filter((r) => (r.totalScore || 0) >= 60).length / attempts) * 100).toFixed(2))
 
         return {
           name: quiz.title && quiz.title.length > 20 ? quiz.title.substring(0, 20) + "..." : quiz.title || 'Unknown Quiz',
@@ -296,7 +296,7 @@ export default function AdminAnalyticsPage() {
 
     return Object.values(weeklyData).map((week) => ({
       week: new Date(week.date).toLocaleDateString(),
-      avgScore: Math.round(week.scores.reduce((sum, score) => sum + score, 0) / week.scores.length),
+      avgScore: parseFloat((week.scores.reduce((sum, score) => sum + score, 0) / week.scores.length).toFixed(2)),
       attempts: week.scores.length,
     }))
   }
@@ -546,12 +546,12 @@ export default function AdminAnalyticsPage() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Link href="/admin/analytics/advanced">
-              <Button variant="outline" size="sm">
+              <Button variant="neobrutalist" size="sm">
                 <BarChart3 className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">Advanced</span>
               </Button>
             </Link>
-            <Button size="sm" onClick={exportAnalytics}>
+            <Button variant="neobrutalist" size="sm" onClick={exportAnalytics}>
               <Download className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Export</span>
             </Button>
@@ -559,9 +559,9 @@ export default function AdminAnalyticsPage() {
         </div>
 
         {/* Filters */}
-        <Card className="mb-8">
+        <Card variant="neobrutalist" className="mb-8">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-black">
               <Filter className="h-5 w-5" />
               Filters
             </CardTitle>
@@ -654,74 +654,86 @@ export default function AdminAnalyticsPage() {
         {/* Overall Stats */}
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-6 gap-2 md:gap-6 mb-8">
           {/* Total Attempts */}
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-2 sm:px-4">
-              <CardTitle className="text-xs sm:text-sm font-medium">Total Attempts</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs sm:text-sm font-black">Total Attempts</CardTitle>
+              <div className="p-2 bg-blue-400 rounded-lg border-2 border-black">
+                <Users className="h-4 w-4 text-black" />
+              </div>
             </CardHeader>
             <CardContent className="px-2 sm:px-4">
-              <div className="text-lg sm:text-2xl font-bold">{stats.totalAttempts}</div>
+              <div className="text-lg sm:text-2xl font-black">{stats.totalAttempts}</div>
             </CardContent>
           </Card>
 
           {/* Average Score */}
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-2 sm:px-4">
-              <CardTitle className="text-xs sm:text-sm font-medium">Average Score</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs sm:text-sm font-black">Average Score</CardTitle>
+              <div className="p-2 bg-green-400 rounded-lg border-2 border-black">
+                <TrendingUp className="h-4 w-4 text-black" />
+              </div>
             </CardHeader>
             <CardContent className="px-2 sm:px-4">
-              <div className="text-lg sm:text-2xl font-bold">{stats.averageScore}%</div>
+              <div className="text-lg sm:text-2xl font-black">{stats.averageScore}%</div>
             </CardContent>
           </Card>
 
           {/* Pass Rate */}
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-2 sm:px-4">
-              <CardTitle className="text-xs sm:text-sm font-medium">Pass Rate</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs sm:text-sm font-black">Pass Rate</CardTitle>
+              <div className="p-2 bg-yellow-400 rounded-lg border-2 border-black">
+                <Target className="h-4 w-4 text-black" />
+              </div>
             </CardHeader>
             <CardContent className="px-2 sm:px-4">
-              <div className="text-lg sm:text-2xl font-bold">{stats.passRate}%</div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">≥60% score</p>
+              <div className="text-lg sm:text-2xl font-black">{stats.passRate}%</div>
+              <p className="text-[10px] sm:text-xs font-bold">≥60% score</p>
             </CardContent>
           </Card>
 
           {/* Avg Time */}
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-2 sm:px-4">
-              <CardTitle className="text-xs sm:text-sm font-medium">Avg Time</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs sm:text-sm font-black">Avg Time</CardTitle>
+              <div className="p-2 bg-purple-400 rounded-lg border-2 border-black">
+                <Clock className="h-4 w-4 text-black" />
+              </div>
             </CardHeader>
             <CardContent className="px-2 sm:px-4">
-              <div className="text-lg sm:text-2xl font-bold">{stats.averageTime}m</div>
+              <div className="text-lg sm:text-2xl font-black">{stats.averageTime}m</div>
             </CardContent>
           </Card>
 
           {/* Top Performers */}
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-2 sm:px-4">
-              <CardTitle className="text-xs sm:text-sm font-medium">Top Performers</CardTitle>
-              <BookOpen className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs sm:text-sm font-black">Top Performers</CardTitle>
+              <div className="p-2 bg-orange-400 rounded-lg border-2 border-black">
+                <BookOpen className="h-4 w-4 text-black" />
+              </div>
             </CardHeader>
             <CardContent className="px-2 sm:px-4">
-              <div className="text-lg sm:text-2xl font-bold">{stats.topPerformers}</div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">≥80% score</p>
+              <div className="text-lg sm:text-2xl font-black">{stats.topPerformers}</div>
+              <p className="text-[10px] sm:text-xs font-bold">≥80% score</p>
             </CardContent>
           </Card>
 
           {/* Improvement */}
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-2 sm:px-4">
-              <CardTitle className="text-xs sm:text-sm font-medium">Improvement</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs sm:text-sm font-black">Improvement</CardTitle>
+              <div className="p-2 bg-pink-400 rounded-lg border-2 border-black">
+                <TrendingUp className="h-4 w-4 text-black" />
+              </div>
             </CardHeader>
             <CardContent className="px-2 sm:px-4">
-              <div className="text-lg sm:text-2xl font-bold">
+              <div className="text-lg sm:text-2xl font-black">
                 {stats.improvementRate > 0 ? "+" : ""}
                 {stats.improvementRate}%
               </div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">vs earlier attempts</p>
+              <p className="text-[10px] sm:text-xs font-bold">vs earlier attempts</p>
             </CardContent>
           </Card>
         </div>
@@ -729,9 +741,9 @@ export default function AdminAnalyticsPage() {
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-8">
           {/* Score Trend */}
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader>
-              <CardTitle>Score Trend Over Time</CardTitle>
+              <CardTitle className="font-black">Score Trend Over Time</CardTitle>
               <CardDescription>Weekly average scores</CardDescription>
             </CardHeader>
             <CardContent>
@@ -750,9 +762,9 @@ export default function AdminAnalyticsPage() {
           </Card>
 
           {/* Quiz Performance */}
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader>
-              <CardTitle>Quiz Performance Comparison</CardTitle>
+              <CardTitle className="font-black">Quiz Performance Comparison</CardTitle>
               <CardDescription>Average scores by quiz</CardDescription>
             </CardHeader>
             <CardContent>
@@ -772,9 +784,9 @@ export default function AdminAnalyticsPage() {
         </div>
 
         {/* Section Performance */}
-        <Card className="mb-8">
+        <Card variant="neobrutalist" className="mb-8">
           <CardHeader>
-            <CardTitle>Section Performance Analysis</CardTitle>
+            <CardTitle className="font-black">Section Performance Analysis</CardTitle>
             <CardDescription>Average performance across different sections</CardDescription>
           </CardHeader>
           <CardContent>
@@ -793,9 +805,9 @@ export default function AdminAnalyticsPage() {
         </Card>
 
         {/* Individual Results Table with User Data */}
-        <Card className="mb-8">
+        <Card variant="neobrutalist" className="mb-8">
           <CardHeader>
-            <CardTitle>Individual Quiz Results</CardTitle>
+            <CardTitle className="font-black">Individual Quiz Results</CardTitle>
             <CardDescription>Detailed results with user information and management options</CardDescription>
           </CardHeader>
           <CardContent>
@@ -880,15 +892,15 @@ export default function AdminAnalyticsPage() {
 
         {/* User Management Actions */}
         {selectedUser !== "all" && (
-          <Card className="mb-8">
+          <Card variant="neobrutalist" className="mb-8">
             <CardHeader>
-              <CardTitle>User Management</CardTitle>
+              <CardTitle className="font-black">User Management</CardTitle>
               <CardDescription>Bulk actions for selected user</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
                 <Button
-                  variant="outline"
+                  variant="neobrutalist"
                   onClick={() => {
                     const userId = selectedUser
                     const user = users.find(u => u.id === userId)
@@ -905,7 +917,7 @@ export default function AdminAnalyticsPage() {
                   variant="destructive"
                   onClick={() => deleteUserResults(selectedUser)}
                   disabled={isDeleting}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 border-4 border-black shadow-[4px_4px_0px_0px_#000] hover:shadow-[6px_6px_0px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all"
                 >
                   <Trash2 className="h-4 w-4" />
                   Delete All User Results
@@ -916,9 +928,9 @@ export default function AdminAnalyticsPage() {
         )}
 
         {/* Detailed Quiz Performance Table */}
-        <Card>
+        <Card variant="neobrutalist">
           <CardHeader>
-            <CardTitle>Detailed Quiz Performance</CardTitle>
+            <CardTitle className="font-black">Detailed Quiz Performance</CardTitle>
             <CardDescription>Comprehensive statistics for each quiz</CardDescription>
           </CardHeader>
           <CardContent>
