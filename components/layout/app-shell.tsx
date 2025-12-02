@@ -25,6 +25,16 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     const isAdminPage = pathname?.startsWith("/admin") // Admin pages don't need TopHeader
     const isMainDashboard = pathname === "/dashboard" // Only show TopHeader on main dashboard
 
+    // Pages that use MobilePageHeader (they handle their own top spacing)
+    const subpagesWithHeader = [
+        '/dashboard/full-mock-tests',
+        '/dashboard/sectional-tests',
+        '/dashboard/attempted-quizzes',
+        '/analytics',
+        '/profile',
+    ]
+    const hasMobilePageHeader = subpagesWithHeader.some(path => pathname?.startsWith(path))
+
     // Check if this is a focused page (no sidebar needed)
     const isFocusedPage = isAuthPage || isQuizPage || isResultsPage || isHomePage
 
@@ -54,7 +64,9 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
             <main
                 className={cn(
                     "min-h-screen flex flex-col",
-                    "mobile-header-safe-zone", // Dynamic top padding based on hamburger visibility
+                    // Only apply mobile-header-safe-zone to pages WITHOUT MobilePageHeader
+                    // Pages with MobilePageHeader handle their own top spacing
+                    !hasMobilePageHeader && "mobile-header-safe-zone",
                     mounted && "md:pl-[300px]", // Only apply sidebar padding after mount
                     mounted && isCollapsed && "md:pl-[100px]" // 80px collapsed + 16px left margin + 4px gap
                 )}

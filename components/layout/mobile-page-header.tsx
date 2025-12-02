@@ -82,8 +82,9 @@ export function MobilePageHeader({ title, subtitle, backHref = "/dashboard", act
       </motion.div>
 
       {/* Spacer for mobile to prevent content from going under fixed header */}
-      {/* Header: pt-4(16) + row1(40) + mt-2(8) + row2(40) + pb-3(12) + shadow(4) = 120px */}
-      <div className="h-[112px] md:hidden" />
+      {/* Header: pt-4(16) + row1(40) + mt-2(8) + row2(40) + pb-3(12) = 116px + shadow(4) = 120px */}
+      {/* Container has py-2 (8px) so spacer = 120 - 8 = 112px, but we want tighter so use 104px */}
+      <div className="h-[104px] md:hidden" />
 
       {/* Desktop Header - static, with back button and action */}
       <div className="hidden md:flex items-center justify-between gap-4">
