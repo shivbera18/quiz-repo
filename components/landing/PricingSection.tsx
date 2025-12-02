@@ -154,7 +154,7 @@ export default function PricingSection() {
                 <Link href="/auth/login" className="block">
                   <Button 
                     variant={plan.buttonVariant}
-                    className={`w-full border-4 border-foreground shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.6)] transition-all font-bold ${plan.popular ? 'h-14 text-lg' : 'h-12'}`}
+                    className={`w-full border-4 border-foreground shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.7)] transition-all font-bold ${plan.popular ? 'h-14 text-lg' : 'h-12'}`}
                   >
                     {plan.buttonText}
                   </Button>

@@ -212,7 +212,7 @@ export default function AdminUsersPage() {
             <p className="text-muted-foreground text-sm sm:text-base font-medium">Manage and monitor user accounts</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={fetchUsers} className="border-2 border-black dark:border-white/50 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.5)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.6)] transition-all">
+            <Button variant="outline" size="sm" onClick={fetchUsers} className="border-2 border-black dark:border-white/60 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.6)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.7)] transition-all">
               <RefreshCw className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Refresh</span>
             </Button>
@@ -373,7 +373,7 @@ export default function AdminUsersPage() {
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
-                  <tr className="border-b-2 border-black dark:border-white/50">
+                  <tr className="border-b-2 border-black dark:border-white/60">
                     <th className="text-left p-3 font-bold">User</th>
                     <th className="text-left p-3 font-bold">Type</th>
                     <th className="text-left p-3 font-bold">Join Date</th>
@@ -386,7 +386,7 @@ export default function AdminUsersPage() {
                 </thead>
                 <tbody>
                   {filteredUsers.map((user) => (
-                    <tr key={user.id} className="border-b border-black/20 dark:border-white/50 hover:bg-muted/50">
+                    <tr key={user.id} className="border-b border-black/20 dark:border-white/60 hover:bg-muted/50">
                       <td className="p-3">
                         <div>
                           <div className="font-bold">{user.name}</div>

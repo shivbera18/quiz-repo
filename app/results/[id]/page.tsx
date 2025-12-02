@@ -303,7 +303,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
               </Button>
             </Link>
             <Link href="/history">
-              <Button variant="outline" className="w-full border-2 border-black dark:border-white/50">
+              <Button variant="outline" className="w-full border-2 border-black dark:border-white/60">
                 View History
               </Button>
             </Link>
@@ -449,11 +449,11 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="text-center p-3 bg-blue-100 dark:bg-blue-900/30 border-2 border-black dark:border-white/50 rounded-lg">
+                  <div className="text-center p-3 bg-blue-100 dark:bg-blue-900/30 border-2 border-black dark:border-white/60 rounded-lg">
                     <div className="text-2xl font-black">{analysis.accuracy}%</div>
                     <p className="text-xs text-muted-foreground font-medium">Accuracy</p>
                   </div>
-                  <div className="text-center p-3 bg-green-100 dark:bg-green-900/30 border-2 border-black dark:border-white/50 rounded-lg">
+                  <div className="text-center p-3 bg-green-100 dark:bg-green-900/30 border-2 border-black dark:border-white/60 rounded-lg">
                     <div className="text-2xl font-black">{analysis.attemptRate}%</div>
                     <p className="text-xs text-muted-foreground font-medium">Attempt Rate</p>
                   </div>
@@ -461,7 +461,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
 
                 {/* Show only the most important insight */}
                 {analysis.insights.length > 0 && (
-                  <Alert variant={analysis.insights[0].type === "error" ? "destructive" : "default"} className="border-2 border-black dark:border-white/50">
+                  <Alert variant={analysis.insights[0].type === "error" ? "destructive" : "default"} className="border-2 border-black dark:border-white/60">
                     <AlertDescription className="font-medium text-sm">{analysis.insights[0].message}</AlertDescription>
                   </Alert>
                 )}
@@ -522,7 +522,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                   <CardContent>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-2xl font-black">{score}%</span>
-                      <Badge variant={score >= 70 ? "default" : "destructive"} className="border-2 border-black dark:border-white/50 font-bold">
+                      <Badge variant={score >= 70 ? "default" : "destructive"} className="border-2 border-black dark:border-white/60 font-bold">
                         {score >= 70 ? "Good" : "Needs Work"}
                       </Badge>
                     </div>
@@ -595,19 +595,19 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
               <CardContent className="space-y-6">
                 {/* Time Stats Overview */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="p-4 bg-blue-100 dark:bg-blue-900/30 border-2 border-black dark:border-white/50 rounded-lg text-center">
+                  <div className="p-4 bg-blue-100 dark:bg-blue-900/30 border-2 border-black dark:border-white/60 rounded-lg text-center">
                     <div className="text-2xl font-black">{formatTime(totalTime)}</div>
                     <div className="text-xs text-muted-foreground font-medium">Total Time</div>
                   </div>
-                  <div className="p-4 bg-green-100 dark:bg-green-900/30 border-2 border-black dark:border-white/50 rounded-lg text-center">
+                  <div className="p-4 bg-green-100 dark:bg-green-900/30 border-2 border-black dark:border-white/60 rounded-lg text-center">
                     <div className="text-2xl font-black">{formatTime(avgTime)}</div>
                     <div className="text-xs text-muted-foreground font-medium">Avg per Question</div>
                   </div>
-                  <div className="p-4 bg-cyan-100 dark:bg-cyan-900/30 border-2 border-black dark:border-white/50 rounded-lg text-center">
+                  <div className="p-4 bg-cyan-100 dark:bg-cyan-900/30 border-2 border-black dark:border-white/60 rounded-lg text-center">
                     <div className="text-2xl font-black text-blue-600">{formatTime(minTime)}</div>
                     <div className="text-xs text-muted-foreground font-medium">Fastest</div>
                   </div>
-                  <div className="p-4 bg-orange-100 dark:bg-orange-900/30 border-2 border-black dark:border-white/50 rounded-lg text-center">
+                  <div className="p-4 bg-orange-100 dark:bg-orange-900/30 border-2 border-black dark:border-white/60 rounded-lg text-center">
                     <div className="text-2xl font-black text-orange-600">{formatTime(maxTime)}</div>
                     <div className="text-xs text-muted-foreground font-medium">Slowest</div>
                   </div>
@@ -619,7 +619,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                     <h4 className="font-black mb-3">Time by Section</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {Object.entries(sectionTimes).map(([section, data]) => (
-                        <div key={section} className="p-3 border-2 border-black dark:border-white/50 rounded-lg">
+                        <div key={section} className="p-3 border-2 border-black dark:border-white/60 rounded-lg">
                           <div className="text-sm font-bold capitalize">{section}</div>
                           <div className="text-lg font-black">{formatTime(data.total / data.count)}</div>
                           <div className="text-xs text-muted-foreground font-medium">avg • {data.count} questions</div>
@@ -632,10 +632,10 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                 {/* Per Question Time Table */}
                 <div>
                   <h4 className="font-black mb-3">Time per Question</h4>
-                  <div className="overflow-x-auto border-2 border-black dark:border-white/50 rounded-lg">
+                  <div className="overflow-x-auto border-2 border-black dark:border-white/60 rounded-lg">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b-2 border-black dark:border-white/50 bg-muted">
+                        <tr className="border-b-2 border-black dark:border-white/60 bg-muted">
                           <th className="text-left py-2 px-3 font-black">Q#</th>
                           <th className="text-left py-2 px-3 font-black">Time</th>
                           <th className="text-left py-2 px-3 font-black">Status</th>
@@ -648,7 +648,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                           const isUnanswered = q.selectedAnswer === -1
                           
                           return (
-                            <tr key={idx} className="border-b border-black/20 dark:border-white/50 last:border-0">
+                            <tr key={idx} className="border-b border-black/20 dark:border-white/60 last:border-0">
                               <td className="py-2 px-3 font-mono font-bold">{idx + 1}</td>
                               <td className="py-2 px-3">
                                 <span className="font-bold">
@@ -657,7 +657,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                               </td>
                               <td className="py-2 px-3">
                                 {isUnanswered ? (
-                                  <Badge variant="outline" className="text-xs border-2 border-black dark:border-white/50 font-bold">Skipped</Badge>
+                                  <Badge variant="outline" className="text-xs border-2 border-black dark:border-white/60 font-bold">Skipped</Badge>
                                 ) : q.isCorrect ? (
                                   <Badge variant="default" className="text-xs bg-green-500 border-2 border-black font-bold">✓ Correct</Badge>
                                 ) : (
@@ -745,11 +745,11 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                           <div>
                             <CardTitle className="text-lg flex flex-wrap items-center gap-2 font-black">
                               Question {index + 1}
-                              <Badge variant="outline" className="ml-2 whitespace-nowrap border-2 border-black dark:border-white/50 font-bold">
+                              <Badge variant="outline" className="ml-2 whitespace-nowrap border-2 border-black dark:border-white/60 font-bold">
                                 {question.section}
                               </Badge>
                               {question.timeSpent !== undefined && question.timeSpent > 0 && (
-                                <Badge variant="secondary" className="ml-2 whitespace-nowrap text-xs px-2 py-1 border-2 border-black dark:border-white/50 font-bold">
+                                <Badge variant="secondary" className="ml-2 whitespace-nowrap text-xs px-2 py-1 border-2 border-black dark:border-white/60 font-bold">
                                   <Clock className="h-3 w-3 mr-1" />
                                   {formatTime(question.timeSpent)}
                                 </Badge>
@@ -783,7 +783,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                             <img
                               src={question.image || "/placeholder.svg"}
                               alt="Question illustration"
-                              className="max-w-sm rounded border-2 border-black dark:border-white/50"
+                              className="max-w-sm rounded border-2 border-black dark:border-white/60"
                             />
                           </div>
                         )}
@@ -801,7 +801,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                                     ? "bg-green-100 border-green-600 dark:bg-green-900/30 dark:border-green-500"
                                     : isSelected && !isCorrect
                                       ? "bg-red-100 border-red-600 dark:bg-red-900/30 dark:border-red-500"
-                                      : "bg-muted border-black dark:border-white/50"
+                                      : "bg-muted border-black dark:border-white/60"
                                 }`}
                               >
                                 <div className="flex items-center justify-between">

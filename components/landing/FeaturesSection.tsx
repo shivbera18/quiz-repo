@@ -45,9 +45,9 @@ function FeatureCard({
             whileInView="visible"
             viewport={{ once: true, amount: 0.3 }}
         >
-            <div className="bg-card relative rounded-2xl border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-300 hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] dark:border-white/50 dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.5)] dark:hover:shadow-[12px_12px_0px_0px_rgba(255,255,255,0.6)]">
+            <div className="bg-card relative rounded-2xl border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-300 hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] dark:border-white/60 dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.6)] dark:hover:shadow-[12px_12px_0px_0px_rgba(255,255,255,0.7)]">
                 <div className="relative z-10">
-                    <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-md border-2 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:bg-black dark:border-white/50">
+                    <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-md border-2 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:bg-black dark:border-white/60">
                         {icon}
                     </div>
                     <h3 className="text-foreground mb-3 text-xl font-bold">

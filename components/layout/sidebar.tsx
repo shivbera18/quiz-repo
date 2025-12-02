@@ -88,7 +88,7 @@ export function Sidebar() {
                             variant="outline"
                             size="icon"
                             onClick={() => setIsMobileOpen(!isMobileOpen)}
-                            className="rounded-lg bg-white dark:bg-zinc-900 border-4 border-black dark:border-white/50 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.5)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.6)] transition-all"
+                            className="rounded-lg bg-white dark:bg-zinc-900 border-4 border-black dark:border-white/60 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.6)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.7)] transition-all"
                         >
                             {isMobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                         </Button>
@@ -112,7 +112,7 @@ export function Sidebar() {
             {/* Desktop Sidebar - Neo Brutalism Design */}
             <aside
                 className={cn(
-                    "fixed top-4 left-4 z-40 border-4 border-black rounded-lg bg-white dark:bg-zinc-900 dark:border-white/50 shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.5)] hidden md:flex flex-col",
+                    "fixed top-4 left-4 z-40 border-4 border-black rounded-lg bg-white dark:bg-zinc-900 dark:border-white/60 shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.6)] hidden md:flex flex-col",
                     isCollapsed ? "w-20" : "w-[280px]",
                     !isHydrated && "invisible"
                 )}
@@ -123,7 +123,7 @@ export function Sidebar() {
             >
                 {/* Header */}
                 <div className={cn(
-                    "flex h-20 items-center border-b-4 border-black dark:border-white/50",
+                    "flex h-20 items-center border-b-4 border-black dark:border-white/60",
                     isCollapsed ? "justify-center px-2" : "justify-between px-6"
                 )}>
                     {/* App Name - Text only (hidden when collapsed) */}
@@ -155,10 +155,10 @@ export function Sidebar() {
                             <Link key={item.href} href={item.href} className={isCollapsed ? "" : "w-full"}>
                                 <div
                                     className={cn(
-                                        "flex items-center rounded-lg text-sm font-bold border-2 border-black dark:border-white/50 transition-all duration-200",
+                                        "flex items-center rounded-lg text-sm font-bold border-2 border-black dark:border-white/60 transition-all duration-200",
                                         isActive 
-                                            ? "bg-yellow-300 dark:bg-yellow-400 text-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.5)] translate-x-0 translate-y-0" 
-                                            : "bg-white dark:bg-zinc-800 hover:bg-blue-300 dark:hover:bg-blue-400 hover:shadow-[4px_4px_0px_0px_#000] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.6)] hover:translate-x-[-2px] hover:translate-y-[-2px]",
+                                            ? "bg-yellow-300 dark:bg-yellow-400 text-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.6)] translate-x-0 translate-y-0" 
+                                            : "bg-white dark:bg-zinc-800 hover:bg-blue-300 dark:hover:bg-blue-400 hover:shadow-[4px_4px_0px_0px_#000] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.7)] hover:translate-x-[-2px] hover:translate-y-[-2px]",
                                         isCollapsed ? "h-12 w-12 justify-center" : "gap-3 px-4 py-3 w-full"
                                     )}
                                 >
@@ -175,18 +175,18 @@ export function Sidebar() {
                 </nav>
 
                 {/* Footer */}
-                <div className="border-t-4 border-black dark:border-white/50 p-4">
+                <div className="border-t-4 border-black dark:border-white/60 p-4">
                     <div 
                         className={cn("flex items-center gap-3 transition-all duration-250", isCollapsed ? "flex-col justify-center" : "justify-between")}
                         style={{ transition: "all 250ms cubic-bezier(0.4, 0, 0.2, 1)" }}
                     >
-                        <div className="border-2 border-black dark:border-white/50 rounded-md hover:bg-purple-300 dark:hover:bg-purple-400 transition-all">
+                        <div className="border-2 border-black dark:border-white/60 rounded-md hover:bg-purple-300 dark:hover:bg-purple-400 transition-all">
                             <ThemeToggle />
                         </div>
                         <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="border-2 border-black dark:border-white/50 rounded-md hover:bg-red-300 dark:hover:bg-red-400 text-black dark:text-white"
+                            className="border-2 border-black dark:border-white/60 rounded-md hover:bg-red-300 dark:hover:bg-red-400 text-black dark:text-white"
                             onClick={logout}
                         >
                             <LogOut className="h-5 w-5" />
@@ -203,9 +203,9 @@ export function Sidebar() {
                         animate={{ x: 0 }}
                         exit={{ x: "-100%" }}
                         transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                        className="fixed inset-y-0 left-0 z-50 w-72 border-r-4 border-black dark:border-white/50 bg-white dark:bg-zinc-900 md:hidden flex flex-col shadow-[8px_0px_0px_0px_#000] dark:shadow-[8px_0px_0px_0px_rgba(255,255,255,0.5)]"
+                        className="fixed inset-y-0 left-0 z-50 w-72 border-r-4 border-black dark:border-white/60 bg-white dark:bg-zinc-900 md:hidden flex flex-col shadow-[8px_0px_0px_0px_#000] dark:shadow-[8px_0px_0px_0px_rgba(255,255,255,0.6)]"
                     >
-                        <div className="flex h-16 items-center justify-between px-6 shrink-0 border-b-4 border-black dark:border-white/50">
+                        <div className="flex h-16 items-center justify-between px-6 shrink-0 border-b-4 border-black dark:border-white/60">
                             <div className="flex items-center gap-3">
                                 <span className="text-2xl font-black tracking-tight text-black dark:text-white">Quizzy</span>
                             </div>
@@ -213,13 +213,13 @@ export function Sidebar() {
                                 variant="ghost" 
                                 size="icon" 
                                 onClick={() => setIsMobileOpen(false)}
-                                className="border-2 border-black dark:border-white/50 rounded-md hover:bg-red-300 dark:hover:bg-red-400"
+                                className="border-2 border-black dark:border-white/60 rounded-md hover:bg-red-300 dark:hover:bg-red-400"
                             >
                                 <X className="h-5 w-5" />
                             </Button>
                         </div>
 
-                        <nav className="flex-1 space-y-6 px-5 py-6 overflow-y-auto">
+                        <nav className="flex-1 space-y-10 px-5 py-6 overflow-y-auto">
                             {sidebarItems.map((item) => {
                                 const isActive = pathname === item.href ||
                                     (item.href !== '/dashboard' && item.href !== '/admin' && pathname.startsWith(item.href)) ||
@@ -228,10 +228,10 @@ export function Sidebar() {
                                     <Link key={item.href} href={item.href} onClick={() => setIsMobileOpen(false)}>
                                         <div
                                             className={cn(
-                                                "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-bold border-2 border-black dark:border-white/50 transition-all",
+                                                "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-bold border-2 border-black dark:border-white/60 transition-all",
                                                 isActive 
-                                                    ? "bg-yellow-300 dark:bg-yellow-400 text-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.5)]" 
-                                                    : "bg-white dark:bg-zinc-800 hover:bg-blue-300 dark:hover:bg-blue-400 hover:shadow-[4px_4px_0px_0px_#000] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.6)] hover:translate-x-[-2px] hover:translate-y-[-2px]"
+                                                    ? "bg-yellow-300 dark:bg-yellow-400 text-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.6)]" 
+                                                    : "bg-white dark:bg-zinc-800 hover:bg-blue-300 dark:hover:bg-blue-400 hover:shadow-[4px_4px_0px_0px_#000] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.7)] hover:translate-x-[-2px] hover:translate-y-[-2px]"
                                             )}
                                         >
                                             <item.icon className={cn("h-5 w-5")} />
@@ -242,15 +242,15 @@ export function Sidebar() {
                             })}
                         </nav>
 
-                        <div className="border-t-4 border-black dark:border-white/50 p-4 shrink-0">
+                        <div className="border-t-4 border-black dark:border-white/60 p-4 shrink-0">
                             <div className="flex items-center justify-between">
-                                <div className="border-2 border-black dark:border-white/50 rounded-md hover:bg-purple-300 dark:hover:bg-purple-400 transition-all">
+                                <div className="border-2 border-black dark:border-white/60 rounded-md hover:bg-purple-300 dark:hover:bg-purple-400 transition-all">
                                     <ThemeToggle />
                                 </div>
                                 <Button 
                                     variant="ghost" 
                                     size="icon" 
-                                    className="border-2 border-black dark:border-white/50 rounded-md hover:bg-red-300 dark:hover:bg-red-400 text-black dark:text-white"
+                                    className="border-2 border-black dark:border-white/60 rounded-md hover:bg-red-300 dark:hover:bg-red-400 text-black dark:text-white"
                                     onClick={logout}
                                 >
                                     <LogOut className="h-5 w-5" />

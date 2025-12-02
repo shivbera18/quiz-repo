@@ -1,25 +1,21 @@
 const fs = require('fs');
 const path = require('path');
 
-// Make shadows brighter and sync borders in dark mode
+// Make shadows 10% brighter and sync borders
 const replacements = [
-  // SHADOWS - Make them brighter (toward white, not grey)
-  // Normal shadows: 0.3 -> 0.5
-  { from: /dark:shadow-\[(\d+)px_(\d+)px_0px_0px_rgba\(255,255,255,0\.3\)\]/g, to: 'dark:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.5)]' },
-  // Hover shadows: 0.4 -> 0.6
-  { from: /dark:hover:shadow-\[(\d+)px_(\d+)px_0px_0px_rgba\(255,255,255,0\.4\)\]/g, to: 'dark:hover:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.6)]' },
-  // Softer shadows: 0.25 -> 0.45
-  { from: /dark:shadow-\[(\d+)px_(\d+)px_0px_0px_rgba\(255,255,255,0\.25\)\]/g, to: 'dark:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.45)]' },
-  { from: /dark:hover:shadow-\[(\d+)px_(\d+)px_0px_0px_rgba\(255,255,255,0\.35\)\]/g, to: 'dark:hover:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.55)]' },
-  // Sidebar edge shadow: 0.2 -> 0.4
-  { from: /dark:shadow-\[8px_0px_0px_0px_rgba\(255,255,255,0\.2\)\]/g, to: 'dark:shadow-[8px_0px_0px_0px_rgba(255,255,255,0.4)]' },
+  // SHADOWS - Increase by ~10% (0.5 -> 0.6, etc)
+  // Normal shadows: 0.5 -> 0.6
+  { from: /dark:shadow-\[(\d+)px_(\d+)px_0px_0px_rgba\(255,255,255,0\.5\)\]/g, to: 'dark:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.6)]' },
+  // Hover shadows: 0.6 -> 0.7
+  { from: /dark:hover:shadow-\[(\d+)px_(\d+)px_0px_0px_rgba\(255,255,255,0\.6\)\]/g, to: 'dark:hover:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.7)]' },
+  // Softer shadows: 0.45 -> 0.55
+  { from: /dark:shadow-\[(\d+)px_(\d+)px_0px_0px_rgba\(255,255,255,0\.45\)\]/g, to: 'dark:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.55)]' },
+  { from: /dark:hover:shadow-\[(\d+)px_(\d+)px_0px_0px_rgba\(255,255,255,0\.55\)\]/g, to: 'dark:hover:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.65)]' },
+  // Sidebar edge shadow: 0.4 -> 0.5
+  { from: /dark:shadow-\[8px_0px_0px_0px_rgba\(255,255,255,0\.4\)\]/g, to: 'dark:shadow-[8px_0px_0px_0px_rgba(255,255,255,0.6)]' },
   
-  // BORDERS - Sync with shadows (make them softer but visible)
-  // Full white borders -> 50% opacity
-  { from: /dark:border-white/50(?!\/)/g, to: 'dark:border-white/50' },
-  // Already partial opacity borders - make them brighter
-  { from: /dark:border-white/50\/20/g, to: 'dark:border-white/50' },
-  { from: /dark:border-white/50\/30/g, to: 'dark:border-white/50' },
+  // BORDERS - Sync with shadows (50% -> 60%)
+  { from: /dark:border-white\/50/g, to: 'dark:border-white/60' },
 ];
 
 const extensions = ['.tsx', '.jsx', '.ts', '.js', '.css'];
