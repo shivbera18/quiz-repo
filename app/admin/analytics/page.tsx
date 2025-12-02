@@ -839,7 +839,7 @@ export default function AdminAnalyticsPage() {
                       <td className="p-2">{getQuizTitle(result, quizzes)}</td>
                       <td className="p-2">
                         <Badge variant={result.totalScore >= 70 ? "default" : "destructive"}>
-                          {result.totalScore}%
+                          {Number(result.totalScore).toFixed(0)}%
                         </Badge>
                       </td>
                       <td className="p-2 text-green-600">{result.correctAnswers}</td>
@@ -1066,7 +1066,7 @@ export default function AdminAnalyticsPage() {
                                 <span>{new Date(attempt.date).toLocaleDateString()}</span>
                                 <div className="flex items-center gap-2">
                                   <Badge variant={attempt.totalScore >= 70 ? "default" : "secondary"} className="text-xs">
-                                    {attempt.totalScore}%
+                                    {Number(attempt.totalScore).toFixed(0)}%
                                   </Badge>
                                   <span className="text-muted-foreground">{attempt.timeSpent ? Math.round(attempt.timeSpent / 60) + "m" : "N/A"}</span>
                                   <Button

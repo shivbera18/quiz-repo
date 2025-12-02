@@ -386,7 +386,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
         {/* Score Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card variant="neobrutalist" className="md:col-span-2 lg:col-span-1 p-6 text-center">
-            <h2 className="text-3xl sm:text-4xl font-black text-blue-600 mb-2">{result.totalScore}%</h2>
+            <h2 className="text-3xl sm:text-4xl font-black text-blue-600 mb-2">{Number(result.totalScore).toFixed(2)}%</h2>
             <p className="text-muted-foreground text-sm font-medium">Final Score</p>
             {result.rawScore !== undefined && (
               <div className="mt-4 space-y-1 text-sm font-medium">

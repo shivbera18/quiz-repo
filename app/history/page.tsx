@@ -352,7 +352,7 @@ export default function HistoryPage() {
                   >
                     <div className="flex items-center gap-4 min-w-0">
                       <div className={`w-14 h-14 aspect-square rounded-xl flex items-center justify-center font-black text-black text-lg flex-shrink-0 shadow-[2px_2px_0px_0px_#000] border-2 border-black ${scoreColor}`}>
-                        {attempt.totalScore}%
+                        {Number(attempt.totalScore).toFixed(0)}%
                       </div>
                       <div className="min-w-0">
                         <h4 className="font-bold truncate max-w-[180px] sm:max-w-xs">{attempt.quizName || 'Unknown Quiz'}</h4>

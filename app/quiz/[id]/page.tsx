@@ -519,7 +519,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.2 }}
               >
-                <Card variant="neobrutalist" className="bg-card">
+                <Card className="bg-card p-4 sm:p-6 border rounded-lg">
                   <div className="text-lg sm:text-xl lg:text-2xl font-medium leading-relaxed mb-6 sm:mb-8">
                     <MathRenderer text={currentQuestion.question} />
                   </div>
@@ -690,60 +690,60 @@ export default function QuizPage({ params }: { params: { id: string } }) {
           </div>
 
           {/* Mobile Layout */}
-          <div className="sm:hidden space-y-2">
-            <div className="flex gap-2">
+          <div className="sm:hidden space-y-1.5">
+            <div className="flex gap-1.5">
               <Button
                 variant="outline"
                 onClick={handleClearResponse}
                 disabled={!userAnswer}
-                className="flex-1 h-11"
+                className="flex-1 h-9 text-xs"
               >
                 Clear
               </Button>
               <Button
                 variant="outline"
                 onClick={handleMarkForReview}
-                className="flex-1 h-11 gap-2"
+                className="flex-1 h-9 gap-1.5 text-xs"
               >
-                <Bookmark className="h-4 w-4" />
+                <Bookmark className="h-3.5 w-3.5" />
                 Mark
               </Button>
               <Button
                 variant="default"
                 onClick={handleSaveAndMarkForReview}
                 disabled={!userAnswer}
-                className="flex-1 h-11 gap-2 bg-purple-600 hover:bg-purple-700"
+                className="flex-1 h-9 gap-1.5 text-xs bg-purple-600 hover:bg-purple-700"
               >
-                <CheckCheck className="h-4 w-4" />
+                <CheckCheck className="h-3.5 w-3.5" />
                 Save & Mark
               </Button>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               <Button
                 variant="default"
                 onClick={handleSaveAndNext}
                 disabled={!userAnswer || currentQuestionIndex === quiz.questions.length - 1}
-                className="flex-1 h-11 gap-2 bg-green-600 hover:bg-green-700"
+                className="flex-1 h-9 gap-1.5 text-xs bg-green-600 hover:bg-green-700"
               >
-                <Save className="h-4 w-4" />
+                <Save className="h-3.5 w-3.5" />
                 Save & Next
               </Button>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               <Button
                 variant="ghost"
                 onClick={() => navigateToQuestion(Math.max(0, currentQuestionIndex - 1))}
                 disabled={currentQuestionIndex === 0}
-                className="flex-1 h-11"
+                className="flex-1 h-9 text-xs"
               >
-                <ChevronLeft className="mr-2 h-4 w-4" /> Prev
+                <ChevronLeft className="mr-1 h-3.5 w-3.5" /> Prev
               </Button>
               <Button
                 onClick={() => navigateToQuestion(Math.min(quiz.questions.length - 1, currentQuestionIndex + 1))}
                 disabled={currentQuestionIndex === quiz.questions.length - 1}
-                className="flex-1 h-11"
+                className="flex-1 h-9 text-xs"
               >
-                Next <ChevronRight className="ml-2 h-4 w-4" />
+                Next <ChevronRight className="ml-1 h-3.5 w-3.5" />
               </Button>
             </div>
           </div>
