@@ -45,7 +45,7 @@ export function QuizFilters({ onFilterChange, activeFilters }: QuizFiltersProps)
                     )}
                 </Button>
             </SheetTrigger>
-            <SheetContent className="border-l-4 border-black dark:border-white">
+            <SheetContent className="border-l-4 border-black dark:border-white/50">
                 <SheetHeader>
                     <SheetTitle className="font-black text-xl">Filter Quizzes</SheetTitle>
                     <SheetDescription className="font-medium">
@@ -80,7 +80,7 @@ export function QuizFilters({ onFilterChange, activeFilters }: QuizFiltersProps)
                     <div className="space-y-4">
                         <div className="flex justify-between">
                             <Label className="font-bold text-base">Max Duration (minutes)</Label>
-                            <span className="text-sm font-bold bg-blue-200 dark:bg-blue-400/30 px-2 py-0.5 rounded border-2 border-black dark:border-white/30">{localFilters.duration[1]}m</span>
+                            <span className="text-sm font-bold bg-blue-200 dark:bg-blue-400/30 px-2 py-0.5 rounded border-2 border-black dark:border-white/50">{localFilters.duration[1]}m</span>
                         </div>
                         <Slider
                             defaultValue={[120]}

@@ -605,7 +605,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           return (
-                            <div className="bg-white dark:bg-zinc-900 border-4 border-black dark:border-white/50 rounded-xl shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.3)] p-3">
+                            <div className="bg-white dark:bg-zinc-900 border-4 border-black dark:border-white/50 rounded-xl shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.5)] p-3">
                               <p className="font-black">{payload[0].payload.fullName}</p>
                               <p className="text-sm font-medium text-muted-foreground">{payload[0].payload.date}</p>
                               <p className="text-sm font-bold">Score: <span className="font-black text-[#8B5CF6]">{payload[0].value}%</span></p>

@@ -85,7 +85,7 @@ export default function AttemptedQuizzesPage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
             <Link href="/dashboard">
-              <Button variant="outline" size="icon" className="rounded-lg h-11 w-11 border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.3)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.4)] bg-white dark:bg-zinc-900 transition-all">
+              <Button variant="outline" size="icon" className="rounded-lg h-11 w-11 border-2 border-black dark:border-white/50 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.5)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.6)] bg-white dark:bg-zinc-900 transition-all">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
@@ -123,7 +123,7 @@ export default function AttemptedQuizzesPage() {
           <div className="space-y-6">
             {/* Summary Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="p-4 rounded-xl bg-card border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.3)]">
+              <div className="p-4 rounded-xl bg-card border-2 border-black dark:border-white/50 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.5)]">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-blue-400 border-2 border-black">
                     <BookOpen className="h-5 w-5 text-black" />
@@ -135,7 +135,7 @@ export default function AttemptedQuizzesPage() {
                 </div>
               </div>
               
-              <div className="p-4 rounded-xl bg-card border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.3)]">
+              <div className="p-4 rounded-xl bg-card border-2 border-black dark:border-white/50 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.5)]">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-green-400 border-2 border-black">
                     <TrendingUp className="h-5 w-5 text-black" />
@@ -149,7 +149,7 @@ export default function AttemptedQuizzesPage() {
                 </div>
               </div>
               
-              <div className="p-4 rounded-xl bg-card border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.3)]">
+              <div className="p-4 rounded-xl bg-card border-2 border-black dark:border-white/50 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.5)]">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-purple-400 border-2 border-black">
                     <Target className="h-5 w-5 text-black" />
@@ -163,7 +163,7 @@ export default function AttemptedQuizzesPage() {
                 </div>
               </div>
               
-              <div className="p-4 rounded-xl bg-card border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.3)]">
+              <div className="p-4 rounded-xl bg-card border-2 border-black dark:border-white/50 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.5)]">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-orange-400 border-2 border-black">
                     <Clock className="h-5 w-5 text-black" />
@@ -189,7 +189,7 @@ export default function AttemptedQuizzesPage() {
                   return (
                     <div 
                       key={attempt._id} 
-                      className="group p-4 rounded-xl bg-card border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.3)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.4)] transition-all"
+                      className="group p-4 rounded-xl bg-card border-2 border-black dark:border-white/50 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.5)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.6)] transition-all"
                     >
                       <div className="flex items-start justify-between gap-4">
                         {/* Left: Score & Info */}

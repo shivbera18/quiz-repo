@@ -376,7 +376,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
   return (
     <div className="min-h-screen bg-background">
       {/* Top Bar */}
-      <div className="sticky top-0 z-40 w-full border-b-4 border-black bg-background/95 backdrop-blur dark:border-white/20">
+      <div className="sticky top-0 z-40 w-full border-b-4 border-black bg-background/95 backdrop-blur dark:border-white/50">
         <div className="container flex h-16 sm:h-14 items-center justify-between px-4">
           <div className="flex items-center gap-2 sm:gap-4">
             <AlertDialog>
@@ -492,7 +492,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
                                 setShowNavigator(false)
                               }}
                               className={cn(
-                                "relative h-12 w-full rounded-lg border-2 font-bold transition-all flex items-center justify-center shadow-[2px_2px_0px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_#000] active:translate-x-[0px] active:translate-y-[0px] active:shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.3)] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.4)]",
+                                "relative h-12 w-full rounded-lg border-2 font-bold transition-all flex items-center justify-center shadow-[2px_2px_0px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_#000] active:translate-x-[0px] active:translate-y-[0px] active:shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.5)] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.6)]",
                                 isCurrent && "ring-2 ring-black ring-offset-2 dark:ring-white",
                                 getQuestionStatusColor(q.id)
                               )}
@@ -544,13 +544,13 @@ export default function QuizPage({ params }: { params: { id: string } }) {
                           className={cn(
                             "flex items-center gap-3 sm:gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 active:scale-[0.99]",
                             isSelected
-                              ? "border-black bg-primary/10 shadow-[4px_4px_0px_0px_#000] dark:border-white dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.3)]"
-                              : "border-black/20 hover:border-black hover:shadow-[4px_4px_0px_0px_#000] hover:bg-background dark:border-white/20 dark:hover:border-white dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.4)]"
+                              ? "border-black bg-primary/10 shadow-[4px_4px_0px_0px_#000] dark:border-white/50 dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.5)]"
+                              : "border-black/20 hover:border-black hover:shadow-[4px_4px_0px_0px_#000] hover:bg-background dark:border-white/50 dark:hover:border-white dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.6)]"
                           )}
                         >
                           <div className={cn(
                             "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
-                            isSelected ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black" : "border-black/20"
+                            isSelected ? "border-black bg-black text-white dark:border-white/50 dark:bg-white dark:text-black" : "border-black/20"
                           )}>
                             {isSelected && <div className="h-3 w-3 rounded-full bg-current" />}
                           </div>
@@ -609,7 +609,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
                     key={idx}
                     onClick={() => navigateToQuestion(idx)}
                     className={cn(
-                      "relative h-10 w-full rounded-lg border-2 text-sm font-bold transition-all flex items-center justify-center shadow-[2px_2px_0px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_#000] active:translate-x-[0px] active:translate-y-[0px] active:shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.3)] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.4)]",
+                      "relative h-10 w-full rounded-lg border-2 text-sm font-bold transition-all flex items-center justify-center shadow-[2px_2px_0px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_#000] active:translate-x-[0px] active:translate-y-[0px] active:shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.5)] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.6)]",
                       isCurrent && "ring-2 ring-black ring-offset-2 dark:ring-white",
                       getQuestionStatusColor(q.id)
                     )}
@@ -627,7 +627,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
       </div>
 
       {/* Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 lg:right-80 border-t-4 border-black bg-background/95 backdrop-blur p-3 sm:p-4 z-30 dark:border-white/20">
+      <div className="fixed bottom-0 left-0 right-0 lg:right-80 border-t-4 border-black bg-background/95 backdrop-blur p-3 sm:p-4 z-30 dark:border-white/50">
         <div className="container max-w-5xl">
           {/* Desktop Layout */}
           <div className="hidden sm:flex items-center justify-between gap-4">

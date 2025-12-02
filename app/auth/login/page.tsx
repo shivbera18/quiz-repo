@@ -99,7 +99,7 @@ export default function LoginPage() {
         <p className="mt-2 text-muted-foreground">Master your banking exams</p>
       </div>
 
-      <Card variant="neobrutalist" className="border-4 border-black shadow-[8px_8px_0px_0px_#000] dark:border-white/20 dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.3)]">
+      <Card variant="neobrutalist" className="border-4 border-black shadow-[8px_8px_0px_0px_#000] dark:border-white/50 dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.5)]">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl">Welcome back</CardTitle>
           <CardDescription>

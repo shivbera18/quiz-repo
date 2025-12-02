@@ -16,7 +16,7 @@ const badgeVariants = cva(
           "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "text-foreground",
         neobrutalist:
-          "border-2 border-black bg-background text-foreground hover:shadow-[2px_2px_0px_0px_#000] transition-all dark:border-white/20 dark:hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.4)]",
+          "border-2 border-black bg-background text-foreground hover:shadow-[2px_2px_0px_0px_#000] transition-all dark:border-white/50 dark:hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.6)]",
       },
     },
     defaultVariants: {
