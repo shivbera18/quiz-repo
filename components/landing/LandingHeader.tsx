@@ -33,10 +33,10 @@ export default function LandingHeader() {
                     router.push("/dashboard");
                 }
             } catch (e) {
-                router.push("/login");
+                router.push("/auth/login");
             }
         } else {
-            router.push("/login");
+            router.push("/auth/login");
         }
     };
 
@@ -65,12 +65,12 @@ export default function LandingHeader() {
                                     </Button>
                                 ) : (
                                     <div className="flex items-center gap-2">
-                                        <Link href="/login">
+                                        <Link href="/auth/login">
                                             <Button variant="ghost" className="hover:bg-primary/10">
                                                 Login
                                             </Button>
                                         </Link>
-                                        <Link href="/register">
+                                        <Link href="/auth/login">
                                             <Button variant="neobrutalist">Get Started</Button>
                                         </Link>
                                     </div>

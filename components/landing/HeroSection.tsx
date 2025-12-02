@@ -68,10 +68,10 @@ export default function HeroSection() {
                     router.push("/dashboard");
                 }
             } catch (e) {
-                router.push("/login");
+                router.push("/auth/login");
             }
         } else {
-            router.push("/login");
+            router.push("/auth/login");
         }
     };
 
@@ -139,7 +139,7 @@ export default function HeroSection() {
                                 </Button>
                             ) : (
                                 <>
-                                    <Link href="/register">
+                                    <Link href="/auth/login">
                                         <Button
                                             size="lg"
                                             variant="neobrutalist"
@@ -148,7 +148,7 @@ export default function HeroSection() {
                                             Start Learning <BookOpenIcon className="size-4" />
                                         </Button>
                                     </Link>
-                                    <Link href="/login">
+                                    <Link href="/auth/login">
                                         <Button
                                             size="lg"
                                             variant="neobrutalistInverted"
