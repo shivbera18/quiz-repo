@@ -525,7 +525,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                     setSearchQuery("")
                     setSelectedTags([])
                   }}
-                  className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.15)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.2)] transition-all"
+                  className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.3)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.4)] transition-all"
                 >
                   Clear Filters
                 </Button>
@@ -692,7 +692,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                   <Save className="h-4 w-4 mr-2" />
                   {editingQuestion ? "Update Question" : "Create Question"}
                 </Button>
-                <Button variant="outline" onClick={resetForm} className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.15)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.2)] transition-all">
+                <Button variant="outline" onClick={resetForm} className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.3)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.4)] transition-all">
                   Cancel
                 </Button>
               </div>
@@ -818,7 +818,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                     variant="outline"
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.15)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.2)] transition-all disabled:opacity-50"
+                    className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.3)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.4)] transition-all disabled:opacity-50"
                   >
                     Previous
                   </Button>
@@ -842,7 +842,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                           variant={currentPage === pageNum ? "neobrutalist" : "outline"}
                           size="icon"
                           onClick={() => setCurrentPage(pageNum)}
-                          className={currentPage !== pageNum ? "border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.15)]" : ""}
+                          className={currentPage !== pageNum ? "border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.3)]" : ""}
                         >
                           {pageNum}
                         </Button>
@@ -854,7 +854,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                     variant="outline"
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
-                    className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.15)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.2)] transition-all disabled:opacity-50"
+                    className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.3)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.4)] transition-all disabled:opacity-50"
                   >
                     Next
                   </Button>

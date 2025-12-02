@@ -1,18 +1,19 @@
 const fs = require('fs');
 const path = require('path');
 
-// Replace white shadows with gray shadows in dark mode
+// Make shadows brighter for better contrast in dark mode
 const replacements = [
-  // Change bright white shadows to soft gray
-  { from: /dark:shadow-\[(\d+)px_(\d+)px_0px_0px_#fff\]/g, to: 'dark:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.15)]' },
-  { from: /dark:hover:shadow-\[(\d+)px_(\d+)px_0px_0px_#fff\]/g, to: 'dark:hover:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.2)]' },
+  // Increase opacity from 0.15 to 0.3 for normal shadows
+  { from: /dark:shadow-\[(\d+)px_(\d+)px_0px_0px_rgba\(255,255,255,0\.15\)\]/g, to: 'dark:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.3)]' },
+  // Increase opacity from 0.2 to 0.4 for hover shadows
+  { from: /dark:hover:shadow-\[(\d+)px_(\d+)px_0px_0px_rgba\(255,255,255,0\.2\)\]/g, to: 'dark:hover:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.4)]' },
   
-  // Change #757373 shadows to softer gray
-  { from: /dark:shadow-\[(\d+)px_(\d+)px_0px_0px_#757373\]/g, to: 'dark:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.1)]' },
-  { from: /dark:hover:shadow-\[(\d+)px_(\d+)px_0px_0px_#757373\]/g, to: 'dark:hover:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.15)]' },
+  // Increase opacity from 0.1 to 0.25 for softer shadows
+  { from: /dark:shadow-\[(\d+)px_(\d+)px_0px_0px_rgba\(255,255,255,0\.1\)\]/g, to: 'dark:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.25)]' },
+  { from: /dark:hover:shadow-\[(\d+)px_(\d+)px_0px_0px_rgba\(255,255,255,0\.15\)\]/g, to: 'dark:hover:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.35)]' },
   
-  // Fix sidebar shadows (8px_0px pattern)
-  { from: /dark:shadow-\[8px_0px_0px_0px_#fff\]/g, to: 'dark:shadow-[8px_0px_0px_0px_rgba(255,255,255,0.1)]' },
+  // Fix sidebar edge shadow
+  { from: /dark:shadow-\[8px_0px_0px_0px_rgba\(255,255,255,0\.1\)\]/g, to: 'dark:shadow-[8px_0px_0px_0px_rgba(255,255,255,0.2)]' },
 ];
 
 const extensions = ['.tsx', '.jsx', '.ts', '.js', '.css'];

@@ -212,7 +212,7 @@ export default function AdminUsersPage() {
             <p className="text-muted-foreground text-sm sm:text-base font-medium">Manage and monitor user accounts</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={fetchUsers} className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.15)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.2)] transition-all">
+            <Button variant="outline" size="sm" onClick={fetchUsers} className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.3)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.4)] transition-all">
               <RefreshCw className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Refresh</span>
             </Button>
