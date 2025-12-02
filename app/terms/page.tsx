@@ -213,25 +213,6 @@ export default function TermsPage() {
           </div>
         </motion.div>
       </main>
-
-      {/* Simple Footer */}
-      <footer className="bg-yellow-400 border-t-4 border-foreground w-full">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-foreground/70 text-sm font-medium">
-              © {new Date().getFullYear()} Quizzy. All rights reserved.
-            </p>
-            <div className="flex items-center gap-6">
-              <Link href="/terms" className="text-foreground hover:text-foreground text-sm font-black">
-                Terms of Service
-              </Link>
-              <Link href="/privacy" className="text-foreground/70 hover:text-foreground text-sm font-bold transition-colors">
-                Privacy Policy
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }
