@@ -51,22 +51,11 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-6 sm:space-y-8 pt-14 md:pt-0">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard">
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="rounded-lg h-11 w-11 border-2 border-black dark:border-white/65 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.75)] bg-white dark:bg-zinc-900 transition-all"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">My Analytics</h1>
-            <p className="text-sm text-muted-foreground mt-1 font-medium">Detailed performance insights and progress tracking</p>
-          </div>
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">My Analytics</h1>
+          <p className="text-sm text-muted-foreground mt-1 font-medium">Detailed performance insights and progress tracking</p>
         </div>
         <Button 
           variant="outline" 
