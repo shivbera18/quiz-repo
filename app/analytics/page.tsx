@@ -1,11 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, RefreshCw } from "lucide-react"
+import { RefreshCw } from "lucide-react"
 import StudentAnalytics from "@/components/student-analytics"
 import { useAuth } from "@/hooks/use-auth"
+import { MobilePageHeader } from "@/components/layout/mobile-page-header"
 
 export default function AnalyticsPage() {
   const { user } = useAuth()
@@ -52,35 +52,15 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          {/* Row 1: Heading - aligned with hamburger right edge */}
-          <div className="flex items-center md:ml-0 ml-[52px]">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">My Analytics</h1>
-          </div>
-          {/* Row 2: Back button (same as hamburger) + Subheading */}
-          <div className="flex items-center gap-2 md:ml-0 ml-2">
-            <Link href="/dashboard" className="md:hidden">
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className="h-10 w-10 shrink-0 rounded-lg border-4 border-black dark:border-white/65 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.75)] bg-yellow-300 dark:bg-yellow-400 hover:bg-yellow-400 dark:hover:bg-yellow-500 transition-all"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href="/dashboard" className="hidden md:block">
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className="h-9 w-9 shrink-0 border-2 border-black dark:border-white/65 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.75)] bg-yellow-300 dark:bg-yellow-400 hover:bg-yellow-400 dark:hover:bg-yellow-500 transition-all"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <p className="text-sm text-muted-foreground font-medium">Detailed performance insights and progress tracking</p>
-          </div>
-        </div>
+      {/* Mobile & Desktop Header */}
+      <MobilePageHeader 
+        title="My Analytics" 
+        subtitle="Detailed performance insights and progress tracking"
+        backHref="/dashboard"
+      />
+      
+      {/* Refresh Button */}
+      <div className="flex justify-end">
         <Button 
           variant="outline" 
           onClick={fetchData} 

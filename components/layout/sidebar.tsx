@@ -39,6 +39,15 @@ export function Sidebar() {
     // Scroll-based hamburger visibility (only show at top)
     const [isAtTop, setIsAtTop] = React.useState(true)
     
+    // Pages that use MobilePageHeader (subpages with back button)
+    const subpagesWithHeader = [
+        '/dashboard/full-mock-tests',
+        '/dashboard/sectional-tests',
+        '/dashboard/attempted-quizzes',
+        '/analytics',
+    ]
+    const isSubpageWithHeader = subpagesWithHeader.some(path => pathname?.startsWith(path))
+    
     React.useEffect(() => {
         const handleScroll = () => {
             // Show hamburger only when at top (within 50px threshold)
@@ -71,25 +80,28 @@ export function Sidebar() {
     return (
         <>
             {/* Mobile Menu Button - Neo Brutalism Style */}
-            <motion.div 
-                className="fixed top-4 left-4 z-50 md:hidden"
-                initial={{ y: 0 }}
-                animate={{ y: isAtTop ? 0 : -60 }}
-                transition={{ 
-                    type: "spring", 
-                    stiffness: 300, 
-                    damping: 30 
-                }}
-            >
-                <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setIsMobileOpen(!isMobileOpen)}
-                    className="rounded-lg bg-white dark:bg-zinc-900 border-4 border-black dark:border-white/65 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.75)] transition-all"
+            {/* Only show on pages that don't have MobilePageHeader */}
+            {!isSubpageWithHeader && (
+                <motion.div 
+                    className="fixed top-4 left-4 z-50 md:hidden"
+                    initial={{ y: 0 }}
+                    animate={{ y: isAtTop ? 0 : -60 }}
+                    transition={{ 
+                        type: "spring", 
+                        stiffness: 300, 
+                        damping: 30 
+                    }}
                 >
-                    {isMobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                </Button>
-            </motion.div>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setIsMobileOpen(!isMobileOpen)}
+                        className="rounded-lg bg-white dark:bg-zinc-900 border-4 border-black dark:border-white/65 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.75)] transition-all"
+                    >
+                        {isMobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                    </Button>
+                </motion.div>
+            )}
 
             {/* Mobile Overlay */}
             <AnimatePresence>
