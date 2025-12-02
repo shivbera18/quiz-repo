@@ -219,7 +219,7 @@ export function Sidebar() {
                             </Button>
                         </div>
 
-                        <nav className="flex-1 space-y-6 px-4 py-6 overflow-y-auto">
+                        <nav className="flex-1 space-y-5 px-4 py-8 overflow-y-auto">
                             {sidebarItems.map((item) => {
                                 const isActive = pathname === item.href ||
                                     (item.href !== '/dashboard' && item.href !== '/admin' && pathname.startsWith(item.href)) ||
@@ -228,7 +228,7 @@ export function Sidebar() {
                                     <Link key={item.href} href={item.href} onClick={() => setIsMobileOpen(false)}>
                                         <div
                                             className={cn(
-                                                "flex items-center gap-3 rounded-lg px-4 py-3.5 text-sm font-bold border-2 border-black dark:border-white transition-all",
+                                                "flex items-center gap-3 rounded-lg px-4 py-4 text-base font-bold border-2 border-black dark:border-white transition-all",
                                                 isActive 
                                                     ? "bg-yellow-300 dark:bg-yellow-400 text-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff]" 
                                                     : "bg-white dark:bg-zinc-800 hover:bg-blue-300 dark:hover:bg-blue-400 hover:shadow-[4px_4px_0px_0px_#000] dark:hover:shadow-[4px_4px_0px_0px_#fff] hover:translate-x-[-2px] hover:translate-y-[-2px]"
