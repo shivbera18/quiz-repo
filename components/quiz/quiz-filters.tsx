@@ -12,9 +12,11 @@ import { Badge } from "@/components/ui/badge"
 interface QuizFiltersProps {
     onFilterChange: (filters: any) => void
     activeFilters: any
+    /** Show only icon (for mobile header) */
+    iconOnly?: boolean
 }
 
-export function QuizFilters({ onFilterChange, activeFilters }: QuizFiltersProps) {
+export function QuizFilters({ onFilterChange, activeFilters, iconOnly = false }: QuizFiltersProps) {
     const [localFilters, setLocalFilters] = React.useState(activeFilters)
     const [isOpen, setIsOpen] = React.useState(false)
 
@@ -35,15 +37,30 @@ export function QuizFilters({ onFilterChange, activeFilters }: QuizFiltersProps)
     return (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-                <Button variant="neobrutalist" className="gap-2 relative font-bold">
-                    <Filter className="h-4 w-4" />
-                    Filters
-                    {activeCount > 0 && (
-                        <Badge className="ml-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs font-bold bg-orange-400 text-black border-2 border-black">
-                            {activeCount}
-                        </Badge>
-                    )}
-                </Button>
+                {iconOnly ? (
+                    <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="h-10 w-10 shrink-0 rounded-lg border-4 border-black dark:border-white/65 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.75)] bg-purple-300 dark:bg-purple-400 hover:bg-purple-400 dark:hover:bg-purple-500 transition-all relative"
+                    >
+                        <Filter className="h-5 w-5" />
+                        {activeCount > 0 && (
+                            <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs font-bold bg-orange-400 text-black border-2 border-black">
+                                {activeCount}
+                            </Badge>
+                        )}
+                    </Button>
+                ) : (
+                    <Button variant="neobrutalist" className="gap-2 relative font-bold">
+                        <Filter className="h-4 w-4" />
+                        Filters
+                        {activeCount > 0 && (
+                            <Badge className="ml-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs font-bold bg-orange-400 text-black border-2 border-black">
+                                {activeCount}
+                            </Badge>
+                        )}
+                    </Button>
+                )}
             </SheetTrigger>
             <SheetContent className="border-l-4 border-black dark:border-white/65">
                 <SheetHeader>

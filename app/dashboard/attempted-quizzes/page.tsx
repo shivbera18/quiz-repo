@@ -78,25 +78,38 @@ export default function AttemptedQuizzesPage() {
     )
   }
 
+  const historyButton = (
+    <Link href="/history">
+      <Button variant="neobrutalist" className="border-4 border-black dark:border-white/65">
+        <History className="h-5 w-5" />
+        <span className="ml-2">Full History</span>
+      </Button>
+    </Link>
+  )
+
+  const mobileHistoryButton = (
+    <Link href="/history">
+      <Button 
+        variant="outline" 
+        size="icon"
+        className="h-10 w-10 shrink-0 rounded-lg border-4 border-black dark:border-white/65 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.75)] bg-green-300 dark:bg-green-400 hover:bg-green-400 dark:hover:bg-green-500 transition-all"
+      >
+        <History className="h-5 w-5" />
+      </Button>
+    </Link>
+  )
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 pt-4 pb-4 md:py-8">
-        {/* Mobile & Desktop Header */}
+        {/* Mobile & Desktop Header with History action */}
         <MobilePageHeader 
           title="Attempted Quizzes" 
           subtitle="Review your quiz history and performance"
           backHref="/dashboard"
+          action={historyButton}
+          mobileAction={mobileHistoryButton}
         />
-        
-        {/* Full History Button */}
-        <div className="flex justify-end mb-6">
-          <Link href="/history">
-            <Button variant="neobrutalist" size="sm" className="gap-2">
-              <History className="h-4 w-4" />
-              Full History
-            </Button>
-          </Link>
-        </div>
 
         {loadingAttempts ? (
           <Card variant="neobrutalist">

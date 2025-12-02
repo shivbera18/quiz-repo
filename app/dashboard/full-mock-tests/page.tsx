@@ -108,20 +108,25 @@ export default function FullMockTestsPage() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      {/* Mobile & Desktop Header */}
+      {/* Mobile & Desktop Header with Filters action */}
       <MobilePageHeader 
         title="Full Mock Tests" 
         subtitle="Comprehensive exams covering all sections"
         backHref="/dashboard"
+        action={
+          <QuizFilters
+            activeFilters={activeFilters}
+            onFilterChange={setActiveFilters}
+          />
+        }
+        mobileAction={
+          <QuizFilters
+            activeFilters={activeFilters}
+            onFilterChange={setActiveFilters}
+            iconOnly
+          />
+        }
       />
-      
-      {/* Filters - shown below header on both mobile and desktop */}
-      <div className="flex justify-end">
-        <QuizFilters
-          activeFilters={activeFilters}
-          onFilterChange={setActiveFilters}
-        />
-      </div>
 
       <QuizList
         quizzes={filteredQuizzes}

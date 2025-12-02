@@ -50,27 +50,40 @@ export default function AnalyticsPage() {
     )
   }
 
+  const refreshButton = (
+    <Button 
+      variant="outline" 
+      onClick={fetchData} 
+      disabled={refreshing} 
+      className="border-4 border-black dark:border-white/65 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.75)] bg-blue-300 dark:bg-blue-400 hover:bg-blue-400 dark:hover:bg-blue-500 font-bold transition-all"
+    >
+      <RefreshCw className={`h-5 w-5 ${refreshing ? "animate-spin" : ""}`} />
+      <span className="ml-2">Refresh</span>
+    </Button>
+  )
+
+  const mobileRefreshButton = (
+    <Button 
+      variant="outline" 
+      size="icon"
+      onClick={fetchData} 
+      disabled={refreshing} 
+      className="h-10 w-10 shrink-0 rounded-lg border-4 border-black dark:border-white/65 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.75)] bg-blue-300 dark:bg-blue-400 hover:bg-blue-400 dark:hover:bg-blue-500 transition-all"
+    >
+      <RefreshCw className={`h-5 w-5 ${refreshing ? "animate-spin" : ""}`} />
+    </Button>
+  )
+
   return (
     <div className="space-y-6 sm:space-y-8">
-      {/* Mobile & Desktop Header */}
+      {/* Mobile & Desktop Header with Refresh action */}
       <MobilePageHeader 
         title="My Analytics" 
         subtitle="Detailed performance insights and progress tracking"
         backHref="/dashboard"
+        action={refreshButton}
+        mobileAction={mobileRefreshButton}
       />
-      
-      {/* Refresh Button */}
-      <div className="flex justify-end">
-        <Button 
-          variant="outline" 
-          onClick={fetchData} 
-          disabled={refreshing} 
-          className="w-full sm:w-auto border-2 border-black dark:border-white/65 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.75)] bg-blue-300 dark:bg-blue-400 hover:bg-blue-400 dark:hover:bg-blue-500 font-bold transition-all"
-        >
-          <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-          Refresh
-        </Button>
-      </div>
 
       <StudentAnalytics results={results} />
     </div>

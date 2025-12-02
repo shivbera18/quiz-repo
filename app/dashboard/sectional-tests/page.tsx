@@ -97,20 +97,25 @@ export default function SectionalTestsPage() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      {/* Mobile & Desktop Header */}
+      {/* Mobile & Desktop Header with Filters action */}
       <MobilePageHeader 
         title="Sectional Tests" 
         subtitle="Focused practice on specific topics"
         backHref="/dashboard"
+        action={
+          <QuizFilters
+            activeFilters={activeFilters}
+            onFilterChange={setActiveFilters}
+          />
+        }
+        mobileAction={
+          <QuizFilters
+            activeFilters={activeFilters}
+            onFilterChange={setActiveFilters}
+            iconOnly
+          />
+        }
       />
-      
-      {/* Filters */}
-      <div className="flex justify-end">
-        <QuizFilters
-          activeFilters={activeFilters}
-          onFilterChange={setActiveFilters}
-        />
-      </div>
 
       <QuizList
         quizzes={filteredQuizzes}

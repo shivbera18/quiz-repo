@@ -11,9 +11,13 @@ interface MobilePageHeaderProps {
   title: string
   subtitle: string
   backHref?: string
+  /** Action button to show in header - renders in both mobile and desktop */
+  action?: React.ReactNode
+  /** Mobile-specific action (icon only) - if provided, overrides action on mobile */
+  mobileAction?: React.ReactNode
 }
 
-export function MobilePageHeader({ title, subtitle, backHref = "/dashboard" }: MobilePageHeaderProps) {
+export function MobilePageHeader({ title, subtitle, backHref = "/dashboard", action, mobileAction }: MobilePageHeaderProps) {
   const { isMobileOpen, setIsMobileOpen } = useSidebar()
   const [isAtTop, setIsAtTop] = React.useState(true)
 
@@ -29,6 +33,9 @@ export function MobilePageHeader({ title, subtitle, backHref = "/dashboard" }: M
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Use mobileAction if provided, otherwise use action for mobile
+  const mobileActionElement = mobileAction || action
+
   return (
     <>
       {/* Mobile Header - slides up on scroll */}
@@ -43,7 +50,7 @@ export function MobilePageHeader({ title, subtitle, backHref = "/dashboard" }: M
         }}
       >
         <div className="px-4 pt-4 pb-3">
-          {/* Row 1: Hamburger + Heading */}
+          {/* Row 1: Hamburger + Heading + Action */}
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
@@ -53,7 +60,9 @@ export function MobilePageHeader({ title, subtitle, backHref = "/dashboard" }: M
             >
               {isMobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
-            <h1 className="text-xl font-black tracking-tight truncate">{title}</h1>
+            <h1 className="text-xl font-black tracking-tight truncate flex-1">{title}</h1>
+            {/* Mobile action */}
+            {mobileActionElement && <div className="shrink-0">{mobileActionElement}</div>}
           </div>
           
           {/* Row 2: Back button + Subheading */}
@@ -75,8 +84,8 @@ export function MobilePageHeader({ title, subtitle, backHref = "/dashboard" }: M
       {/* Spacer for mobile to prevent content from going under fixed header */}
       <div className="h-[100px] md:hidden" />
 
-      {/* Desktop Header - static, with back button in place of hamburger */}
-      <div className="hidden md:flex flex-col gap-1 mb-6">
+      {/* Desktop Header - static, with back button and action */}
+      <div className="hidden md:flex items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           <Link href={backHref}>
             <Button 
@@ -92,6 +101,8 @@ export function MobilePageHeader({ title, subtitle, backHref = "/dashboard" }: M
             <p className="text-sm text-muted-foreground font-medium">{subtitle}</p>
           </div>
         </div>
+        {/* Desktop action - full button */}
+        {action && <div className="shrink-0">{action}</div>}
       </div>
     </>
   )
