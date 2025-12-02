@@ -45,6 +45,7 @@ export function Sidebar() {
         '/dashboard/sectional-tests',
         '/dashboard/attempted-quizzes',
         '/analytics',
+        '/profile',
     ]
     const isSubpageWithHeader = subpagesWithHeader.some(path => pathname?.startsWith(path))
     
