@@ -103,14 +103,14 @@ export function Sidebar() {
                 </motion.div>
             )}
 
-            {/* Mobile Overlay */}
+            {/* Mobile Overlay - z-[55] to be above header (z-50) but below sidebar (z-[60]) */}
             <AnimatePresence>
                 {isMobileOpen && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
+                        className="fixed inset-0 z-[55] bg-background/80 backdrop-blur-sm md:hidden"
                         onClick={() => setIsMobileOpen(false)}
                     />
                 )}
@@ -202,7 +202,7 @@ export function Sidebar() {
                 </div>
             </aside>
 
-            {/* Mobile Sidebar - Neo Brutalism */}
+            {/* Mobile Sidebar - Neo Brutalism - z-[60] to be above overlay and header */}
             <AnimatePresence>
                 {isMobileOpen && (
                     <motion.aside
@@ -210,7 +210,7 @@ export function Sidebar() {
                         animate={{ x: 0 }}
                         exit={{ x: "-100%" }}
                         transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                        className="fixed inset-y-0 left-0 z-50 w-72 border-r-4 border-black dark:border-white/65 bg-white dark:bg-zinc-900 md:hidden flex flex-col shadow-[8px_0px_0px_0px_#000] dark:shadow-[8px_0px_0px_0px_rgba(255,255,255,0.65)]"
+                        className="fixed inset-y-0 left-0 z-[60] w-72 border-r-4 border-black dark:border-white/65 bg-white dark:bg-zinc-900 md:hidden flex flex-col shadow-[8px_0px_0px_0px_#000] dark:shadow-[8px_0px_0px_0px_rgba(255,255,255,0.65)]"
                     >
                         <div className="flex h-16 items-center justify-between px-6 shrink-0 border-b-4 border-black dark:border-white/65">
                             <div className="flex items-center gap-3">
