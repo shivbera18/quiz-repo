@@ -47,6 +47,7 @@ export function Sidebar() {
         '/analytics',
         '/profile',
         '/admin',
+        '/history',
     ]
     const isSubpageWithHeader = subpagesWithHeader.some(path => pathname?.startsWith(path))
     

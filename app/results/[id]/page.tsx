@@ -218,9 +218,9 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
 
     // Performance by difficulty (based on section performance)
     const sectionPerformance = [
-      { section: "Reasoning", score: result.sections?.reasoning || 0, color: "#8884d8" },
-      { section: "Quantitative", score: result.sections?.quantitative || 0, color: "#82ca9d" },
-      { section: "English", score: result.sections?.english || 0, color: "#ffc658" },
+      { section: "Reasoning", score: Number((result.sections?.reasoning || 0).toFixed(2)), color: "#8884d8" },
+      { section: "Quantitative", score: Number((result.sections?.quantitative || 0).toFixed(2)), color: "#82ca9d" },
+      { section: "English", score: Number((result.sections?.english || 0).toFixed(2)), color: "#ffc658" },
     ].filter((s) => s.score > 0)
 
     // Answer distribution
@@ -521,7 +521,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-2xl font-black">{score}%</span>
+                      <span className="text-2xl font-black">{Number(score).toFixed(2)}%</span>
                       <Badge variant={score >= 70 ? "default" : "destructive"} className="border-2 border-black dark:border-white/65 font-bold">
                         {score >= 70 ? "Good" : "Needs Work"}
                       </Badge>
