@@ -22,7 +22,7 @@ import {
 } from "lucide-react"
 import MathRenderer from "@/components/math-renderer"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts"
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
 import { useAuth } from "@/hooks/use-auth"
 
 interface QuestionResult {
@@ -276,7 +276,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center mobile-header-safe-zone">
+      <div className="min-h-screen flex items-center justify-center">
         <Card variant="neobrutalist" className="p-8 text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground font-medium">Loading results...</p>
@@ -513,8 +513,15 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
             .filter(([section, score]) => score > 0 && getSectionStats(section).total > 0)
             .map(([section, score]) => {
               const stats = getSectionStats(section)
+              const sectionColors: { [key: string]: { bg: string; border: string; progress: string } } = {
+                reasoning: { bg: 'bg-purple-50 dark:bg-purple-900/20', border: 'border-l-purple-500', progress: 'bg-purple-500' },
+                quantitative: { bg: 'bg-green-50 dark:bg-green-900/20', border: 'border-l-green-500', progress: 'bg-green-500' },
+                english: { bg: 'bg-yellow-50 dark:bg-yellow-900/20', border: 'border-l-yellow-500', progress: 'bg-yellow-500' },
+              }
+              const colors = sectionColors[section] || { bg: 'bg-gray-50 dark:bg-gray-900/20', border: 'border-l-gray-500', progress: 'bg-gray-500' }
+              
               return (
-                <Card variant="neobrutalist" key={section}>
+                <Card variant="neobrutalist" key={section} className={`border-l-4 ${colors.border} ${colors.bg}`}>
                   <CardHeader>
                     <CardTitle className="text-lg capitalize font-black">{section}</CardTitle>
                     <CardDescription className="font-medium">
@@ -528,7 +535,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                         {score >= 70 ? "Good" : "Needs Work"}
                       </Badge>
                     </div>
-                    <Progress value={score} />
+                    <Progress value={score} className={`[&>div]:${colors.progress}`} />
                   </CardContent>
                 </Card>
               )
@@ -550,7 +557,12 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                     <XAxis dataKey="section" />
                     <YAxis domain={[0, 100]} />
                     <Tooltip formatter={(value) => [`${value}%`, "Score"]} />
-                    <Bar dataKey="score" fill="hsl(var(--primary))" />
+                    <Legend />
+                    <Bar dataKey="score" name="Score %" radius={[4, 4, 0, 0]}>
+                      {analysis.sectionPerformance.filter(s => s.score > 0).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
