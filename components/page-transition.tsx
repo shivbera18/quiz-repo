@@ -1,81 +1,35 @@
 "use client"
 
-import { motion, AnimatePresence } from "framer-motion"
 import { usePathname } from "next/navigation"
-import { ReactNode, useState, useEffect, useRef } from "react"
+import { ReactNode, useState, useEffect } from "react"
 
 interface PageTransitionProps {
   children: ReactNode
 }
 
-const pageVariants = {
-  initial: {
-    opacity: 0,
-    y: 20,
-    scale: 0.98
-  },
-  in: {
-    opacity: 1,
-    y: 0,
-    scale: 1
-  },
-  out: {
-    opacity: 0,
-    y: -20,
-    scale: 0.98
-  }
-}
-
-const pageTransition = {
-  type: "tween",
-  ease: "anticipate",
-  duration: 0.4
-}
-
+// Simplified page transition that doesn't cause hydration/navigation issues
+// The AnimatePresence with mode="wait" was causing white screens on back navigation
+// because the exit animation would complete but the enter animation wouldn't trigger
 export function PageTransition({ children }: PageTransitionProps) {
   const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
-  const isFirstRender = useRef(true)
-  const previousPathname = useRef(pathname)
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Track if pathname changed (actual navigation vs initial load)
-  useEffect(() => {
-    if (mounted && previousPathname.current !== pathname) {
-      isFirstRender.current = false
-    }
-    previousPathname.current = pathname
-  }, [pathname, mounted])
-
-  // During SSR and initial hydration, render children directly without animation wrapper
+  // During SSR and initial hydration, render children directly
   // This ensures server HTML matches initial client HTML
   if (!mounted) {
     return <>{children}</>
   }
 
-  // On first render after mount, don't animate - just show content
-  // Only animate on subsequent navigations
-  if (isFirstRender.current) {
-    return <div className="min-h-screen">{children}</div>
-  }
-
+  // Simple wrapper - let Next.js handle navigation
+  // This avoids the white screen issue on back navigation
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <motion.div
-        key={pathname}
-        initial="initial"
-        animate="in"
-        exit="out"
-        variants={pageVariants}
-        transition={pageTransition}
-        className="min-h-screen"
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
+    <div key={pathname} className="min-h-screen">
+      {children}
+    </div>
   )
 }
 

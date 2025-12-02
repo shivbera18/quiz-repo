@@ -23,7 +23,7 @@ const validateToken = async (token: string) => {
       throw new Error('Invalid timestamp in token')
     }
     
-    // Check if token is not too old (24 hours)
+    // Allow tokens to stay valid for 30 days to avoid frequent logouts on deployments
     const maxAge = 30 * 24 * 60 * 60 * 1000 // 30 days in ms
     if (Date.now() - timestamp > maxAge) {
       throw new Error('Token expired')

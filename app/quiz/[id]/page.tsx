@@ -95,9 +95,9 @@ export default function QuizPage({ params }: { params: { id: string } }) {
 
         // Initialize question statuses
         const statuses: Record<string, QuestionStatus> = {}
-        ;(quizData.questions || []).forEach((q: Question) => {
-          statuses[q.id] = { answered: false, markedForReview: false }
-        })
+          ; (quizData.questions || []).forEach((q: Question) => {
+            statuses[q.id] = { answered: false, markedForReview: false }
+          })
         setQuestionStatuses(statuses)
       } catch (error) {
         console.error(error)
@@ -129,12 +129,12 @@ export default function QuizPage({ params }: { params: { id: string } }) {
     if (!quiz) return
     const currentQuestion = quiz.questions[currentQuestionIndex]
     const timeSpentOnQuestion = Date.now() - questionStartTime
-    
+
     setQuestionTimes(prev => ({
       ...prev,
       [currentQuestion.id]: (prev[currentQuestion.id] || 0) + timeSpentOnQuestion
     }))
-    
+
     // Reset start time for next question
     setQuestionStartTime(Date.now())
   }
@@ -279,8 +279,9 @@ export default function QuizPage({ params }: { params: { id: string } }) {
 
     scoreData.totalScore = Math.max(0, (scoreData.rawScore / quiz.questions.length) * 100)
 
+    const tempId = Date.now().toString()
     const result = {
-      _id: Date.now().toString(),
+      _id: tempId,
       quizId: quiz.id,
       quizName: quiz.title,
       date: new Date().toISOString(),
@@ -317,7 +318,17 @@ export default function QuizPage({ params }: { params: { id: string } }) {
 
       if (saveResponse.ok) {
         const saveData = await saveResponse.json()
-        result._id = saveData.result._id
+        const serverId = saveData.result._id
+        result._id = serverId
+        
+        // Update the ID in localStorage to match the server ID
+        // This ensures that if the user navigates to the result page with the server ID,
+        // they can still find the result in localStorage if the API fails (fallback)
+        const currentResults = JSON.parse(localStorage.getItem("quizResults") || "[]")
+        const updatedResults = currentResults.map((r: any) => 
+          r._id === tempId ? { ...r, _id: serverId } : r
+        )
+        localStorage.setItem("quizResults", JSON.stringify(updatedResults))
       }
     } catch (error) {
       console.warn("Database save failed", error)
@@ -365,7 +376,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
   return (
     <div className="min-h-screen bg-background">
       {/* Top Bar */}
-      <div className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur">
+      <div className="sticky top-0 z-40 w-full border-b-4 border-black bg-background/95 backdrop-blur dark:border-white/20">
         <div className="container flex h-16 sm:h-14 items-center justify-between px-4">
           <div className="flex items-center gap-2 sm:gap-4">
             <AlertDialog>
@@ -399,7 +410,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="default" size="sm" className="gap-1.5 h-9 sm:h-8">
+                <Button variant="neobrutalist" size="sm" className="gap-1.5 h-9 sm:h-8">
                   <Send className="h-4 w-4" />
                   <span className="hidden sm:inline text-sm">Submit</span>
                 </Button>
@@ -437,7 +448,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
                 <span className="capitalize hidden sm:inline">{currentQuestion.section}</span>
                 <Sheet open={showNavigator} onOpenChange={setShowNavigator}>
                   <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9 gap-2">
+                    <Button variant="neobrutalist" size="sm" className="h-9 gap-2">
                       <Grid3x3 className="h-4 w-4" />
                       <span className="hidden xs:inline">Questions</span>
                     </Button>
@@ -481,8 +492,8 @@ export default function QuizPage({ params }: { params: { id: string } }) {
                                 setShowNavigator(false)
                               }}
                               className={cn(
-                                "relative h-12 w-full rounded-lg border-2 font-medium transition-all flex items-center justify-center",
-                                isCurrent && "ring-2 ring-primary ring-offset-2",
+                                "relative h-12 w-full rounded-lg border-2 font-bold transition-all flex items-center justify-center shadow-[2px_2px_0px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_#000] active:translate-x-[0px] active:translate-y-[0px] active:shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff] dark:hover:shadow-[4px_4px_0px_0px_#fff]",
+                                isCurrent && "ring-2 ring-black ring-offset-2 dark:ring-white",
                                 getQuestionStatusColor(q.id)
                               )}
                             >
@@ -508,7 +519,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.2 }}
               >
-                <Card className="border-none shadow-none bg-transparent">
+                <Card className="bg-card p-4 sm:p-6 border rounded-lg">
                   <div className="text-lg sm:text-xl lg:text-2xl font-medium leading-relaxed mb-6 sm:mb-8">
                     <MathRenderer text={currentQuestion.question} />
                   </div>
@@ -533,17 +544,17 @@ export default function QuizPage({ params }: { params: { id: string } }) {
                           className={cn(
                             "flex items-center gap-3 sm:gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 active:scale-[0.99]",
                             isSelected
-                              ? "border-primary bg-primary/5 shadow-sm"
-                              : "border-muted hover:border-primary/50 hover:bg-muted/50"
+                              ? "border-black bg-primary/10 shadow-[4px_4px_0px_0px_#000] dark:border-white dark:shadow-[4px_4px_0px_0px_#fff]"
+                              : "border-black/20 hover:border-black hover:shadow-[4px_4px_0px_0px_#000] hover:bg-background dark:border-white/20 dark:hover:border-white dark:hover:shadow-[4px_4px_0px_0px_#fff]"
                           )}
                         >
                           <div className={cn(
-                            "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
-                            isSelected ? "border-primary bg-primary" : "border-muted-foreground/30"
+                            "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                            isSelected ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black" : "border-black/20"
                           )}>
-                            {isSelected && <div className="h-3 w-3 rounded-full bg-white" />}
+                            {isSelected && <div className="h-3 w-3 rounded-full bg-current" />}
                           </div>
-                          <div className="flex-1 text-sm sm:text-base">
+                          <div className="flex-1 text-sm sm:text-base font-medium">
                             <MathRenderer text={option} />
                           </div>
                         </div>
@@ -598,8 +609,8 @@ export default function QuizPage({ params }: { params: { id: string } }) {
                     key={idx}
                     onClick={() => navigateToQuestion(idx)}
                     className={cn(
-                      "relative h-10 w-full rounded-lg border-2 text-sm font-medium transition-all flex items-center justify-center",
-                      isCurrent && "ring-2 ring-primary ring-offset-2",
+                      "relative h-10 w-full rounded-lg border-2 text-sm font-bold transition-all flex items-center justify-center shadow-[2px_2px_0px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_#000] active:translate-x-[0px] active:translate-y-[0px] active:shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff] dark:hover:shadow-[4px_4px_0px_0px_#fff]",
+                      isCurrent && "ring-2 ring-black ring-offset-2 dark:ring-white",
                       getQuestionStatusColor(q.id)
                     )}
                   >
@@ -616,13 +627,13 @@ export default function QuizPage({ params }: { params: { id: string } }) {
       </div>
 
       {/* Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 lg:right-80 border-t bg-background/95 backdrop-blur p-3 sm:p-4 z-30">
+      <div className="fixed bottom-0 left-0 right-0 lg:right-80 border-t-4 border-black bg-background/95 backdrop-blur p-3 sm:p-4 z-30 dark:border-white/20">
         <div className="container max-w-5xl">
           {/* Desktop Layout */}
           <div className="hidden sm:flex items-center justify-between gap-4">
             <div className="flex gap-2">
               <Button
-                variant="ghost"
+                variant="neobrutalist"
                 onClick={() => navigateToQuestion(Math.max(0, currentQuestionIndex - 1))}
                 disabled={currentQuestionIndex === 0}
                 className="h-10 px-4"
@@ -633,7 +644,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
 
             <div className="flex gap-2">
               <Button
-                variant="outline"
+                variant="neobrutalist"
                 onClick={handleClearResponse}
                 disabled={!userAnswer}
                 className="h-10"
@@ -641,7 +652,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
                 Clear
               </Button>
               <Button
-                variant="outline"
+                variant="neobrutalist"
                 onClick={handleMarkForReview}
                 className="h-10 gap-2"
               >
@@ -649,19 +660,19 @@ export default function QuizPage({ params }: { params: { id: string } }) {
                 Mark for Review
               </Button>
               <Button
-                variant="default"
+                variant="neobrutalistInverted"
                 onClick={handleSaveAndMarkForReview}
                 disabled={!userAnswer}
-                className="h-10 gap-2 bg-purple-600 hover:bg-purple-700"
+                className="h-10 gap-2 bg-purple-600 hover:bg-purple-700 text-white border-purple-900"
               >
                 <CheckCheck className="h-4 w-4" />
                 Save & Mark
               </Button>
               <Button
-                variant="default"
+                variant="neobrutalistInverted"
                 onClick={handleSaveAndNext}
                 disabled={!userAnswer || currentQuestionIndex === quiz.questions.length - 1}
-                className="h-10 gap-2 bg-green-600 hover:bg-green-700"
+                className="h-10 gap-2 bg-green-600 hover:bg-green-700 text-white border-green-900"
               >
                 <Save className="h-4 w-4" />
                 Save & Next
@@ -669,6 +680,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
             </div>
 
             <Button
+              variant="neobrutalist"
               onClick={() => navigateToQuestion(Math.min(quiz.questions.length - 1, currentQuestionIndex + 1))}
               disabled={currentQuestionIndex === quiz.questions.length - 1}
               className="h-10 px-4"
@@ -678,60 +690,60 @@ export default function QuizPage({ params }: { params: { id: string } }) {
           </div>
 
           {/* Mobile Layout */}
-          <div className="sm:hidden space-y-2">
-            <div className="flex gap-2">
+          <div className="sm:hidden space-y-1.5">
+            <div className="flex gap-1.5">
               <Button
                 variant="outline"
                 onClick={handleClearResponse}
                 disabled={!userAnswer}
-                className="flex-1 h-11"
+                className="flex-1 h-9 text-xs"
               >
                 Clear
               </Button>
               <Button
                 variant="outline"
                 onClick={handleMarkForReview}
-                className="flex-1 h-11 gap-2"
+                className="flex-1 h-9 gap-1.5 text-xs"
               >
-                <Bookmark className="h-4 w-4" />
+                <Bookmark className="h-3.5 w-3.5" />
                 Mark
               </Button>
               <Button
                 variant="default"
                 onClick={handleSaveAndMarkForReview}
                 disabled={!userAnswer}
-                className="flex-1 h-11 gap-2 bg-purple-600 hover:bg-purple-700"
+                className="flex-1 h-9 gap-1.5 text-xs bg-purple-600 hover:bg-purple-700"
               >
-                <CheckCheck className="h-4 w-4" />
+                <CheckCheck className="h-3.5 w-3.5" />
                 Save & Mark
               </Button>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               <Button
                 variant="default"
                 onClick={handleSaveAndNext}
                 disabled={!userAnswer || currentQuestionIndex === quiz.questions.length - 1}
-                className="flex-1 h-11 gap-2 bg-green-600 hover:bg-green-700"
+                className="flex-1 h-9 gap-1.5 text-xs bg-green-600 hover:bg-green-700"
               >
-                <Save className="h-4 w-4" />
+                <Save className="h-3.5 w-3.5" />
                 Save & Next
               </Button>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               <Button
                 variant="ghost"
                 onClick={() => navigateToQuestion(Math.max(0, currentQuestionIndex - 1))}
                 disabled={currentQuestionIndex === 0}
-                className="flex-1 h-11"
+                className="flex-1 h-9 text-xs"
               >
-                <ChevronLeft className="mr-2 h-4 w-4" /> Prev
+                <ChevronLeft className="mr-1 h-3.5 w-3.5" /> Prev
               </Button>
               <Button
                 onClick={() => navigateToQuestion(Math.min(quiz.questions.length - 1, currentQuestionIndex + 1))}
                 disabled={currentQuestionIndex === quiz.questions.length - 1}
-                className="flex-1 h-11"
+                className="flex-1 h-9 text-xs"
               >
-                Next <ChevronRight className="ml-2 h-4 w-4" />
+                Next <ChevronRight className="ml-1 h-3.5 w-3.5" />
               </Button>
             </div>
           </div>

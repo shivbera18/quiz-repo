@@ -5,67 +5,90 @@
 @layer base {
   :root {
     /* Light Mode */
-    --background: 0 0% 98%; /* #FAFAFA */
-    --foreground: 0 0% 7%; /* #111111 */
+    --background: 0 0% 98%;
+    /* #FAFAFA */
+    --foreground: 0 0% 7%;
+    /* #111111 */
 
-    --card: 0 0% 100%; /* #FFFFFF */
-    --card-foreground: 0 0% 7%; /* #111111 */
+    --card: 0 0% 100%;
+    /* #FFFFFF */
+    --card-foreground: 0 0% 7%;
+    /* #111111 */
 
-    --popover: 0 0% 100%; /* #FFFFFF */
-    --popover-foreground: 0 0% 7%; /* #111111 */
+    --popover: 0 0% 100%;
+    /* #FFFFFF */
+    --popover-foreground: 0 0% 7%;
+    /* #111111 */
 
-    --primary: 239 84% 67%; /* #6366F1 Indigo */
+    --primary: 239 84% 67%;
+    /* #6366F1 Indigo */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 95%; /* #F2F2F2 Muted */
+    --secondary: 0 0% 95%;
+    /* #F2F2F2 Muted */
     --secondary-foreground: 0 0% 7%;
 
-    --muted: 0 0% 95%; /* #F2F2F2 */
+    --muted: 0 0% 95%;
+    /* #F2F2F2 */
     --muted-foreground: 0 0% 45%;
 
-    --accent: 0 0% 95%; /* #F2F2F2 */
+    --accent: 0 0% 95%;
+    /* #F2F2F2 */
     --accent-foreground: 0 0% 7%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 90%; /* #E5E5E5 */
+    --border: 0 0% 90%;
+    /* #E5E5E5 */
     --input: 0 0% 90%;
     --ring: 239 84% 67%;
 
-    --radius: 0.75rem; /* 12px default for buttons/inputs */
-    
-    /* Dynamic mobile header padding */
-    --mobile-header-padding: 4rem;
+    --radius: 0.75rem;
+    /* 12px default for buttons/inputs */
+
+    /* Dynamic mobile header padding - reduced for less gap */
+    --mobile-header-padding: 3.25rem;
   }
 
   .dark {
     /* Dark Mode */
-    --background: 240 6% 4.5%; /* #0B0B0C */
-    --foreground: 0 0% 93%; /* #EDEDED */
+    --background: 240 6% 4.5%;
+    /* #0B0B0C */
+    --foreground: 0 0% 93%;
+    /* #EDEDED */
 
-    --card: 240 5% 7%; /* #111113 */
-    --card-foreground: 0 0% 93%; /* #EDEDED */
+    --card: 240 5% 7%;
+    /* #111113 */
+    --card-foreground: 0 0% 93%;
+    /* #EDEDED */
 
-    --popover: 240 5% 7%; /* #111113 */
-    --popover-foreground: 0 0% 93%; /* #EDEDED */
+    --popover: 240 5% 7%;
+    /* #111113 */
+    --popover-foreground: 0 0% 93%;
+    /* #EDEDED */
 
-    --primary: 239 84% 67%; /* #6366F1 Indigo */
+    --primary: 239 84% 67%;
+    /* #6366F1 Indigo */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 10%; /* #1A1A1A Muted */
+    --secondary: 0 0% 10%;
+    /* #1A1A1A Muted */
     --secondary-foreground: 0 0% 93%;
 
-    --muted: 0 0% 10%; /* #1A1A1A */
+    --muted: 0 0% 10%;
+    /* #1A1A1A */
     --muted-foreground: 0 0% 60%;
 
-    --accent: 0 0% 10%; /* #1A1A1A */
+    --accent: 0 0% 10%;
+    /* #1A1A1A */
     --accent-foreground: 0 0% 93%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 3% 14%; /* #222224 */
+    --border: 240 3% 14%;
+    /* #222224 */
     --input: 240 3% 14%;
     --ring: 239 84% 67%;
   }
@@ -75,10 +98,12 @@
   * {
     @apply border-border;
   }
-  
+
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    background-image: radial-gradient(hsl(var(--foreground) / 0.1) 1px, transparent 1px);
+    background-size: 24px 24px;
   }
 }
 
@@ -88,7 +113,7 @@
     padding-top: var(--mobile-header-padding);
     transition: padding-top 0.2s ease-out;
   }
-  
+
   @media (min-width: 768px) {
     .mobile-header-safe-zone {
       padding-top: 0;
@@ -115,4 +140,18 @@
 .rdp-today:not(.rdp-selected) .rdp-day_button {
   background-color: hsl(var(--accent));
   color: hsl(var(--accent-foreground));
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
 }

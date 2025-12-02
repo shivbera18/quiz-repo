@@ -329,7 +329,7 @@ export function ActivityCalendar({ attempts }: ActivityCalendarProps) {
                                     attempt.totalScore >= 80 ? 'text-green-600' :
                                     attempt.totalScore >= 60 ? 'text-yellow-600' : 'text-red-600'
                                   }`}>
-                                    {attempt.totalScore}%
+                                    {Number(attempt.totalScore).toFixed(0)}%
                                   </span>
                                 </div>
                               </div>

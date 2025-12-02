@@ -79,7 +79,7 @@ export default function GoalsPage() {
         case "score":
           // Average score goal
           if (results.length > 0) {
-            current = Math.round(results.reduce((sum, r) => sum + r.totalScore, 0) / results.length)
+            current = parseFloat((results.reduce((sum, r) => sum + r.totalScore, 0) / results.length).toFixed(2))
           }
           break
 
@@ -100,7 +100,7 @@ export default function GoalsPage() {
               .map((r) => r.sections[goal.section as keyof typeof r.sections])
               .filter((score) => score > 0)
             if (sectionScores.length > 0) {
-              current = Math.round(sectionScores.reduce((sum, score) => sum + score, 0) / sectionScores.length)
+              current = parseFloat((sectionScores.reduce((sum, score) => sum + score, 0) / sectionScores.length).toFixed(2))
             }
           }
           break
@@ -226,18 +226,18 @@ export default function GoalsPage() {
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-4">
             <Link href="/dashboard">
-              <Button variant="outline" size="icon">
+              <Button variant="neobrutalist" size="icon">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Performance Goals</h1>
+              <h1 className="text-3xl font-black text-foreground">Performance Goals</h1>
               <p className="text-muted-foreground">Set and track your learning objectives</p>
             </div>
           </div>
           <div className="flex gap-2">
             <ThemeToggle />
-            <Button onClick={() => setShowAddForm(true)}>
+            <Button variant="neobrutalist" onClick={() => setShowAddForm(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Add Goal
             </Button>
@@ -246,45 +246,53 @@ export default function GoalsPage() {
 
         {/* Stats Overview */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Goals</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-black">Active Goals</CardTitle>
+              <div className="p-1.5 bg-blue-400 rounded-lg border-2 border-black">
+                <Target className="h-4 w-4 text-black" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{activeGoals.length}</div>
+              <div className="text-2xl font-black">{activeGoals.length}</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completed</CardTitle>
-              <Trophy className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-black">Completed</CardTitle>
+              <div className="p-1.5 bg-yellow-400 rounded-lg border-2 border-black">
+                <Trophy className="h-4 w-4 text-black" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{completedGoals.length}</div>
+              <div className="text-2xl font-black">{completedGoals.length}</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-black">Success Rate</CardTitle>
+              <div className="p-1.5 bg-green-400 rounded-lg border-2 border-black">
+                <TrendingUp className="h-4 w-4 text-black" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-black">
                 {goals.length > 0 ? Math.round((completedGoals.length / goals.length) * 100) : 0}%
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">This Month</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-black">This Month</CardTitle>
+              <div className="p-1.5 bg-purple-400 rounded-lg border-2 border-black">
+                <Calendar className="h-4 w-4 text-black" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-black">
                 {
                   goals.filter(
                     (g) =>
@@ -299,9 +307,9 @@ export default function GoalsPage() {
 
         {/* Add Goal Form */}
         {showAddForm && (
-          <Card className="mb-8">
+          <Card variant="neobrutalist" className="mb-8">
             <CardHeader>
-              <CardTitle>Create New Goal</CardTitle>
+              <CardTitle className="font-black">Create New Goal</CardTitle>
               <CardDescription>Set a new performance target to work towards</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -388,8 +396,8 @@ export default function GoalsPage() {
               </div>
 
               <div className="flex gap-2">
-                <Button onClick={handleAddGoal}>Create Goal</Button>
-                <Button variant="outline" onClick={() => setShowAddForm(false)}>
+                <Button variant="neobrutalist" onClick={handleAddGoal}>Create Goal</Button>
+                <Button variant="neobrutalistInverted" onClick={() => setShowAddForm(false)}>
                   Cancel
                 </Button>
               </div>
@@ -399,11 +407,11 @@ export default function GoalsPage() {
 
         {/* Goals Lists */}
         {goals.length === 0 ? (
-          <Card>
+          <Card variant="neobrutalist">
             <CardContent className="text-center py-12">
               <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground mb-4">No performance goals set yet</p>
-              <Button onClick={() => setShowAddForm(true)}>
+              <p className="text-muted-foreground mb-4 font-bold">No performance goals set yet</p>
+              <Button variant="neobrutalist" onClick={() => setShowAddForm(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create Your First Goal
               </Button>
@@ -414,14 +422,14 @@ export default function GoalsPage() {
             {/* Active Goals */}
             {activeGoals.length > 0 && (
               <div>
-                <h2 className="text-2xl font-bold mb-4">Active Goals</h2>
+                <h2 className="text-2xl font-black mb-4">Active Goals</h2>
                 <div className="grid md:grid-cols-2 gap-6">
                   {activeGoals.map((goal) => (
-                    <Card key={goal.id}>
+                    <Card key={goal.id} variant="neobrutalist">
                       <CardHeader>
                         <div className="flex justify-between items-start">
                           <div>
-                            <CardTitle className="text-lg">{goal.title}</CardTitle>
+                            <CardTitle className="text-lg font-black">{goal.title}</CardTitle>
                             <CardDescription>{goal.description}</CardDescription>
                           </div>
                           <div className="flex gap-1">
@@ -438,15 +446,15 @@ export default function GoalsPage() {
                         <div className="space-y-4">
                           <div className="flex justify-between items-center">
                             <Badge variant="outline">{getGoalTypeLabel(goal.type)}</Badge>
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-sm font-bold">
                               Due: {new Date(goal.deadline).toLocaleDateString()}
                             </span>
                           </div>
 
                           <div className="space-y-2">
                             <div className="flex justify-between text-sm">
-                              <span>Progress</span>
-                              <span>
+                              <span className="font-bold">Progress</span>
+                              <span className="font-bold">
                                 {goal.current} / {goal.target}
                                 {goal.type === "score" || goal.type === "section" ? "%" : ""}
                               </span>
@@ -470,17 +478,17 @@ export default function GoalsPage() {
             {/* Completed Goals */}
             {completedGoals.length > 0 && (
               <div>
-                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                <h2 className="text-2xl font-black mb-4 flex items-center gap-2">
                   <Trophy className="h-6 w-6 text-yellow-500" />
                   Completed Goals
                 </h2>
                 <div className="grid md:grid-cols-2 gap-6">
                   {completedGoals.map((goal) => (
-                    <Card key={goal.id} className="border-green-200 dark:border-green-800">
+                    <Card key={goal.id} variant="neobrutalist" className="border-green-200 dark:border-green-800">
                       <CardHeader>
                         <div className="flex justify-between items-start">
                           <div>
-                            <CardTitle className="text-lg flex items-center gap-2">
+                            <CardTitle className="text-lg flex items-center gap-2 font-black">
                               {goal.title}
                               <Badge className="bg-green-500">Completed</Badge>
                             </CardTitle>
@@ -491,8 +499,8 @@ export default function GoalsPage() {
                       <CardContent>
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
-                            <span>{getGoalTypeLabel(goal.type)}</span>
-                            <span>
+                            <span className="font-bold">{getGoalTypeLabel(goal.type)}</span>
+                            <span className="font-bold">
                               {goal.current} / {goal.target}
                               {goal.type === "score" || goal.type === "section" ? "%" : ""}
                             </span>
@@ -509,14 +517,14 @@ export default function GoalsPage() {
             {/* Expired Goals */}
             {expiredGoals.length > 0 && (
               <div>
-                <h2 className="text-2xl font-bold mb-4">Expired Goals</h2>
+                <h2 className="text-2xl font-black mb-4">Expired Goals</h2>
                 <div className="grid md:grid-cols-2 gap-6">
                   {expiredGoals.map((goal) => (
-                    <Card key={goal.id} className="border-red-200 dark:border-red-800 opacity-75">
+                    <Card key={goal.id} variant="neobrutalist" className="border-red-200 dark:border-red-800 opacity-75">
                       <CardHeader>
                         <div className="flex justify-between items-start">
                           <div>
-                            <CardTitle className="text-lg flex items-center gap-2">
+                            <CardTitle className="text-lg flex items-center gap-2 font-black">
                               {goal.title}
                               <Badge variant="destructive">Expired</Badge>
                             </CardTitle>
@@ -530,8 +538,8 @@ export default function GoalsPage() {
                       <CardContent>
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
-                            <span>{getGoalTypeLabel(goal.type)}</span>
-                            <span>
+                            <span className="font-bold">{getGoalTypeLabel(goal.type)}</span>
+                            <span className="font-bold">
                               {goal.current} / {goal.target}
                               {goal.type === "score" || goal.type === "section" ? "%" : ""}
                             </span>

@@ -12,6 +12,7 @@ import { AdminBreadcrumb } from "@/components/ui/admin-breadcrumb"
 import { Users, Search, Mail, Calendar, TrendingUp, Download, RefreshCw } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/hooks/use-auth"
+import { cn } from "@/lib/utils"
 
 interface User {
   id: string
@@ -202,15 +203,20 @@ export default function AdminUsersPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">User Management</h1>
-            <p className="text-muted-foreground text-sm sm:text-base">Manage and monitor user accounts</p>
+            <h1 className="text-2xl sm:text-3xl font-black text-foreground flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-400 border-2 border-black">
+                <Users className="h-6 w-6 text-black" />
+              </div>
+              User Management
+            </h1>
+            <p className="text-muted-foreground text-sm sm:text-base font-medium">Manage and monitor user accounts</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={fetchUsers}>
+            <Button variant="outline" size="sm" onClick={fetchUsers} className="border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_#fff] transition-all">
               <RefreshCw className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Refresh</span>
             </Button>
-            <Button size="sm" onClick={exportUserData}>
+            <Button variant="neobrutalist" size="sm" onClick={exportUserData}>
               <Download className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Export</span>
             </Button>
@@ -219,75 +225,89 @@ export default function AdminUsersPage() {
 
         {/* Stats Overview */}
         <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-bold">Total Users</CardTitle>
+              <div className="p-1.5 rounded-lg bg-blue-400 border-2 border-black">
+                <Users className="h-4 w-4 text-black" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalUsers}</div>
+              <div className="text-2xl font-black">{stats.totalUsers}</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-bold">Active Users</CardTitle>
+              <div className="p-1.5 rounded-lg bg-green-400 border-2 border-black">
+                <TrendingUp className="h-4 w-4 text-black" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.activeUsers}</div>
-              <p className="text-xs text-muted-foreground">Have taken quizzes</p>
+              <div className="text-2xl font-black">{stats.activeUsers}</div>
+              <p className="text-xs text-muted-foreground font-medium">Have taken quizzes</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Students</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-bold">Students</CardTitle>
+              <div className="p-1.5 rounded-lg bg-purple-400 border-2 border-black">
+                <Users className="h-4 w-4 text-black" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.studentUsers}</div>
+              <div className="text-2xl font-black">{stats.studentUsers}</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Admins</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-bold">Admins</CardTitle>
+              <div className="p-1.5 rounded-lg bg-orange-400 border-2 border-black">
+                <Users className="h-4 w-4 text-black" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.adminUsers}</div>
+              <div className="text-2xl font-black">{stats.adminUsers}</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg Attempts</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-bold">Avg Attempts</CardTitle>
+              <div className="p-1.5 rounded-lg bg-cyan-400 border-2 border-black">
+                <TrendingUp className="h-4 w-4 text-black" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.avgAttemptsPerUser}</div>
-              <p className="text-xs text-muted-foreground">per user</p>
+              <div className="text-2xl font-black">{stats.avgAttemptsPerUser}</div>
+              <p className="text-xs text-muted-foreground font-medium">per user</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg Score</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-bold">Avg Score</CardTitle>
+              <div className="p-1.5 rounded-lg bg-pink-400 border-2 border-black">
+                <TrendingUp className="h-4 w-4 text-black" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.avgScoreAllUsers}%</div>
-              <p className="text-xs text-muted-foreground">all active users</p>
+              <div className="text-2xl font-black">{stats.avgScoreAllUsers}%</div>
+              <p className="text-xs text-muted-foreground font-medium">all active users</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Filters */}
-        <Card className="mb-8">
+        <Card variant="neobrutalist" className="mb-8">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Search className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 font-bold">
+              <div className="p-1.5 rounded-lg bg-yellow-400 border-2 border-black">
+                <Search className="h-4 w-4 text-black" />
+              </div>
               Search & Filter
             </CardTitle>
           </CardHeader>
@@ -344,73 +364,82 @@ export default function AdminUsersPage() {
         </Card>
 
         {/* Users Table */}
-        <Card>
+        <Card variant="neobrutalist">
           <CardHeader>
-            <CardTitle>User Directory</CardTitle>
-            <CardDescription>Complete list of registered users and their performance</CardDescription>
+            <CardTitle className="font-bold">User Directory</CardTitle>
+            <CardDescription className="font-medium">Complete list of registered users and their performance</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-3">User</th>
-                    <th className="text-left p-3">Type</th>
-                    <th className="text-left p-3">Join Date</th>
-                    <th className="text-left p-3">Last Active</th>
-                    <th className="text-left p-3">Attempts</th>
-                    <th className="text-left p-3">Avg Score</th>
-                    <th className="text-left p-3">Best Score</th>
-                    <th className="text-left p-3">Status</th>
+                  <tr className="border-b-2 border-black dark:border-white">
+                    <th className="text-left p-3 font-bold">User</th>
+                    <th className="text-left p-3 font-bold">Type</th>
+                    <th className="text-left p-3 font-bold">Join Date</th>
+                    <th className="text-left p-3 font-bold">Last Active</th>
+                    <th className="text-left p-3 font-bold">Attempts</th>
+                    <th className="text-left p-3 font-bold">Avg Score</th>
+                    <th className="text-left p-3 font-bold">Best Score</th>
+                    <th className="text-left p-3 font-bold">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredUsers.map((user) => (
-                    <tr key={user.id} className="border-b hover:bg-muted/50">
+                    <tr key={user.id} className="border-b border-black/20 dark:border-white/20 hover:bg-muted/50">
                       <td className="p-3">
                         <div>
-                          <div className="font-medium">{user.name}</div>
-                          <div className="text-sm text-muted-foreground flex items-center gap-1">
+                          <div className="font-bold">{user.name}</div>
+                          <div className="text-sm text-muted-foreground flex items-center gap-1 font-medium">
                             <Mail className="h-3 w-3" />
                             {user.email}
                           </div>
                         </div>
                       </td>
                       <td className="p-3">
-                        <Badge variant={user.isAdmin ? "default" : "secondary"}>{user.userType}</Badge>
+                        <Badge className={cn(
+                          "border-2 border-black font-bold",
+                          user.isAdmin ? "bg-orange-400 text-black" : "bg-blue-400 text-black"
+                        )}>{user.userType}</Badge>
                       </td>
                       <td className="p-3">
-                        <div className="flex items-center gap-1 text-sm">
+                        <div className="flex items-center gap-1 text-sm font-medium">
                           <Calendar className="h-3 w-3" />
                           {new Date(user.joinDate).toLocaleDateString()}
                         </div>
                       </td>
                       <td className="p-3">
-                        <div className="text-sm">
+                        <div className="text-sm font-medium">
                           {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : "Never"}
                         </div>
                       </td>
                       <td className="p-3">
-                        <div className="text-sm font-medium">{user.totalAttempts}</div>
+                        <div className="text-sm font-bold">{user.totalAttempts}</div>
                       </td>
                       <td className="p-3">
                         {user.totalAttempts > 0 ? (
-                          <Badge variant={user.averageScore >= 70 ? "default" : "destructive"}>
+                          <Badge className={cn(
+                            "border-2 border-black font-bold",
+                            user.averageScore >= 70 ? "bg-green-400 text-black" : "bg-red-400 text-black"
+                          )}>
                             {user.averageScore}%
                           </Badge>
                         ) : (
-                          <span className="text-muted-foreground">-</span>
+                          <span className="text-muted-foreground font-medium">-</span>
                         )}
                       </td>
                       <td className="p-3">
                         {user.totalAttempts > 0 ? (
-                          <div className="text-sm font-medium">{user.bestScore}%</div>
+                          <div className="text-sm font-bold">{user.bestScore}%</div>
                         ) : (
-                          <span className="text-muted-foreground">-</span>
+                          <span className="text-muted-foreground font-medium">-</span>
                         )}
                       </td>
                       <td className="p-3">
-                        <Badge variant="outline">{user.totalAttempts > 0 ? "Active" : "Inactive"}</Badge>
+                        <Badge className={cn(
+                          "border-2 border-black font-bold",
+                          user.totalAttempts > 0 ? "bg-green-400 text-black" : "bg-gray-300 text-black"
+                        )}>{user.totalAttempts > 0 ? "Active" : "Inactive"}</Badge>
                       </td>
                     </tr>
                   ))}

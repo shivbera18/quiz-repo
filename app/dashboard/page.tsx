@@ -169,176 +169,205 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user.name}</h1>
-        <p className="text-muted-foreground">Here&apos;s an overview of your progress.</p>
+        <h1 className="text-3xl font-black tracking-tight">Welcome back, {user.name}</h1>
+        <p className="text-muted-foreground font-medium">Here&apos;s an overview of your progress.</p>
       </div>
 
-      {/* Quick Stats Bar */}
+      {/* Quick Stats Bar - Neo Brutalism */}
       {!loadingAttempts && allAttempts.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-4 bg-muted/30 rounded-2xl border">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <BookOpen className="h-5 w-5 text-primary" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white shadow-[6px_6px_0px_0px_#000] sm:shadow-[8px_8px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#fff] sm:dark:shadow-[8px_8px_0px_0px_#fff] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_#fff] transition-all">
+            <div className="p-2 rounded-lg bg-blue-300 dark:bg-blue-400 border-2 border-black dark:border-white flex-shrink-0">
+              <BookOpen className="h-5 w-5 text-black" />
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Total Attempts</p>
-              <p className="text-xl font-bold">{allAttempts.length}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground font-bold">Total Attempts</p>
+              <p className="text-xl sm:text-2xl font-black">{allAttempts.length}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <TrendingUp className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white shadow-[6px_6px_0px_0px_#000] sm:shadow-[8px_8px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#fff] sm:dark:shadow-[8px_8px_0px_0px_#fff] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_#fff] transition-all">
+            <div className="p-2 rounded-lg bg-green-300 dark:bg-green-400 border-2 border-black dark:border-white flex-shrink-0">
+              <TrendingUp className="h-5 w-5 text-black" />
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Avg Score</p>
-              <p className="text-xl font-bold">
-                {Math.round(allAttempts.reduce((sum, a) => sum + a.totalScore, 0) / allAttempts.length)}%
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground font-bold">Avg Score</p>
+              <p className="text-xl sm:text-2xl font-black truncate">
+                {(allAttempts.reduce((sum, a) => sum + a.totalScore, 0) / allAttempts.length).toFixed(0)}%
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Target className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white shadow-[6px_6px_0px_0px_#000] sm:shadow-[8px_8px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#fff] sm:dark:shadow-[8px_8px_0px_0px_#fff] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_#fff] transition-all">
+            <div className="p-2 rounded-lg bg-yellow-300 dark:bg-yellow-400 border-2 border-black dark:border-white flex-shrink-0">
+              <Target className="h-5 w-5 text-black" />
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Best Score</p>
-              <p className="text-xl font-bold">{Math.max(...allAttempts.map(a => a.totalScore))}%</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground font-bold">Best Score</p>
+              <p className="text-xl sm:text-2xl font-black truncate">{Math.max(...allAttempts.map(a => a.totalScore)).toFixed(0)}%</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Clock className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white shadow-[6px_6px_0px_0px_#000] sm:shadow-[8px_8px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#fff] sm:dark:shadow-[8px_8px_0px_0px_#fff] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_#fff] transition-all">
+            <div className="p-2 rounded-lg bg-purple-300 dark:bg-purple-400 border-2 border-black dark:border-white flex-shrink-0">
+              <Clock className="h-5 w-5 text-black" />
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Study Time</p>
-              <p className="text-xl font-bold">
-                {Math.round(allAttempts.reduce((sum, a) => sum + (a.timeSpent || 0), 0) / 60)}m
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground font-bold">Study Time</p>
+              <p className="text-xl sm:text-2xl font-black">
+                {(allAttempts.reduce((sum, a) => sum + (a.timeSpent || 0), 0) / 60).toFixed(0)}m
               </p>
             </div>
           </div>
         </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          {showFlashQuestions ? (
-            <CardContent className="p-6">
-              <Button
-                variant="ghost"
-                onClick={() => setShowFlashQuestions(false)}
-                className="mb-4"
-              >
-                ← Back
-              </Button>
-              <FlashQuestions questions={flashQuestions} />
+      {/* Flash Questions Modal/Expanded View */}
+      {showFlashQuestions && (
+        <Card variant="neobrutalist">
+          <CardContent className="p-6">
+            <Button
+              variant="ghost"
+              onClick={() => setShowFlashQuestions(false)}
+              className="mb-4"
+            >
+              ← Back to Dashboard
+            </Button>
+            <FlashQuestions questions={flashQuestions} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Action Cards Grid - 2 per row on desktop */}
+      {!showFlashQuestions && (
+        <div className="grid gap-4 grid-cols-2">
+          {/* Quick Practice */}
+          <Card 
+            variant="neobrutalist" 
+            className="cursor-pointer hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all"
+            onClick={() => setShowFlashQuestions(true)}
+          >
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-yellow-300 dark:bg-yellow-400 border-2 border-black">
+                  <Zap className="h-4 w-4 text-black" />
+                </div>
+                <CardTitle className="text-base">Quick Practice</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className="text-xs text-muted-foreground mb-2">Flash questions</p>
+              <Badge variant="secondary" className="text-xs">{flashQuestions.length} Questions</Badge>
             </CardContent>
-          ) : (
-            <>
-              <CardHeader className="flex flex-row items-center justify-between">
+          </Card>
+
+          {/* Full Mock Tests */}
+          <Link href="/dashboard/full-mock-tests">
+            <Card variant="neobrutalist" className="cursor-pointer h-full hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all">
+              <CardHeader className="pb-2">
                 <div className="flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-primary" />
-                  <div>
-                    <CardTitle>Quick Practice</CardTitle>
-                    <CardDescription className="mt-1">Lightning-fast quiz session</CardDescription>
+                  <div className="p-2 rounded-lg bg-blue-300 dark:bg-blue-400 border-2 border-black">
+                    <BookOpen className="h-4 w-4 text-black" />
                   </div>
+                  <CardTitle className="text-base">Mock Tests</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent>
-                <Button
-                  onClick={() => setShowFlashQuestions(true)}
-                  className="w-full"
-                  disabled={flashQuestions.length === 0}
-                >
-                  Start Flash Questions
-                </Button>
+              <CardContent className="pt-0">
+                <p className="text-xs text-muted-foreground mb-2">Full practice exams</p>
+                <Badge variant="secondary" className="text-xs">{fullMockTests.length} Available</Badge>
               </CardContent>
-            </>
-          )}
-        </Card>
+            </Card>
+          </Link>
 
-        <Link href="/dashboard/full-mock-tests">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-            <CardHeader>
-              <div className="flex items-center gap-2 mb-2">
-                <BookOpen className="h-5 w-5 text-primary" />
-                <CardTitle>Full Mock Tests</CardTitle>
-              </div>
-              <CardDescription>Comprehensive practice exams</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Badge variant="secondary">{fullMockTests.length} Available</Badge>
-            </CardContent>
-          </Card>
-        </Link>
+          {/* Sectional Tests */}
+          <Link href="/dashboard/sectional-tests">
+            <Card variant="neobrutalist" className="cursor-pointer h-full hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-green-300 dark:bg-green-400 border-2 border-black">
+                    <Target className="h-4 w-4 text-black" />
+                  </div>
+                  <CardTitle className="text-base">Sectional</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-xs text-muted-foreground mb-2">Topic practice</p>
+                <Badge variant="secondary" className="text-xs">{sectionalTests.length} Available</Badge>
+              </CardContent>
+            </Card>
+          </Link>
 
-        <Link href="/dashboard/sectional-tests">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-            <CardHeader>
-              <div className="flex items-center gap-2 mb-2">
-                <Target className="h-5 w-5 text-primary" />
-                <CardTitle>Sectional Tests</CardTitle>
-              </div>
-              <CardDescription>Topic-specific practice</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Badge variant="secondary">{sectionalTests.length} Available</Badge>
-            </CardContent>
-          </Card>
-        </Link>
+          {/* History */}
+          <Link href="/dashboard/attempted-quizzes">
+            <Card variant="neobrutalist" className="cursor-pointer h-full hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-purple-300 dark:bg-purple-400 border-2 border-black">
+                    <History className="h-4 w-4 text-black" />
+                  </div>
+                  <CardTitle className="text-base">History</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-xs text-muted-foreground mb-2">Past attempts</p>
+                <Badge variant="secondary" className="text-xs">{allAttempts.length} Completed</Badge>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+      )}
 
-        <Link href="/dashboard/attempted-quizzes">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-            <CardHeader>
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="h-5 w-5 text-primary" />
-                <CardTitle>History</CardTitle>
-              </div>
-              <CardDescription>Review past attempts</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Badge variant="secondary">{allAttempts.length} Completed</Badge>
-            </CardContent>
-          </Card>
-        </Link>
-      </div>
-
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Attempts</CardTitle>
+      {/* Recent Attempts */}
+      {!showFlashQuestions && (
+        <Card variant="neobrutalist">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">Recent Attempts</CardTitle>
+              {recentAttempts.length > 0 && (
+                <Link href="/dashboard/attempted-quizzes">
+                  <Button variant="ghost" size="sm" className="text-xs gap-1">
+                    View All <ArrowRight className="h-3 w-3" />
+                  </Button>
+                </Link>
+              )}
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             {recentAttempts.length > 0 ? (
-              <div className="space-y-4">
-                {recentAttempts.map((attempt) => (
-                  <div key={attempt._id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+              <div className="space-y-2">
+                {recentAttempts.slice(0, 3).map((attempt) => (
+                  <div key={attempt._id} className="flex items-center justify-between p-3 rounded-lg border-2 border-black dark:border-white bg-card hover:bg-accent/50 transition-colors">
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{attempt.quizName}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-bold text-sm truncate">{attempt.quizName}</p>
+                      <p className="text-xs text-muted-foreground">
                         {new Date(attempt.date).toLocaleDateString()}
                       </p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        className={`text-xs font-bold ${
+                          attempt.totalScore >= 70 
+                            ? 'bg-green-400 text-black border-black' 
+                            : 'bg-orange-400 text-black border-black'
+                        }`}
+                      >
+                        {Math.round(attempt.totalScore)}%
+                      </Badge>
                       <Link href={`/results/${attempt._id}`}>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
                           <Eye className="h-4 w-4" />
                         </Button>
                       </Link>
-                      <Badge variant={attempt.totalScore >= 70 ? "default" : "secondary"}>
-                        {attempt.totalScore}%
-                      </Badge>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-8">
+              <p className="text-sm text-muted-foreground text-center py-6">
                 No attempts yet. Start a quiz to see your results here!
               </p>
             )}
           </CardContent>
         </Card>
-      </div>
+      )}
     </div>
   )
 }
+

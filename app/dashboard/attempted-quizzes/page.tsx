@@ -80,22 +80,22 @@ export default function AttemptedQuizzesPage() {
 
   return (
     <div className="min-h-screen bg-background mobile-header-safe-zone">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-4 md:py-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
             <Link href="/dashboard">
-              <Button variant="ghost" size="icon" className="rounded-xl">
+              <Button variant="outline" size="icon" className="rounded-lg h-11 w-11 border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_#fff] bg-white dark:bg-zinc-900 transition-all">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold">Attempted Quizzes</h1>
-              <p className="text-sm text-muted-foreground">Review your quiz history and performance</p>
+              <h1 className="text-2xl sm:text-3xl font-black">Attempted Quizzes</h1>
+              <p className="text-sm text-muted-foreground font-medium">Review your quiz history and performance</p>
             </div>
           </div>
           <Link href="/history">
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button variant="neobrutalist" size="sm" className="gap-2">
               <History className="h-4 w-4" />
               Full History
             </Button>
@@ -103,19 +103,19 @@ export default function AttemptedQuizzesPage() {
         </div>
 
         {loadingAttempts ? (
-          <Card>
+          <Card variant="neobrutalist">
             <CardContent className="text-center py-12">
-              <p className="text-muted-foreground">Loading attempted quizzes...</p>
+              <p className="text-muted-foreground font-medium">Loading attempted quizzes...</p>
             </CardContent>
           </Card>
         ) : allAttempts.length === 0 ? (
-          <Card>
+          <Card variant="neobrutalist">
             <CardContent className="text-center py-12">
               <History className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground mb-4">No quizzes attempted yet</p>
-              <p className="text-sm text-muted-foreground mb-6">Start taking quizzes to track your progress here</p>
+              <p className="text-muted-foreground mb-4 font-medium">No quizzes attempted yet</p>
+              <p className="text-sm text-muted-foreground mb-6 font-medium">Start taking quizzes to track your progress here</p>
               <Link href="/dashboard">
-                <Button>Browse Available Quizzes</Button>
+                <Button variant="neobrutalist">Browse Available Quizzes</Button>
               </Link>
             </CardContent>
           </Card>
@@ -123,54 +123,54 @@ export default function AttemptedQuizzesPage() {
           <div className="space-y-6">
             {/* Summary Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="p-4 rounded-xl bg-card border">
+              <div className="p-4 rounded-xl bg-card border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff]">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-500/10">
-                    <BookOpen className="h-5 w-5 text-blue-500" />
+                  <div className="p-2 rounded-lg bg-blue-400 border-2 border-black">
+                    <BookOpen className="h-5 w-5 text-black" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Total Attempts</p>
-                    <p className="text-xl font-bold">{allAttempts.length}</p>
+                    <p className="text-xs text-muted-foreground font-bold">Total Attempts</p>
+                    <p className="text-xl font-black">{allAttempts.length}</p>
                   </div>
                 </div>
               </div>
               
-              <div className="p-4 rounded-xl bg-card border">
+              <div className="p-4 rounded-xl bg-card border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff]">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-green-500/10">
-                    <TrendingUp className="h-5 w-5 text-green-500" />
+                  <div className="p-2 rounded-lg bg-green-400 border-2 border-black">
+                    <TrendingUp className="h-5 w-5 text-black" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Average Score</p>
-                    <p className="text-xl font-bold">
-                      {Math.round(allAttempts.reduce((sum, a) => sum + a.totalScore, 0) / allAttempts.length)}%
+                    <p className="text-xs text-muted-foreground font-bold">Average Score</p>
+                    <p className="text-xl font-black">
+                      {(allAttempts.reduce((sum, a) => sum + a.totalScore, 0) / allAttempts.length).toFixed(0)}%
                     </p>
                   </div>
                 </div>
               </div>
               
-              <div className="p-4 rounded-xl bg-card border">
+              <div className="p-4 rounded-xl bg-card border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff]">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-purple-500/10">
-                    <Target className="h-5 w-5 text-purple-500" />
+                  <div className="p-2 rounded-lg bg-purple-400 border-2 border-black">
+                    <Target className="h-5 w-5 text-black" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Best Score</p>
-                    <p className="text-xl font-bold">
-                      {Math.max(...allAttempts.map(a => a.totalScore))}%
+                    <p className="text-xs text-muted-foreground font-bold">Best Score</p>
+                    <p className="text-xl font-black">
+                      {Math.max(...allAttempts.map(a => a.totalScore)).toFixed(0)}%
                     </p>
                   </div>
                 </div>
               </div>
               
-              <div className="p-4 rounded-xl bg-card border">
+              <div className="p-4 rounded-xl bg-card border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff]">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-orange-500/10">
-                    <Clock className="h-5 w-5 text-orange-500" />
+                  <div className="p-2 rounded-lg bg-orange-400 border-2 border-black">
+                    <Clock className="h-5 w-5 text-black" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Avg Time</p>
-                    <p className="text-xl font-bold">
+                    <p className="text-xs text-muted-foreground font-bold">Avg Time</p>
+                    <p className="text-xl font-black">
                       {Math.round(allAttempts.reduce((sum, a) => sum + (a.timeSpent || 0), 0) / allAttempts.length / 60)}m
                     </p>
                   </div>
@@ -180,36 +180,33 @@ export default function AttemptedQuizzesPage() {
 
             {/* All Attempts List */}
             <div>
-              <h2 className="text-lg font-semibold mb-4">All Attempts</h2>
+              <h2 className="text-lg font-black mb-4">All Attempts</h2>
               <div className="space-y-3">
                 {allAttempts.map((attempt) => {
-                  const scoreColor = attempt.totalScore >= 80 ? 'text-green-500' : 
-                                     attempt.totalScore >= 60 ? 'text-yellow-500' : 'text-red-500'
-                  const scoreBg = attempt.totalScore >= 80 ? 'bg-green-500/10' : 
-                                  attempt.totalScore >= 60 ? 'bg-yellow-500/10' : 'bg-red-500/10'
+                  const scoreBg = attempt.totalScore >= 80 ? 'bg-green-400' : 
+                                  attempt.totalScore >= 60 ? 'bg-yellow-400' : 'bg-orange-400'
                   
                   return (
                     <div 
                       key={attempt._id} 
-                      className="group p-4 rounded-xl bg-card border hover:border-primary/30 hover:shadow-sm transition-all"
+                      className="group p-4 rounded-xl bg-card border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_#fff] transition-all"
                     >
                       <div className="flex items-start justify-between gap-4">
                         {/* Left: Score & Info */}
                         <div className="flex items-start gap-4 min-w-0 flex-1">
                           {/* Score Circle */}
                           <div className={cn(
-                            "w-14 h-14 rounded-xl flex flex-col items-center justify-center shrink-0",
+                            "w-14 h-14 rounded-xl flex items-center justify-center shrink-0 border-2 border-black",
                             scoreBg
                           )}>
-                            <span className={cn("text-lg font-bold", scoreColor)}>
-                              {Math.round(attempt.totalScore)}
+                            <span className="text-base font-black text-black">
+                              {Math.round(attempt.totalScore)}%
                             </span>
-                            <span className={cn("text-[10px] font-medium", scoreColor)}>%</span>
                           </div>
                           
                           {/* Quiz Details */}
                           <div className="min-w-0 flex-1">
-                            <h3 className="font-semibold truncate">
+                            <h3 className="font-bold truncate">
                               {attempt.quizName || 'Unknown Quiz'}
                             </h3>
                             <p className="text-xs text-muted-foreground mt-0.5">
@@ -244,9 +241,9 @@ export default function AttemptedQuizzesPage() {
                           {attempt.quizId && (
                             <Link href={`/results/${attempt._id}`}>
                               <Button 
-                                variant="ghost" 
+                                variant="neobrutalist" 
                                 size="sm" 
-                                className="gap-2 opacity-60 group-hover:opacity-100 transition-opacity"
+                                className="gap-2"
                               >
                                 <Eye className="h-4 w-4" />
                                 <span className="hidden sm:inline">View</span>

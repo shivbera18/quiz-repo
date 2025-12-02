@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { Sidebar } from "./sidebar"
 import { TopHeader } from "./top-header"
 import { SidebarProvider, useSidebar } from "./sidebar-context"
+import { Footer } from "./footer"
 import { cn } from "@/lib/utils"
 
 function AppShellContent({ children }: { children: React.ReactNode }) {
@@ -15,7 +16,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     React.useEffect(() => {
         setMounted(true)
     }, [])
-    
+
     // Pages where sidebar should be completely hidden (focused/immersive experiences)
     const isAuthPage = pathname?.startsWith("/auth")
     const isQuizPage = pathname?.startsWith("/quiz/") // Active quiz taking
@@ -23,7 +24,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     const isHomePage = pathname === "/" // Home redirect page
     const isAdminPage = pathname?.startsWith("/admin") // Admin pages don't need TopHeader
     const isMainDashboard = pathname === "/dashboard" // Only show TopHeader on main dashboard
-    
+
     // Check if this is a focused page (no sidebar needed)
     const isFocusedPage = isAuthPage || isQuizPage || isResultsPage || isHomePage
 
@@ -52,7 +53,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
             {mounted && <Sidebar />}
             <main
                 className={cn(
-                    "min-h-screen bg-background",
+                    "min-h-screen flex flex-col",
                     "mobile-header-safe-zone", // Dynamic top padding based on hamburger visibility
                     mounted && "md:pl-[300px]", // Only apply sidebar padding after mount
                     mounted && isCollapsed && "md:pl-[100px]" // 80px collapsed + 16px left margin + 4px gap
@@ -62,9 +63,10 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
                 }}
             >
                 {isMainDashboard && mounted && <TopHeader />}
-                <div className="container mx-auto p-4 sm:p-6 md:p-8">
+                <div className="container mx-auto px-2 py-2 sm:p-6 md:p-8 flex-1">
                     {children}
                 </div>
+                <Footer />
             </main>
         </>
     )

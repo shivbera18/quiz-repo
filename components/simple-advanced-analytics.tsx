@@ -178,7 +178,7 @@ export default function SimpleAdvancedAnalytics({ results = [] }: SimpleAdvanced
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-lg font-bold">{result.totalScore}%</div>
+                      <div className="text-lg font-bold">{Number(result.totalScore).toFixed(0)}%</div>
                       <div className="text-sm text-muted-foreground">
                         {result.correctAnswers}✓ {result.wrongAnswers}✗ {result.unanswered}—
                       </div>

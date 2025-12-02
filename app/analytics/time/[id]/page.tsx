@@ -118,6 +118,7 @@ export default function TimeAnalysisPage() {
     if (!resultId || !user) return
 
     const fetchResult = async () => {
+      let isSessionExpired = false
       try {
         setLoading(true)
         const response = await fetch(`/api/results/${resultId}`, {
@@ -126,18 +127,57 @@ export default function TimeAnalysisPage() {
           },
         })
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch result")
+        if (response.ok) {
+          const data = await response.json()
+          // API returns { result: {...} }, extract the result object
+          const resultData = data.result || data
+          console.log("Fetched result data:", resultData) // Debug log
+          setResult(resultData)
+          return
+        } else if (response.status === 401) {
+          console.log("Token invalid or expired, falling back to localStorage")
+          isSessionExpired = true
+        } else {
+          console.error("API error:", response.status, response.statusText)
         }
 
-        const data = await response.json()
-        // API returns { result: {...} }, extract the result object
-        const resultData = data.result || data
-        console.log("Fetched result data:", resultData) // Debug log
-        setResult(resultData)
+        // Fallback to localStorage if API fails
+        const localResults = localStorage.getItem("quizResults")
+        if (localResults) {
+          const results = JSON.parse(localResults)
+          const foundResult = results.find((r: any) => r._id === resultId || r.id === resultId)
+          if (foundResult) {
+            console.log("Found result in localStorage:", foundResult)
+            setResult(foundResult)
+            return
+          }
+        }
+        
+        throw new Error("Result not found in API or localStorage")
       } catch (err) {
         console.error("Error fetching result:", err)
-        setError("Failed to load time analysis data")
+        
+        // Final fallback attempt to localStorage
+        try {
+          const localResults = localStorage.getItem("quizResults")
+          if (localResults) {
+            const results = JSON.parse(localResults)
+            const foundResult = results.find((r: any) => r._id === resultId || r.id === resultId)
+            if (foundResult) {
+              console.log("Found result in localStorage (final fallback):", foundResult)
+              setResult(foundResult)
+              return
+            }
+          }
+        } catch (localError) {
+          console.error("Error reading from localStorage:", localError)
+        }
+        
+        if (isSessionExpired) {
+          setError("Session expired. Please log in again to view this result.")
+        } else {
+          setError("Failed to load time analysis data")
+        }
       } finally {
         setLoading(false)
       }
@@ -170,9 +210,15 @@ export default function TimeAnalysisPage() {
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Go Back
               </Button>
-              <Link href="/analytics">
-                <Button>View Analytics</Button>
-              </Link>
+              {error && error.includes("Session expired") ? (
+                <Link href="/auth/login">
+                  <Button>Log In</Button>
+                </Link>
+              ) : (
+                <Link href="/analytics">
+                  <Button>View Analytics</Button>
+                </Link>
+              )}
             </div>
           </CardContent>
         </Card>

@@ -1,43 +1,25 @@
-"use client"
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import LandingHeader from "@/components/landing/LandingHeader";
+import HeroSection from "@/components/landing/HeroSection";
+import FeaturesSection from "@/components/landing/FeaturesSection";
+import TestimonialsSection from "@/components/landing/TestimonialsSection";
+import PricingSection from "@/components/landing/PricingSection";
+import FAQSection from "@/components/landing/FAQSection";
+import CTASection from "@/components/landing/CTASection";
+import { Footer } from "@/components/layout/footer";
 
-export default function HomePage() {
-  const router = useRouter()
-
-  useEffect(() => {
-    // Check if user is already logged in
-    const token = localStorage.getItem("token")
-    const user = localStorage.getItem("user")
-
-    if (token && user) {
-      try {
-        const userData = JSON.parse(user)
-        // Redirect based on user type
-        if (userData.isAdmin) {
-          router.push("/admin")
-        } else {
-          router.push("/dashboard")
-        }
-      } catch (error) {
-        // Invalid user data, redirect to login
-        router.push("/auth/login")
-      }
-    } else {
-      // No token, redirect to login
-      router.push("/auth/login")
-    }
-  }, [router])
-
+export default function Home() {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <div className="text-center space-y-4">
-        <h1 className="text-3xl font-bold tracking-tight">Quizzy</h1>
-        <p className="text-muted-foreground">Redirecting...</p>
-        <div className="flex justify-center">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        </div>
-      </div>
+    <div className="min-h-screen bg-background">
+      <LandingHeader />
+      <main>
+        <HeroSection />
+        <FeaturesSection />
+        <TestimonialsSection />
+        <PricingSection />
+        <FAQSection />
+        <CTASection />
+      </main>
+      <Footer />
     </div>
-  )
+  );
 }

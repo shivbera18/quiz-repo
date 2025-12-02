@@ -391,7 +391,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
         {(['7d', '30d', '90d', 'all'] as const).map(period => (
           <Button
             key={period}
-            variant={selectedPeriod === period ? "default" : "outline"}
+            variant={selectedPeriod === period ? "neobrutalistInverted" : "neobrutalist"}
             size="sm"
             onClick={() => setSelectedPeriod(period)}
           >
@@ -402,76 +402,84 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
 
       {/* Main KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
+        <Card variant="neobrutalist">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <BookOpen className="h-4 w-4" />
+            <CardTitle className="text-sm font-black flex items-center gap-2">
+              <div className="p-1.5 bg-blue-400 rounded-lg border-2 border-black">
+                <BookOpen className="h-4 w-4 text-black" />
+              </div>
               Total Quizzes
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{overviewMetrics.totalQuizzes}</div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <div className="text-2xl font-black">{overviewMetrics.totalQuizzes}</div>
+            <p className="text-xs font-bold mt-1">
               {overviewMetrics.totalQuestions} questions attempted
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card variant="neobrutalist">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Target className="h-4 w-4" />
+            <CardTitle className="text-sm font-black flex items-center gap-2">
+              <div className="p-1.5 bg-green-400 rounded-lg border-2 border-black">
+                <Target className="h-4 w-4 text-black" />
+              </div>
               Average Score
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{overviewMetrics.averageScore}%</div>
+            <div className="text-2xl font-black">{overviewMetrics.averageScore}%</div>
             <div className="flex items-center gap-1 mt-1">
               {overviewMetrics.improvementTrend > 0 ? (
                 <>
                   <ArrowUp className="h-3 w-3 text-green-500" />
-                  <span className="text-xs text-green-500">+{Math.round(overviewMetrics.improvementTrend)}% trend</span>
+                  <span className="text-xs text-green-500 font-bold">+{Math.round(overviewMetrics.improvementTrend)}% trend</span>
                 </>
               ) : overviewMetrics.improvementTrend < 0 ? (
                 <>
                   <ArrowDown className="h-3 w-3 text-red-500" />
-                  <span className="text-xs text-red-500">{Math.round(overviewMetrics.improvementTrend)}% trend</span>
+                  <span className="text-xs text-red-500 font-bold">{Math.round(overviewMetrics.improvementTrend)}% trend</span>
                 </>
               ) : (
                 <>
-                  <Minus className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">Stable</span>
+                  <Minus className="h-3 w-3" />
+                  <span className="text-xs font-bold">Stable</span>
                 </>
               )}
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card variant="neobrutalist">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4" />
+            <CardTitle className="text-sm font-black flex items-center gap-2">
+              <div className="p-1.5 bg-yellow-400 rounded-lg border-2 border-black">
+                <CheckCircle2 className="h-4 w-4 text-black" />
+              </div>
               Accuracy
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{overviewMetrics.accuracy}%</div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <div className="text-2xl font-black">{overviewMetrics.accuracy}%</div>
+            <p className="text-xs font-bold mt-1">
               {overviewMetrics.totalCorrect}/{overviewMetrics.totalCorrect + overviewMetrics.totalWrong} correct
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card variant="neobrutalist">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Flame className="h-4 w-4" />
+            <CardTitle className="text-sm font-black flex items-center gap-2">
+              <div className="p-1.5 bg-orange-400 rounded-lg border-2 border-black">
+                <Flame className="h-4 w-4 text-black" />
+              </div>
               Streak
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{overviewMetrics.currentStreak} days</div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <div className="text-2xl font-black">{overviewMetrics.currentStreak} days</div>
+            <p className="text-xs font-bold mt-1">
               Best: {overviewMetrics.maxStreak} days
             </p>
           </CardContent>
@@ -480,61 +488,61 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
 
       {/* Secondary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card className="col-span-1">
+        <Card variant="neobrutalist" className="col-span-1">
           <CardContent className="pt-4">
             <div className="flex items-center gap-2">
               <Trophy className="h-5 w-5 text-yellow-500" />
               <div>
-                <p className="text-xs text-muted-foreground">Best Score</p>
-                <p className="text-lg font-bold">{overviewMetrics.highestScore}%</p>
+                <p className="text-xs font-bold">Best Score</p>
+                <p className="text-lg font-black">{overviewMetrics.highestScore}%</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="col-span-1">
+        <Card variant="neobrutalist" className="col-span-1">
           <CardContent className="pt-4">
             <div className="flex items-center gap-2">
               <TrendingDown className="h-5 w-5 text-red-500" />
               <div>
-                <p className="text-xs text-muted-foreground">Lowest Score</p>
-                <p className="text-lg font-bold">{overviewMetrics.lowestScore}%</p>
+                <p className="text-xs font-bold">Lowest Score</p>
+                <p className="text-lg font-black">{overviewMetrics.lowestScore}%</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="col-span-1">
+        <Card variant="neobrutalist" className="col-span-1">
           <CardContent className="pt-4">
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-blue-500" />
               <div>
-                <p className="text-xs text-muted-foreground">Avg Time/Quiz</p>
-                <p className="text-lg font-bold">{overviewMetrics.averageTimePerQuiz}m</p>
+                <p className="text-xs font-bold">Avg Time/Quiz</p>
+                <p className="text-lg font-black">{overviewMetrics.averageTimePerQuiz}m</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="col-span-1">
+        <Card variant="neobrutalist" className="col-span-1">
           <CardContent className="pt-4">
             <div className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-orange-500" />
               <div>
-                <p className="text-xs text-muted-foreground">Avg Time/Q</p>
-                <p className="text-lg font-bold">{overviewMetrics.averageTimePerQuestion}s</p>
+                <p className="text-xs font-bold">Avg Time/Q</p>
+                <p className="text-lg font-black">{overviewMetrics.averageTimePerQuestion}s</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="col-span-1">
+        <Card variant="neobrutalist" className="col-span-1">
           <CardContent className="pt-4">
             <div className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-purple-500" />
               <div>
-                <p className="text-xs text-muted-foreground">Attempt Rate</p>
-                <p className="text-lg font-bold">{overviewMetrics.attemptRate}%</p>
+                <p className="text-xs font-bold">Attempt Rate</p>
+                <p className="text-lg font-black">{overviewMetrics.attemptRate}%</p>
               </div>
             </div>
           </CardContent>
@@ -573,9 +581,9 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
         <TabsContent value="overview" className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             {/* Score Trend Line Chart */}
-            <Card>
+            <Card variant="neobrutalist">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 font-black">
                   <TrendingUp className="h-5 w-5" />
                   Score Progression
                 </CardTitle>
@@ -586,8 +594,8 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                   <AreaChart data={performanceTrend}>
                     <defs>
                       <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -597,10 +605,10 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           return (
-                            <div className="bg-background border rounded-lg shadow-lg p-3">
-                              <p className="font-medium">{payload[0].payload.fullName}</p>
-                              <p className="text-sm text-muted-foreground">{payload[0].payload.date}</p>
-                              <p className="text-sm">Score: <span className="font-bold">{payload[0].value}%</span></p>
+                            <div className="bg-white dark:bg-zinc-900 border-4 border-black dark:border-white/50 rounded-xl shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] p-3">
+                              <p className="font-black">{payload[0].payload.fullName}</p>
+                              <p className="text-sm font-medium text-muted-foreground">{payload[0].payload.date}</p>
+                              <p className="text-sm font-bold">Score: <span className="font-black text-[#8B5CF6]">{payload[0].value}%</span></p>
                             </div>
                           )
                         }
@@ -610,7 +618,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                     <Area 
                       type="monotone" 
                       dataKey="score" 
-                      stroke="hsl(var(--primary))" 
+                      stroke="#8B5CF6" 
                       fill="url(#scoreGradient)"
                       strokeWidth={2}
                     />
@@ -620,9 +628,9 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
             </Card>
 
             {/* Answer Distribution Pie */}
-            <Card>
+            <Card variant="neobrutalist">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 font-black">
                   <PieChartIcon className="h-5 w-5" />
                   Answer Distribution
                 </CardTitle>
@@ -653,9 +661,9 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
           </div>
 
           {/* Daily Activity */}
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 font-black">
                 <Calendar className="h-5 w-5" />
                 Daily Activity (Last 14 Days)
               </CardTitle>
@@ -669,6 +677,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                   <YAxis yAxisId="left" tickLine={false} axisLine={false} fontSize={12} />
                   <YAxis yAxisId="right" orientation="right" tickLine={false} axisLine={false} fontSize={12} domain={[0, 100]} />
                   <Tooltip />
+                  <Legend />
                   <Bar yAxisId="left" dataKey="quizzes" fill="#8B5CF6" radius={[4, 4, 0, 0]} name="Quizzes" />
                   <Line yAxisId="right" type="monotone" dataKey="avgScore" stroke="#10B981" strokeWidth={2} name="Avg Score %" />
                 </BarChart>
@@ -681,9 +690,9 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
         <TabsContent value="sections" className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             {/* Section Performance Bar Chart */}
-            <Card>
+            <Card variant="neobrutalist">
               <CardHeader>
-                <CardTitle>Section Performance</CardTitle>
+                <CardTitle className="font-black">Section Performance</CardTitle>
                 <CardDescription>Average accuracy per section</CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
@@ -704,9 +713,9 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
             </Card>
 
             {/* Radar Chart */}
-            <Card>
+            <Card variant="neobrutalist">
               <CardHeader>
-                <CardTitle>Section Comparison</CardTitle>
+                <CardTitle className="font-black">Section Comparison</CardTitle>
                 <CardDescription>Radar view of section performance</CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
@@ -727,9 +736,9 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
           {/* Section Details Cards */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {sectionAnalysis.map(section => (
-              <Card key={section.sectionKey}>
+              <Card key={section.sectionKey} variant="neobrutalist">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center gap-2">
+                  <CardTitle className="text-lg flex items-center gap-2 font-black">
                     <Brain className="h-5 w-5" style={{ color: section.color }} />
                     {section.section}
                   </CardTitle>
@@ -766,16 +775,16 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
 
         {/* QUIZZES TAB */}
         <TabsContent value="quizzes" className="space-y-6">
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader>
-              <CardTitle>Quiz History</CardTitle>
+              <CardTitle className="font-black">Quiz History</CardTitle>
               <CardDescription>Detailed breakdown of each quiz attempt</CardDescription>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[500px] pr-4">
                 <div className="space-y-3">
                   {quizBreakdown.map((quiz, index) => (
-                    <Card key={quiz.id || index} className="bg-muted/30">
+                    <Card key={quiz.id || index} variant="neobrutalist" className="bg-muted/30">
                       <CardContent className="p-4">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div className="flex-1">
@@ -846,9 +855,9 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
         <TabsContent value="time" className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             {/* Time Overview Cards */}
-            <Card>
+            <Card variant="neobrutalist">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 font-black">
                   <Clock className="h-5 w-5" />
                   Time Overview
                 </CardTitle>
@@ -895,9 +904,9 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
             </Card>
 
             {/* Time vs Accuracy Chart */}
-            <Card>
+            <Card variant="neobrutalist">
               <CardHeader>
-                <CardTitle>Time vs Accuracy</CardTitle>
+                <CardTitle className="font-black">Time vs Accuracy</CardTitle>
                 <CardDescription>Relationship between time spent and accuracy</CardDescription>
               </CardHeader>
               <CardContent className="h-[250px]">
@@ -922,9 +931,9 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
           </div>
 
           {/* Per-Question Time Breakdown Table */}
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 font-black">
                 <Timer className="h-5 w-5" />
                 Quiz Time Analysis
               </CardTitle>
@@ -1022,9 +1031,9 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
           </Card>
 
           {/* Time Distribution by Section */}
-          <Card>
+          <Card variant="neobrutalist">
             <CardHeader>
-              <CardTitle>Average Time by Section</CardTitle>
+              <CardTitle className="font-black">Average Time by Section</CardTitle>
               <CardDescription>Compare time spent across different sections</CardDescription>
             </CardHeader>
             <CardContent className="h-[300px]">
@@ -1065,9 +1074,9 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
         {/* TRENDS TAB */}
         <TabsContent value="trends" className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
-            <Card>
+            <Card variant="neobrutalist">
               <CardHeader>
-                <CardTitle>Score vs Accuracy Trend</CardTitle>
+                <CardTitle className="font-black">Score vs Accuracy Trend</CardTitle>
                 <CardDescription>Compare your score and accuracy over time</CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
@@ -1084,9 +1093,9 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
               </CardContent>
             </Card>
 
-            <Card>
+            <Card variant="neobrutalist">
               <CardHeader>
-                <CardTitle>Performance Summary</CardTitle>
+                <CardTitle className="font-black">Performance Summary</CardTitle>
                 <CardDescription>Key insights from your quiz history</CardDescription>
               </CardHeader>
               <CardContent>
@@ -1132,9 +1141,9 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
         {/* DISTRIBUTION TAB */}
         <TabsContent value="distribution" className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
-            <Card>
+            <Card variant="neobrutalist">
               <CardHeader>
-                <CardTitle>Score Distribution</CardTitle>
+                <CardTitle className="font-black">Score Distribution</CardTitle>
                 <CardDescription>How your scores are distributed</CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
@@ -1144,15 +1153,20 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                     <XAxis dataKey="range" tickLine={false} axisLine={false} fontSize={12} />
                     <YAxis tickLine={false} axisLine={false} fontSize={12} />
                     <Tooltip />
-                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Quizzes" />
+                    <Bar dataKey="count" radius={[4, 4, 0, 0]} name="Quizzes">
+                      {scoreDistribution.map((entry, index) => {
+                        const colors = ['#EF4444', '#F97316', '#EAB308', '#22C55E', '#10B981']
+                        return <Cell key={`cell-${index}`} fill={colors[index]} />
+                      })}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card variant="neobrutalist">
               <CardHeader>
-                <CardTitle>Performance Zones</CardTitle>
+                <CardTitle className="font-black">Performance Zones</CardTitle>
                 <CardDescription>Quiz count by performance level</CardDescription>
               </CardHeader>
               <CardContent>

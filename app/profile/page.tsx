@@ -62,7 +62,7 @@ export default function ProfilePage() {
     if (results.length === 0) return
 
     const totalQuizzes = results.length
-    const averageScore = Math.round(results.reduce((sum: number, r: any) => sum + r.totalScore, 0) / totalQuizzes)
+    const averageScore = parseFloat((results.reduce((sum: number, r: any) => sum + r.totalScore, 0) / totalQuizzes).toFixed(2))
     const bestScore = Math.max(...results.map((r: any) => r.totalScore))
     const totalTimeSpent = results.reduce((sum: number, r: any) => sum + (r.timeSpent || 0), 0)
     const experience = totalQuizzes * 10 + averageScore * 2
@@ -145,55 +145,59 @@ export default function ProfilePage() {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Link href="/dashboard">
-          <Button variant="outline" size="icon" className="rounded-full h-9 w-9">
-            <ArrowLeft className="h-4 w-4" />
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="rounded-lg h-11 w-11 border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_#fff] bg-white dark:bg-zinc-900 transition-all"
+          >
+            <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Profile</h1>
-          <p className="text-sm text-muted-foreground mt-1">Your learning journey and achievements</p>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Profile</h1>
+          <p className="text-sm text-muted-foreground mt-1 font-medium">Your learning journey and achievements</p>
         </div>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
-        <Card className="md:col-span-1">
+        <Card variant="neobrutalist" className="md:col-span-1">
           <CardContent className="pt-6 text-center">
             <Avatar className="w-20 h-20 mx-auto mb-4">
               <AvatarFallback>
                 <User className="w-10 h-10" />
               </AvatarFallback>
             </Avatar>
-            <h2 className="text-xl font-bold mb-1">{user?.name || "Quiz Learner"}</h2>
+            <h2 className="text-xl font-black mb-1">{user?.name || "Quiz Learner"}</h2>
             <p className="text-sm text-muted-foreground mb-3">{user?.email || "learner@quiz.com"}</p>
             <div className="flex items-center justify-center gap-2 mb-4">
               <Shield className="w-4 h-4" />
-              <span className="text-sm font-medium">Level {stats.level}</span>
+              <span className="text-sm font-black">Level {stats.level}</span>
             </div>
 
             <div className="space-y-4">
               <div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span>Experience</span>
-                  <span>{progressExp}/{requiredExp} XP</span>
+                  <span className="font-bold">Experience</span>
+                  <span className="font-bold">{progressExp}/{requiredExp} XP</span>
                 </div>
                 <Progress value={(progressExp / requiredExp) * 100} className="h-2" />
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-center pt-4 border-t">
                 <div>
-                  <div className="text-2xl font-bold text-primary">{stats.totalQuizzes}</div>
-                  <div className="text-xs text-muted-foreground">Quizzes</div>
+                  <div className="text-2xl font-black text-primary">{stats.totalQuizzes}</div>
+                  <div className="text-xs font-bold">Quizzes</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-primary">{stats.averageScore}%</div>
-                  <div className="text-xs text-muted-foreground">Avg Score</div>
+                  <div className="text-2xl font-black text-primary">{stats.averageScore}%</div>
+                  <div className="text-xs font-bold">Avg Score</div>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-2">
+        <Card variant="neobrutalist" className="md:col-span-2">
           <Tabs value={selectedProfileTab} onValueChange={setSelectedProfileTab} className="p-6">
             {/* Mobile: Dropdown selector */}
             <div className="sm:hidden mb-6">
@@ -263,50 +267,50 @@ export default function ProfilePage() {
 
             <TabsContent value="stats" className="space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
-                <div className="flex items-center gap-3 p-4 rounded-xl border bg-card">
-                  <div className="p-2 rounded-lg bg-yellow-500/10">
-                    <Trophy className="w-5 h-5 text-yellow-600" />
+                <div className="flex items-center gap-3 p-4 rounded-xl border-4 border-black shadow-[4px_4px_0px_0px_#000] bg-white">
+                  <div className="p-2 rounded-lg bg-yellow-400 border-2 border-black">
+                    <Trophy className="w-5 h-5 text-black" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Best Score</p>
-                    <p className="text-lg font-bold">{stats.bestScore}%</p>
+                    <p className="text-sm font-bold">Best Score</p>
+                    <p className="text-lg font-black">{stats.bestScore}%</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-4 rounded-xl border bg-card">
-                  <div className="p-2 rounded-lg bg-blue-500/10">
-                    <Clock className="w-5 h-5 text-blue-600" />
+                <div className="flex items-center gap-3 p-4 rounded-xl border-4 border-black shadow-[4px_4px_0px_0px_#000] bg-white">
+                  <div className="p-2 rounded-lg bg-blue-400 border-2 border-black">
+                    <Clock className="w-5 h-5 text-black" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Time Spent</p>
-                    <p className="text-lg font-bold">{Math.round(stats.totalTimeSpent / 60)}m</p>
+                    <p className="text-sm font-bold">Time Spent</p>
+                    <p className="text-lg font-black">{Math.round(stats.totalTimeSpent / 60)}m</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-4 rounded-xl border bg-card">
-                  <div className="p-2 rounded-lg bg-green-500/10">
-                    <Calendar className="w-5 h-5 text-green-600" />
+                <div className="flex items-center gap-3 p-4 rounded-xl border-4 border-black shadow-[4px_4px_0px_0px_#000] bg-white">
+                  <div className="p-2 rounded-lg bg-green-400 border-2 border-black">
+                    <Calendar className="w-5 h-5 text-black" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Current Streak</p>
-                    <p className="text-lg font-bold">{stats.streakDays} days</p>
+                    <p className="text-sm font-bold">Current Streak</p>
+                    <p className="text-lg font-black">{stats.streakDays} days</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-4 rounded-xl border bg-card">
-                  <div className="p-2 rounded-lg bg-purple-500/10">
-                    <Star className="w-5 h-5 text-purple-600" />
+                <div className="flex items-center gap-3 p-4 rounded-xl border-4 border-black shadow-[4px_4px_0px_0px_#000] bg-white">
+                  <div className="p-2 rounded-lg bg-purple-400 border-2 border-black">
+                    <Star className="w-5 h-5 text-black" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Badges Earned</p>
-                    <p className="text-lg font-bold">{stats.badges.length}</p>
+                    <p className="text-sm font-bold">Badges Earned</p>
+                    <p className="text-lg font-black">{stats.badges.length}</p>
                   </div>
                 </div>
               </div>
 
               {stats.badges.length > 0 && (
-                <div className="p-4 rounded-xl border bg-card">
-                  <h3 className="font-medium mb-3 text-sm">Your Badges</h3>
+                <div className="p-4 rounded-xl border-4 border-black shadow-[4px_4px_0px_0px_#000] bg-white">
+                  <h3 className="font-black mb-3 text-sm">Your Badges</h3>
                   <div className="flex flex-wrap gap-2">
                     {stats.badges.map((badge, index) => (
                       <Badge key={index} variant="secondary" className="text-xs">

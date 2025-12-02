@@ -22,7 +22,7 @@ import {
 } from "lucide-react"
 import MathRenderer from "@/components/math-renderer"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts"
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
 import { useAuth } from "@/hooks/use-auth"
 
 interface QuestionResult {
@@ -133,6 +133,10 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
               setLoading(false)
               return
             }
+          } else if (response.status === 401) {
+            console.log("Token invalid or expired, falling back to localStorage")
+          } else {
+            console.error("API error:", response.status, response.statusText)
           }
         }
 
@@ -147,7 +151,20 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
         }
       } catch (error) {
         console.error("Error loading result:", error)
-        setError("Failed to load quiz result. Please try again.")
+        
+        // Try localStorage as final fallback
+        try {
+          const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
+          const foundResult = results.find((r: Result) => r._id === params.id)
+          
+          if (foundResult) {
+            setResult(parseResultData(foundResult))
+          } else {
+            setError("Failed to load quiz result. Please try again.")
+          }
+        } catch (localStorageError) {
+          setError("Failed to load quiz result. Please try again.")
+        }
       } finally {
         setLoading(false)
       }
@@ -259,21 +276,21 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen neu-surface flex items-center justify-center mobile-header-safe-zone">
-        <div className="neu-card p-8 text-center">
+      <div className="min-h-screen flex items-center justify-center">
+        <Card variant="neobrutalist" className="p-8 text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading results...</p>
-        </div>
+          <p className="text-muted-foreground font-medium">Loading results...</p>
+        </Card>
       </div>
     )
   }
 
   if (error || !result) {
     return (
-      <div className="min-h-screen neu-surface flex items-center justify-center p-4 mobile-header-safe-zone">
-        <div className="neu-card p-8 text-center max-w-md w-full">
+      <div className="min-h-screen flex items-center justify-center p-4 mobile-header-safe-zone">
+        <Card variant="neobrutalist" className="p-8 text-center max-w-md w-full">
           <AlertTriangle className="h-12 w-12 mx-auto text-yellow-500 mb-4" />
-          <p className="text-muted-foreground mb-4">
+          <p className="text-muted-foreground font-bold mb-4">
             {error || "Result not found"}
           </p>
           <p className="text-sm text-muted-foreground mb-6">
@@ -281,17 +298,17 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
           </p>
           <div className="grid grid-cols-1 gap-3">
             <Link href="/dashboard">
-              <button className="neu-button py-3 px-6 text-sm font-medium text-primary w-full">
+              <Button variant="neobrutalist" className="w-full">
                 Back to Dashboard
-              </button>
+              </Button>
             </Link>
             <Link href="/history">
-              <button className="neu-button py-3 px-6 text-sm font-medium text-muted-foreground w-full">
+              <Button variant="outline" className="w-full border-2 border-black dark:border-white">
                 View History
-              </button>
+              </Button>
             </Link>
           </div>
-        </div>
+        </Card>
       </div>
     )
   }
@@ -299,65 +316,65 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
   const analysis = getPerformanceAnalysis()
 
   return (
-    <div className="min-h-screen neu-surface mobile-header-safe-zone">
+    <div className="min-h-screen">
       <div className="container mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 max-w-full overflow-x-hidden">
         {/* Header */}
         <div className="mb-6">
           {/* Mobile Header */}
           <div className="md:hidden">
-            <div className="neu-card p-4 mb-4">
-              <h1 className="text-xl sm:text-2xl font-bold neu-text-gradient break-words">Quiz Results</h1>
-              <p className="text-muted-foreground text-sm mt-1 break-words">
+            <Card variant="neobrutalist" className="p-4 mb-4">
+              <h1 className="text-xl sm:text-2xl font-black break-words">Quiz Results</h1>
+              <p className="text-muted-foreground text-sm mt-1 break-words font-medium">
                 {result.quizName} • Completed on {new Date(result.date).toLocaleDateString()}
               </p>
-            </div>
+            </Card>
             <div className="grid grid-cols-1 gap-2">
               <Link href={`/quiz/${result.quizId}`}>
-                <button className="neu-button py-3 px-4 w-full text-sm font-medium text-primary">
+                <Button variant="neobrutalist" className="w-full">
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Retake Quiz
-                </button>
+                </Button>
               </Link>
               <Link href="/dashboard">
-                <button className="neu-button py-3 px-4 w-full text-sm font-medium text-primary">
+                <Button variant="neobrutalist" className="w-full">
                   <Home className="h-4 w-4 mr-2" />
                   Dashboard
-                </button>
+                </Button>
               </Link>
             </div>
           </div>
 
           {/* Desktop Header */}
           <div className="hidden md:block">
-            <div className="neu-card p-6">
+            <Card variant="neobrutalist" className="p-6">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                 <div className="min-w-0 flex-1">
-                  <h1 className="text-2xl lg:text-3xl font-bold neu-text-gradient truncate">Quiz Results</h1>
-                  <p className="text-muted-foreground text-sm lg:text-base break-words">
+                  <h1 className="text-2xl lg:text-3xl font-black truncate">Quiz Results</h1>
+                  <p className="text-muted-foreground text-sm lg:text-base break-words font-medium">
                     {result.quizName} • Completed on {new Date(result.date).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0">
                   <Link href={`/quiz/${result.quizId}`}>
-                    <button className="neu-button py-2 px-4 text-sm font-medium text-primary whitespace-nowrap">
+                    <Button variant="neobrutalist">
                       <RotateCcw className="h-4 w-4 mr-2" />
                       Retake Quiz
-                    </button>
+                    </Button>
                   </Link>
                   <Link href="/dashboard">
-                    <button className="neu-button py-2 px-4 text-sm font-medium text-primary whitespace-nowrap">
+                    <Button variant="neobrutalist">
                       <Home className="h-4 w-4 mr-2" />
                       Dashboard
-                    </button>
+                    </Button>
                   </Link>
                 </div>
               </div>
-            </div>
+            </Card>
           </div>
         </div>
 
-        {/* Negative Marking Info */}
-        {result.negativeMarking && (
+        {/* Negative Marking Info - Only show when quiz actually has negative marking enabled */}
+        {result.negativeMarking === true && result.negativeMarkValue && result.negativeMarkValue > 0 && (
           <Alert className="mb-6">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
@@ -368,62 +385,54 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
 
         {/* Score Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <div className="neu-card md:col-span-2 lg:col-span-1 p-6 text-center">
-            <h2 className="text-3xl sm:text-4xl font-bold text-blue-600 mb-2">{result.totalScore}%</h2>
-            <p className="text-muted-foreground text-sm">Final Score</p>
+          <Card variant="neobrutalist" className="md:col-span-2 lg:col-span-1 p-6 text-center">
+            <h2 className="text-3xl sm:text-4xl font-black text-blue-600 mb-2">{Number(result.totalScore).toFixed(2)}%</h2>
+            <p className="text-muted-foreground text-sm font-medium">Final Score</p>
             {result.rawScore !== undefined && (
-              <div className="mt-4 space-y-1 text-sm">
+              <div className="mt-4 space-y-1 text-sm font-medium">
                 <p>Raw Score: {result.rawScore.toFixed(2)}</p>
                 {result.negativeMarking && result.negativeMarks && result.negativeMarks > 0 && (
-                  <p className="text-red-600">Penalty: -{result.negativeMarks}</p>
+                  <p className="text-red-600 font-bold">Penalty: -{result.negativeMarks}</p>
                 )}
               </div>
             )}
-          </div>
-
-          <div className="neu-card p-4 sm:p-6">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <h3 className="text-lg font-semibold">Correct</h3>
-            </div>
-            <div className="text-2xl sm:text-3xl font-bold text-green-600">
-              {result.correctAnswers || (Array.isArray(result.questions) ? result.questions.filter((q) => q.isCorrect).length : 0)}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              +{result.positiveMarks || (Array.isArray(result.questions) ? result.questions.filter((q) => q.isCorrect).length : 0)} marks
-            </p>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <XCircle className="h-5 w-5 text-red-600" />
-                Wrong
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-red-600">
-                {result.wrongAnswers || (Array.isArray(result.questions) ? result.questions.filter((q) => !q.isCorrect && q.selectedAnswer !== -1).length : 0)}
-              </div>
-              {result.negativeMarking && (
-                <p className="text-sm text-muted-foreground">-{result.negativeMarks || 0} marks</p>
-              )}
-            </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Minus className="h-5 w-5 text-gray-600" />
-                Unanswered
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-600">
-                {result.unanswered || (Array.isArray(result.questions) ? result.questions.filter((q) => q.selectedAnswer === -1).length : 0)}
-              </div>
-              <p className="text-sm text-muted-foreground">No penalty</p>
-            </CardContent>
+          <Card variant="neobrutalist" className="p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <h3 className="text-lg font-bold">Correct</h3>
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-green-600">
+              {result.correctAnswers || (Array.isArray(result.questions) ? result.questions.filter((q) => q.isCorrect).length : 0)}
+            </div>
+            <p className="text-sm text-muted-foreground font-medium">
+              +{result.positiveMarks || (Array.isArray(result.questions) ? result.questions.filter((q) => q.isCorrect).length : 0)} marks
+            </p>
+          </Card>
+
+          <Card variant="neobrutalist" className="p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-2">
+              <XCircle className="h-5 w-5 text-red-600" />
+              <h3 className="text-lg font-bold">Wrong</h3>
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-red-600">
+              {result.wrongAnswers || (Array.isArray(result.questions) ? result.questions.filter((q) => !q.isCorrect && q.selectedAnswer !== -1).length : 0)}
+            </div>
+            {result.negativeMarking && (
+              <p className="text-sm text-muted-foreground font-medium">-{result.negativeMarks || 0} marks</p>
+            )}
+          </Card>
+
+          <Card variant="neobrutalist" className="p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Minus className="h-5 w-5 text-gray-600" />
+              <h3 className="text-lg font-bold">Unanswered</h3>
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-gray-600">
+              {result.unanswered || (Array.isArray(result.questions) ? result.questions.filter((q) => q.selectedAnswer === -1).length : 0)}
+            </div>
+            <p className="text-sm text-muted-foreground font-medium">No penalty</p>
           </Card>
         </div>
 
@@ -431,57 +440,48 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
         {analysis && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* Performance Insights */}
-            <Card>
+            <Card variant="neobrutalist">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 font-black">
                   <TrendingUp className="h-5 w-5" />
                   Performance Insights
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">{analysis.accuracy}%</div>
-                    <p className="text-sm text-muted-foreground">Accuracy</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-center p-3 bg-blue-100 dark:bg-blue-900/30 border-2 border-black dark:border-white rounded-lg">
+                    <div className="text-2xl font-black">{analysis.accuracy}%</div>
+                    <p className="text-xs text-muted-foreground font-medium">Accuracy</p>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">{analysis.attemptRate}%</div>
-                    <p className="text-sm text-muted-foreground">Attempt Rate</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">{analysis.timePerQuestion}s</div>
-                    <p className="text-sm text-muted-foreground">Per Question</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">{analysis.timeEfficiency}</div>
-                    <p className="text-sm text-muted-foreground">Efficiency</p>
+                  <div className="text-center p-3 bg-green-100 dark:bg-green-900/30 border-2 border-black dark:border-white rounded-lg">
+                    <div className="text-2xl font-black">{analysis.attemptRate}%</div>
+                    <p className="text-xs text-muted-foreground font-medium">Attempt Rate</p>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  {analysis.insights.map((insight, index) => (
-                    <Alert key={index} variant={insight.type === "error" ? "destructive" : "default"}>
-                      <AlertDescription>{insight.message}</AlertDescription>
-                    </Alert>
-                  ))}
-                </div>
+                {/* Show only the most important insight */}
+                {analysis.insights.length > 0 && (
+                  <Alert variant={analysis.insights[0].type === "error" ? "destructive" : "default"} className="border-2 border-black dark:border-white">
+                    <AlertDescription className="font-medium text-sm">{analysis.insights[0].message}</AlertDescription>
+                  </Alert>
+                )}
               </CardContent>
             </Card>
 
             {/* Answer Distribution */}
-            <Card>
+            <Card variant="neobrutalist">
               <CardHeader>
-                <CardTitle>Answer Distribution</CardTitle>
+                <CardTitle className="font-black">Answer Distribution</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-[200px]">
+                <div className="h-[180px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={analysis.answerDistribution}
                         cx="50%"
                         cy="50%"
-                        outerRadius={80}
+                        outerRadius={70}
                         dataKey="value"
                         label={({ name, value }) => `${name}: ${value}`}
                       >
@@ -504,22 +504,29 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
             .filter(([section, score]) => score > 0 && getSectionStats(section).total > 0)
             .map(([section, score]) => {
               const stats = getSectionStats(section)
+              const sectionColors: { [key: string]: { bg: string; border: string; progress: string } } = {
+                reasoning: { bg: 'bg-purple-50 dark:bg-purple-900/20', border: 'border-l-purple-500', progress: 'bg-purple-500' },
+                quantitative: { bg: 'bg-green-50 dark:bg-green-900/20', border: 'border-l-green-500', progress: 'bg-green-500' },
+                english: { bg: 'bg-yellow-50 dark:bg-yellow-900/20', border: 'border-l-yellow-500', progress: 'bg-yellow-500' },
+              }
+              const colors = sectionColors[section] || { bg: 'bg-gray-50 dark:bg-gray-900/20', border: 'border-l-gray-500', progress: 'bg-gray-500' }
+              
               return (
-                <Card key={section}>
+                <Card variant="neobrutalist" key={section} className={`border-l-4 ${colors.border} ${colors.bg}`}>
                   <CardHeader>
-                    <CardTitle className="text-lg capitalize">{section}</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-lg capitalize font-black">{section}</CardTitle>
+                    <CardDescription className="font-medium">
                       {stats.correct}C • {stats.wrong}W • {stats.unanswered}U of {stats.total}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-2xl font-bold">{score}%</span>
-                      <Badge variant={score >= 70 ? "default" : "destructive"}>
+                      <span className="text-2xl font-black">{score}%</span>
+                      <Badge variant={score >= 70 ? "default" : "destructive"} className="border-2 border-black dark:border-white font-bold">
                         {score >= 70 ? "Good" : "Needs Work"}
                       </Badge>
                     </div>
-                    <Progress value={score} />
+                    <Progress value={score} className={`[&>div]:${colors.progress}`} />
                   </CardContent>
                 </Card>
               )
@@ -528,10 +535,10 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
 
         {/* Section Performance Chart */}
         {analysis && analysis.sectionPerformance.length > 0 && (
-          <Card className="mb-8">
+          <Card variant="neobrutalist" className="mb-8">
             <CardHeader>
-              <CardTitle>Section-wise Performance</CardTitle>
-              <CardDescription>Your performance across different sections</CardDescription>
+              <CardTitle className="font-black">Section-wise Performance</CardTitle>
+              <CardDescription className="font-medium">Your performance across different sections</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
@@ -541,7 +548,12 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                     <XAxis dataKey="section" />
                     <YAxis domain={[0, 100]} />
                     <Tooltip formatter={(value) => [`${value}%`, "Score"]} />
-                    <Bar dataKey="score" fill="hsl(var(--primary))" />
+                    <Legend />
+                    <Bar dataKey="score" name="Score %" radius={[4, 4, 0, 0]}>
+                      {analysis.sectionPerformance.filter(s => s.score > 0).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -572,45 +584,45 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
           })
           
           return (
-            <Card className="mb-8">
+            <Card variant="neobrutalist" className="mb-8">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 font-black">
                   <Timer className="h-5 w-5" />
                   Time Analysis
                 </CardTitle>
-                <CardDescription>Detailed breakdown of time spent on each question</CardDescription>
+                <CardDescription className="font-medium">Detailed breakdown of time spent on each question</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Time Stats Overview */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="p-4 bg-muted rounded-lg text-center">
-                    <div className="text-2xl font-bold">{formatTime(totalTime)}</div>
-                    <div className="text-xs text-muted-foreground">Total Time</div>
+                  <div className="p-4 bg-blue-100 dark:bg-blue-900/30 border-2 border-black dark:border-white rounded-lg text-center">
+                    <div className="text-2xl font-black">{formatTime(totalTime)}</div>
+                    <div className="text-xs text-muted-foreground font-medium">Total Time</div>
                   </div>
-                  <div className="p-4 bg-muted rounded-lg text-center">
-                    <div className="text-2xl font-bold">{formatTime(avgTime)}</div>
-                    <div className="text-xs text-muted-foreground">Avg per Question</div>
+                  <div className="p-4 bg-green-100 dark:bg-green-900/30 border-2 border-black dark:border-white rounded-lg text-center">
+                    <div className="text-2xl font-black">{formatTime(avgTime)}</div>
+                    <div className="text-xs text-muted-foreground font-medium">Avg per Question</div>
                   </div>
-                  <div className="p-4 bg-muted rounded-lg text-center">
-                    <div className="text-2xl font-bold text-blue-500">{formatTime(minTime)}</div>
-                    <div className="text-xs text-muted-foreground">Fastest</div>
+                  <div className="p-4 bg-cyan-100 dark:bg-cyan-900/30 border-2 border-black dark:border-white rounded-lg text-center">
+                    <div className="text-2xl font-black text-blue-600">{formatTime(minTime)}</div>
+                    <div className="text-xs text-muted-foreground font-medium">Fastest</div>
                   </div>
-                  <div className="p-4 bg-muted rounded-lg text-center">
-                    <div className="text-2xl font-bold text-orange-500">{formatTime(maxTime)}</div>
-                    <div className="text-xs text-muted-foreground">Slowest</div>
+                  <div className="p-4 bg-orange-100 dark:bg-orange-900/30 border-2 border-black dark:border-white rounded-lg text-center">
+                    <div className="text-2xl font-black text-orange-600">{formatTime(maxTime)}</div>
+                    <div className="text-xs text-muted-foreground font-medium">Slowest</div>
                   </div>
                 </div>
                 
                 {/* Time by Section */}
                 {Object.keys(sectionTimes).length > 1 && (
                   <div>
-                    <h4 className="font-semibold mb-3">Time by Section</h4>
+                    <h4 className="font-black mb-3">Time by Section</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {Object.entries(sectionTimes).map(([section, data]) => (
-                        <div key={section} className="p-3 border rounded-lg">
-                          <div className="text-sm font-medium capitalize">{section}</div>
-                          <div className="text-lg font-bold">{formatTime(data.total / data.count)}</div>
-                          <div className="text-xs text-muted-foreground">avg • {data.count} questions</div>
+                        <div key={section} className="p-3 border-2 border-black dark:border-white rounded-lg">
+                          <div className="text-sm font-bold capitalize">{section}</div>
+                          <div className="text-lg font-black">{formatTime(data.total / data.count)}</div>
+                          <div className="text-xs text-muted-foreground font-medium">avg • {data.count} questions</div>
                         </div>
                       ))}
                     </div>
@@ -619,55 +631,41 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                 
                 {/* Per Question Time Table */}
                 <div>
-                  <h4 className="font-semibold mb-3">Time per Question</h4>
-                  <div className="overflow-x-auto">
+                  <h4 className="font-black mb-3">Time per Question</h4>
+                  <div className="overflow-x-auto border-2 border-black dark:border-white rounded-lg">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2 px-2 font-medium">Q#</th>
-                          <th className="text-left py-2 px-2 font-medium">Time</th>
-                          <th className="text-left py-2 px-2 font-medium">Status</th>
-                          <th className="text-left py-2 px-2 font-medium">vs Avg</th>
-                          <th className="text-left py-2 px-2 font-medium hidden sm:table-cell">Section</th>
+                        <tr className="border-b-2 border-black dark:border-white bg-muted">
+                          <th className="text-left py-2 px-3 font-black">Q#</th>
+                          <th className="text-left py-2 px-3 font-black">Time</th>
+                          <th className="text-left py-2 px-3 font-black">Status</th>
+                          <th className="text-left py-2 px-3 font-black hidden sm:table-cell">Section</th>
                         </tr>
                       </thead>
                       <tbody>
                         {result.questions.map((q: QuestionResult, idx: number) => {
                           const timeSpent = q.timeSpent || 0
-                          const timeDiff = timeSpent - avgTime
-                          const timeDiffPercent = avgTime > 0 ? Math.round((timeDiff / avgTime) * 100) : 0
                           const isUnanswered = q.selectedAnswer === -1
                           
                           return (
-                            <tr key={idx} className="border-b border-dashed last:border-0">
-                              <td className="py-2 px-2 font-mono">{idx + 1}</td>
-                              <td className="py-2 px-2">
-                                <span className={`font-medium ${timeSpent > avgTime * 1.5 ? 'text-orange-500' : timeSpent < avgTime * 0.5 && timeSpent > 0 ? 'text-blue-500' : ''}`}>
+                            <tr key={idx} className="border-b border-black/20 dark:border-white/20 last:border-0">
+                              <td className="py-2 px-3 font-mono font-bold">{idx + 1}</td>
+                              <td className="py-2 px-3">
+                                <span className="font-bold">
                                   {timeSpent > 0 ? formatTime(timeSpent) : '-'}
                                 </span>
                               </td>
-                              <td className="py-2 px-2">
+                              <td className="py-2 px-3">
                                 {isUnanswered ? (
-                                  <Badge variant="outline" className="text-xs">Skipped</Badge>
+                                  <Badge variant="outline" className="text-xs border-2 border-black dark:border-white font-bold">Skipped</Badge>
                                 ) : q.isCorrect ? (
-                                  <Badge variant="default" className="text-xs bg-green-500">✓ Correct</Badge>
+                                  <Badge variant="default" className="text-xs bg-green-500 border-2 border-black font-bold">✓ Correct</Badge>
                                 ) : (
-                                  <Badge variant="destructive" className="text-xs">✗ Wrong</Badge>
+                                  <Badge variant="destructive" className="text-xs border-2 border-black font-bold">✗ Wrong</Badge>
                                 )}
                               </td>
-                              <td className="py-2 px-2">
-                                {timeSpent > 0 ? (
-                                  timeDiff > 0 ? (
-                                    <span className="text-orange-500 text-xs">+{formatTime(Math.abs(timeDiff))} ({timeDiffPercent > 0 ? '+' : ''}{timeDiffPercent}%)</span>
-                                  ) : (
-                                    <span className="text-blue-500 text-xs">-{formatTime(Math.abs(timeDiff))} ({timeDiffPercent}%)</span>
-                                  )
-                                ) : (
-                                  <span className="text-muted-foreground text-xs">-</span>
-                                )}
-                              </td>
-                              <td className="py-2 px-2 hidden sm:table-cell">
-                                <span className="text-xs text-muted-foreground capitalize">{q.section || '-'}</span>
+                              <td className="py-2 px-3 hidden sm:table-cell">
+                                <span className="text-xs text-muted-foreground capitalize font-medium">{q.section || '-'}</span>
                               </td>
                             </tr>
                           )
@@ -682,14 +680,14 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
         })()}
 
         {/* Section Filter */}
-        <Card className="mb-6">
+        <Card variant="neobrutalist" className="mb-6">
           <CardHeader>
             <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
               <div>
-                <CardTitle>Question Analysis</CardTitle>
-                <CardDescription>Review your answers and see the correct solutions</CardDescription>
+                <CardTitle className="font-black">Question Analysis</CardTitle>
+                <CardDescription className="font-medium">Review your answers and see the correct solutions</CardDescription>
               </div>
-              <Button onClick={toggleAllQuestions} variant="outline">
+              <Button onClick={toggleAllQuestions} variant="neobrutalist">
                 {(Array.isArray(result.questions) && openQuestions.size === result.questions.length) ? "Collapse All" : "Expand All"}
               </Button>
             </div>
@@ -697,7 +695,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
           <CardContent>
             <div className="flex flex-wrap gap-2 mb-4">
               <Button
-                variant={selectedSection === "all" ? "default" : "outline"}
+                variant={selectedSection === "all" ? "neobrutalistInverted" : "neobrutalist"}
                 onClick={() => setSelectedSection("all")}
               >
                 All Questions
@@ -707,7 +705,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                 .map(([section]) => (
                   <Button
                     key={section}
-                    variant={selectedSection === section ? "default" : "outline"}
+                    variant={selectedSection === section ? "neobrutalistInverted" : "neobrutalist"}
                     onClick={() => setSelectedSection(section)}
                   >
                     {section.charAt(0).toUpperCase() + section.slice(1)}
@@ -727,13 +725,14 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
             return (
               <Card
                 key={index}
-                className={`border-l-4 ${
+                variant="neobrutalist"
+                className={`border-l-8 ${
                   question.isCorrect ? "border-l-green-500" : isUnanswered ? "border-l-gray-500" : "border-l-red-500"
                 }`}
               >
                 <Collapsible open={isOpen} onOpenChange={() => toggleQuestion(index)}>
                   <CollapsibleTrigger asChild>
-                    <CardHeader className="cursor-pointer hover:bg-muted/50">
+                    <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           {question.isCorrect ? (
@@ -744,24 +743,24 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                             <XCircle className="h-5 w-5 text-red-600" />
                           )}
                           <div>
-                            <CardTitle className="text-lg flex flex-wrap items-center gap-2">
+                            <CardTitle className="text-lg flex flex-wrap items-center gap-2 font-black">
                               Question {index + 1}
-                              <Badge variant="outline" className="ml-2 whitespace-nowrap">
+                              <Badge variant="outline" className="ml-2 whitespace-nowrap border-2 border-black dark:border-white font-bold">
                                 {question.section}
                               </Badge>
                               {question.timeSpent !== undefined && question.timeSpent > 0 && (
-                                <Badge variant="secondary" className="ml-2 whitespace-nowrap text-xs px-2 py-1">
+                                <Badge variant="secondary" className="ml-2 whitespace-nowrap text-xs px-2 py-1 border-2 border-black dark:border-white font-bold">
                                   <Clock className="h-3 w-3 mr-1" />
                                   {formatTime(question.timeSpent)}
                                 </Badge>
                               )}
                               {isWrong && result.negativeMarking && (
-                                <Badge variant="destructive" className="ml-2 whitespace-nowrap text-xs px-2 py-1">
+                                <Badge variant="destructive" className="ml-2 whitespace-nowrap text-xs px-2 py-1 border-2 border-black font-bold">
                                   -{result.negativeMarkValue} marks
                                 </Badge>
                               )}
                             </CardTitle>
-                            <CardDescription className="mt-1 line-clamp-2">
+                            <CardDescription className="mt-1 line-clamp-2 font-medium">
                               <MathRenderer text={question.question} />
                             </CardDescription>
                           </div>
@@ -774,7 +773,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                   <CollapsibleContent>
                     <CardContent>
                       <div className="space-y-4">
-                        <p className="font-medium">
+                        <p className="font-bold">
                           <MathRenderer text={question.question} />
                         </p>
 
@@ -784,7 +783,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                             <img
                               src={question.image || "/placeholder.svg"}
                               alt="Question illustration"
-                              className="max-w-sm rounded border"
+                              className="max-w-sm rounded border-2 border-black dark:border-white"
                             />
                           </div>
                         )}
@@ -797,24 +796,24 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                             return (
                               <div
                                 key={optionIndex}
-                                className={`p-3 rounded-lg border ${
+                                className={`p-3 rounded-lg border-2 ${
                                   isCorrect
-                                    ? "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800"
+                                    ? "bg-green-100 border-green-600 dark:bg-green-900/30 dark:border-green-500"
                                     : isSelected && !isCorrect
-                                      ? "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800"
-                                      : "bg-muted"
+                                      ? "bg-red-100 border-red-600 dark:bg-red-900/30 dark:border-red-500"
+                                      : "bg-muted border-black dark:border-white"
                                 }`}
                               >
                                 <div className="flex items-center justify-between">
-                                  <span>
+                                  <span className="font-medium">
                                     <MathRenderer text={option} />
                                   </span>
                                   <div className="flex gap-2">
                                     {isSelected && (
-                                      <Badge variant={isCorrect ? "default" : "destructive"}>Your Answer</Badge>
+                                      <Badge variant={isCorrect ? "default" : "destructive"} className="border-2 border-black font-bold">Your Answer</Badge>
                                     )}
                                     {isCorrect && (
-                                      <Badge variant="default" className="bg-green-600">
+                                      <Badge variant="default" className="bg-green-600 border-2 border-black font-bold">
                                         Correct
                                       </Badge>
                                     )}
@@ -827,18 +826,18 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
 
                         {/* Show explanation if available */}
                         {question.explanation && (
-                          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                            <p className="text-sm">
-                              <strong>Explanation:</strong> <MathRenderer text={question.explanation} />
+                          <div className="mt-4 p-3 bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-600 dark:border-blue-500 rounded-lg">
+                            <p className="text-sm font-medium">
+                              <strong className="font-black">Explanation:</strong> <MathRenderer text={question.explanation} />
                             </p>
                           </div>
                         )}
 
                         {/* Show unanswered message */}
                         {isUnanswered && (
-                          <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-900/20 rounded-lg">
-                            <p className="text-sm text-muted-foreground">
-                              <strong>Not Attempted:</strong> This question was left unanswered.
+                          <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-900/30 border-2 border-gray-600 dark:border-gray-500 rounded-lg">
+                            <p className="text-sm text-muted-foreground font-medium">
+                              <strong className="font-black">Not Attempted:</strong> This question was left unanswered.
                             </p>
                           </div>
                         )}

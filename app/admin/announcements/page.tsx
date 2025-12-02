@@ -281,17 +281,19 @@ export default function AdminAnnouncementsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2">
-              <Megaphone className="h-7 w-7 text-primary" />
+            <h1 className="text-2xl sm:text-3xl font-black text-foreground flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-purple-400 border-2 border-black">
+                <Megaphone className="h-6 w-6 text-black" />
+              </div>
               Announcements
             </h1>
-            <p className="text-muted-foreground text-sm sm:text-base">
+            <p className="text-muted-foreground text-sm sm:text-base font-medium">
               Create and manage announcements for all users
             </p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={openCreateDialog} className="gap-2">
+              <Button onClick={openCreateDialog} variant="neobrutalist" className="gap-2">
                 <Plus className="h-4 w-4" />
                 New Announcement
               </Button>
@@ -461,56 +463,56 @@ export default function AdminAnnouncementsPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <Card>
+          <Card variant="neobrutalist">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Megaphone className="h-5 w-5 text-primary" />
+                <div className="p-2 rounded-lg bg-purple-400 border-2 border-black">
+                  <Megaphone className="h-5 w-5 text-black" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{announcements.length}</p>
-                  <p className="text-xs text-muted-foreground">Total</p>
+                  <p className="text-2xl font-black">{announcements.length}</p>
+                  <p className="text-xs text-muted-foreground font-bold">Total</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card variant="neobrutalist">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-green-500/10">
-                  <Eye className="h-5 w-5 text-green-500" />
+                <div className="p-2 rounded-lg bg-green-400 border-2 border-black">
+                  <Eye className="h-5 w-5 text-black" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{announcements.filter(a => a.isActive).length}</p>
-                  <p className="text-xs text-muted-foreground">Active</p>
+                  <p className="text-2xl font-black">{announcements.filter(a => a.isActive).length}</p>
+                  <p className="text-xs text-muted-foreground font-bold">Active</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card variant="neobrutalist">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-orange-500/10">
-                  <AlertTriangle className="h-5 w-5 text-orange-500" />
+                <div className="p-2 rounded-lg bg-orange-400 border-2 border-black">
+                  <AlertTriangle className="h-5 w-5 text-black" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{announcements.filter(a => a.priority === "high" || a.priority === "urgent").length}</p>
-                  <p className="text-xs text-muted-foreground">High Priority</p>
+                  <p className="text-2xl font-black">{announcements.filter(a => a.priority === "high" || a.priority === "urgent").length}</p>
+                  <p className="text-xs text-muted-foreground font-bold">High Priority</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card variant="neobrutalist">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-500/10">
-                  <Users className="h-5 w-5 text-blue-500" />
+                <div className="p-2 rounded-lg bg-blue-400 border-2 border-black">
+                  <Users className="h-5 w-5 text-black" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">
-                    {announcements.length > 0 ? Math.round(announcements.reduce((acc, a) => acc + a.readPercentage, 0) / announcements.length) : 0}%
+                  <p className="text-2xl font-black">
+                    {announcements.length > 0 ? (announcements.reduce((acc, a) => acc + a.readPercentage, 0) / announcements.length).toFixed(2) : '0.00'}%
                   </p>
-                  <p className="text-xs text-muted-foreground">Avg Read Rate</p>
+                  <p className="text-xs text-muted-foreground font-bold">Avg Read Rate</p>
                 </div>
               </div>
             </CardContent>
@@ -518,20 +520,20 @@ export default function AdminAnnouncementsPage() {
         </div>
 
         {/* Announcements List */}
-        <Card>
+        <Card variant="neobrutalist">
           <CardHeader>
-            <CardTitle>All Announcements</CardTitle>
-            <CardDescription>Manage your announcements</CardDescription>
+            <CardTitle className="font-bold">All Announcements</CardTitle>
+            <CardDescription className="font-medium">Manage your announcements</CardDescription>
           </CardHeader>
           <CardContent>
             {announcements.length === 0 ? (
               <div className="text-center py-12">
                 <Megaphone className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                <h3 className="font-medium text-lg mb-2">No announcements yet</h3>
-                <p className="text-muted-foreground text-sm mb-4">
+                <h3 className="font-bold text-lg mb-2">No announcements yet</h3>
+                <p className="text-muted-foreground text-sm mb-4 font-medium">
                   Create your first announcement to notify users
                 </p>
-                <Button onClick={openCreateDialog}>
+                <Button onClick={openCreateDialog} variant="neobrutalist">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Announcement
                 </Button>
@@ -546,26 +548,34 @@ export default function AdminAnnouncementsPage() {
                     return (
                       <div
                         key={announcement.id}
-                        className={`p-3 sm:p-4 border rounded-lg ${!announcement.isActive ? 'opacity-60 bg-muted/50' : ''}`}
+                        className={`p-3 sm:p-4 border-2 border-black dark:border-white rounded-lg shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff] ${!announcement.isActive ? 'opacity-60 bg-muted/50' : 'bg-card'}`}
                       >
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
                           <div className="flex gap-3 flex-1 min-w-0">
-                            <div className={`h-9 w-9 sm:h-10 sm:w-10 rounded-full flex items-center justify-center shrink-0 ${priorityConfig.bg}/10`}>
-                              <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${priorityConfig.color}`} />
+                            <div className={`h-9 w-9 sm:h-10 sm:w-10 rounded-lg flex items-center justify-center shrink-0 border-2 border-black ${priorityConfig.bg}`}>
+                              <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-black" />
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start sm:items-center gap-2 flex-wrap">
-                                <h4 className="font-semibold text-sm sm:text-base">{announcement.title}</h4>
+                                <h4 className="font-bold text-sm sm:text-base">{announcement.title}</h4>
                                 <div className="flex gap-1 flex-wrap">
-                                  <Badge variant={announcement.isActive ? "default" : "secondary"} className="text-[10px] sm:text-xs">
+                                  <Badge className={cn(
+                                    "text-[10px] sm:text-xs border-2 border-black font-bold",
+                                    announcement.isActive ? "bg-green-400 text-black" : "bg-gray-300 text-black"
+                                  )}>
                                     {announcement.isActive ? "Active" : "Inactive"}
                                   </Badge>
-                                  <Badge variant="outline" className={`text-[10px] sm:text-xs ${priorityConfig.color}`}>
+                                  <Badge className={cn(
+                                    "text-[10px] sm:text-xs border-2 border-black font-bold",
+                                    priorityConfig.value === "urgent" ? "bg-red-400 text-black" :
+                                    priorityConfig.value === "high" ? "bg-orange-400 text-black" :
+                                    priorityConfig.value === "low" ? "bg-blue-400 text-black" : "bg-purple-400 text-black"
+                                  )}>
                                     {priorityConfig.label}
                                   </Badge>
                                 </div>
                               </div>
-                              <p className="text-xs sm:text-sm text-muted-foreground mt-1 line-clamp-2">
+                              <p className="text-xs sm:text-sm text-muted-foreground mt-1 line-clamp-2 font-medium">
                                 {announcement.content}
                               </p>
                               <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 sm:mt-3 text-[10px] sm:text-xs text-muted-foreground">
