@@ -594,8 +594,8 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                   <AreaChart data={performanceTrend}>
                     <defs>
                       <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -608,7 +608,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                             <div className="bg-white dark:bg-zinc-900 border-4 border-black dark:border-white/50 rounded-xl shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] p-3">
                               <p className="font-black">{payload[0].payload.fullName}</p>
                               <p className="text-sm font-medium text-muted-foreground">{payload[0].payload.date}</p>
-                              <p className="text-sm font-bold">Score: <span className="font-black text-primary">{payload[0].value}%</span></p>
+                              <p className="text-sm font-bold">Score: <span className="font-black text-[#8B5CF6]">{payload[0].value}%</span></p>
                             </div>
                           )
                         }
@@ -618,7 +618,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                     <Area 
                       type="monotone" 
                       dataKey="score" 
-                      stroke="hsl(var(--primary))" 
+                      stroke="#8B5CF6" 
                       fill="url(#scoreGradient)"
                       strokeWidth={2}
                     />
@@ -677,6 +677,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                   <YAxis yAxisId="left" tickLine={false} axisLine={false} fontSize={12} />
                   <YAxis yAxisId="right" orientation="right" tickLine={false} axisLine={false} fontSize={12} domain={[0, 100]} />
                   <Tooltip />
+                  <Legend />
                   <Bar yAxisId="left" dataKey="quizzes" fill="#8B5CF6" radius={[4, 4, 0, 0]} name="Quizzes" />
                   <Line yAxisId="right" type="monotone" dataKey="avgScore" stroke="#10B981" strokeWidth={2} name="Avg Score %" />
                 </BarChart>
@@ -1152,7 +1153,12 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                     <XAxis dataKey="range" tickLine={false} axisLine={false} fontSize={12} />
                     <YAxis tickLine={false} axisLine={false} fontSize={12} />
                     <Tooltip />
-                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Quizzes" />
+                    <Bar dataKey="count" radius={[4, 4, 0, 0]} name="Quizzes">
+                      {scoreDistribution.map((entry, index) => {
+                        const colors = ['#EF4444', '#F97316', '#EAB308', '#22C55E', '#10B981']
+                        return <Cell key={`cell-${index}`} fill={colors[index]} />
+                      })}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>

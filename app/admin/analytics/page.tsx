@@ -11,7 +11,7 @@ import { TrendingUp, Users, BookOpen, Clock, Target, Download, Filter, BarChart3
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from "recharts"
 import { useAuth } from "@/hooks/use-auth"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
@@ -754,7 +754,7 @@ export default function AdminAnalyticsPage() {
                     <XAxis dataKey="week" />
                     <YAxis domain={[0, 100]} />
                     <Tooltip />
-                    <Line type="monotone" dataKey="avgScore" stroke="hsl(var(--primary))" strokeWidth={2} />
+                    <Line type="monotone" dataKey="avgScore" stroke="#8B5CF6" strokeWidth={2} name="Average Score" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -775,7 +775,7 @@ export default function AdminAnalyticsPage() {
                     <XAxis dataKey="name" />
                     <YAxis domain={[0, 100]} />
                     <Tooltip />
-                    <Bar dataKey="avgScore" fill="hsl(var(--primary))" />
+                    <Bar dataKey="avgScore" fill="#3B82F6" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -797,7 +797,11 @@ export default function AdminAnalyticsPage() {
                   <XAxis dataKey="section" />
                   <YAxis domain={[0, 100]} />
                   <Tooltip />
-                  <Bar dataKey="average" fill="hsl(var(--primary))" />
+                  <Bar dataKey="average" radius={[4, 4, 0, 0]}>
+                    {sectionPerformanceData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
