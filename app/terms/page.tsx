@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { ArrowLeft, FileText, BookOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { Footer } from "@/components/layout/footer"
 
 export default function TermsPage() {
   return (
@@ -213,6 +214,8 @@ export default function TermsPage() {
           </div>
         </motion.div>
       </main>
+
+      <Footer />
     </div>
   )
 }
