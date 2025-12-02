@@ -114,7 +114,7 @@ export default function FullMockTestsPage() {
         <div className="flex flex-col gap-0">
           {/* Row 1: Hamburger space + Heading */}
           <div className="flex items-center">
-            <div className="w-12 shrink-0 md:hidden" /> {/* Hamburger spacer - matches hamburger button */}
+            <div className="w-14 shrink-0 md:hidden" /> {/* Spacer: 16px left + 48px button - 8px container px = 56px = w-14 */}
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Full Mock Tests</h1>
           </div>
           {/* Row 2: Back button + Subheading */}
@@ -123,7 +123,7 @@ export default function FullMockTestsPage() {
               <Button 
                 variant="outline" 
                 size="icon" 
-                className="h-10 w-10 shrink-0 border-2 border-black dark:border-white/65 shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_#000] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.75)] bg-yellow-300 dark:bg-yellow-400 hover:bg-yellow-400 dark:hover:bg-yellow-500 transition-all"
+                className="h-12 w-12 shrink-0 border-2 border-black dark:border-white/65 shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_#000] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.75)] bg-yellow-300 dark:bg-yellow-400 hover:bg-yellow-400 dark:hover:bg-yellow-500 transition-all"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
