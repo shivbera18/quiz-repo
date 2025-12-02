@@ -235,9 +235,9 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {/* Action Cards Grid - Equal sizes */}
+      {/* Action Cards Grid - 2 per row on desktop */}
       {!showFlashQuestions && (
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2">
           {/* Quick Practice */}
           <Card 
             variant="neobrutalist" 
