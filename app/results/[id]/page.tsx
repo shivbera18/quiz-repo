@@ -373,8 +373,8 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
           </div>
         </div>
 
-        {/* Negative Marking Info */}
-        {result.negativeMarking && (
+        {/* Negative Marking Info - Only show when quiz actually has negative marking enabled */}
+        {result.negativeMarking === true && result.negativeMarkValue && result.negativeMarkValue > 0 && (
           <Alert className="mb-6">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
@@ -448,32 +448,23 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div className="text-center p-3 bg-blue-100 dark:bg-blue-900/30 border-2 border-black dark:border-white rounded-lg">
                     <div className="text-2xl font-black">{analysis.accuracy}%</div>
-                    <p className="text-sm text-muted-foreground font-medium">Accuracy</p>
+                    <p className="text-xs text-muted-foreground font-medium">Accuracy</p>
                   </div>
                   <div className="text-center p-3 bg-green-100 dark:bg-green-900/30 border-2 border-black dark:border-white rounded-lg">
                     <div className="text-2xl font-black">{analysis.attemptRate}%</div>
-                    <p className="text-sm text-muted-foreground font-medium">Attempt Rate</p>
-                  </div>
-                  <div className="text-center p-3 bg-yellow-100 dark:bg-yellow-900/30 border-2 border-black dark:border-white rounded-lg">
-                    <div className="text-2xl font-black">{analysis.timePerQuestion}s</div>
-                    <p className="text-sm text-muted-foreground font-medium">Per Question</p>
-                  </div>
-                  <div className="text-center p-3 bg-purple-100 dark:bg-purple-900/30 border-2 border-black dark:border-white rounded-lg">
-                    <div className="text-2xl font-black">{analysis.timeEfficiency}</div>
-                    <p className="text-sm text-muted-foreground font-medium">Efficiency</p>
+                    <p className="text-xs text-muted-foreground font-medium">Attempt Rate</p>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  {analysis.insights.map((insight, index) => (
-                    <Alert key={index} variant={insight.type === "error" ? "destructive" : "default"} className="border-2 border-black dark:border-white">
-                      <AlertDescription className="font-medium">{insight.message}</AlertDescription>
-                    </Alert>
-                  ))}
-                </div>
+                {/* Show only the most important insight */}
+                {analysis.insights.length > 0 && (
+                  <Alert variant={analysis.insights[0].type === "error" ? "destructive" : "default"} className="border-2 border-black dark:border-white">
+                    <AlertDescription className="font-medium text-sm">{analysis.insights[0].message}</AlertDescription>
+                  </Alert>
+                )}
               </CardContent>
             </Card>
 
@@ -483,14 +474,14 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                 <CardTitle className="font-black">Answer Distribution</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-[200px]">
+                <div className="h-[180px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={analysis.answerDistribution}
                         cx="50%"
                         cy="50%"
-                        outerRadius={80}
+                        outerRadius={70}
                         dataKey="value"
                         label={({ name, value }) => `${name}: ${value}`}
                       >
