@@ -225,13 +225,13 @@ export function Sidebar() {
                                     (item.href !== '/dashboard' && item.href !== '/admin' && pathname.startsWith(item.href)) ||
                                     (item.href === '/admin' && pathname.startsWith('/admin'))
                                 return (
-                                    <Link key={item.href} href={item.href} onClick={() => setIsMobileOpen(false)} className="block mb-8">
+                                    <Link key={item.href} href={item.href} onClick={() => setIsMobileOpen(false)} className="block mb-5">
                                         <div
                                             className={cn(
                                                 "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-bold border-2 border-black dark:border-white/65 transition-all",
                                                 isActive 
-                                                    ? "bg-yellow-300 dark:bg-yellow-400 text-black shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)]" 
-                                                    : "bg-white dark:bg-zinc-800 hover:bg-blue-300 dark:hover:bg-blue-400 hover:shadow-[2px_2px_0px_0px_#000] dark:hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.75)]"
+                                                    ? "bg-yellow-300 dark:bg-yellow-400 text-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)]" 
+                                                    : "bg-white dark:bg-zinc-800 hover:bg-blue-300 dark:hover:bg-blue-400 hover:shadow-[4px_4px_0px_0px_#000] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.75)]"
                                             )}
                                         >
                                             <item.icon className={cn("h-5 w-5")} />
