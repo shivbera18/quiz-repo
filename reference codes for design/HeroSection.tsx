@@ -118,7 +118,7 @@ export default function HeroSection() {
             <Link href="/notes">
               <Button
                 size="lg"
-                className="gap-4 border-2 border-black bg-white text-black shadow-[4px_4px_0px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:text-white hover:shadow-[2px_2px_0px_0px_#000] dark:border-white/60 dark:bg-zinc-900 dark:text-white dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.55)] dark:hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)]"
+                className="gap-4 border-2 border-black bg-white text-black shadow-[4px_4px_0px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:text-white hover:shadow-[2px_2px_0px_0px_#000] dark:border-white/65 dark:bg-zinc-900 dark:text-white dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.6)] dark:hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.7)]"
               >
                 Visit Notes <BookOpenIcon weight="duotone" className="size-4" />
               </Button>
@@ -126,7 +126,7 @@ export default function HeroSection() {
             <Link href="/premium">
               <Button
                 size="lg"
-                className="gap-4 border-2 border-black bg-black text-white shadow-[4px_4px_0px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:bg-white hover:text-black hover:shadow-[2px_2px_0px_0px_#000] dark:border-white/60 dark:bg-white dark:text-black dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.55)] dark:hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)]"
+                className="gap-4 border-2 border-black bg-black text-white shadow-[4px_4px_0px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:bg-white hover:text-black hover:shadow-[2px_2px_0px_0px_#000] dark:border-white/65 dark:bg-white dark:text-black dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.6)] dark:hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.7)]"
               >
                 Purchase Premium{" "}
                 <StarIcon weight="duotone" className="size-4" />

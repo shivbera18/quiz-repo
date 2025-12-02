@@ -525,7 +525,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                     setSearchQuery("")
                     setSelectedTags([])
                   }}
-                  className="border-2 border-black dark:border-white/60 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.6)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.7)] transition-all"
+                  className="border-2 border-black dark:border-white/65 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.75)] transition-all"
                 >
                   Clear Filters
                 </Button>
@@ -556,7 +556,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle className="font-bold">{editingQuestion ? "Edit Question" : "Add New Question"}</CardTitle>
-                <Button variant="ghost" size="icon" onClick={resetForm} className="border-2 border-black dark:border-white/60">
+                <Button variant="ghost" size="icon" onClick={resetForm} className="border-2 border-black dark:border-white/65">
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -692,7 +692,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                   <Save className="h-4 w-4 mr-2" />
                   {editingQuestion ? "Update Question" : "Create Question"}
                 </Button>
-                <Button variant="outline" onClick={resetForm} className="border-2 border-black dark:border-white/60 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.6)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.7)] transition-all">
+                <Button variant="outline" onClick={resetForm} className="border-2 border-black dark:border-white/65 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.75)] transition-all">
                   Cancel
                 </Button>
               </div>
@@ -752,7 +752,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                           size="icon" 
                           onClick={() => handleEditQuestion(question)}
                           title="Edit Question"
-                          className="border-2 border-black dark:border-white/60"
+                          className="border-2 border-black dark:border-white/65"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -761,7 +761,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                           size="icon" 
                           onClick={() => handleDeleteQuestion(question.id)}
                           title="Delete Question"
-                          className="border-2 border-black dark:border-white/60 text-red-500"
+                          className="border-2 border-black dark:border-white/65 text-red-500"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -774,7 +774,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                         {question.options.map((option, optIndex) => (
                           <div 
                             key={optIndex} 
-                            className={`p-2 rounded-lg border-2 border-black dark:border-white/60 ${
+                            className={`p-2 rounded-lg border-2 border-black dark:border-white/65 ${
                               optIndex === question.correctAnswer 
                                 ? 'bg-green-400' 
                                 : 'bg-card'
@@ -818,7 +818,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                     variant="outline"
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className="border-2 border-black dark:border-white/60 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.6)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.7)] transition-all disabled:opacity-50"
+                    className="border-2 border-black dark:border-white/65 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.75)] transition-all disabled:opacity-50"
                   >
                     Previous
                   </Button>
@@ -842,7 +842,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                           variant={currentPage === pageNum ? "neobrutalist" : "outline"}
                           size="icon"
                           onClick={() => setCurrentPage(pageNum)}
-                          className={currentPage !== pageNum ? "border-2 border-black dark:border-white/60 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.6)]" : ""}
+                          className={currentPage !== pageNum ? "border-2 border-black dark:border-white/65 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)]" : ""}
                         >
                           {pageNum}
                         </Button>
@@ -854,7 +854,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
                     variant="outline"
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
-                    className="border-2 border-black dark:border-white/60 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.6)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.7)] transition-all disabled:opacity-50"
+                    className="border-2 border-black dark:border-white/65 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.75)] transition-all disabled:opacity-50"
                   >
                     Next
                   </Button>

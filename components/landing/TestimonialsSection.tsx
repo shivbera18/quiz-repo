@@ -41,7 +41,7 @@ function TestimonialCard({
             whileInView="visible"
             viewport={{ once: true, amount: 0.3 }}
         >
-            <div className="relative rounded-md border-4 border-black bg-card p-8 shadow-[8px_8px_0px_0px_#000] transition-all duration-300 hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:border-white/60 dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.6)] dark:hover:shadow-[12px_12px_0px_0px_rgba(255,255,255,0.7)]">
+            <div className="relative rounded-md border-4 border-black bg-card p-8 shadow-[8px_8px_0px_0px_#000] transition-all duration-300 hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:border-white/65 dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.65)] dark:hover:shadow-[12px_12px_0px_0px_rgba(255,255,255,0.75)]">
                 <div className="relative z-10">
                     {/* Quote Icon */}
                     <div className="mb-4">
@@ -70,7 +70,7 @@ function TestimonialCard({
 
                     {/* Author */}
                     <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-md border-4 border-black dark:border-white/60 bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                        <div className="h-12 w-12 rounded-md border-4 border-black dark:border-white/65 bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white font-bold text-lg">
                             {initial}
                         </div>
                         <div>

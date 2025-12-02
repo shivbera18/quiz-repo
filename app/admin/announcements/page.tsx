@@ -548,7 +548,7 @@ export default function AdminAnnouncementsPage() {
                     return (
                       <div
                         key={announcement.id}
-                        className={`p-3 sm:p-4 border-2 border-black dark:border-white/60 rounded-lg shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.6)] ${!announcement.isActive ? 'opacity-60 bg-muted/50' : 'bg-card'}`}
+                        className={`p-3 sm:p-4 border-2 border-black dark:border-white/65 rounded-lg shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)] ${!announcement.isActive ? 'opacity-60 bg-muted/50' : 'bg-card'}`}
                       >
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
                           <div className="flex gap-3 flex-1 min-w-0">

@@ -77,11 +77,11 @@ export function QuizList({ quizzes, emptyMessage = "No quizzes found." }: QuizLi
 
                             <CardContent className="flex-grow pb-3">
                                 <div className="flex items-center gap-4 text-sm mb-4">
-                                    <div className="flex items-center gap-1.5 bg-green-200 dark:bg-green-400/30 px-2 py-1 rounded-lg border-2 border-black dark:border-white/60">
+                                    <div className="flex items-center gap-1.5 bg-green-200 dark:bg-green-400/30 px-2 py-1 rounded-lg border-2 border-black dark:border-white/65">
                                         <Clock className="h-3.5 w-3.5" />
                                         <span className="text-xs font-bold">{quiz.duration}m</span>
                                     </div>
-                                    <div className="flex items-center gap-1.5 bg-purple-200 dark:bg-purple-400/30 px-2 py-1 rounded-lg border-2 border-black dark:border-white/60">
+                                    <div className="flex items-center gap-1.5 bg-purple-200 dark:bg-purple-400/30 px-2 py-1 rounded-lg border-2 border-black dark:border-white/65">
                                         <BookOpen className="h-3.5 w-3.5" />
                                         <span className="text-xs font-bold">{quiz.questions.length} Qs</span>
                                     </div>
@@ -89,19 +89,19 @@ export function QuizList({ quizzes, emptyMessage = "No quizzes found." }: QuizLi
 
                                 <div className="flex flex-wrap gap-1.5">
                                     {quiz.sections.slice(0, 3).map((section) => (
-                                        <Badge key={section} variant="outline" className="text-xs font-bold px-2 py-0.5 border-2 border-black dark:border-white/60 bg-white dark:bg-zinc-800">
+                                        <Badge key={section} variant="outline" className="text-xs font-bold px-2 py-0.5 border-2 border-black dark:border-white/65 bg-white dark:bg-zinc-800">
                                             {section}
                                         </Badge>
                                     ))}
                                     {quiz.sections.length > 3 && (
-                                        <Badge variant="outline" className="text-xs font-bold px-2 py-0.5 border-2 border-black dark:border-white/60 bg-white dark:bg-zinc-800">
+                                        <Badge variant="outline" className="text-xs font-bold px-2 py-0.5 border-2 border-black dark:border-white/65 bg-white dark:bg-zinc-800">
                                             +{quiz.sections.length - 3}
                                         </Badge>
                                     )}
                                 </div>
                             </CardContent>
 
-                            <CardFooter className="pt-3 border-t-4 border-black dark:border-white/60 bg-orange-100 dark:bg-orange-400/20 rounded-b-xl">
+                            <CardFooter className="pt-3 border-t-4 border-black dark:border-white/65 bg-orange-100 dark:bg-orange-400/20 rounded-b-xl">
                                 <Button variant="neobrutalistInverted" className="w-full text-sm font-bold">
                                     Start Quiz
                                     <ArrowRight className="ml-2 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />

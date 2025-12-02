@@ -1,21 +1,21 @@
 const fs = require('fs');
 const path = require('path');
 
-// Make shadows 10% brighter and sync borders
+// Make shadows 5% brighter
 const replacements = [
-  // SHADOWS - Increase by ~10% (0.5 -> 0.6, etc)
-  // Normal shadows: 0.5 -> 0.6
-  { from: /dark:shadow-\[(\d+)px_(\d+)px_0px_0px_rgba\(255,255,255,0\.5\)\]/g, to: 'dark:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.6)]' },
-  // Hover shadows: 0.6 -> 0.7
-  { from: /dark:hover:shadow-\[(\d+)px_(\d+)px_0px_0px_rgba\(255,255,255,0\.6\)\]/g, to: 'dark:hover:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.7)]' },
-  // Softer shadows: 0.45 -> 0.55
-  { from: /dark:shadow-\[(\d+)px_(\d+)px_0px_0px_rgba\(255,255,255,0\.45\)\]/g, to: 'dark:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.55)]' },
-  { from: /dark:hover:shadow-\[(\d+)px_(\d+)px_0px_0px_rgba\(255,255,255,0\.55\)\]/g, to: 'dark:hover:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.65)]' },
-  // Sidebar edge shadow: 0.4 -> 0.5
-  { from: /dark:shadow-\[8px_0px_0px_0px_rgba\(255,255,255,0\.4\)\]/g, to: 'dark:shadow-[8px_0px_0px_0px_rgba(255,255,255,0.6)]' },
+  // SHADOWS - Increase by ~5% (0.6 -> 0.65, etc)
+  // Normal shadows: 0.6 -> 0.65
+  { from: /dark:shadow-\[(\d+)px_(\d+)px_0px_0px_rgba\(255,255,255,0\.6\)\]/g, to: 'dark:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.65)]' },
+  // Hover shadows: 0.7 -> 0.75
+  { from: /dark:hover:shadow-\[(\d+)px_(\d+)px_0px_0px_rgba\(255,255,255,0\.7\)\]/g, to: 'dark:hover:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.75)]' },
+  // Softer shadows: 0.55 -> 0.6
+  { from: /dark:shadow-\[(\d+)px_(\d+)px_0px_0px_rgba\(255,255,255,0\.55\)\]/g, to: 'dark:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.6)]' },
+  { from: /dark:hover:shadow-\[(\d+)px_(\d+)px_0px_0px_rgba\(255,255,255,0\.65\)\]/g, to: 'dark:hover:shadow-[$1px_$2px_0px_0px_rgba(255,255,255,0.7)]' },
+  // Sidebar edge shadow: 0.6 -> 0.65
+  { from: /dark:shadow-\[8px_0px_0px_0px_rgba\(255,255,255,0\.6\)\]/g, to: 'dark:shadow-[8px_0px_0px_0px_rgba(255,255,255,0.65)]' },
   
-  // BORDERS - Sync with shadows (50% -> 60%)
-  { from: /dark:border-white\/50/g, to: 'dark:border-white/60' },
+  // BORDERS - Sync with shadows (60% -> 65%)
+  { from: /dark:border-white\/60/g, to: 'dark:border-white/65' },
 ];
 
 const extensions = ['.tsx', '.jsx', '.ts', '.js', '.css'];

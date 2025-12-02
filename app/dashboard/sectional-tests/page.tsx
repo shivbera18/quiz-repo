@@ -105,7 +105,7 @@ export default function SectionalTestsPage() {
             <Button 
               variant="outline" 
               size="icon" 
-              className="rounded-lg h-11 w-11 border-2 border-black dark:border-white/60 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.6)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.7)] bg-white dark:bg-zinc-900 transition-all"
+              className="rounded-lg h-11 w-11 border-2 border-black dark:border-white/65 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.75)] bg-white dark:bg-zinc-900 transition-all"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>

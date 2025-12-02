@@ -976,7 +976,7 @@ export default function AdminPage() {
                 <CardContent>
                   <div className="space-y-3">
                     {analytics.recentActivity.map((activity: any, index: number) => (
-                      <div key={index} className="flex justify-between items-center p-3 border-2 border-black dark:border-white/60 rounded-lg bg-card shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.6)]">
+                      <div key={index} className="flex justify-between items-center p-3 border-2 border-black dark:border-white/65 rounded-lg bg-card shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)]">
                         <div>
                           <div className="font-bold">{activity.quizName || 'Unknown Quiz'}</div>
                           <div className="text-sm text-muted-foreground font-medium">
