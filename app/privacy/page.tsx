@@ -181,17 +181,17 @@ export default function PrivacyPage() {
       </main>
 
       {/* Simple Footer */}
-      <footer className="bg-foreground text-background mt-20 w-full">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <footer className="bg-yellow-400 border-t-4 border-foreground w-full">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-background/70 text-sm">
+            <p className="text-foreground/70 text-sm font-medium">
               © {new Date().getFullYear()} Quizzy. All rights reserved.
             </p>
             <div className="flex items-center gap-6">
-              <Link href="/terms" className="text-background/70 hover:text-background text-sm">
+              <Link href="/terms" className="text-foreground/70 hover:text-foreground text-sm font-bold transition-colors">
                 Terms of Service
               </Link>
-              <Link href="/privacy" className="text-background hover:text-background text-sm font-bold">
+              <Link href="/privacy" className="text-foreground hover:text-foreground text-sm font-black">
                 Privacy Policy
               </Link>
             </div>
