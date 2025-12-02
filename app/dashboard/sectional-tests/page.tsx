@@ -98,8 +98,8 @@ export default function SectionalTestsPage() {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8 pt-14 md:pt-0">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 sm:space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 ml-14 md:ml-0 pt-1 md:pt-0">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Sectional Tests</h1>
           <p className="text-sm text-muted-foreground mt-1 font-medium">Focused practice on specific topics</p>

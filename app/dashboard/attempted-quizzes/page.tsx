@@ -80,9 +80,9 @@ export default function AttemptedQuizzesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 pt-14 pb-4 md:pt-4 md:py-8">
+      <div className="container mx-auto px-4 pt-4 pb-4 md:py-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 mb-8 ml-14 md:ml-0">
           <div>
             <h1 className="text-2xl sm:text-3xl font-black">Attempted Quizzes</h1>
             <p className="text-sm text-muted-foreground font-medium">Review your quiz history and performance</p>
