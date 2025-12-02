@@ -66,7 +66,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
                 <div className="container mx-auto px-2 py-2 sm:p-6 md:p-8 flex-1">
                     {children}
                 </div>
-                <Footer />
+                {isMainDashboard && <Footer />}
             </main>
         </>
     )

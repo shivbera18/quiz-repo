@@ -285,7 +285,7 @@ export function TopHeader() {
       {/* Desktop Header - Hidden on Mobile - No Blur */}
       <div 
         className={cn(
-          "hidden md:flex items-center justify-end gap-3 px-4 py-3 bg-background border-b-2 border-black dark:border-white/65 sticky top-0 z-30 transition-all duration-300",
+          "hidden md:flex items-center justify-end gap-3 px-4 py-3 bg-background border-b-2 border-black dark:border-white/65 sticky top-0 z-20 transition-all duration-300",
           !isVisible && "-translate-y-full opacity-0"
         )}
       >

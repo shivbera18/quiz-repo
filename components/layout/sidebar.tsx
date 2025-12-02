@@ -112,7 +112,7 @@ export function Sidebar() {
             {/* Desktop Sidebar - Neo Brutalism Design */}
             <aside
                 className={cn(
-                    "fixed top-4 left-4 z-40 border-4 border-black rounded-lg bg-white dark:bg-zinc-900 dark:border-white/65 shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.65)] hidden md:flex flex-col",
+                    "fixed top-4 left-4 z-40 border-4 border-black rounded-lg bg-white dark:bg-zinc-900 dark:border-white/65 shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_#a1a1aa] hidden md:flex flex-col",
                     isCollapsed ? "w-20" : "w-[280px]",
                     !isHydrated && "invisible"
                 )}
