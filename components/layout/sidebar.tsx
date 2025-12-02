@@ -219,7 +219,7 @@ export function Sidebar() {
                             </Button>
                         </div>
 
-                        <nav className="flex-1 space-y-10 px-5 py-6 overflow-y-auto">
+                        <nav className="flex-1 space-y-12 px-5 py-8 overflow-y-auto">
                             {sidebarItems.map((item) => {
                                 const isActive = pathname === item.href ||
                                     (item.href !== '/dashboard' && item.href !== '/admin' && pathname.startsWith(item.href)) ||
