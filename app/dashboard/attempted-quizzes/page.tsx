@@ -143,7 +143,7 @@ export default function AttemptedQuizzesPage() {
                   <div>
                     <p className="text-xs text-muted-foreground font-bold">Average Score</p>
                     <p className="text-xl font-black">
-                      {(allAttempts.reduce((sum, a) => sum + a.totalScore, 0) / allAttempts.length).toFixed(2)}%
+                      {(allAttempts.reduce((sum, a) => sum + (a.rawScore ?? (a.correctAnswers - a.wrongAnswers * 0.25)), 0) / allAttempts.length).toFixed(1)}
                     </p>
                   </div>
                 </div>
@@ -157,7 +157,7 @@ export default function AttemptedQuizzesPage() {
                   <div>
                     <p className="text-xs text-muted-foreground font-bold">Best Score</p>
                     <p className="text-xl font-black">
-                      {Math.max(...allAttempts.map(a => a.totalScore))}%
+                      {Math.max(...allAttempts.map(a => a.rawScore ?? (a.correctAnswers - a.wrongAnswers * 0.25))).toFixed(1)}
                     </p>
                   </div>
                 </div>
@@ -188,6 +188,11 @@ export default function AttemptedQuizzesPage() {
                   const scoreBg = attempt.totalScore >= 80 ? 'bg-green-400' : 
                                   attempt.totalScore >= 60 ? 'bg-yellow-400' : 'bg-red-400'
                   
+                  // Calculate actual marks from rawScore or estimate from correct/wrong
+                  const actualMarks = attempt.rawScore ?? (attempt.correctAnswers - (attempt.wrongAnswers * 0.25))
+                  const totalQuestions = attempt.correctAnswers + attempt.wrongAnswers + attempt.unanswered
+                  const maxMarks = totalQuestions // Assuming 1 mark per question
+                  
                   return (
                     <div 
                       key={attempt._id} 
@@ -202,9 +207,9 @@ export default function AttemptedQuizzesPage() {
                             scoreBg
                           )}>
                             <span className={cn("text-lg font-black", scoreColor)}>
-                              {attempt.totalScore.toFixed(2)}
+                              {actualMarks.toFixed(1)}
                             </span>
-                            <span className={cn("text-[10px] font-bold", scoreColor)}>%</span>
+                            <span className={cn("text-[10px] font-bold", scoreColor)}>/{maxMarks}</span>
                           </div>
                           
                           {/* Quiz Details */}
