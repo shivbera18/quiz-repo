@@ -83,9 +83,20 @@ export default function AttemptedQuizzesPage() {
       <div className="container mx-auto px-4 pt-4 pb-4 md:py-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 mb-8 ml-14 md:ml-0">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black">Attempted Quizzes</h1>
-            <p className="text-sm text-muted-foreground font-medium">Review your quiz history and performance</p>
+          <div className="flex items-center gap-3">
+            <Link href="/dashboard">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-9 w-9 shrink-0 border-2 border-black dark:border-white/65 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.75)] bg-yellow-300 dark:bg-yellow-400 hover:bg-yellow-400 dark:hover:bg-yellow-500 transition-all"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-black">Attempted Quizzes</h1>
+              <p className="text-sm text-muted-foreground font-medium">Review your quiz history and performance</p>
+            </div>
           </div>
           <Link href="/history">
             <Button variant="neobrutalist" size="sm" className="gap-2">

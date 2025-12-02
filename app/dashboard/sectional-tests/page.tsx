@@ -100,9 +100,20 @@ export default function SectionalTestsPage() {
   return (
     <div className="space-y-6 sm:space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 ml-14 md:ml-0 pt-1 md:pt-0">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Sectional Tests</h1>
-          <p className="text-sm text-muted-foreground mt-1 font-medium">Focused practice on specific topics</p>
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="h-9 w-9 shrink-0 border-2 border-black dark:border-white/65 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.75)] bg-yellow-300 dark:bg-yellow-400 hover:bg-yellow-400 dark:hover:bg-yellow-500 transition-all"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Sectional Tests</h1>
+            <p className="text-sm text-muted-foreground mt-1 font-medium">Focused practice on specific topics</p>
+          </div>
         </div>
         <QuizFilters
           activeFilters={activeFilters}
