@@ -639,22 +639,19 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                           <th className="text-left py-2 px-3 font-black">Q#</th>
                           <th className="text-left py-2 px-3 font-black">Time</th>
                           <th className="text-left py-2 px-3 font-black">Status</th>
-                          <th className="text-left py-2 px-3 font-black">vs Avg</th>
                           <th className="text-left py-2 px-3 font-black hidden sm:table-cell">Section</th>
                         </tr>
                       </thead>
                       <tbody>
                         {result.questions.map((q: QuestionResult, idx: number) => {
                           const timeSpent = q.timeSpent || 0
-                          const timeDiff = timeSpent - avgTime
-                          const timeDiffPercent = avgTime > 0 ? Math.round((timeDiff / avgTime) * 100) : 0
                           const isUnanswered = q.selectedAnswer === -1
                           
                           return (
                             <tr key={idx} className="border-b border-black/20 dark:border-white/20 last:border-0">
                               <td className="py-2 px-3 font-mono font-bold">{idx + 1}</td>
                               <td className="py-2 px-3">
-                                <span className={`font-bold ${timeSpent > avgTime * 1.5 ? 'text-orange-500' : timeSpent < avgTime * 0.5 && timeSpent > 0 ? 'text-blue-500' : ''}`}>
+                                <span className="font-bold">
                                   {timeSpent > 0 ? formatTime(timeSpent) : '-'}
                                 </span>
                               </td>
@@ -665,17 +662,6 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                                   <Badge variant="default" className="text-xs bg-green-500 border-2 border-black font-bold">✓ Correct</Badge>
                                 ) : (
                                   <Badge variant="destructive" className="text-xs border-2 border-black font-bold">✗ Wrong</Badge>
-                                )}
-                              </td>
-                              <td className="py-2 px-3">
-                                {timeSpent > 0 ? (
-                                  timeDiff > 0 ? (
-                                    <span className="text-orange-500 text-xs font-bold">+{formatTime(Math.abs(timeDiff))} ({timeDiffPercent > 0 ? '+' : ''}{timeDiffPercent}%)</span>
-                                  ) : (
-                                    <span className="text-blue-500 text-xs font-bold">-{formatTime(Math.abs(timeDiff))} ({timeDiffPercent}%)</span>
-                                  )
-                                ) : (
-                                  <span className="text-muted-foreground text-xs font-medium">-</span>
                                 )}
                               </td>
                               <td className="py-2 px-3 hidden sm:table-cell">

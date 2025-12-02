@@ -10,7 +10,7 @@ export default function TermsPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b-4 border-foreground dark:border-foreground/30">
+      <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-sm border-b-4 border-foreground dark:border-foreground/30">
         <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <Link href="/" className="flex items-center gap-2 group">

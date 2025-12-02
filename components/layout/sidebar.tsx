@@ -144,7 +144,7 @@ export function Sidebar() {
 
                 {/* Nav Items */}
                 <nav className={cn(
-                    "flex-1 space-y-3 py-6 overflow-hidden flex flex-col",
+                    "flex-1 space-y-4 py-6 overflow-hidden flex flex-col",
                     isCollapsed ? "items-center px-0" : "items-stretch px-4"
                 )}>
                     {sidebarItems.map((item) => {
@@ -219,7 +219,7 @@ export function Sidebar() {
                             </Button>
                         </div>
 
-                        <nav className="flex-1 space-y-3 px-4 py-6 overflow-y-auto">
+                        <nav className="flex-1 space-y-4 px-4 py-6 overflow-y-auto">
                             {sidebarItems.map((item) => {
                                 const isActive = pathname === item.href ||
                                     (item.href !== '/dashboard' && item.href !== '/admin' && pathname.startsWith(item.href)) ||
