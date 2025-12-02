@@ -107,7 +107,7 @@ export default function FullMockTestsPage() {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-4 sm:space-y-6">
       {/* Mobile & Desktop Header with Filters action */}
       <MobilePageHeader 
         title="Full Mock Tests" 

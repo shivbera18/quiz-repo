@@ -37,7 +37,7 @@ export function MobilePageHeader({ title, subtitle, backHref = "/dashboard", act
   const mobileActionElement = mobileAction || action
 
   return (
-    <>
+    <div>
       {/* Mobile Header - slides up on scroll */}
       <motion.div
         className="fixed top-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-sm"
@@ -82,10 +82,11 @@ export function MobilePageHeader({ title, subtitle, backHref = "/dashboard", act
       </motion.div>
 
       {/* Spacer for mobile to prevent content from going under fixed header */}
-      <div className="h-[100px] md:hidden" />
+      {/* Header: pt-4(16) + row1(40) + mt-2(8) + row2(40) + pb-3(12) + shadow(4) = 120px */}
+      <div className="h-[112px] md:hidden" />
 
       {/* Desktop Header - static, with back button and action */}
-      <div className="hidden md:flex items-center justify-between gap-4 mb-6">
+      <div className="hidden md:flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link href={backHref}>
             <Button 
@@ -104,6 +105,6 @@ export function MobilePageHeader({ title, subtitle, backHref = "/dashboard", act
         {/* Desktop action - full button */}
         {action && <div className="shrink-0">{action}</div>}
       </div>
-    </>
+    </div>
   )
 }
