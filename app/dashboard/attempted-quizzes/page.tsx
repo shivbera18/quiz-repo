@@ -143,7 +143,7 @@ export default function AttemptedQuizzesPage() {
                   <div>
                     <p className="text-xs text-muted-foreground font-bold">Average Score</p>
                     <p className="text-xl font-black">
-                      {(allAttempts.reduce((sum, a) => sum + (a.rawScore ?? (a.correctAnswers - a.wrongAnswers * 0.25)), 0) / allAttempts.length).toFixed(1)}
+                      {(allAttempts.reduce((sum, a) => sum + a.totalScore, 0) / allAttempts.length).toFixed(0)}%
                     </p>
                   </div>
                 </div>
@@ -157,7 +157,7 @@ export default function AttemptedQuizzesPage() {
                   <div>
                     <p className="text-xs text-muted-foreground font-bold">Best Score</p>
                     <p className="text-xl font-black">
-                      {Math.max(...allAttempts.map(a => a.rawScore ?? (a.correctAnswers - a.wrongAnswers * 0.25))).toFixed(1)}
+                      {Math.max(...allAttempts.map(a => a.totalScore)).toFixed(0)}%
                     </p>
                   </div>
                 </div>
@@ -183,15 +183,8 @@ export default function AttemptedQuizzesPage() {
               <h2 className="text-lg font-black mb-4">All Attempts</h2>
               <div className="space-y-3">
                 {allAttempts.map((attempt) => {
-                  const scoreColor = attempt.totalScore >= 80 ? 'text-green-600' : 
-                                     attempt.totalScore >= 60 ? 'text-yellow-600' : 'text-red-600'
                   const scoreBg = attempt.totalScore >= 80 ? 'bg-green-400' : 
-                                  attempt.totalScore >= 60 ? 'bg-yellow-400' : 'bg-red-400'
-                  
-                  // Calculate actual marks from rawScore or estimate from correct/wrong
-                  const actualMarks = attempt.rawScore ?? (attempt.correctAnswers - (attempt.wrongAnswers * 0.25))
-                  const totalQuestions = attempt.correctAnswers + attempt.wrongAnswers + attempt.unanswered
-                  const maxMarks = totalQuestions // Assuming 1 mark per question
+                                  attempt.totalScore >= 60 ? 'bg-yellow-400' : 'bg-orange-400'
                   
                   return (
                     <div 
@@ -203,13 +196,12 @@ export default function AttemptedQuizzesPage() {
                         <div className="flex items-start gap-4 min-w-0 flex-1">
                           {/* Score Circle */}
                           <div className={cn(
-                            "w-14 h-14 rounded-xl flex flex-col items-center justify-center shrink-0 border-2 border-black",
+                            "w-14 h-14 rounded-xl flex items-center justify-center shrink-0 border-2 border-black",
                             scoreBg
                           )}>
-                            <span className={cn("text-lg font-black", scoreColor)}>
-                              {actualMarks.toFixed(1)}
+                            <span className="text-base font-black text-black">
+                              {Math.round(attempt.totalScore)}%
                             </span>
-                            <span className={cn("text-[10px] font-bold", scoreColor)}>/{maxMarks}</span>
                           </div>
                           
                           {/* Quiz Details */}
