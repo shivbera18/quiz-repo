@@ -2,15 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
-import { Zap } from "lucide-react";
+import { Zap, Moon, Sun } from "lucide-react";
 import Link from "next/link";
 
 export default function LandingHeader() {
     const router = useRouter();
+    const { theme, setTheme } = useTheme();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [scrolled, setScrolled] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -74,7 +81,22 @@ export default function LandingHeader() {
                         </Link>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                        {/* Theme Toggle */}
+                        {mounted && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                                className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                            >
+                                {theme === "dark" ? (
+                                    <Sun className="h-4 w-4" />
+                                ) : (
+                                    <Moon className="h-4 w-4" />
+                                )}
+                            </Button>
+                        )}
                         {!isLoading && (
                             <>
                                 {isLoggedIn ? (
