@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 const plans = [
@@ -15,14 +15,14 @@ const plans = [
             "50 Practice Questions/day",
             "Basic Analytics",
             "2 Mock Tests/month",
-            "Mobile App Access",
+            "Mobile Access",
         ],
         buttonText: "Get Started",
         popular: false,
     },
     {
         name: "Pro",
-        description: "Most popular for serious aspirants",
+        description: "For serious aspirants",
         price: "₹299",
         period: "per month",
         features: [
@@ -38,7 +38,7 @@ const plans = [
     },
     {
         name: "Premium",
-        description: "For those who want it all",
+        description: "Everything you need",
         price: "₹599",
         period: "per month",
         features: [
@@ -56,19 +56,26 @@ const plans = [
 
 export default function PricingSection() {
     return (
-        <section id="pricing" className="py-24 sm:py-32 relative">
-            <div className="container mx-auto px-4">
+        <section id="pricing" className="py-32 relative overflow-hidden">
+            {/* Background */}
+            <div className="absolute inset-0 linear-bg opacity-30" />
+
+            <div className="container mx-auto px-4 relative z-10">
                 {/* Section header */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.5 }}
-                    className="text-center mb-16"
+                    transition={{ duration: 0.6 }}
+                    className="text-center mb-20"
                 >
-                    <p className="text-sm font-medium text-primary mb-4">Pricing</p>
-                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight mb-4">
-                        Simple, transparent pricing
+                    <p className="text-sm font-medium text-primary mb-4 tracking-wide uppercase">
+                        Pricing
+                    </p>
+                    <h2 className="text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight mb-6">
+                        Simple, transparent
+                        <br />
+                        <span className="text-muted-foreground">pricing</span>
                     </h2>
                     <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                         Choose the plan that fits your preparation needs. Upgrade or downgrade anytime.
@@ -84,48 +91,55 @@ export default function PricingSection() {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.5, delay: index * 0.1 }}
-                            className={`relative p-6 rounded-xl border transition-all duration-300 ${
-                                plan.popular
-                                    ? "bg-card border-primary/50 glow-purple-sm"
-                                    : "bg-card/50 border-border/50 hover:border-border"
-                            }`}
+                            className={`relative ${plan.popular ? 'md:-mt-4 md:mb-4' : ''}`}
                         >
                             {plan.popular && (
-                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-primary text-primary-foreground text-xs font-medium rounded-full">
-                                    Most Popular
+                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+                                    <div className="flex items-center gap-1.5 px-4 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-full shadow-lg glow-sm">
+                                        <Sparkles className="h-3 w-3" />
+                                        Most Popular
+                                    </div>
                                 </div>
                             )}
 
-                            <div className="mb-6">
-                                <h3 className="text-lg font-medium mb-1">{plan.name}</h3>
-                                <p className="text-sm text-muted-foreground">{plan.description}</p>
+                            <div className={`relative p-8 rounded-2xl border transition-all duration-500 card-hover backdrop-blur-sm h-full flex flex-col ${
+                                plan.popular
+                                    ? "bg-card border-primary/30 glow"
+                                    : "bg-card/50 border-border/50 hover:border-border"
+                            }`}>
+                                <div className="mb-8">
+                                    <h3 className="text-xl font-medium mb-2">{plan.name}</h3>
+                                    <p className="text-sm text-muted-foreground">{plan.description}</p>
+                                </div>
+
+                                <div className="mb-8">
+                                    <span className="text-5xl font-semibold">{plan.price}</span>
+                                    <span className="text-muted-foreground ml-2">/{plan.period}</span>
+                                </div>
+
+                                <ul className="space-y-4 mb-8 flex-1">
+                                    {plan.features.map((feature) => (
+                                        <li key={feature} className="flex items-start gap-3">
+                                            <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                <Check className="h-3 w-3 text-primary" />
+                                            </div>
+                                            <span className="text-muted-foreground text-sm">{feature}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+
+                                <Link href="/auth/login" className="block">
+                                    <Button
+                                        className={`w-full rounded-xl h-12 font-medium ${
+                                            plan.popular
+                                                ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                                                : "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+                                        }`}
+                                    >
+                                        {plan.buttonText}
+                                    </Button>
+                                </Link>
                             </div>
-
-                            <div className="mb-6">
-                                <span className="text-4xl font-semibold">{plan.price}</span>
-                                <span className="text-muted-foreground ml-2">/{plan.period}</span>
-                            </div>
-
-                            <ul className="space-y-3 mb-8">
-                                {plan.features.map((feature) => (
-                                    <li key={feature} className="flex items-center gap-3 text-sm">
-                                        <Check className="h-4 w-4 text-primary flex-shrink-0" />
-                                        <span className="text-muted-foreground">{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-
-                            <Link href="/auth/login" className="block">
-                                <Button
-                                    className={`w-full rounded-lg ${
-                                        plan.popular
-                                            ? "bg-primary hover:bg-primary/90 text-primary-foreground"
-                                            : "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
-                                    }`}
-                                >
-                                    {plan.buttonText}
-                                </Button>
-                            </Link>
                         </motion.div>
                     ))}
                 </div>
@@ -136,7 +150,7 @@ export default function PricingSection() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5, delay: 0.4 }}
-                    className="text-center text-sm text-muted-foreground mt-12"
+                    className="text-center text-sm text-muted-foreground mt-16"
                 >
                     🛡️ 7-day money-back guarantee on all paid plans. No questions asked.
                 </motion.p>
