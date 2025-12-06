@@ -4,93 +4,76 @@
 
 @layer base {
   :root {
-    /* Light Mode */
-    --background: 0 0% 98%;
-    /* #FAFAFA */
-    --foreground: 0 0% 7%;
-    /* #111111 */
+    /* Linear-inspired Light Mode */
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
-    /* #FFFFFF */
-    --card-foreground: 0 0% 7%;
-    /* #111111 */
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    /* #FFFFFF */
-    --popover-foreground: 0 0% 7%;
-    /* #111111 */
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 239 84% 67%;
-    /* #6366F1 Indigo */
+    --primary: 258 90% 66%;
+    /* Linear purple #8B5CF6 */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 95%;
-    /* #F2F2F2 Muted */
-    --secondary-foreground: 0 0% 7%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 0 0% 95%;
-    /* #F2F2F2 */
-    --muted-foreground: 0 0% 45%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
 
-    --accent: 0 0% 95%;
-    /* #F2F2F2 */
-    --accent-foreground: 0 0% 7%;
+    --accent: 258 90% 66%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 90%;
-    /* #E5E5E5 */
-    --input: 0 0% 90%;
-    --ring: 239 84% 67%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 258 90% 66%;
 
-    --radius: 0.75rem;
-    /* 12px default for buttons/inputs */
+    --radius: 0.5rem;
 
-    /* Dynamic mobile header padding - reduced for less gap */
     --mobile-header-padding: 3.25rem;
   }
 
   .dark {
-    /* Dark Mode */
-    --background: 240 6% 4.5%;
-    /* #0B0B0C */
-    --foreground: 0 0% 93%;
-    /* #EDEDED */
+    /* Linear-inspired Dark Mode - Primary theme */
+    --background: 228 14% 8%;
+    /* #111118 */
+    --foreground: 210 40% 98%;
+    /* #F8FAFC */
 
-    --card: 240 5% 7%;
-    /* #111113 */
-    --card-foreground: 0 0% 93%;
-    /* #EDEDED */
+    --card: 228 14% 10%;
+    /* #15151E */
+    --card-foreground: 210 40% 98%;
 
-    --popover: 240 5% 7%;
-    /* #111113 */
-    --popover-foreground: 0 0% 93%;
-    /* #EDEDED */
+    --popover: 228 14% 10%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 239 84% 67%;
-    /* #6366F1 Indigo */
+    --primary: 258 90% 66%;
+    /* Linear purple #8B5CF6 */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 10%;
-    /* #1A1A1A Muted */
-    --secondary-foreground: 0 0% 93%;
+    --secondary: 228 14% 14%;
+    /* #1C1C27 */
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 0 0% 10%;
-    /* #1A1A1A */
-    --muted-foreground: 0 0% 60%;
+    --muted: 228 14% 14%;
+    --muted-foreground: 215 20% 55%;
 
-    --accent: 0 0% 10%;
-    /* #1A1A1A */
-    --accent-foreground: 0 0% 93%;
+    --accent: 258 90% 66%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 240 3% 14%;
-    /* #222224 */
-    --input: 240 3% 14%;
-    --ring: 239 84% 67%;
+    --border: 228 14% 18%;
+    /* #252532 */
+    --input: 228 14% 18%;
+    --ring: 258 90% 66%;
   }
 }
 
@@ -102,12 +85,19 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
-    background-image: radial-gradient(hsl(var(--foreground) / 0.1) 1px, transparent 1px);
-    background-size: 24px 24px;
+  }
+
+  /* Linear-style subtle gradient background */
+  .dark body {
+    background: linear-gradient(
+      180deg,
+      hsl(228 14% 8%) 0%,
+      hsl(228 14% 6%) 100%
+    );
   }
 }
 
-/* Mobile header padding utility - transitions smoothly with hamburger visibility */
+/* Mobile header padding utility */
 @layer utilities {
   .mobile-header-safe-zone {
     padding-top: var(--mobile-header-padding);
@@ -119,6 +109,45 @@
       padding-top: 0;
     }
   }
+
+  /* Linear-style glow effects */
+  .glow-purple {
+    box-shadow: 0 0 40px -10px hsl(258 90% 66% / 0.5);
+  }
+
+  .glow-purple-sm {
+    box-shadow: 0 0 20px -5px hsl(258 90% 66% / 0.4);
+  }
+
+  /* Linear-style text gradient */
+  .text-gradient {
+    background: linear-gradient(
+      135deg,
+      hsl(258 90% 76%) 0%,
+      hsl(258 90% 66%) 50%,
+      hsl(280 90% 66%) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Linear-style border gradient */
+  .border-gradient {
+    border: 1px solid transparent;
+    background: linear-gradient(var(--background), var(--background)) padding-box,
+      linear-gradient(135deg, hsl(258 90% 66% / 0.3), hsl(280 90% 66% / 0.1)) border-box;
+  }
+
+  /* Subtle noise texture overlay */
+  .noise-overlay::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.02;
+    pointer-events: none;
+  }
 }
 
 /* React Day Picker v9 Styles */
@@ -128,7 +157,7 @@
 }
 
 .rdp-day_button:hover {
-  background-color: hsl(var(--accent));
+  background-color: hsl(var(--accent) / 0.1);
   color: hsl(var(--accent-foreground));
 }
 
@@ -138,7 +167,7 @@
 }
 
 .rdp-today:not(.rdp-selected) .rdp-day_button {
-  background-color: hsl(var(--accent));
+  background-color: hsl(var(--accent) / 0.1);
   color: hsl(var(--accent-foreground));
 }
 
@@ -146,7 +175,6 @@
   0% {
     transform: translateX(0);
   }
-
   100% {
     transform: translateX(-50%);
   }
@@ -154,4 +182,41 @@
 
 .animate-marquee {
   animation: marquee 30s linear infinite;
+}
+
+/* Linear-style smooth animations */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out forwards;
+}
+
+/* Linear-style shimmer effect */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(258 90% 66% / 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
 }

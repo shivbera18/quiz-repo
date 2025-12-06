@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Zap } from "lucide-react";
 import Link from "next/link";
 
@@ -11,15 +10,23 @@ export default function LandingHeader() {
     const router = useRouter();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [scrolled, setScrolled] = useState(false);
 
     useEffect(() => {
-        // Check auth state
         const token = localStorage.getItem("token");
         const user = localStorage.getItem("user");
         if (token && user) {
             setIsLoggedIn(true);
         }
         setIsLoading(false);
+    }, []);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setScrolled(window.scrollY > 10);
+        };
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
     const handleDashboardClick = () => {
@@ -41,37 +48,54 @@ export default function LandingHeader() {
     };
 
     return (
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b-4 border-black dark:border-white/65 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)]">
+        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+            scrolled 
+                ? "bg-background/80 backdrop-blur-xl border-b border-border" 
+                : "bg-transparent"
+        }`}>
             <div className="container mx-auto px-4 md:px-6">
                 <div className="flex items-center justify-between h-16">
-                    <Link href="/" className="flex items-center gap-2">
-                        <div className="h-10 w-10 rounded-lg bg-primary border-2 border-black dark:border-white/65 flex items-center justify-center shadow-[2px_2px_0px_0px] shadow-foreground/80">
-                            <Zap className="h-5 w-5 text-primary-foreground" />
+                    <Link href="/" className="flex items-center gap-2 group">
+                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                            <Zap className="h-4 w-4 text-primary" />
                         </div>
-                        <span className="text-2xl font-black tracking-tight">Quizzy</span>
+                        <span className="text-lg font-semibold tracking-tight">Quizzy</span>
                     </Link>
 
-                    <div className="flex items-center gap-4">
-                        <ThemeToggle />
+                    <div className="hidden md:flex items-center gap-8">
+                        <Link href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                            Features
+                        </Link>
+                        <Link href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                            Pricing
+                        </Link>
+                        <Link href="#faq" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                            FAQ
+                        </Link>
+                    </div>
+
+                    <div className="flex items-center gap-3">
                         {!isLoading && (
                             <>
                                 {isLoggedIn ? (
                                     <Button
                                         onClick={handleDashboardClick}
-                                        variant="neobrutalist"
-                                        className="gap-2"
+                                        size="sm"
+                                        className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-4"
                                     >
-                                        Go to Dashboard
+                                        Dashboard
                                     </Button>
                                 ) : (
                                     <div className="flex items-center gap-2">
                                         <Link href="/auth/login">
-                                            <Button variant="ghost" className="hover:bg-primary/10">
-                                                Login
+                                            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                                                Log in
                                             </Button>
                                         </Link>
                                         <Link href="/auth/login">
-                                            <Button variant="neobrutalist">Get Started</Button>
+                                            <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-4">
+                                                Get Started
+                                            </Button>
                                         </Link>
                                     </div>
                                 )}

@@ -1,30 +1,33 @@
 import Link from "next/link"
+import { Zap } from "lucide-react"
 
 export function Footer() {
   return (
-    <footer className="w-full border-t-4 border-black dark:border-yellow-500/60 bg-yellow-200 dark:bg-yellow-500 py-6 mt-auto relative z-20">
-      <div className="flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row md:py-0 px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col items-center gap-4 md:flex-row md:gap-2">
-          <p className="text-center text-sm leading-loose font-medium md:text-left text-black dark:text-black">
-            Built by{" "}
-            <a
-              href="#"
-              target="_blank"
-              rel="noreferrer"
-              className="font-black underline underline-offset-4 hover:text-primary text-black dark:text-black"
-            >
-              Quizzy
-            </a>
-            . © {new Date().getFullYear()} All rights reserved.
-          </p>
-        </div>
-        <div className="flex gap-4 md:gap-6 lg:gap-8 text-sm font-bold text-black dark:text-black">
-          <Link href="/privacy" className="hover:underline hover:text-primary transition-colors whitespace-nowrap">
-            Privacy Policy
-          </Link>
-          <Link href="/terms" className="hover:underline hover:text-primary transition-colors whitespace-nowrap">
-            Terms of Service
-          </Link>
+    <footer className="w-full border-t border-border/50 bg-background py-12 mt-auto">
+      <div className="container mx-auto px-4">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          {/* Logo and copyright */}
+          <div className="flex items-center gap-6">
+            <Link href="/" className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Zap className="h-4 w-4 text-primary" />
+              </div>
+              <span className="text-sm font-semibold">Quizzy</span>
+            </Link>
+            <p className="text-sm text-muted-foreground">
+              © {new Date().getFullYear()} Quizzy. All rights reserved.
+            </p>
+          </div>
+
+          {/* Links */}
+          <div className="flex items-center gap-6 text-sm text-muted-foreground">
+            <Link href="/privacy" className="hover:text-foreground transition-colors">
+              Privacy
+            </Link>
+            <Link href="/terms" className="hover:text-foreground transition-colors">
+              Terms
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

@@ -60,9 +60,9 @@ export default function RootLayout({
       <body className={inter.className} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
-          enableSystem
-          themes={['light', 'dark', 'system', 'blue', 'green', 'purple', 'orange', 'red', 'pink', 'teal']}
+          defaultTheme="dark"
+          enableSystem={false}
+          themes={['light', 'dark']}
           disableTransitionOnChange
         >
           <PageTransition>

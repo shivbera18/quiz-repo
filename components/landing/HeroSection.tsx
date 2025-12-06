@@ -1,48 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { ArrowRight as ArrowRightIcon, BookOpen as BookOpenIcon, Star as StarIcon } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import HandDrawnArrow from "../svgs/HandDrawnArrow";
-import Science from "../svgs/Science";
-import Cap from "../svgs/Cap";
-import Atom from "../svgs/Atom";
-import Trophy from "../svgs/Trophy";
-import Calculator from "../svgs/Calculator";
-import Book from "../svgs/Book";
-import Image from "next/image";
-
-interface Testimonial {
-    name: string;
-    image: string;
-}
-
-const testimonials: Testimonial[] = [
-    { name: "Priya S.", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=faces" },
-    { name: "Rajesh K.", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=faces" },
-    { name: "Anjali G.", image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=faces" },
-    { name: "Vikram S.", image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=faces" },
-    { name: "Sneha P.", image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=faces" },
-    { name: "Arun M.", image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&crop=faces" },
-    { name: "Meera R.", image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=faces" },
-];
 
 export default function HeroSection() {
     const router = useRouter();
-    const [titleNumber, setTitleNumber] = useState(0);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
-    const titles = useMemo(
-        () => ["smart", "fast", "efficient", "quick", "effective"],
-        [],
-    );
-
     useEffect(() => {
-        // Check auth state
         const token = localStorage.getItem("token");
         const user = localStorage.getItem("user");
         if (token && user) {
@@ -50,17 +20,6 @@ export default function HeroSection() {
         }
         setIsLoading(false);
     }, []);
-
-    useEffect(() => {
-        const timeoutId = setTimeout(() => {
-            if (titleNumber === titles.length - 1) {
-                setTitleNumber(0);
-            } else {
-                setTitleNumber(titleNumber + 1);
-            }
-        }, 2000);
-        return () => clearTimeout(timeoutId);
-    }, [titleNumber, titles]);
 
     const handleDashboardClick = () => {
         const user = localStorage.getItem("user");
@@ -81,121 +40,130 @@ export default function HeroSection() {
     };
 
     return (
-        <div className="w-full pt-20">
-            <div className="container mx-auto">
-                <div className="relative flex flex-col items-center justify-center gap-8 py-10 lg:py-20">
-                    <Science className="absolute top-4 left-4 size-24 md:size-64 text-foreground opacity-20" />
-                    <Cap className="absolute right-10 -bottom-16 size-24 md:bottom-10 md:size-64 lg:bottom-0 text-foreground opacity-20" />
-                    <Atom className="absolute top-20 right-20 size-16 md:size-32 text-foreground opacity-15 hidden md:block" />
-                    <Trophy className="absolute bottom-32 left-16 size-20 md:size-40 text-foreground opacity-15 hidden lg:block" />
-                    <Calculator className="absolute top-40 left-32 size-16 md:size-28 text-foreground opacity-15 hidden lg:block" />
-                    <Book className="absolute bottom-20 right-32 size-16 md:size-28 text-foreground opacity-15 hidden lg:block" />
-                    <div>
-                        <Button variant="secondary" size="sm" className="gap-4">
-                            Now it is time to ace your exams{" "}
-                            <ArrowRightIcon className="size-4" />
-                        </Button>
-                    </div>
-                    <div className="flex flex-col gap-4">
-                        <h1 className="max-w-2xl text-center text-5xl tracking-tighter md:text-7xl font-black">
-                            <span className="relative inline-block">
-                                Your all-in-one learning platform
-                                <HandDrawnArrow className="absolute right-2 mx-auto mt-4 size-8 md:-right-8 md:size-12 text-foreground opacity-40" />
-                            </span>
-
-                            <span className="relative flex w-full justify-center overflow-hidden text-center md:pt-1 md:pb-4">
-                                &nbsp;
-                                {titles.map((title, index) => (
-                                    <motion.div
-                                        key={index}
-                                        className="absolute font-light"
-                                        initial={{ opacity: 0, y: "-100" }}
-                                        transition={{ type: "spring", stiffness: 50 }}
-                                        animate={
-                                            titleNumber === index
-                                                ? {
-                                                    y: 0,
-                                                    opacity: 1,
-                                                }
-                                                : {
-                                                    y: titleNumber > index ? -150 : 150,
-                                                    opacity: 0,
-                                                }
-                                        }
-                                    >
-                                        {title}
-                                    </motion.div>
-                                ))}
-                            </span>
-                        </h1>
-
-                        <p className="text-muted-foreground max-w-2xl text-center text-lg leading-relaxed tracking-tight md:text-xl">
-                            Preparing for exams is already challenging enough. <br />
-                            Avoid further complications by ditching outdated study methods.
-                        </p>
-                    </div>
-
-                    {!isLoading && (
-                        <div className="flex flex-row gap-3">
-                            {isLoggedIn ? (
-                                <Button
-                                    onClick={handleDashboardClick}
-                                    size="lg"
-                                    variant="neobrutalist"
-                                    className="gap-4"
-                                >
-                                    Go to Dashboard <ArrowRightIcon className="size-4" />
-                                </Button>
-                            ) : (
-                                <>
-                                    <Link href="/auth/login">
-                                        <Button
-                                            size="lg"
-                                            variant="neobrutalist"
-                                            className="gap-4"
-                                        >
-                                            Start Learning <BookOpenIcon className="size-4" />
-                                        </Button>
-                                    </Link>
-                                    <Link href="/auth/login">
-                                        <Button
-                                            size="lg"
-                                            variant="neobrutalistInverted"
-                                            className="gap-4"
-                                        >
-                                            Login{" "}
-                                            <StarIcon className="size-4" />
-                                        </Button>
-                                    </Link>
-                                </>
-                            )}
-                        </div>
-                    )}
-
-                    <div className="flex flex-row gap-3">
-                        <div className="flex items-center gap-3">
-                            <div className="flex -space-x-3">
-                                {testimonials.map((testimonial, idx) => (
-                                    <div
-                                        key={idx}
-                                        className="relative h-10 w-10 rounded-full border-3 border-background transition-all duration-300 hover:scale-125 hover:cursor-pointer hover:z-10 overflow-hidden"
-                                    >
-                                        <Image
-                                            src={testimonial.image}
-                                            alt={testimonial.name}
-                                            fill
-                                            className="object-cover"
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-                            <p className="text-muted-foreground text-sm font-bold">
-                                Trusted by 10,000+ students
-                            </p>
-                        </div>
-                    </div>
-                </div>
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+            {/* Background gradient effects */}
+            <div className="absolute inset-0 overflow-hidden">
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
+                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
             </div>
-        </div>
+
+            {/* Grid pattern overlay */}
+            <div 
+                className="absolute inset-0 opacity-[0.02]"
+                style={{
+                    backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                                      linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+                    backgroundSize: '64px 64px'
+                }}
+            />
+
+            <div className="container mx-auto px-4 relative z-10">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="max-w-4xl mx-auto text-center"
+                >
+                    {/* Badge */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.1 }}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8"
+                    >
+                        <Sparkles className="h-4 w-4 text-primary" />
+                        <span className="text-sm text-primary font-medium">Now with AI-powered analytics</span>
+                    </motion.div>
+
+                    {/* Main heading */}
+                    <motion.h1
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.2 }}
+                        className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight mb-6"
+                    >
+                        <span className="text-foreground">Ace your banking</span>
+                        <br />
+                        <span className="text-gradient">exams with ease</span>
+                    </motion.h1>
+
+                    {/* Subtitle */}
+                    <motion.p
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.3 }}
+                        className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed"
+                    >
+                        The modern quiz platform designed for serious aspirants. 
+                        Practice smarter with intelligent analytics, mock tests, and personalized insights.
+                    </motion.p>
+
+                    {/* CTA Buttons */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.4 }}
+                        className="flex flex-col sm:flex-row items-center justify-center gap-4"
+                    >
+                        {!isLoading && (
+                            <>
+                                {isLoggedIn ? (
+                                    <Button
+                                        onClick={handleDashboardClick}
+                                        size="lg"
+                                        className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-8 h-12 text-base font-medium glow-purple-sm"
+                                    >
+                                        Go to Dashboard
+                                        <ArrowRight className="ml-2 h-4 w-4" />
+                                    </Button>
+                                ) : (
+                                    <>
+                                        <Link href="/auth/login">
+                                            <Button
+                                                size="lg"
+                                                className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-8 h-12 text-base font-medium glow-purple-sm"
+                                            >
+                                                Start for free
+                                                <ArrowRight className="ml-2 h-4 w-4" />
+                                            </Button>
+                                        </Link>
+                                        <Link href="#features">
+                                            <Button
+                                                variant="ghost"
+                                                size="lg"
+                                                className="text-muted-foreground hover:text-foreground rounded-lg px-8 h-12 text-base font-medium"
+                                            >
+                                                Learn more
+                                            </Button>
+                                        </Link>
+                                    </>
+                                )}
+                            </>
+                        )}
+                    </motion.div>
+
+                    {/* Stats */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.5 }}
+                        className="flex items-center justify-center gap-8 sm:gap-12 mt-16 pt-8 border-t border-border/50"
+                    >
+                        <div className="text-center">
+                            <div className="text-2xl sm:text-3xl font-semibold text-foreground">10K+</div>
+                            <div className="text-sm text-muted-foreground">Active users</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl sm:text-3xl font-semibold text-foreground">50K+</div>
+                            <div className="text-sm text-muted-foreground">Questions</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl sm:text-3xl font-semibold text-foreground">95%</div>
+                            <div className="text-sm text-muted-foreground">Success rate</div>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            </div>
+        </section>
     );
 }
