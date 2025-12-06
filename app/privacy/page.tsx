@@ -2,45 +2,20 @@
 
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { ArrowLeft, Shield, BookOpen } from "lucide-react"
+import { ArrowLeft, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { Footer } from "@/components/layout/footer"
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-sm border-b-4 border-foreground dark:border-foreground/30">
-        <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="h-10 w-10 rounded-xl bg-primary border-2 border-foreground flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] group-hover:translate-x-[2px] group-hover:translate-y-[2px] group-hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:group-hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.2)] transition-all">
-                <BookOpen className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-black tracking-tight">Quizzy</span>
-            </Link>
-            <ThemeToggle />
-          </div>
-        </nav>
-      </header>
+    <div className="space-y-6">
 
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Back Button */}
-        <Link href="/">
-          <Button variant="outline" className="mb-8 border-2 border-foreground shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] dark:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.2)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all font-bold">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Home
-          </Button>
-        </Link>
-
-        {/* Hero Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-12"
-        >
+      {/* Hero Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-center mb-12"
+      >
           <div className="inline-flex items-center justify-center h-20 w-20 rounded-2xl bg-primary border-4 border-foreground shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.2)] mb-6">
             <Shield className="h-10 w-10 text-primary-foreground" />
           </div>
@@ -54,15 +29,15 @@ export default function PrivacyPage() {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Last updated: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
           </p>
-        </motion.div>
+      </motion.div>
 
-        {/* Content */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="max-w-4xl mx-auto"
-        >
+      {/* Content */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="max-w-4xl mx-auto"
+      >
           <div className="bg-card border-4 border-foreground rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.2)] p-8 md:p-12 space-y-8">
             
             <section>
@@ -177,11 +152,8 @@ export default function PrivacyPage() {
                 <p className="text-muted-foreground">Address: Bangalore, India</p>
               </div>
             </section>
-          </div>
-        </motion.div>
-      </main>
-
-      <Footer />
+        </div>
+      </motion.div>
     </div>
   )
 }

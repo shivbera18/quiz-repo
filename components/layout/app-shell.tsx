@@ -24,6 +24,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     const isHomePage = pathname === "/" // Home redirect page
     const isAdminPage = pathname?.startsWith("/admin") // Admin pages don't need TopHeader
     const isMainDashboard = pathname === "/dashboard" // Only show TopHeader on main dashboard
+    const isPrivacyOrTerms = pathname === "/privacy" || pathname === "/terms" // Privacy and Terms pages
 
     // Pages that use MobilePageHeader (they handle their own top spacing)
     const subpagesWithHeader = [
@@ -37,6 +38,8 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         '/admin/question-bank',
         '/admin/quiz',
         '/admin/analytics',
+        '/privacy',
+        '/terms',
     ]
     const hasMobilePageHeader = subpagesWithHeader.some(path => pathname?.startsWith(path))
 
@@ -79,11 +82,11 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
                     transition: isHydrated ? "padding-left 250ms cubic-bezier(0.4, 0, 0.2, 1)" : "none"
                 }}
             >
-                {isMainDashboard && mounted && <TopHeader />}
+                {(isMainDashboard || isPrivacyOrTerms) && mounted && <TopHeader />}
                 <div className="container mx-auto px-2 py-2 sm:p-6 md:p-8 flex-1">
                     {children}
                 </div>
-                {isMainDashboard && <Footer />}
+                {(isMainDashboard || isPrivacyOrTerms) && <Footer />}
             </main>
         </>
     )

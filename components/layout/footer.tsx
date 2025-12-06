@@ -3,7 +3,7 @@ import Link from "next/link"
 export function Footer() {
   return (
     <footer className="w-full border-t-4 border-black dark:border-yellow-500/60 bg-yellow-200 dark:bg-yellow-500 py-6 mt-auto relative z-20">
-      <div className="container flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row md:py-0 px-4 sm:px-6">
+      <div className="flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row md:py-0 px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center gap-4 md:flex-row md:gap-2">
           <p className="text-center text-sm leading-loose font-medium md:text-left text-black dark:text-black">
             Built by{" "}
@@ -18,11 +18,11 @@ export function Footer() {
             . © {new Date().getFullYear()} All rights reserved.
           </p>
         </div>
-        <div className="flex gap-4 text-sm font-bold text-black dark:text-black">
-          <Link href="/privacy" className="hover:underline hover:text-primary transition-colors">
+        <div className="flex gap-4 md:gap-6 lg:gap-8 text-sm font-bold text-black dark:text-black">
+          <Link href="/privacy" className="hover:underline hover:text-primary transition-colors whitespace-nowrap">
             Privacy Policy
           </Link>
-          <Link href="/terms" className="hover:underline hover:text-primary transition-colors">
+          <Link href="/terms" className="hover:underline hover:text-primary transition-colors whitespace-nowrap">
             Terms of Service
           </Link>
         </div>
