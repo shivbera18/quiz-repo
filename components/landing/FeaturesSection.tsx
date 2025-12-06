@@ -11,6 +11,10 @@ import {
 import { motion } from "framer-motion";
 import React from "react";
 import Image from "next/image";
+import Atom from "../svgs/Atom";
+import Calculator from "../svgs/Calculator";
+import Book from "../svgs/Book";
+import Trophy from "../svgs/Trophy";
 
 interface FeatureCardProps {
     icon: React.ReactNode;
@@ -113,7 +117,12 @@ const containerVariants = {
 export default function Features() {
     return (
         <section className="relative overflow-hidden py-20 lg:py-32">
-            <div className="absolute inset-0" />
+            {/* Decorative SVG Elements */}
+            <Atom className="absolute top-10 left-10 size-24 md:size-40 text-foreground opacity-10" />
+            <Calculator className="absolute bottom-20 right-10 size-24 md:size-40 text-foreground opacity-10" />
+            <Book className="absolute top-1/2 left-20 size-16 md:size-28 text-foreground opacity-10 hidden lg:block" />
+            <Trophy className="absolute bottom-40 left-1/4 size-20 md:size-32 text-foreground opacity-10 hidden lg:block" />
+            
             <div className="relative z-10 container mx-auto">
                 <motion.div
                     className="mb-16 text-center md:mb-20"

@@ -4,6 +4,10 @@ import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Check, X, Sparkles, Zap, Crown } from "lucide-react"
 import Link from "next/link"
+import Science from "../svgs/Science"
+import Cap from "../svgs/Cap"
+import Calculator from "../svgs/Calculator"
+import Trophy from "../svgs/Trophy"
 
 const plans = [
   {
@@ -70,8 +74,14 @@ const plans = [
 
 export default function PricingSection() {
   return (
-    <section id="pricing" className="py-20 md:py-32">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="pricing" className="py-20 md:py-32 relative overflow-hidden">
+      {/* Decorative SVG Elements */}
+      <Science className="absolute top-10 right-10 size-24 md:size-40 text-foreground opacity-10" />
+      <Cap className="absolute bottom-20 left-10 size-24 md:size-40 text-foreground opacity-10" />
+      <Calculator className="absolute top-1/3 left-20 size-16 md:size-28 text-foreground opacity-10 hidden lg:block" />
+      <Trophy className="absolute bottom-1/3 right-20 size-20 md:size-32 text-foreground opacity-10 hidden lg:block" />
+      
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

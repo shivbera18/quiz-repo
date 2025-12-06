@@ -9,20 +9,25 @@ import Link from "next/link";
 import HandDrawnArrow from "../svgs/HandDrawnArrow";
 import Science from "../svgs/Science";
 import Cap from "../svgs/Cap";
+import Atom from "../svgs/Atom";
+import Trophy from "../svgs/Trophy";
+import Calculator from "../svgs/Calculator";
+import Book from "../svgs/Book";
+import Image from "next/image";
 
 interface Testimonial {
     name: string;
-    initial: string;
+    image: string;
 }
 
 const testimonials: Testimonial[] = [
-    { name: "Student 1", initial: "A" },
-    { name: "Student 2", initial: "B" },
-    { name: "Student 3", initial: "C" },
-    { name: "Student 4", initial: "D" },
-    { name: "Student 5", initial: "E" },
-    { name: "Student 6", initial: "F" },
-    { name: "Student 7", initial: "G" },
+    { name: "Priya S.", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=faces" },
+    { name: "Rajesh K.", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=faces" },
+    { name: "Anjali G.", image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=faces" },
+    { name: "Vikram S.", image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=faces" },
+    { name: "Sneha P.", image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=faces" },
+    { name: "Arun M.", image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&crop=faces" },
+    { name: "Meera R.", image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=faces" },
 ];
 
 export default function HeroSection() {
@@ -81,6 +86,10 @@ export default function HeroSection() {
                 <div className="relative flex flex-col items-center justify-center gap-8 py-10 lg:py-20">
                     <Science className="absolute top-4 left-4 size-24 md:size-64 text-foreground opacity-20" />
                     <Cap className="absolute right-10 -bottom-16 size-24 md:bottom-10 md:size-64 lg:bottom-0 text-foreground opacity-20" />
+                    <Atom className="absolute top-20 right-20 size-16 md:size-32 text-foreground opacity-15 hidden md:block" />
+                    <Trophy className="absolute bottom-32 left-16 size-20 md:size-40 text-foreground opacity-15 hidden lg:block" />
+                    <Calculator className="absolute top-40 left-32 size-16 md:size-28 text-foreground opacity-15 hidden lg:block" />
+                    <Book className="absolute bottom-20 right-32 size-16 md:size-28 text-foreground opacity-15 hidden lg:block" />
                     <div>
                         <Button variant="secondary" size="sm" className="gap-4">
                             Now it is time to ace your exams{" "}
@@ -164,18 +173,23 @@ export default function HeroSection() {
                     )}
 
                     <div className="flex flex-row gap-3">
-                        <div className="flex items-center gap-2">
-                            <div className="flex -space-x-2">
+                        <div className="flex items-center gap-3">
+                            <div className="flex -space-x-3">
                                 {testimonials.map((testimonial, idx) => (
                                     <div
                                         key={idx}
-                                        className="h-8 w-8 rounded-full border-2 border-white bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white text-xs font-bold transition-all duration-300 hover:scale-150 hover:cursor-pointer hover:z-10"
+                                        className="relative h-10 w-10 rounded-full border-3 border-background transition-all duration-300 hover:scale-125 hover:cursor-pointer hover:z-10 overflow-hidden"
                                     >
-                                        {testimonial.initial}
+                                        <Image
+                                            src={testimonial.image}
+                                            alt={testimonial.name}
+                                            fill
+                                            className="object-cover"
+                                        />
                                     </div>
                                 ))}
                             </div>
-                            <p className="text-muted-foreground text-sm font-medium">
+                            <p className="text-muted-foreground text-sm font-bold">
                                 Trusted by 10,000+ students
                             </p>
                         </div>

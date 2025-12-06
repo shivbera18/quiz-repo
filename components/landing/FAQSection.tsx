@@ -3,6 +3,10 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronDown, HelpCircle } from "lucide-react"
+import Book from "../svgs/Book"
+import Atom from "../svgs/Atom"
+import Science from "../svgs/Science"
+import Calculator from "../svgs/Calculator"
 
 const faqs = [
   {
@@ -43,8 +47,14 @@ export default function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(0)
 
   return (
-    <section id="faq" className="py-20 md:py-32">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="faq" className="py-20 md:py-32 relative overflow-hidden">
+      {/* Decorative SVG Elements */}
+      <Book className="absolute top-10 left-10 size-24 md:size-40 text-foreground opacity-10" />
+      <Atom className="absolute bottom-20 right-10 size-24 md:size-40 text-foreground opacity-10" />
+      <Science className="absolute top-1/2 right-20 size-16 md:size-28 text-foreground opacity-10 hidden lg:block" />
+      <Calculator className="absolute bottom-1/3 left-20 size-20 md:size-32 text-foreground opacity-10 hidden lg:block" />
+      
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -85,12 +95,7 @@ export default function FAQSection() {
                   onClick={() => setOpenIndex(openIndex === index ? null : index)}
                   className="w-full px-6 py-5 flex items-center justify-between gap-4 text-left hover:bg-muted/50 transition-colors"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className={`h-10 w-10 rounded-lg border-3 border-foreground flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.2)] ${openIndex === index ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                      <HelpCircle className="h-5 w-5" />
-                    </div>
-                    <span className="font-bold text-lg">{faq.question}</span>
-                  </div>
+                  <span className="font-bold text-lg">{faq.question}</span>
                   <ChevronDown className={`h-6 w-6 transition-transform flex-shrink-0 ${openIndex === index ? 'rotate-180' : ''}`} />
                 </button>
                 
@@ -103,7 +108,7 @@ export default function FAQSection() {
                       transition={{ duration: 0.3 }}
                     >
                       <div className="px-6 pb-5 pt-0">
-                        <div className="pl-14 text-muted-foreground leading-relaxed">
+                        <div className="text-muted-foreground leading-relaxed">
                           {faq.answer}
                         </div>
                       </div>
