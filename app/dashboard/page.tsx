@@ -5,20 +5,19 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/hooks/use-auth"
-import { FlashQuestions } from "@/components/flash-questions"
-import { staggerContainer, staggerItem } from "@/components/page-transition"
 import {
   BookOpen,
   TrendingUp,
   Clock,
   Target,
-  History,
   Eye,
   Zap,
-  ArrowRight
+  ArrowRight,
+  BarChart3,
+  History
 } from "lucide-react"
 
 interface RecentAttempt {
@@ -27,16 +26,10 @@ interface RecentAttempt {
   totalScore: number
   quizName: string
   quizId: string
-  rawScore?: number
   correctAnswers: number
   wrongAnswers: number
   unanswered: number
   timeSpent: number
-  sections: {
-    reasoning: number
-    quantitative: number
-    english: number
-  }
 }
 
 interface Quiz {
@@ -56,10 +49,7 @@ export default function DashboardPage() {
   const [allAttempts, setAllAttempts] = useState<RecentAttempt[]>([])
   const [availableQuizzes, setAvailableQuizzes] = useState<Quiz[]>([])
   const [loadingAttempts, setLoadingAttempts] = useState(true)
-  const [showFlashQuestions, setShowFlashQuestions] = useState(false)
-  const [flashQuestions, setFlashQuestions] = useState<any[]>([])
 
-  // Redirect to login if not authenticated (after hydration)
   useEffect(() => {
     if (!loading && !user) {
       router.push("/auth/login")
@@ -73,7 +63,6 @@ export default function DashboardPage() {
           const response = await fetch("/api/results", {
             headers: {
               Authorization: `Bearer ${user.token || "student-token-placeholder"}`,
-              "Cache-Control": "no-cache, no-store, must-revalidate",
             },
           })
 
@@ -83,25 +72,11 @@ export default function DashboardPage() {
             const sortedAttempts = attempts.sort((a: any, b: any) =>
               new Date(b.date).getTime() - new Date(a.date).getTime()
             )
-
             setAllAttempts(sortedAttempts)
             setRecentAttempts(sortedAttempts.slice(0, 5))
-          } else {
-            const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
-            const sortedResults = results
-              .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
-
-            setAllAttempts(sortedResults)
-            setRecentAttempts(sortedResults.slice(0, 5))
           }
         } catch (error) {
           console.error("Failed to fetch attempts:", error)
-          const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
-          const sortedResults = results
-            .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
-
-          setAllAttempts(sortedResults)
-          setRecentAttempts(sortedResults.slice(0, 5))
         } finally {
           setLoadingAttempts(false)
         }
@@ -112,7 +87,6 @@ export default function DashboardPage() {
       fetch("/api/quizzes", {
         headers: {
           Authorization: `Bearer ${user.token || "student-token-placeholder"}`,
-          "Cache-Control": "no-cache, no-store, must-revalidate",
         },
       })
         .then((res) => res.ok ? res.json() : [])
@@ -120,31 +94,15 @@ export default function DashboardPage() {
           const quizzesArray = Array.isArray(data) ? data : (data.value || data)
           const activeQuizzes = quizzesArray.filter((q: Quiz) => q.isActive && q.questions?.length > 0)
           setAvailableQuizzes(activeQuizzes)
-
-          const allQuestions = activeQuizzes.flatMap((quiz: Quiz) =>
-            quiz.questions?.map((q: any) => ({
-              id: q.id || Math.random().toString(),
-              question: q.question,
-              options: q.options,
-              correctAnswer: q.correctAnswer,
-              section: q.section || 'General'
-            })) || []
-          )
-
-          const shuffled = allQuestions.sort(() => Math.random() - 0.5)
-          setFlashQuestions(shuffled.slice(0, 10))
         })
-        .catch((error) => {
-          console.error("Error fetching quizzes:", error)
-          setAvailableQuizzes([])
-        })
+        .catch(() => setAvailableQuizzes([]))
     }
   }, [loading, user])
 
-  const attemptedQuizIds = allAttempts.map((attempt: RecentAttempt) => attempt.quizId).filter(Boolean)
-  const unattemptedQuizzes = availableQuizzes.filter((quiz: Quiz) => !attemptedQuizIds.includes(quiz.id))
-  const fullMockTests = unattemptedQuizzes.filter((q: Quiz) => q.sections.length > 1)
-  const sectionalTests = unattemptedQuizzes.filter((q: Quiz) => q.sections.length === 1)
+  const attemptedQuizIds = allAttempts.map((attempt) => attempt.quizId).filter(Boolean)
+  const unattemptedQuizzes = availableQuizzes.filter((quiz) => !attemptedQuizIds.includes(quiz.id))
+  const fullMockTests = unattemptedQuizzes.filter((q) => q.sections.length > 1)
+  const sectionalTests = unattemptedQuizzes.filter((q) => q.sections.length === 1)
 
   if (loading) {
     return (
@@ -154,7 +112,6 @@ export default function DashboardPage() {
     )
   }
 
-  // If not authenticated after hydration, show brief loading while redirecting
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -167,207 +124,179 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-black tracking-tight">Welcome back, {user.name}</h1>
-        <p className="text-muted-foreground font-medium">Here&apos;s an overview of your progress.</p>
-      </div>
+    <div className="space-y-8">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+          Welcome back, {user.name}
+        </h1>
+        <p className="text-muted-foreground mt-1">Here's an overview of your progress.</p>
+      </motion.div>
 
-      {/* Quick Stats Bar - Neo Brutalism */}
+      {/* Stats Grid */}
       {!loadingAttempts && allAttempts.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white/65 shadow-[6px_6px_0px_0px_#000] sm:shadow-[8px_8px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.65)] sm:dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_rgba(255,255,255,0.75)] transition-all">
-            <div className="p-2 rounded-lg bg-blue-300 dark:bg-blue-400 border-2 border-black dark:border-white/65 flex-shrink-0">
-              <BookOpen className="h-5 w-5 text-black" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-muted-foreground font-bold">Total Attempts</p>
-              <p className="text-xl sm:text-2xl font-black">{allAttempts.length}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white/65 shadow-[6px_6px_0px_0px_#000] sm:shadow-[8px_8px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.65)] sm:dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_rgba(255,255,255,0.75)] transition-all">
-            <div className="p-2 rounded-lg bg-green-300 dark:bg-green-400 border-2 border-black dark:border-white/65 flex-shrink-0">
-              <TrendingUp className="h-5 w-5 text-black" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-muted-foreground font-bold">Avg Score</p>
-              <p className="text-xl sm:text-2xl font-black truncate">
-                {(allAttempts.reduce((sum, a) => sum + a.totalScore, 0) / allAttempts.length).toFixed(0)}%
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white/65 shadow-[6px_6px_0px_0px_#000] sm:shadow-[8px_8px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.65)] sm:dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_rgba(255,255,255,0.75)] transition-all">
-            <div className="p-2 rounded-lg bg-yellow-300 dark:bg-yellow-400 border-2 border-black dark:border-white/65 flex-shrink-0">
-              <Target className="h-5 w-5 text-black" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-muted-foreground font-bold">Best Score</p>
-              <p className="text-xl sm:text-2xl font-black truncate">{Math.max(...allAttempts.map(a => a.totalScore)).toFixed(0)}%</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white/65 shadow-[6px_6px_0px_0px_#000] sm:shadow-[8px_8px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.65)] sm:dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_rgba(255,255,255,0.75)] transition-all">
-            <div className="p-2 rounded-lg bg-purple-300 dark:bg-purple-400 border-2 border-black dark:border-white/65 flex-shrink-0">
-              <Clock className="h-5 w-5 text-black" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-muted-foreground font-bold">Study Time</p>
-              <p className="text-xl sm:text-2xl font-black">
-                {(allAttempts.reduce((sum, a) => sum + (a.timeSpent || 0), 0) / 60).toFixed(0)}m
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Flash Questions Modal/Expanded View */}
-      {showFlashQuestions && (
-        <Card variant="neobrutalist">
-          <CardContent className="p-6">
-            <Button
-              variant="ghost"
-              onClick={() => setShowFlashQuestions(false)}
-              className="mb-4"
-            >
-              ← Back to Dashboard
-            </Button>
-            <FlashQuestions questions={flashQuestions} />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Action Cards Grid - 2 per row on desktop */}
-      {!showFlashQuestions && (
-        <div className="grid gap-4 grid-cols-2">
-          {/* Quick Practice */}
-          <Card 
-            variant="neobrutalist" 
-            className="cursor-pointer hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all"
-            onClick={() => setShowFlashQuestions(true)}
-          >
-            <CardHeader className="pb-2">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-yellow-300 dark:bg-yellow-400 border-2 border-black">
-                  <Zap className="h-4 w-4 text-black" />
-                </div>
-                <CardTitle className="text-base">Quick Practice</CardTitle>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+        >
+          <div className="p-4 rounded-xl bg-card border border-border">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <BookOpen className="h-5 w-5 text-primary" />
               </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <p className="text-xs text-muted-foreground mb-2">Flash questions</p>
-              <Badge variant="secondary" className="text-xs">{flashQuestions.length} Questions</Badge>
-            </CardContent>
-          </Card>
-
-          {/* Full Mock Tests */}
-          <Link href="/dashboard/full-mock-tests">
-            <Card variant="neobrutalist" className="cursor-pointer h-full hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all">
-              <CardHeader className="pb-2">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-blue-300 dark:bg-blue-400 border-2 border-black">
-                    <BookOpen className="h-4 w-4 text-black" />
-                  </div>
-                  <CardTitle className="text-base">Mock Tests</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-xs text-muted-foreground mb-2">Full practice exams</p>
-                <Badge variant="secondary" className="text-xs">{fullMockTests.length} Available</Badge>
-              </CardContent>
-            </Card>
-          </Link>
-
-          {/* Sectional Tests */}
-          <Link href="/dashboard/sectional-tests">
-            <Card variant="neobrutalist" className="cursor-pointer h-full hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all">
-              <CardHeader className="pb-2">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-green-300 dark:bg-green-400 border-2 border-black">
-                    <Target className="h-4 w-4 text-black" />
-                  </div>
-                  <CardTitle className="text-base">Sectional</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-xs text-muted-foreground mb-2">Topic practice</p>
-                <Badge variant="secondary" className="text-xs">{sectionalTests.length} Available</Badge>
-              </CardContent>
-            </Card>
-          </Link>
-
-          {/* History */}
-          <Link href="/dashboard/attempted-quizzes">
-            <Card variant="neobrutalist" className="cursor-pointer h-full hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all">
-              <CardHeader className="pb-2">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-purple-300 dark:bg-purple-400 border-2 border-black">
-                    <History className="h-4 w-4 text-black" />
-                  </div>
-                  <CardTitle className="text-base">History</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-xs text-muted-foreground mb-2">Past attempts</p>
-                <Badge variant="secondary" className="text-xs">{allAttempts.length} Completed</Badge>
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
+              <div>
+                <p className="text-2xl font-semibold">{allAttempts.length}</p>
+                <p className="text-xs text-muted-foreground">Total Attempts</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-4 rounded-xl bg-card border border-border">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-green-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-semibold">
+                  {(allAttempts.reduce((sum, a) => sum + a.totalScore, 0) / allAttempts.length).toFixed(0)}%
+                </p>
+                <p className="text-xs text-muted-foreground">Avg Score</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-4 rounded-xl bg-card border border-border">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                <Target className="h-5 w-5 text-amber-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-semibold">
+                  {Math.max(...allAttempts.map(a => a.totalScore)).toFixed(0)}%
+                </p>
+                <p className="text-xs text-muted-foreground">Best Score</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-4 rounded-xl bg-card border border-border">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                <Clock className="h-5 w-5 text-violet-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-semibold">
+                  {(allAttempts.reduce((sum, a) => sum + (a.timeSpent || 0), 0) / 60).toFixed(0)}m
+                </p>
+                <p className="text-xs text-muted-foreground">Study Time</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
       )}
+
+      {/* Quick Actions */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
+        className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+      >
+        <Link href="/dashboard/full-mock-tests">
+          <div className="p-4 rounded-xl bg-card border border-border hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
+              <BookOpen className="h-5 w-5 text-primary" />
+            </div>
+            <h3 className="font-medium mb-1">Mock Tests</h3>
+            <p className="text-xs text-muted-foreground">{fullMockTests.length} available</p>
+          </div>
+        </Link>
+        <Link href="/dashboard/sectional-tests">
+          <div className="p-4 rounded-xl bg-card border border-border hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group">
+            <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center mb-3 group-hover:bg-green-500/20 transition-colors">
+              <Target className="h-5 w-5 text-green-500" />
+            </div>
+            <h3 className="font-medium mb-1">Sectional</h3>
+            <p className="text-xs text-muted-foreground">{sectionalTests.length} available</p>
+          </div>
+        </Link>
+        <Link href="/analytics">
+          <div className="p-4 rounded-xl bg-card border border-border hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group">
+            <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center mb-3 group-hover:bg-amber-500/20 transition-colors">
+              <BarChart3 className="h-5 w-5 text-amber-500" />
+            </div>
+            <h3 className="font-medium mb-1">Analytics</h3>
+            <p className="text-xs text-muted-foreground">View insights</p>
+          </div>
+        </Link>
+        <Link href="/dashboard/attempted-quizzes">
+          <div className="p-4 rounded-xl bg-card border border-border hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group">
+            <div className="h-10 w-10 rounded-lg bg-violet-500/10 flex items-center justify-center mb-3 group-hover:bg-violet-500/20 transition-colors">
+              <History className="h-5 w-5 text-violet-500" />
+            </div>
+            <h3 className="font-medium mb-1">History</h3>
+            <p className="text-xs text-muted-foreground">{allAttempts.length} completed</p>
+          </div>
+        </Link>
+      </motion.div>
 
       {/* Recent Attempts */}
-      {!showFlashQuestions && (
-        <Card variant="neobrutalist">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Recent Attempts</CardTitle>
-              {recentAttempts.length > 0 && (
-                <Link href="/dashboard/attempted-quizzes">
-                  <Button variant="ghost" size="sm" className="text-xs gap-1">
-                    View All <ArrowRight className="h-3 w-3" />
-                  </Button>
-                </Link>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {recentAttempts.length > 0 ? (
-              <div className="space-y-2">
-                {recentAttempts.slice(0, 3).map((attempt) => (
-                  <div key={attempt._id} className="flex items-center justify-between p-3 rounded-lg border-2 border-black dark:border-white/65 bg-card hover:bg-accent/50 transition-colors">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm truncate">{attempt.quizName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(attempt.date).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge 
-                        className={`text-xs font-bold ${
-                          attempt.totalScore >= 70 
-                            ? 'bg-green-400 text-black border-black' 
-                            : 'bg-orange-400 text-black border-black'
-                        }`}
-                      >
-                        {Math.round(attempt.totalScore)}%
-                      </Badge>
-                      <Link href={`/results/${attempt._id}`}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                    </div>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.3 }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-medium">Recent Attempts</h2>
+          {recentAttempts.length > 0 && (
+            <Link href="/dashboard/attempted-quizzes">
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                View all <ArrowRight className="ml-1 h-4 w-4" />
+              </Button>
+            </Link>
+          )}
+        </div>
+        
+        <div className="rounded-xl border border-border overflow-hidden">
+          {recentAttempts.length > 0 ? (
+            <div className="divide-y divide-border">
+              {recentAttempts.slice(0, 5).map((attempt) => (
+                <div key={attempt._id} className="flex items-center justify-between p-4 hover:bg-card/50 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{attempt.quizName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(attempt.date).toLocaleDateString()}
+                    </p>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-6">
-                No attempts yet. Start a quiz to see your results here!
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      )}
+                  <div className="flex items-center gap-3">
+                    <Badge 
+                      className={`${
+                        attempt.totalScore >= 70 
+                          ? 'bg-green-500/10 text-green-500 border-green-500/20' 
+                          : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                      }`}
+                    >
+                      {Math.round(attempt.totalScore)}%
+                    </Badge>
+                    <Link href={`/results/${attempt._id}`}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 text-center">
+              <p className="text-muted-foreground">No attempts yet. Start a quiz to see your results here!</p>
+            </div>
+          )}
+        </div>
+      </motion.div>
     </div>
   )
 }
-
