@@ -117,7 +117,7 @@ export function Sidebar() {
                         className="fixed inset-0 z-[55] bg-background/80 backdrop-blur-sm md:hidden"
                         onClick={() => setIsMobileOpen(false)}
                     />
-                )}
+                                        )}
             </AnimatePresence>
 
             {/* Desktop Sidebar - Neo Brutalism Design */}
@@ -133,29 +133,20 @@ export function Sidebar() {
                 }}
             >
                 {/* Header */}
-                <div className={cn(
-                    "flex h-20 items-center border-b-4 border-black dark:border-white/65",
-                    isCollapsed ? "justify-center px-2" : "justify-between px-6"
-                )}>
-                    {/* Logo - hidden when collapsed */}
-                    {!isCollapsed && (
-                        <QuizzyLogo size="md" showText={true} />
-                    )}
-                    {/* Logo icon only when collapsed */}
-                    {isCollapsed && (
-                        <QuizzyLogo size="sm" showText={false} />
-                    )}
+                <div className="flex h-20 items-center border-b-4 border-black dark:border-white/65 px-4 gap-3">
+                    {/* Toggle button - always on left, stays in same position */}
                     <Button
                         variant="ghost"
                         size="icon"
-                        className={cn(
-                            "hidden md:flex h-10 w-10 hover:bg-yellow-300 dark:hover:bg-yellow-400 hover:border-2 hover:border-black dark:hover:border-white rounded-md transition-all focus:bg-transparent active:bg-yellow-300 dark:active:bg-yellow-400 focus-visible:ring-0 focus-visible:ring-offset-0",
-                            isCollapsed && "absolute right-2"
-                        )}
+                        className="hidden md:flex h-10 w-10 flex-shrink-0 rounded-md border-2 border-black dark:border-white/65 bg-white dark:bg-zinc-900 hover:bg-yellow-300 dark:hover:bg-yellow-400 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)] hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.75)] transition-all focus:bg-transparent active:bg-yellow-300 dark:active:bg-yellow-400 focus-visible:ring-0 focus-visible:ring-offset-0"
                         onClick={() => setIsCollapsed(!isCollapsed)}
                     >
                         {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
                     </Button>
+                    {/* Logo - shown when expanded */}
+                    {!isCollapsed && (
+                        <QuizzyLogo size="md" showText={true} />
+                    )}
                 </div>
 
                 {/* Nav Items */}
