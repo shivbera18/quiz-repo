@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useSidebar } from "./sidebar-context"
 import { useAuth } from "@/hooks/use-auth"
+import { QuizzyLogo } from "@/components/ui/quizzy-logo"
 
 // Consistent navigation items (same for everyone)
 const baseSidebarItems = [
@@ -136,16 +137,21 @@ export function Sidebar() {
                     "flex h-20 items-center border-b-4 border-black dark:border-white/65",
                     isCollapsed ? "justify-center px-2" : "justify-between px-6"
                 )}>
-                    {/* App Name - Text only (hidden when collapsed) */}
+                    {/* Logo - hidden when collapsed */}
                     {!isCollapsed && (
-                        <span className="text-2xl font-black tracking-tight text-black dark:text-white">
-                            Quizzy
-                        </span>
+                        <QuizzyLogo size="md" showText={true} />
+                    )}
+                    {/* Logo icon only when collapsed */}
+                    {isCollapsed && (
+                        <QuizzyLogo size="sm" showText={false} />
                     )}
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="hidden md:flex h-10 w-10 hover:bg-yellow-300 dark:hover:bg-yellow-400 hover:border-2 hover:border-black dark:hover:border-white rounded-md transition-all focus:bg-transparent active:bg-yellow-300 dark:active:bg-yellow-400 focus-visible:ring-0 focus-visible:ring-offset-0"
+                        className={cn(
+                            "hidden md:flex h-10 w-10 hover:bg-yellow-300 dark:hover:bg-yellow-400 hover:border-2 hover:border-black dark:hover:border-white rounded-md transition-all focus:bg-transparent active:bg-yellow-300 dark:active:bg-yellow-400 focus-visible:ring-0 focus-visible:ring-offset-0",
+                            isCollapsed && "absolute right-2"
+                        )}
                         onClick={() => setIsCollapsed(!isCollapsed)}
                     >
                         {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
@@ -216,9 +222,7 @@ export function Sidebar() {
                         className="fixed inset-y-0 left-0 z-[60] w-72 border-r-4 border-black dark:border-white/65 bg-white dark:bg-zinc-900 md:hidden flex flex-col shadow-[8px_0px_0px_0px_#000] dark:shadow-[8px_0px_0px_0px_rgba(255,255,255,0.65)]"
                     >
                         <div className="flex h-16 items-center justify-between px-6 shrink-0 border-b-4 border-black dark:border-white/65">
-                            <div className="flex items-center gap-3">
-                                <span className="text-2xl font-black tracking-tight text-black dark:text-white">Quizzy</span>
-                            </div>
+                            <QuizzyLogo size="md" showText={true} />
                             <Button 
                                 variant="ghost" 
                                 size="icon" 
