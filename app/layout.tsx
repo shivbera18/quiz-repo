@@ -1,6 +1,7 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
+import Script from "next/script"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { PageTransition } from "@/components/page-transition"
@@ -72,6 +73,14 @@ export default function RootLayout({
           </PageTransition>
           {/* <PWAHandler /> */}
         </ThemeProvider>
+        
+        {/* Umami Analytics */}
+        <Script
+          defer
+          src="https://cloud.umami.is/script.js"
+          data-website-id="686ffdd5-ec09-41ac-9afe-19388b1fd2fb"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   )
