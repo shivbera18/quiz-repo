@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shield, User, Lock, Mail } from "lucide-react"
+import { Shield, User, Lock, Mail, Zap } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function LoginPage() {
@@ -22,6 +22,20 @@ export default function LoginPage() {
   const [activeTab, setActiveTab] = useState("student")
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
+
+  // Demo credentials for quick login
+  const demoCredentials = {
+    student: { email: "student@example.com", password: "password" },
+    admin: { email: "admin@quizapp.com", password: "admin123" }
+  }
+
+  const fillDemoCredentials = (type: "student" | "admin") => {
+    if (type === "student") {
+      setStudentData(demoCredentials.student)
+    } else {
+      setAdminData(demoCredentials.admin)
+    }
+  }
 
   useEffect(() => {
     setMounted(true)
@@ -144,6 +158,15 @@ export default function LoginPage() {
                     neobrutalist
                   />
                 </div>
+                <Button
+                  type="button"
+                  variant="neobrutalist"
+                  className="w-full border-4 border-black bg-emerald-400 text-black font-bold shadow-[4px_4px_0px_0px_#000] hover:shadow-[2px_2px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] transition-all dark:bg-emerald-500 dark:text-black dark:border-white/65 dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] dark:hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)]"
+                  onClick={() => fillDemoCredentials("student")}
+                >
+                  <Zap className="h-4 w-4 mr-2" />
+                  Quick Fill Demo Credentials
+                </Button>
                 <Button type="submit" className="w-full" disabled={loading} variant="neobrutalist">
                   {loading ? "Logging in..." : "Login as Student"}
                 </Button>
@@ -175,6 +198,15 @@ export default function LoginPage() {
                     neobrutalist
                   />
                 </div>
+                <Button
+                  type="button"
+                  variant="neobrutalist"
+                  className="w-full border-4 border-black bg-cyan-400 text-black font-bold shadow-[4px_4px_0px_0px_#000] hover:shadow-[2px_2px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] transition-all dark:bg-cyan-500 dark:text-black dark:border-white/65 dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] dark:hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)]"
+                  onClick={() => fillDemoCredentials("admin")}
+                >
+                  <Zap className="h-4 w-4 mr-2" />
+                  Quick Fill Demo Credentials
+                </Button>
                 <Button type="submit" className="w-full" disabled={loading} variant="neobrutalist">
                   {loading ? "Logging in..." : "Login as Admin"}
                 </Button>
@@ -192,6 +224,11 @@ export default function LoginPage() {
           {activeTab === "student" && (
             <div className="text-center text-xs text-muted-foreground">
               Demo: student@example.com / password
+            </div>
+          )}
+          {activeTab === "admin" && (
+            <div className="text-center text-xs text-muted-foreground">
+              Demo: admin@quizapp.com / admin123
             </div>
           )}
         </CardFooter>
