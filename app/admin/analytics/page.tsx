@@ -105,7 +105,7 @@ export default function AdminAnalyticsPage() {
       // Always fetch analytics data from backend API with cache busting (no localStorage fallback)
       const fetchAnalytics = async () => {
         try {
-          console.log('🔄 Admin Analytics: Fetching fresh data...')
+          console.log('[LOADING] Admin Analytics: Fetching fresh data...')
           const response = await fetch(`/api/admin/analytics?_t=${Date.now()}`)
           
           if (!response.ok) {
@@ -113,7 +113,7 @@ export default function AdminAnalyticsPage() {
           }
           
           const data = await response.json()
-          console.log('✅ Admin Analytics: Fresh data received:', {
+          console.log('[SUCCESS] Admin Analytics: Fresh data received:', {
             resultsCount: data.results?.length,
             quizzesCount: data.quizzes?.length,
             success: data.success
@@ -142,7 +142,7 @@ export default function AdminAnalyticsPage() {
           setQuizzes(apiQuizzes)
           
         } catch (error) {
-          console.error("❌ Error fetching admin analytics:", error)
+          console.error("[ERROR] Error fetching admin analytics:", error)
           // For admin analytics, we don't use localStorage fallback - always show current DB state
           setResults([])
           setFilteredResults([])
@@ -381,7 +381,7 @@ export default function AdminAnalyticsPage() {
     }
 
     setIsDeleting(true)
-    console.log('🗑️ Starting deletion of result:', resultId)
+    console.log('[DELETE] Starting deletion of result:', resultId)
 
     try {
       const response = await fetch(`/api/admin/results?id=${resultId}`, {
@@ -391,11 +391,11 @@ export default function AdminAnalyticsPage() {
         }
       })
 
-      console.log('🗑️ Delete API response:', response.status)
+      console.log('[DELETE] Delete API response:', response.status)
 
       if (response.ok) {
         const result = await response.json()
-        console.log('✅ Deletion confirmed:', result.deletedId)
+        console.log('[SUCCESS] Deletion confirmed:', result.deletedId)
         
         // Wait a moment for database to process
         await new Promise(resolve => setTimeout(resolve, 500))
@@ -403,15 +403,15 @@ export default function AdminAnalyticsPage() {
         // Force refresh from server to get accurate data
         await forceServerRefresh()
         
-        console.log('✅ Admin analytics refreshed after deletion')
+        console.log('[SUCCESS] Admin analytics refreshed after deletion')
         alert("Quiz result deleted successfully")
       } else {
         const errorText = await response.text()
-        console.error('❌ Deletion failed:', response.status, errorText)
+        console.error('[ERROR] Deletion failed:', response.status, errorText)
         throw new Error(`Delete failed: ${response.status} - ${errorText}`)
       }
     } catch (error) {
-      console.error("❌ Error deleting result:", error)
+      console.error("[ERROR] Error deleting result:", error)
       alert(`Failed to delete quiz result: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsDeleting(false)
@@ -442,7 +442,7 @@ export default function AdminAnalyticsPage() {
 
       if (response.ok) {
         const result = await response.json()
-        console.log('✅ Bulk deletion confirmed:', result)
+        console.log('[SUCCESS] Bulk deletion confirmed:', result)
         
         // Wait a moment for database to process
         await new Promise(resolve => setTimeout(resolve, 500))
@@ -450,7 +450,7 @@ export default function AdminAnalyticsPage() {
         // Only refresh from server - no local filtering to avoid race conditions
         await forceServerRefresh()
         
-        console.log('✅ Admin analytics refreshed after bulk deletion')
+        console.log('[SUCCESS] Admin analytics refreshed after bulk deletion')
         alert("Results deleted successfully")
       } else {
         throw new Error("Failed to delete results")
@@ -484,14 +484,14 @@ export default function AdminAnalyticsPage() {
   // Function to refresh analytics data from server
   const forceServerRefresh = async () => {
     try {
-      console.log('🔄 Force refreshing admin analytics...')
+      console.log('[LOADING] Force refreshing admin analytics...')
       const response = await fetch("/api/admin/analytics?_t=" + Date.now())
       if (response.ok) {
         const data = await response.json()
         const apiResults = data.results || []
         const apiQuizzes = data.quizzes || []
         
-        console.log(`📊 Refreshed: ${apiResults.length} results, ${apiQuizzes.length} quizzes`)
+        console.log(`[INFO] Refreshed: ${apiResults.length} results, ${apiQuizzes.length} quizzes`)
         
         setResults(apiResults)
         setFilteredResults(apiResults)
@@ -513,12 +513,12 @@ export default function AdminAnalyticsPage() {
         setUsers(Array.from(userMap.values()))
         setQuizzes(apiQuizzes)
         
-        console.log('✅ Admin analytics refresh completed')
+        console.log('[SUCCESS] Admin analytics refresh completed')
       } else {
         throw new Error(`HTTP ${response.status}`)
       }
     } catch (error) {
-      console.error("❌ Force server refresh failed:", error)
+      console.error("[ERROR] Force server refresh failed:", error)
       throw error // Re-throw to let caller handle it
     }
   }
