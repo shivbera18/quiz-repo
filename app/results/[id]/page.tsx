@@ -116,18 +116,8 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
     if (authLoading) return
     
     const loadResult = async () => {
-      // Helper to check localStorage
-      const checkLocalStorage = (): Result | null => {
-        try {
-          const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
-          return results.find((r: Result) => r._id === params.id) || null
-        } catch {
-          return null
-        }
-      }
-
       try {
-        // First try to fetch from API if user is logged in
+        // First try to fetch from API
         if (user?.token) {
           const response = await fetch(`/api/results/${params.id}`, {
             headers: {
@@ -145,37 +135,34 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
             }
           } else if (response.status === 401) {
             console.log("Token invalid or expired, falling back to localStorage")
-          } else if (response.status === 404) {
-            // Result not found in database - check localStorage before giving up
-            console.log("Result not found in database, checking localStorage...")
           } else {
             console.error("API error:", response.status, response.statusText)
           }
         }
 
         // Fallback to localStorage
-        const foundResult = checkLocalStorage()
+        const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
+        const foundResult = results.find((r: Result) => r._id === params.id)
 
         if (foundResult) {
           setResult(parseResultData(foundResult))
         } else {
-          // Provide more helpful error message
-          const isLoggedIn = !!user?.token
-          if (!isLoggedIn) {
-            setError("Please log in to view your quiz results, or the result may have been deleted.")
-          } else {
-            setError("Result not found. It may have been deleted, or you may be logged in with a different account.")
-          }
+          setError("Result not found. It may have been deleted or the link is invalid.")
         }
       } catch (error) {
         console.error("Error loading result:", error)
         
         // Try localStorage as final fallback
-        const foundResult = checkLocalStorage()
-        
-        if (foundResult) {
-          setResult(parseResultData(foundResult))
-        } else {
+        try {
+          const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
+          const foundResult = results.find((r: Result) => r._id === params.id)
+          
+          if (foundResult) {
+            setResult(parseResultData(foundResult))
+          } else {
+            setError("Failed to load quiz result. Please try again.")
+          }
+        } catch (localStorageError) {
           setError("Failed to load quiz result. Please try again.")
         }
       } finally {
