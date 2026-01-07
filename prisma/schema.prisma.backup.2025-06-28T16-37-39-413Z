@@ -1,4 +1,4 @@
-// Local development schema with SQLite
+/ Local development schema with SQLite
 generator client {
   provider = "prisma-client-js"
   output   = "../lib/generated/prisma"
