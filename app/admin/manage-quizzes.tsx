@@ -97,7 +97,7 @@ function ManageQuizzesPage() {
       </div>
       {/* Quiz List */}
       {selectedSubjectId && selectedChapterId && (
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-card border-2 border-black dark:border-white/65 rounded-lg shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] p-4">
           <h2 className="text-xl font-bold mb-4 text-blue-700">Quizzes in {data.find(s => s.id === selectedSubjectId)?.chapters.find(c => c.id === selectedChapterId)?.name}</h2>
           <ul>
             {data.find(s => s.id === selectedSubjectId)?.chapters.find(c => c.id === selectedChapterId)?.quizzes.length === 0 && (
