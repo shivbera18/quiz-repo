@@ -1705,7 +1705,7 @@ export default function AdminPage() {
             ) : (
               <div className="space-y-4">
                 {subjects.map((subject) => (
-                  <div key={subject.id} className="p-4 border-2 border-black rounded-lg shadow-[4px_4px_0px_0px_#000] bg-white mb-4">
+                  <div key={subject.id} className="p-4 border-2 border-black dark:border-white/65 rounded-lg shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] bg-card mb-4">
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         {getSubjectIcon(subject.icon || "")}
@@ -1772,7 +1772,7 @@ export default function AdminPage() {
                         </div>
                         <div className="space-y-2">
                           {subject.chapters.map((chapter) => (
-                            <div key={chapter.id} className="flex justify-between items-center p-3 border-2 border-black rounded-lg bg-white shadow-[2px_2px_0px_0px_#000]">
+                            <div key={chapter.id} className="flex justify-between items-center p-3 border-2 border-black dark:border-white/65 rounded-lg bg-card shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)]">
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium">{chapter.name}</div>
                                 <div className="text-xs text-muted-foreground">
