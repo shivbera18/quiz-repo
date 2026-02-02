@@ -988,6 +988,17 @@ export default function AdminPage() {
           {/* Quizzes Management Tab */}
           <TabsContent value="quizzes">
             <div className="space-y-6">
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button onClick={() => setShowQuizForm(true)} variant="neobrutalist" className="flex-1 sm:flex-none">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New Quiz
+                </Button>
+                <Button onClick={() => setShowAIQuizGenerator(true)} variant="outline" className="flex-1 sm:flex-none">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate Quiz with AI
+                </Button>
+              </div>
 
       {/* Quiz Form */}
       {showQuizForm && (
