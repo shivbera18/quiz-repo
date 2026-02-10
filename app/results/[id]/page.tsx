@@ -883,7 +883,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
 
                         {/* Show explanation if available */}
                         {question.explanation !== undefined && question.explanation !== null && (
-                          <div className="mt-4 p-3 bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-600 dark:border-blue-500 rounded-lg">
+                          <div className="mt-4 p-3 bg-muted border-2 border-black dark:border-white/65 rounded-lg">
                             <p className="text-sm font-medium">
                               <strong className="font-black">Explanation:</strong>
                             </p>

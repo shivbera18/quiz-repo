@@ -784,66 +784,70 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
               <ScrollArea className="h-[500px] pr-4">
                 <div className="space-y-3">
                   {quizBreakdown.map((quiz, index) => (
-                    <Card key={quiz.id || index} variant="neobrutalist" className="bg-muted/30">
-                      <CardContent className="p-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div className="flex-1">
-                            <h4 className="font-medium line-clamp-1">{quiz.name}</h4>
-                            <div className="flex flex-wrap gap-2 mt-1">
-                              <Badge variant="outline" className="text-xs">
-                                {formatDateSafe(quiz.date, 'MMM d, yyyy')}
-                              </Badge>
-                              <Badge variant="secondary" className="text-xs">
-                                {quiz.subject}
-                              </Badge>
+                    <Link key={quiz.id || index} href={`/results/${quiz.id}`}>
+                      <Card variant="neobrutalist" className="bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer">
+                        <CardContent className="p-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="flex-1">
+                              <h4 className="font-medium line-clamp-1">{quiz.name}</h4>
+                              <div className="flex flex-wrap gap-2 mt-1">
+                                <Badge variant="outline" className="text-xs">
+                                  {formatDateSafe(quiz.date, 'MMM d, yyyy')}
+                                </Badge>
+                                <Badge variant="secondary" className="text-xs">
+                                  {quiz.subject}
+                                </Badge>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-4">
+                              <div className="text-center">
+                                <div className="text-2xl font-bold">{quiz.score}%</div>
+                                <div className="text-xs text-muted-foreground">Score</div>
+                              </div>
+                              
+                              <div className="hidden sm:flex gap-2 text-sm">
+                                <div className="text-center px-2">
+                                  <div className="font-medium text-green-600">{quiz.correct}</div>
+                                  <div className="text-xs text-muted-foreground">✓</div>
+                                </div>
+                                <div className="text-center px-2">
+                                  <div className="font-medium text-red-600">{quiz.wrong}</div>
+                                  <div className="text-xs text-muted-foreground">✗</div>
+                                </div>
+                                <div className="text-center px-2">
+                                  <div className="font-medium text-gray-600">{quiz.unanswered}</div>
+                                  <div className="text-xs text-muted-foreground">-</div>
+                                </div>
+                              </div>
+                              
+                              <div className="text-center">
+                                <div className="font-medium">{Math.round(quiz.timeSpent / 60)}m</div>
+                                <div className="text-xs text-muted-foreground">Time</div>
+                              </div>
+                              
+                              <ExternalLink className="h-4 w-4 text-muted-foreground" />
                             </div>
                           </div>
                           
-                          <div className="flex items-center gap-4">
-                            <div className="text-center">
-                              <div className="text-2xl font-bold">{quiz.score}%</div>
-                              <div className="text-xs text-muted-foreground">Score</div>
-                            </div>
-                            
-                            <div className="hidden sm:flex gap-2 text-sm">
-                              <div className="text-center px-2">
-                                <div className="font-medium text-green-600">{quiz.correct}</div>
-                                <div className="text-xs text-muted-foreground">✓</div>
-                              </div>
-                              <div className="text-center px-2">
-                                <div className="font-medium text-red-600">{quiz.wrong}</div>
-                                <div className="text-xs text-muted-foreground">✗</div>
-                              </div>
-                              <div className="text-center px-2">
-                                <div className="font-medium text-gray-600">{quiz.unanswered}</div>
-                                <div className="text-xs text-muted-foreground">-</div>
-                              </div>
-                            </div>
-                            
-                            <div className="text-center">
-                              <div className="font-medium">{Math.round(quiz.timeSpent / 60)}m</div>
-                              <div className="text-xs text-muted-foreground">Time</div>
-                            </div>
+                          {/* Progress bar showing answer distribution */}
+                          <div className="mt-3 flex h-2 rounded-full overflow-hidden">
+                            <div 
+                              className="bg-green-500" 
+                              style={{ width: `${(quiz.correct / quiz.total) * 100}%` }} 
+                            />
+                            <div 
+                              className="bg-red-500" 
+                              style={{ width: `${(quiz.wrong / quiz.total) * 100}%` }} 
+                            />
+                            <div 
+                              className="bg-gray-400" 
+                              style={{ width: `${(quiz.unanswered / quiz.total) * 100}%` }} 
+                            />
                           </div>
-                        </div>
-                        
-                        {/* Progress bar showing answer distribution */}
-                        <div className="mt-3 flex h-2 rounded-full overflow-hidden">
-                          <div 
-                            className="bg-green-500" 
-                            style={{ width: `${(quiz.correct / quiz.total) * 100}%` }} 
-                          />
-                          <div 
-                            className="bg-red-500" 
-                            style={{ width: `${(quiz.wrong / quiz.total) * 100}%` }} 
-                          />
-                          <div 
-                            className="bg-gray-400" 
-                            style={{ width: `${(quiz.unanswered / quiz.total) * 100}%` }} 
-                          />
-                        </div>
-                      </CardContent>
-                    </Card>
+                        </CardContent>
+                      </Card>
+                    </Link>
                   ))}
                 </div>
               </ScrollArea>
