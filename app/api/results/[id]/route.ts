@@ -108,23 +108,41 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       quizQuestions = [];
     }
 
-    // Create a map of questionId to explanation for quick lookup
+    // Create maps for questionId to explanation and options for quick lookup
     const questionExplanations = new Map();
+    const questionOptions = new Map();
     quizQuestions.forEach((q: any) => {
-      if (q.id && q.explanation) {
-        questionExplanations.set(q.id, q.explanation);
+      if (q.id) {
+        if (q.explanation) {
+          questionExplanations.set(q.id, q.explanation);
+        }
+        if (q.options) {
+          questionOptions.set(q.id, q.options);
+        }
       }
     });
 
-    // Merge explanations into parsedAnswers
+    // Merge explanations and options into parsedAnswers
     parsedAnswers = parsedAnswers.map((answer: any) => {
-      if (answer.questionId && !answer.explanation) {
-        const explanation = questionExplanations.get(answer.questionId);
-        if (explanation) {
-          return { ...answer, explanation };
+      let updatedAnswer = { ...answer };
+      
+      if (answer.questionId) {
+        if (!updatedAnswer.explanation) {
+          const explanation = questionExplanations.get(answer.questionId);
+          if (explanation) {
+            updatedAnswer.explanation = explanation;
+          }
+        }
+        
+        if (!updatedAnswer.options) {
+          const options = questionOptions.get(answer.questionId);
+          if (options) {
+            updatedAnswer.options = options;
+          }
         }
       }
-      return answer;
+      
+      return updatedAnswer;
     });
 
     let parsedSections: any = {};

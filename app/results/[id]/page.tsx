@@ -828,8 +828,11 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                         {question.explanation !== undefined && question.explanation !== null && (
                           <div className="mt-4 p-3 bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-600 dark:border-blue-500 rounded-lg">
                             <p className="text-sm font-medium">
-                              <strong className="font-black">Explanation:</strong> <MathRenderer text={question.explanation || "No explanation available"} />
+                              <strong className="font-black">Explanation:</strong>
                             </p>
+                            <div className="mt-2 text-sm whitespace-pre-line">
+                              {question.explanation || "No explanation available"}
+                            </div>
                           </div>
                         )}
 
