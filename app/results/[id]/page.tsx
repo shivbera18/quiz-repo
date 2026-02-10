@@ -45,6 +45,55 @@ const formatTime = (ms: number): string => {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`
 }
 
+// Helper function to format explanation text with step highlighting
+const formatExplanation = (text: string) => {
+  if (!text) return "No explanation available";
+
+  // Split by "Step" but keep the "Step" in the result
+  const parts = text.split(/(Step\s+\d+)/i);
+
+  const result = [];
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    const stepMatch = part.match(/^Step\s+(\d+)$/i);
+    if (stepMatch) {
+      let stepText = part;
+      let followingText = '';
+      // Check if next part starts with :
+      if (i + 1 < parts.length && parts[i + 1].startsWith(':')) {
+        const nextPart = parts[i + 1];
+        const colonIndex = nextPart.indexOf(':');
+        if (colonIndex !== -1) {
+          stepText += nextPart.substring(0, colonIndex + 1); // Include up to colon
+          followingText = nextPart.substring(colonIndex + 1); // Text after colon
+        } else {
+          stepText += nextPart;
+        }
+        i++; // skip next
+      }
+      result.push(
+        <span key={result.length} className="block mt-2 font-bold text-blue-800 dark:text-blue-200">
+          {stepText}
+        </span>
+      );
+      if (followingText) {
+        result.push(
+          <span key={result.length} className="whitespace-pre-line">
+            {followingText}
+          </span>
+        );
+      }
+    } else if (part) {
+      result.push(
+        <span key={result.length} className="whitespace-pre-line">
+          {part}
+        </span>
+      );
+    }
+  }
+  return result;
+};
+
 interface Result {
   _id: string
   date: string
@@ -117,8 +166,11 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
     
     const loadResult = async () => {
       try {
+        console.log("Loading result for ID:", params.id)
+        
         // First try to fetch from API
         if (user?.token) {
+          console.log("Trying to fetch from API...")
           const response = await fetch(`/api/results/${params.id}`, {
             headers: {
               Authorization: `Bearer ${user.token}`,
@@ -128,6 +180,7 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
 
           if (response.ok) {
             const data = await response.json()
+            console.log("API response:", data)
             if (data.result) {
               setResult(parseResultData(data.result))
               setLoading(false)
@@ -141,12 +194,16 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
         }
 
         // Fallback to localStorage
+        console.log("Falling back to localStorage...")
         const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
+        console.log("LocalStorage results count:", results.length)
         const foundResult = results.find((r: Result) => r._id === params.id)
-
+        
         if (foundResult) {
+          console.log("Found result in localStorage:", foundResult._id)
           setResult(parseResultData(foundResult))
         } else {
+          console.log("Result not found in localStorage either")
           setError("Result not found. It may have been deleted or the link is invalid.")
         }
       } catch (error) {
@@ -830,8 +887,8 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                             <p className="text-sm font-medium">
                               <strong className="font-black">Explanation:</strong>
                             </p>
-                            <div className="mt-2 text-sm whitespace-pre-line">
-                              {question.explanation || "No explanation available"}
+                            <div className="mt-2 text-sm">
+                              {formatExplanation(question.explanation)}
                             </div>
                           </div>
                         )}
