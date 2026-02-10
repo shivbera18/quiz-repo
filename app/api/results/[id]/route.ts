@@ -75,7 +75,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         quiz: {
           select: {
             title: true,
-            description: true
+            description: true,
+            questions: true
           }
         }
       }
@@ -95,6 +96,36 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       console.error("Error parsing answers:", e);
       parsedAnswers = [];
     }
+
+    // Parse quiz questions to get explanations
+    let quizQuestions = [];
+    try {
+      quizQuestions = typeof dbResult.quiz?.questions === 'string'
+        ? JSON.parse(dbResult.quiz.questions)
+        : dbResult.quiz?.questions || [];
+    } catch (e) {
+      console.error("Error parsing quiz questions:", e);
+      quizQuestions = [];
+    }
+
+    // Create a map of questionId to explanation for quick lookup
+    const questionExplanations = new Map();
+    quizQuestions.forEach((q: any) => {
+      if (q.id && q.explanation) {
+        questionExplanations.set(q.id, q.explanation);
+      }
+    });
+
+    // Merge explanations into parsedAnswers
+    parsedAnswers = parsedAnswers.map((answer: any) => {
+      if (answer.questionId && !answer.explanation) {
+        const explanation = questionExplanations.get(answer.questionId);
+        if (explanation) {
+          return { ...answer, explanation };
+        }
+      }
+      return answer;
+    });
 
     let parsedSections: any = {};
     try {

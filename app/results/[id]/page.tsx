@@ -825,10 +825,10 @@ export default function ResultsPage({ params }: { params: { id: string } }) {
                         </div>
 
                         {/* Show explanation if available */}
-                        {question.explanation && (
+                        {question.explanation !== undefined && question.explanation !== null && (
                           <div className="mt-4 p-3 bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-600 dark:border-blue-500 rounded-lg">
                             <p className="text-sm font-medium">
-                              <strong className="font-black">Explanation:</strong> <MathRenderer text={question.explanation} />
+                              <strong className="font-black">Explanation:</strong> <MathRenderer text={question.explanation || "No explanation available"} />
                             </p>
                           </div>
                         )}

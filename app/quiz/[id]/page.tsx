@@ -263,11 +263,14 @@ export default function QuizPage({ params }: { params: { id: string } }) {
       questionResults.push({
         questionId: question.id,
         question: question.question,
-        userAnswer: hasAnswered ? userAnswer.selectedAnswer : null,
+        options: question.options,
+        selectedAnswer: hasAnswered ? userAnswer.selectedAnswer : null,
         correctAnswer: question.correctAnswer,
         isCorrect: isCorrect || false,
         isUnanswered: !hasAnswered,
         section: question.section,
+        explanation: question.explanation,
+        image: question.image,
         timeSpent: finalQuestionTimes[question.id] || 0, // Time in milliseconds
       })
     })
