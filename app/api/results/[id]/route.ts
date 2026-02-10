@@ -65,9 +65,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Await params in Next.js 15
     const { id } = await params
 
-    // Find result in database
+    // Find result in database - allow admins to access any result
     const dbResult = await prisma.quizResult.findFirst({
-      where: { 
+      where: decoded.isAdmin ? { id: id } : { 
         id: id,
         userId: decoded.userId 
       },
