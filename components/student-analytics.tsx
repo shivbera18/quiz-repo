@@ -782,10 +782,10 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[500px] pr-4">
-                <div className="space-y-3">
+                <div className="space-y-0">
                   {quizBreakdown.map((quiz, index) => (
                     <Link key={quiz.id || index} href={`/results/${quiz.id}`}>
-                      <Card variant="neobrutalist" className="bg-muted/30">
+                      <Card variant="neobrutalist" className="bg-muted/30 mb-4 hover:translate-x-0 hover:translate-y-0 hover:shadow-[8px_8px_0px_0px_#000] dark:hover:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.65)] hover:bg-sky-200 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-white">
                         <CardContent className="p-4">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div className="flex-1">
