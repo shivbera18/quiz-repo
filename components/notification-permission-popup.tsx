@@ -29,7 +29,9 @@ export default function NotificationPermissionPopup({ isOpen, onClose }: Notific
   // Update permission state when it changes externally
   useEffect(() => {
     const handlePermissionChange = () => {
-      setPermission(Notification.permission)
+      // Force re-render by triggering a state update
+      // We can't directly set permission from here, but we can trigger the hook to re-check
+      window.dispatchEvent(new CustomEvent('permission-changed'))
     }
 
     // Listen for permission changes (if supported)
@@ -37,17 +39,25 @@ export default function NotificationPermissionPopup({ isOpen, onClose }: Notific
       navigator.permissions.query({ name: 'notifications' }).then((permissionStatus) => {
         permissionStatus.addEventListener('change', handlePermissionChange)
         return () => permissionStatus.removeEventListener('change', handlePermissionChange)
+      }).catch(() => {
+        // Fallback for browsers that don't support permissions API
       })
     }
+
+    // Listen for our custom event
+    window.addEventListener('permission-changed', handlePermissionChange)
 
     // Fallback: check permission periodically
     const interval = setInterval(() => {
       if (Notification.permission !== permission) {
-        setPermission(Notification.permission)
+        window.dispatchEvent(new CustomEvent('permission-changed'))
       }
-    }, 1000)
+    }, 2000) // Check every 2 seconds instead of 1
 
-    return () => clearInterval(interval)
+    return () => {
+      window.removeEventListener('permission-changed', handlePermissionChange)
+      clearInterval(interval)
+    }
   }, [permission])
 
   // Don't show if already subscribed or not supported
@@ -58,6 +68,15 @@ export default function NotificationPermissionPopup({ isOpen, onClose }: Notific
   }, [isSubscribed, isSupported, onClose])
 
   const handleEnableNotifications = async () => {
+    if (!isSupported) {
+      toast({
+        title: "Not Supported",
+        description: "Push notifications are not supported in this browser.",
+        variant: "destructive"
+      })
+      return
+    }
+
     setIsEnabling(true)
 
     try {
@@ -116,7 +135,7 @@ export default function NotificationPermissionPopup({ isOpen, onClose }: Notific
     onClose()
   }
 
-  if (!isOpen || isSubscribed || !isSupported || permission === 'denied') {
+  if (!isOpen || isSubscribed || permission === 'denied') {
     return null
   }
 
@@ -168,7 +187,7 @@ export default function NotificationPermissionPopup({ isOpen, onClose }: Notific
               <div className="flex items-center gap-2 p-3 rounded-lg bg-orange-500/10 border-2 border-orange-500/20">
                 <AlertCircle className="h-4 w-4 text-orange-500 shrink-0" />
                 <p className="text-xs text-orange-600 font-medium">
-                  Push notifications are not supported in this browser. Try using Chrome, Firefox, or Edge.
+                  Push notifications require a modern browser and HTTPS connection. Try using Chrome, Firefox, or Edge on a secure website.
                 </p>
               </div>
             )}

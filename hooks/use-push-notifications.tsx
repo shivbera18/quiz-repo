@@ -33,10 +33,18 @@ export function usePushNotifications(): UsePushNotificationsReturn {
   // Check if push notifications are supported
   useEffect(() => {
     const checkSupport = () => {
-      const supported = 'serviceWorker' in navigator && 'PushManager' in window
+      // Check for all required APIs
+      const hasNotification = 'Notification' in window
+      const hasServiceWorker = 'serviceWorker' in navigator
+      const hasPushManager = 'PushManager' in window
+
+      // Push notifications require HTTPS (except localhost)
+      const isSecure = typeof location !== 'undefined' && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+
+      const supported = hasNotification && hasServiceWorker && hasPushManager && isSecure
       setIsSupported(supported)
 
-      if (supported) {
+      if (supported && hasNotification) {
         setPermission(Notification.permission)
       }
     }
@@ -44,22 +52,32 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     checkSupport()
 
     // Listen for permission changes
+    const handlePermissionChange = () => {
+      if ('Notification' in window) {
+        setPermission(Notification.permission)
+        // Re-check subscription when permission changes
+        if (user && isSupported) {
+          checkSubscriptionStatus()
+        }
+      }
+    }
+
     if ('permissions' in navigator) {
       navigator.permissions.query({ name: 'notifications' }).then((permissionStatus) => {
-        const handleChange = () => {
-          setPermission(Notification.permission)
-          // Re-check subscription when permission changes
-          if (user && isSupported) {
-            checkSubscriptionStatus()
-          }
-        }
-        permissionStatus.addEventListener('change', handleChange)
-        return () => permissionStatus.removeEventListener('change', handleChange)
+        permissionStatus.addEventListener('change', handlePermissionChange)
+        return () => permissionStatus.removeEventListener('change', handlePermissionChange)
       }).catch(() => {
-        // Fallback if permissions API not supported
+        // Fallback for browsers that don't support permissions API
       })
     }
-  }, [])
+
+    // Listen for our custom permission change event
+    window.addEventListener('permission-changed', handlePermissionChange)
+
+    return () => {
+      window.removeEventListener('permission-changed', handlePermissionChange)
+    }
+  }, [user, isSupported])
 
   // Check subscription status when user changes
   useEffect(() => {

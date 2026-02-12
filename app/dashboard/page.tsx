@@ -172,7 +172,12 @@ export default function DashboardPage() {
       // Double-check subscription status before showing
       const checkAndShow = async () => {
         try {
-          if ('serviceWorker' in navigator && 'PushManager' in window) {
+          // Check if notifications are supported
+          const hasNotificationSupport = 'Notification' in window
+          const hasServiceWorker = 'serviceWorker' in navigator
+          const hasPushManager = 'PushManager' in window
+
+          if (hasNotificationSupport && hasServiceWorker && hasPushManager) {
             const registration = await navigator.serviceWorker.ready
             const subscription = await registration.pushManager.getSubscription()
             const permission = Notification.permission
@@ -181,11 +186,15 @@ export default function DashboardPage() {
             if (!subscription && permission !== 'denied' && permission !== 'granted') {
               setShowNotificationPopup(true)
             }
+          } else {
+            // If APIs aren't available, still show popup but let component handle "not supported" message
+            // This ensures mobile users see the popup even if detection fails initially
+            setShowNotificationPopup(true)
           }
         } catch (error) {
           // If we can't check, show the popup anyway (better to ask than miss the opportunity)
           // But don't show if permission is denied
-          if (Notification.permission !== 'denied') {
+          if ('Notification' in window && Notification.permission !== 'denied') {
             setShowNotificationPopup(true)
           }
         }
