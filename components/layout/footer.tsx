@@ -35,7 +35,7 @@ export function Footer() {
           <div className="mt-6 flex flex-col items-center gap-3">
             <div className="flex items-center gap-3">
               <div className="h-12 w-12 rounded-full overflow-hidden ring-2 ring-border">
-                <Image src="https://github.com/shivbera18.png" alt="Shiv" width={48} height={48} />
+                <Image src="/my_photo/download4_upscaled.png" alt="Shiv Choudhary" width={48} height={48} />
               </div>
               <div className="text-sm text-muted-foreground">
                 Built with <Heart className="inline h-4 w-4 text-red-500 mx-1" /> by <span className="font-semibold text-foreground">Shiv Choudhary</span>
