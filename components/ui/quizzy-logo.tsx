@@ -11,7 +11,7 @@ interface QuizzyLogoProps {
 
 // SVG Logo component using the new design from /public/svg.svg
 // Light mode: black on white (as-is)
-// Dark mode: white on black (pre-inverted)
+// Dark mode: white on black (inverted)
 function QuizzyLogoSVG({ className }: { className?: string }) {
   return (
     <>
@@ -23,13 +23,13 @@ function QuizzyLogoSVG({ className }: { className?: string }) {
         height={100}
         className={cn(className, "dark:hidden")}
       />
-      {/* Dark mode logo - pre-inverted for dark backgrounds */}
+      {/* Dark mode logo - using CSS filter to invert */}
       <Image
-        src="/svg-dark.svg"
+        src="/svg.svg"
         alt="Quizzy Logo"
         width={100}
         height={100}
-        className={cn(className, "hidden dark:block")}
+        className={cn(className, "hidden dark:block invert")}
       />
     </>
   )
