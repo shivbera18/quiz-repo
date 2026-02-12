@@ -59,6 +59,7 @@ export default function DashboardPage() {
   const [loadingAttempts, setLoadingAttempts] = useState(true)
   const [showFlashQuestions, setShowFlashQuestions] = useState(false)
   const [flashQuestions, setFlashQuestions] = useState<any[]>([])
+  const [showNotificationPopup, setShowNotificationPopup] = useState(false)
   const [notificationTimer, setNotificationTimer] = useState<NodeJS.Timeout | null>(null)
 
   // Redirect to login if not authenticated (after hydration)
