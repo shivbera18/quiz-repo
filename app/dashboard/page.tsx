@@ -209,6 +209,8 @@ export default function DashboardPage() {
       }
     }
   }, [user, loading, notificationTimer])
+
+  const attemptedQuizIds = allAttempts.map(attempt => attempt.quizId)
   const unattemptedQuizzes = availableQuizzes.filter((quiz: Quiz) => !attemptedQuizIds.includes(quiz.id))
   const fullMockTests = unattemptedQuizzes.filter((q: Quiz) => q.sections.length > 1)
   const sectionalTests = unattemptedQuizzes.filter((q: Quiz) => q.sections.length === 1)
