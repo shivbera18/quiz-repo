@@ -225,6 +225,29 @@ export default function AdminAnnouncementsPage() {
     }
   }
 
+  const repushAnnouncement = async (announcement: Announcement) => {
+    if (!user?.token) return
+
+    try {
+      const response = await fetch(`/api/announcements/${announcement.id}/repush`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`
+        }
+      })
+
+      if (response.ok) {
+        // Show success message
+        console.log("Announcement repushed successfully")
+      } else {
+        console.error("Failed to repush announcement")
+      }
+    } catch (error) {
+      console.error("Failed to repush announcement:", error)
+    }
+  }
+
   const openEditDialog = (announcement: Announcement) => {
     setEditingAnnouncement(announcement)
     setFormData({
@@ -597,6 +620,15 @@ export default function AdminAnnouncementsPage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-1 sm:gap-2 shrink-0 self-end sm:self-start">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 sm:h-9 sm:w-9"
+                              onClick={() => repushAnnouncement(announcement)}
+                              title="Repush notification"
+                            >
+                              <Send className="h-4 w-4" />
+                            </Button>
                             <Button
                               variant="ghost"
                               size="icon"

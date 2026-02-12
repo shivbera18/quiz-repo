@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/hooks/use-auth"
 import { FlashQuestions } from "@/components/flash-questions"
 import { staggerContainer, staggerItem } from "@/components/page-transition"
+import NotificationPermissionPopup from "@/components/notification-permission-popup"
 import {
   BookOpen,
   TrendingUp,
@@ -58,6 +59,7 @@ export default function DashboardPage() {
   const [loadingAttempts, setLoadingAttempts] = useState(true)
   const [showFlashQuestions, setShowFlashQuestions] = useState(false)
   const [flashQuestions, setFlashQuestions] = useState<any[]>([])
+  const [showNotificationPopup, setShowNotificationPopup] = useState(false)
 
   // Redirect to login if not authenticated (after hydration)
   useEffect(() => {
@@ -140,6 +142,27 @@ export default function DashboardPage() {
         })
     }
   }, [loading, user])
+
+  // Show notification permission popup after a delay
+  useEffect(() => {
+    if (!user || loading) return
+
+    // Check if popup was recently dismissed
+    const dismissedAt = localStorage.getItem('notification-popup-dismissed')
+    if (dismissedAt) {
+      const dismissedTime = parseInt(dismissedAt)
+      const hoursSinceDismissed = (Date.now() - dismissedTime) / (1000 * 60 * 60)
+      // Don't show again for 24 hours
+      if (hoursSinceDismissed < 24) return
+    }
+
+    // Show popup after 3 seconds delay
+    const timer = setTimeout(() => {
+      setShowNotificationPopup(true)
+    }, 3000)
+
+    return () => clearTimeout(timer)
+  }, [user, loading])
 
   const attemptedQuizIds = allAttempts.map((attempt: RecentAttempt) => attempt.quizId).filter(Boolean)
   const unattemptedQuizzes = availableQuizzes.filter((quiz: Quiz) => !attemptedQuizIds.includes(quiz.id))
@@ -367,6 +390,12 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       )}
+      
+      {/* Notification Permission Popup */}
+      <NotificationPermissionPopup
+        isOpen={showNotificationPopup}
+        onClose={() => setShowNotificationPopup(false)}
+      />
     </div>
   )
 }
