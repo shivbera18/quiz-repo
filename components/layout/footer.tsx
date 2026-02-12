@@ -21,13 +21,13 @@ export function Footer() {
           <div>
             <h4 className="font-semibold text-foreground mb-4">Quick Links</h4>
             <div className="space-y-2">
-              <Link href="/dashboard" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/dashboard" className="block text-sm text-muted-foreground hover:text-blue-500 transition-colors">
                 Dashboard
               </Link>
-              <Link href="/analytics" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/analytics" className="block text-sm text-muted-foreground hover:text-blue-500 transition-colors">
                 Analytics
               </Link>
-              <Link href="/profile" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/profile" className="block text-sm text-muted-foreground hover:text-blue-500 transition-colors">
                 Profile
               </Link>
             </div>
@@ -39,7 +39,7 @@ export function Footer() {
             <div className="space-y-2">
               <a
                 href="mailto:shivbera45@gmail.com"
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-blue-500 transition-colors"
               >
                 <Mail className="h-4 w-4" />
                 shivbera45@gmail.com
@@ -48,15 +48,15 @@ export function Footer() {
                 href="https://github.com/shivbera18"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-blue-500 transition-colors"
               >
                 <Github className="h-4 w-4" />
                 @shivbera18
               </a>
-              <Link href="/privacy" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/privacy" className="block text-sm text-muted-foreground hover:text-blue-500 transition-colors">
                 Privacy Policy
               </Link>
-              <Link href="/terms" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/terms" className="block text-sm text-muted-foreground hover:text-blue-500 transition-colors">
                 Terms of Service
               </Link>
             </div>
