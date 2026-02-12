@@ -7,21 +7,24 @@ export function Footer() {
     <footer className="w-full relative bg-background/60 mt-auto">
       {/* Top pills (centered) */}
       <div className="absolute inset-x-0 -top-6 flex justify-center pointer-events-none">
-        <div className="pointer-events-auto flex gap-3">
-          <a href="mailto:shivbera45@gmail.com" className="px-4 py-2 bg-white dark:bg-zinc-900 rounded-full text-sm font-medium text-foreground/90 shadow-sm hover:bg-foreground/5 transition flex items-center gap-2">
+        <div className="pointer-events-auto flex gap-3 max-w-full overflow-x-auto px-4 py-2 scrollbar-hide">
+          <a href="mailto:shivbera45@gmail.com" aria-label="Email Shiv" className="px-4 py-2 bg-white dark:bg-zinc-900 rounded-full text-sm font-medium text-foreground/90 shadow-sm hover:scale-105 hover:bg-foreground/5 transition-transform transition-colors flex items-center gap-2">
             <Mail className="h-4 w-4 text-muted-foreground" />
             Contact
           </a>
-          <Link href="/privacy" className="px-4 py-2 bg-white dark:bg-zinc-900 rounded-full text-sm font-medium text-foreground/90 shadow-sm hover:bg-foreground/5 transition">
+          <Link href="/privacy" aria-label="Privacy Policy" className="px-4 py-2 bg-white dark:bg-zinc-900 rounded-full text-sm font-medium text-foreground/90 shadow-sm hover:scale-105 hover:bg-foreground/5 transition-transform transition-colors">
             Privacy Policy
           </Link>
-          <Link href="/terms" className="px-4 py-2 bg-white dark:bg-zinc-900 rounded-full text-sm font-medium text-foreground/90 shadow-sm hover:bg-foreground/5 transition">
+          <Link href="/terms" aria-label="Terms of Service" className="px-4 py-2 bg-white dark:bg-zinc-900 rounded-full text-sm font-medium text-foreground/90 shadow-sm hover:scale-105 hover:bg-foreground/5 transition-transform transition-colors">
             Terms
           </Link>
-          <a href="https://shivcdhry.vercel.app" target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-white dark:bg-zinc-900 rounded-full text-sm font-medium text-foreground/90 shadow-sm hover:bg-foreground/5 transition flex items-center gap-2">
+          <a href="https://shivcdhry.vercel.app" target="_blank" rel="noopener noreferrer" aria-label="Portfolio Shivs site" className="px-4 py-2 bg-white dark:bg-zinc-900 rounded-full text-sm font-medium text-foreground/90 shadow-sm hover:scale-105 hover:bg-foreground/5 transition-transform transition-colors flex items-center gap-2">
             Portfolio
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 3h7v7m0-7L10 14" />
+            </svg>
           </a>
-          <a href="https://github.com/shivbera18" target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-white dark:bg-zinc-900 rounded-full text-sm font-medium text-foreground/90 shadow-sm hover:bg-foreground/5 transition flex items-center gap-2">
+          <a href="https://github.com/shivbera18" target="_blank" rel="noopener noreferrer" aria-label="GitHub shivbera18" className="px-4 py-2 bg-white dark:bg-zinc-900 rounded-full text-sm font-medium text-foreground/90 shadow-sm hover:scale-105 hover:bg-foreground/5 transition-transform transition-colors flex items-center gap-2">
             <Github className="h-4 w-4" />
             <span>@shivbera18</span>
           </a>
