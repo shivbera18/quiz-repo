@@ -3,7 +3,7 @@ import { BookOpen, Mail, HelpCircle, Shield, FileText } from "lucide-react"
 
 export function Footer() {
   return (
-    <footer className="w-full border-t-4 border-black dark:border-yellow-500/60 bg-yellow-200 dark:bg-yellow-500 py-8 mt-auto relative z-20">
+    <footer className="w-full border-t-4 border-black dark:border-yellow-500/60 bg-yellow-300 dark:bg-yellow-400 py-4 mt-auto relative z-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand Section */}
