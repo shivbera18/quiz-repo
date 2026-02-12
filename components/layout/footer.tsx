@@ -7,22 +7,19 @@ export function Footer() {
     <footer className="w-full relative bg-background/60 mt-auto">
       {/* Top pills (centered) */}
       <div className="absolute inset-x-0 -top-6 flex justify-center pointer-events-none">
-        <div className="pointer-events-auto flex gap-3 bg-transparent">
-          <Link href="/contact" className="px-4 py-2 bg-muted rounded-full text-sm font-medium text-foreground/90 shadow-sm hover:bg-muted-foreground/5 transition">
-            Contact Us
-          </Link>
-          <Link href="/shipping" className="px-4 py-2 bg-muted rounded-full text-sm font-medium text-foreground/90 shadow-sm hover:bg-muted-foreground/5 transition">
-            Shipping & Delivery
-          </Link>
-          <Link href="/privacy" className="px-4 py-2 bg-muted rounded-full text-sm font-medium text-foreground/90 shadow-sm hover:bg-muted-foreground/5 transition">
+        <div className="pointer-events-auto flex gap-3">
+          <a href="mailto:shivbera45@gmail.com" className="px-4 py-2 bg-white dark:bg-zinc-900 rounded-full text-sm font-medium text-foreground/90 shadow-sm hover:bg-foreground/5 transition">
+            Contact
+          </a>
+          <Link href="/privacy" className="px-4 py-2 bg-white dark:bg-zinc-900 rounded-full text-sm font-medium text-foreground/90 shadow-sm hover:bg-foreground/5 transition">
             Privacy Policy
           </Link>
-          <Link href="/cancellation" className="px-4 py-2 bg-muted rounded-full text-sm font-medium text-foreground/90 shadow-sm hover:bg-muted-foreground/5 transition">
-            Cancellation & Refund Policy
+          <Link href="/terms" className="px-4 py-2 bg-white dark:bg-zinc-900 rounded-full text-sm font-medium text-foreground/90 shadow-sm hover:bg-foreground/5 transition">
+            Terms
           </Link>
-          <Link href="/terms" className="px-4 py-2 bg-muted rounded-full text-sm font-medium text-foreground/90 shadow-sm hover:bg-muted-foreground/5 transition">
-            Terms of Service
-          </Link>
+          <a href="https://github.com/shivbera18" target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-white dark:bg-zinc-900 rounded-full text-sm font-medium text-foreground/90 shadow-sm hover:bg-foreground/5 transition">
+            @{`shivbera18`}
+          </a>
         </div>
       </div>
 
