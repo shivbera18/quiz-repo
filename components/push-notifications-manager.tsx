@@ -38,6 +38,11 @@ export default function PushNotificationsManager({ compact = false }: PushNotifi
       return
     }
 
+    // Prevent multiple simultaneous requests
+    if (isEnabling || isLoading) {
+      return
+    }
+
     setIsEnabling(true)
 
     try {
@@ -82,9 +87,10 @@ export default function PushNotificationsManager({ compact = false }: PushNotifi
       }
     } catch (err) {
       console.error('Error toggling notifications:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update notification settings'
       toast({
         title: "Error",
-        description: "Failed to update notification settings.",
+        description: errorMessage,
         variant: "destructive"
       })
     } finally {

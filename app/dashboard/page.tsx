@@ -188,9 +188,8 @@ export default function DashboardPage() {
               setShowNotificationPopup(true)
             }
           } else {
-            // If APIs aren't available, still show popup but let component handle "not supported" message
-            // This ensures mobile users see the popup even if detection fails initially
-            setShowNotificationPopup(true)
+            // If APIs aren't available, don't show popup to avoid confusion
+            console.log('Push notifications not fully supported')
           }
         } catch (error) {
           // If we can't check, don't show the popup to avoid errors

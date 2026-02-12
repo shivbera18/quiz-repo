@@ -95,15 +95,25 @@ export function usePushNotifications(): UsePushNotificationsReturn {
   }, [user, isSupported])
 
   const checkSubscriptionStatus = useCallback(async () => {
-    if (!isSupported || !user || typeof window === 'undefined') return
+    if (!isSupported || !user || typeof window === 'undefined') {
+      setIsSubscribed(false)
+      return
+    }
 
     try {
       const registration = await navigator.serviceWorker.ready
       const subscription = await registration.pushManager.getSubscription()
-      setIsSubscribed(!!subscription)
+
+      // Double-check that permission is still granted
+      const currentPermission = Notification.permission
+      const hasValidSubscription = !!(subscription && currentPermission === 'granted')
+
+      setIsSubscribed(hasValidSubscription)
+      setPermission(currentPermission)
     } catch (err) {
       console.error('Error checking subscription status:', err)
-      // Don't set error state for subscription checks, just log
+      // On error, assume not subscribed to be safe
+      setIsSubscribed(false)
     }
   }, [isSupported, user])
 
@@ -179,17 +189,23 @@ export function usePushNotifications(): UsePushNotificationsReturn {
         throw new Error(errorData.message || 'Failed to save subscription')
       }
 
+      // Update local state immediately
       setIsSubscribed(true)
-      // Re-check permission in case it changed
       setPermission(Notification.permission)
+
+      // Re-check subscription status to ensure consistency
+      await checkSubscriptionStatus()
+
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to subscribe'
       setError(errorMessage)
+      // Re-check subscription status on error to ensure state consistency
+      await checkSubscriptionStatus()
       throw err
     } finally {
       setIsLoading(false)
     }
-  }, [isSupported, user])
+  }, [isSupported, user, checkSubscriptionStatus])
 
   const unsubscribe = useCallback(async () => {
     if (!isSupported || !user) {
@@ -224,15 +240,22 @@ export function usePushNotifications(): UsePushNotificationsReturn {
         }
       }
 
+      // Update local state immediately
       setIsSubscribed(false)
+
+      // Re-check subscription status to ensure consistency
+      await checkSubscriptionStatus()
+
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to unsubscribe'
       setError(errorMessage)
+      // Re-check subscription status on error to ensure state consistency
+      await checkSubscriptionStatus()
       throw err
     } finally {
       setIsLoading(false)
     }
-  }, [isSupported, user])
+  }, [isSupported, user, checkSubscriptionStatus])
 
   return {
     isSupported,

@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import Image from "next/image"
+import { useEffect, useState } from "react"
 
 interface QuizzyLogoProps {
   size?: "sm" | "md" | "lg"
@@ -13,25 +14,25 @@ interface QuizzyLogoProps {
 // Light mode: black on white (as-is)
 // Dark mode: white on black (inverted)
 function QuizzyLogoSVG({ className }: { className?: string }) {
+  const [isDarkMode, setIsDarkMode] = useState(false)
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    setIsDarkMode(mediaQuery.matches)
+
+    const handler = (e: MediaQueryListEvent) => setIsDarkMode(e.matches)
+    mediaQuery.addEventListener('change', handler)
+    return () => mediaQuery.removeEventListener('change', handler)
+  }, [])
+
   return (
-    <>
-      {/* Light mode logo */}
-      <Image
-        src="/svg.svg"
-        alt="Quizzy Logo"
-        width={100}
-        height={100}
-        className={cn(className, "dark:hidden")}
-      />
-      {/* Dark mode logo - using CSS filter to invert */}
-      <Image
-        src="/svg.svg"
-        alt="Quizzy Logo"
-        width={100}
-        height={100}
-        className={cn(className, "hidden dark:block dark:invert")}
-      />
-    </>
+    <Image
+      src="/svg.svg"
+      alt="Quizzy Logo"
+      width={100}
+      height={100}
+      className={cn(className, isDarkMode ? "invert" : "")}
+    />
   )
 }
 
