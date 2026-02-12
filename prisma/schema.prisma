@@ -121,3 +121,18 @@ model AnnouncementRead {
   
   @@unique([announcementId, userId])
 }
+
+model PushSubscription {
+  id          String   @id @default(uuid())
+  userId      String
+  endpoint    String   @unique
+  p256dh      String   // P-256 DH key for encryption
+  auth        String   // Authentication secret
+  userAgent   String?  // Browser/device info
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastUsedAt  DateTime?
+
+  @@unique([userId, endpoint])
+}

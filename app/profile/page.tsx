@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { MobilePageHeader } from "@/components/layout/mobile-page-header"
+import PushNotificationsManager from "@/components/push-notifications-manager"
 
 interface UserStats {
   totalQuizzes: number
@@ -198,13 +199,15 @@ export default function ProfilePage() {
                 <SelectContent>
                   <SelectItem value="achievements">🏆 Achievements</SelectItem>
                   <SelectItem value="stats">📊 Quick Stats</SelectItem>
+                  <SelectItem value="notifications">🔔 Notifications</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             {/* Desktop: Tab list */}
-            <TabsList className="hidden sm:grid w-full grid-cols-2 mb-6">
+            <TabsList className="hidden sm:grid w-full grid-cols-3 mb-6">
               <TabsTrigger value="achievements">Achievements</TabsTrigger>
               <TabsTrigger value="stats">Quick Stats</TabsTrigger>
+              <TabsTrigger value="notifications">Notifications</TabsTrigger>
             </TabsList>
 
             <TabsContent value="achievements" className="space-y-4">
@@ -310,6 +313,10 @@ export default function ProfilePage() {
                   </div>
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="notifications" className="space-y-4">
+              <PushNotificationsManager />
             </TabsContent>
           </Tabs>
         </Card>

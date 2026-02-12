@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma-client"
+import { sendPushNotificationToAllUsers } from "@/lib/push-notification-utils"
 
 export const dynamic = 'force-dynamic'
 
@@ -136,6 +137,25 @@ export async function POST(request: NextRequest) {
         createdBy: user.id
       }
     })
+
+    // Send push notification to all users (except the creator)
+    try {
+      const pushResult = await sendPushNotificationToAllUsers({
+        title: announcement.title,
+        body: announcement.content.length > 100
+          ? announcement.content.substring(0, 100) + '...'
+          : announcement.content,
+        url: '/dashboard',
+        priority: announcement.priority as 'low' | 'normal' | 'high' | 'urgent',
+        tag: `announcement-${announcement.id}`,
+        id: announcement.id
+      }, user.id)
+
+      console.log(`Push notification sent: ${pushResult.sent} successful, ${pushResult.failed} failed`)
+    } catch (pushError) {
+      console.error("Error sending push notification:", pushError)
+      // Don't fail the announcement creation if push notification fails
+    }
 
     return NextResponse.json({ 
       success: true, 

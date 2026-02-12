@@ -92,20 +92,89 @@ self.addEventListener('sync', (event) => {
   }
 });
 
-// Push notifications (for future features)
+// Push notifications (enhanced implementation)
 self.addEventListener('push', (event) => {
+  console.log('Push received:', event);
+
+  let data = {};
+  if (event.data) {
+    data = event.data.json();
+  }
+
   const options = {
-    body: event.data ? event.data.text() : 'New update available!',
+    body: data.body || 'New announcement available!',
     icon: '/icons/icon-192x192.svg',
     badge: '/icons/icon-192x192.svg',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
-      primaryKey: 1
-    }
+      primaryKey: data.id || 1,
+      url: data.url || '/dashboard'
+    },
+    actions: [
+      {
+        action: 'view',
+        title: 'View',
+        icon: '/icons/icon-192x192.svg'
+      },
+      {
+        action: 'dismiss',
+        title: 'Dismiss'
+      }
+    ],
+    requireInteraction: data.priority === 'urgent' || data.priority === 'high',
+    silent: false,
+    tag: data.tag || 'announcement' // Group similar notifications
   };
 
+  // Set title based on priority
+  let title = 'Quiz App';
+  if (data.priority === 'urgent') {
+    title = '🚨 URGENT: Quiz App';
+  } else if (data.priority === 'high') {
+    title = '⚠️ Quiz App';
+  } else if (data.title) {
+    title = data.title;
+  }
+
   event.waitUntil(
-    self.registration.showNotification('Quiz App', options)
+    self.registration.showNotification(title, options)
   );
+});
+
+// Handle notification click
+self.addEventListener('notificationclick', (event) => {
+  console.log('Notification click received:', event);
+
+  event.notification.close();
+
+  if (event.action === 'dismiss') {
+    return;
+  }
+
+  // Default action or 'view' action
+  const urlToOpen = event.notification.data?.url || '/dashboard';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((windowClients) => {
+        // Check if there is already a window/tab open with the target URL
+        for (let client of windowClients) {
+          if (client.url === urlToOpen && 'focus' in client) {
+            return client.focus();
+          }
+        }
+
+        // If not, open a new window/tab
+        if (clients.openWindow) {
+          return clients.openWindow(urlToOpen);
+        }
+      })
+  );
+});
+
+// Handle notification close (for analytics)
+self.addEventListener('notificationclose', (event) => {
+  console.log('Notification closed:', event);
+  // Could send analytics data here
 });

@@ -47,6 +47,8 @@ import {
   Calendar as CalendarIcon,
   Clock,
   X,
+  Bell,
+  Send,
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { format, setHours, setMinutes } from "date-fns"
@@ -580,6 +582,10 @@ export default function AdminAnnouncementsPage() {
                                 <span className="flex items-center gap-1">
                                   <Users className="h-3 w-3" />
                                   {announcement.readCount}/{announcement.totalUsers} ({announcement.readPercentage}%)
+                                </span>
+                                <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                                  <Bell className="h-3 w-3" />
+                                  Push sent
                                 </span>
                                 {announcement.expiresAt && (
                                   <span className="flex items-center gap-1">
