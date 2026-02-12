@@ -34,9 +34,9 @@ export function usePushNotifications(): UsePushNotificationsReturn {
   useEffect(() => {
     const checkSupport = () => {
       // Check for all required APIs
-      const hasNotification = 'Notification' in window
-      const hasServiceWorker = 'serviceWorker' in navigator
-      const hasPushManager = 'PushManager' in window
+      const hasNotification = typeof window !== 'undefined' && 'Notification' in window
+      const hasServiceWorker = typeof navigator !== 'undefined' && 'serviceWorker' in navigator
+      const hasPushManager = typeof window !== 'undefined' && 'PushManager' in window
 
       // Push notifications require HTTPS (except localhost)
       const isSecure = typeof location !== 'undefined' && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')
@@ -44,7 +44,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       const supported = hasNotification && hasServiceWorker && hasPushManager && isSecure
       setIsSupported(supported)
 
-      if (supported && hasNotification) {
+      if (supported && typeof window !== 'undefined' && 'Notification' in window) {
         setPermission(Notification.permission)
       }
     }
@@ -53,7 +53,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
 
     // Listen for permission changes
     const handlePermissionChange = () => {
-      if ('Notification' in window) {
+      if (typeof window !== 'undefined' && 'Notification' in window) {
         setPermission(Notification.permission)
         // Re-check subscription when permission changes
         if (user && isSupported) {
@@ -62,7 +62,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       }
     }
 
-    if ('permissions' in navigator) {
+    if (typeof navigator !== 'undefined' && 'permissions' in navigator) {
       navigator.permissions.query({ name: 'notifications' }).then((permissionStatus) => {
         permissionStatus.addEventListener('change', handlePermissionChange)
         return () => permissionStatus.removeEventListener('change', handlePermissionChange)
@@ -72,10 +72,18 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     }
 
     // Listen for our custom permission change event
-    window.addEventListener('permission-changed', handlePermissionChange)
+    const customPermissionHandler = () => {
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        setPermission(Notification.permission)
+        if (user && isSupported) {
+          checkSubscriptionStatus()
+        }
+      }
+    }
+    window.addEventListener('permission-changed', customPermissionHandler)
 
     return () => {
-      window.removeEventListener('permission-changed', handlePermissionChange)
+      window.removeEventListener('permission-changed', customPermissionHandler)
     }
   }, [user, isSupported])
 
@@ -87,7 +95,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
   }, [user, isSupported])
 
   const checkSubscriptionStatus = useCallback(async () => {
-    if (!isSupported || !user) return
+    if (!isSupported || !user || typeof window === 'undefined') return
 
     try {
       const registration = await navigator.serviceWorker.ready
@@ -95,11 +103,12 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       setIsSubscribed(!!subscription)
     } catch (err) {
       console.error('Error checking subscription status:', err)
+      // Don't set error state for subscription checks, just log
     }
   }, [isSupported, user])
 
   const requestPermission = useCallback(async (): Promise<NotificationPermission> => {
-    if (!isSupported) {
+    if (!isSupported || typeof window === 'undefined' || !('Notification' in window)) {
       throw new Error('Push notifications are not supported')
     }
 
@@ -115,12 +124,12 @@ export function usePushNotifications(): UsePushNotificationsReturn {
   }, [isSupported])
 
   const subscribe = useCallback(async () => {
-    if (!isSupported || !user) {
+    if (!isSupported || !user || typeof window === 'undefined') {
       throw new Error('Cannot subscribe: missing requirements')
     }
 
     // Check current permission before proceeding
-    const currentPermission = Notification.permission
+    const currentPermission = typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default'
     if (currentPermission !== 'granted') {
       throw new Error('Cannot subscribe: permission not granted')
     }

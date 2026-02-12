@@ -173,9 +173,9 @@ export default function DashboardPage() {
       const checkAndShow = async () => {
         try {
           // Check if notifications are supported
-          const hasNotificationSupport = 'Notification' in window
-          const hasServiceWorker = 'serviceWorker' in navigator
-          const hasPushManager = 'PushManager' in window
+          const hasNotificationSupport = typeof window !== 'undefined' && 'Notification' in window
+          const hasServiceWorker = typeof navigator !== 'undefined' && 'serviceWorker' in navigator
+          const hasPushManager = typeof window !== 'undefined' && 'PushManager' in window
 
           if (hasNotificationSupport && hasServiceWorker && hasPushManager) {
             const registration = await navigator.serviceWorker.ready
@@ -192,11 +192,8 @@ export default function DashboardPage() {
             setShowNotificationPopup(true)
           }
         } catch (error) {
-          // If we can't check, show the popup anyway (better to ask than miss the opportunity)
-          // But don't show if permission is denied
-          if ('Notification' in window && Notification.permission !== 'denied') {
-            setShowNotificationPopup(true)
-          }
+          // If we can't check, don't show the popup to avoid errors
+          console.log('Could not check notification status:', error)
         }
       }
 

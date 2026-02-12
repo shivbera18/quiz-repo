@@ -26,46 +26,12 @@ export default function NotificationPermissionPopup({ isOpen, onClose }: Notific
   const { toast } = useToast()
   const [isEnabling, setIsEnabling] = useState(false)
 
-  // Update permission state when it changes externally
+  // Simple effect to close popup when conditions change
   useEffect(() => {
-    const handlePermissionChange = () => {
-      // Force re-render by triggering a state update
-      // We can't directly set permission from here, but we can trigger the hook to re-check
-      window.dispatchEvent(new CustomEvent('permission-changed'))
-    }
-
-    // Listen for permission changes (if supported)
-    if ('permissions' in navigator) {
-      navigator.permissions.query({ name: 'notifications' }).then((permissionStatus) => {
-        permissionStatus.addEventListener('change', handlePermissionChange)
-        return () => permissionStatus.removeEventListener('change', handlePermissionChange)
-      }).catch(() => {
-        // Fallback for browsers that don't support permissions API
-      })
-    }
-
-    // Listen for our custom event
-    window.addEventListener('permission-changed', handlePermissionChange)
-
-    // Fallback: check permission periodically
-    const interval = setInterval(() => {
-      if (Notification.permission !== permission) {
-        window.dispatchEvent(new CustomEvent('permission-changed'))
-      }
-    }, 2000) // Check every 2 seconds instead of 1
-
-    return () => {
-      window.removeEventListener('permission-changed', handlePermissionChange)
-      clearInterval(interval)
-    }
-  }, [permission])
-
-  // Don't show if already subscribed or not supported
-  useEffect(() => {
-    if (isSubscribed || !isSupported) {
+    if (isSubscribed || !isSupported || permission === 'denied') {
       onClose()
     }
-  }, [isSubscribed, isSupported, onClose])
+  }, [isSubscribed, isSupported, permission, onClose])
 
   const handleEnableNotifications = async () => {
     if (!isSupported) {
