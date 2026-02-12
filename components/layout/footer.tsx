@@ -4,7 +4,7 @@ import { QuizzyLogo } from "@/components/ui/quizzy-logo"
 
 export function Footer() {
   return (
-    <footer className="w-full border-t border-border bg-background py-6 mt-auto">
+    <footer className="w-full border-t border-border bg-background py-10 mt-auto">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
           {/* Brand */}
@@ -38,10 +38,11 @@ export function Footer() {
               href="https://github.com/shivbera18"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center h-9 w-9 rounded-md border border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
               aria-label="GitHub"
             >
-              <Github className="h-4 w-4" />
+              <Github className="h-5 w-5" />
+              <span className="hidden sm:inline">@shivbera18</span>
             </a>
             <span className="hidden md:inline text-xs text-muted-foreground">Made with <Heart className="inline h-3 w-3 text-red-500 mx-1" /> for exam success</span>
           </div>
