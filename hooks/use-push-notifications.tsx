@@ -42,6 +42,23 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     }
 
     checkSupport()
+
+    // Listen for permission changes
+    if ('permissions' in navigator) {
+      navigator.permissions.query({ name: 'notifications' }).then((permissionStatus) => {
+        const handleChange = () => {
+          setPermission(Notification.permission)
+          // Re-check subscription when permission changes
+          if (user && isSupported) {
+            checkSubscriptionStatus()
+          }
+        }
+        permissionStatus.addEventListener('change', handleChange)
+        return () => permissionStatus.removeEventListener('change', handleChange)
+      }).catch(() => {
+        // Fallback if permissions API not supported
+      })
+    }
   }, [])
 
   // Check subscription status when user changes
@@ -80,8 +97,14 @@ export function usePushNotifications(): UsePushNotificationsReturn {
   }, [isSupported])
 
   const subscribe = useCallback(async () => {
-    if (!isSupported || !user || permission !== 'granted') {
+    if (!isSupported || !user) {
       throw new Error('Cannot subscribe: missing requirements')
+    }
+
+    // Check current permission before proceeding
+    const currentPermission = Notification.permission
+    if (currentPermission !== 'granted') {
+      throw new Error('Cannot subscribe: permission not granted')
     }
 
     setIsLoading(true)
@@ -130,6 +153,8 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       }
 
       setIsSubscribed(true)
+      // Re-check permission in case it changed
+      setPermission(Notification.permission)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to subscribe'
       setError(errorMessage)
@@ -137,7 +162,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [isSupported, user, permission])
+  }, [isSupported, user])
 
   const unsubscribe = useCallback(async () => {
     if (!isSupported || !user) {

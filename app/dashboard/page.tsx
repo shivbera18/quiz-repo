@@ -59,7 +59,7 @@ export default function DashboardPage() {
   const [loadingAttempts, setLoadingAttempts] = useState(true)
   const [showFlashQuestions, setShowFlashQuestions] = useState(false)
   const [flashQuestions, setFlashQuestions] = useState<any[]>([])
-  const [showNotificationPopup, setShowNotificationPopup] = useState(false)
+  const [notificationTimer, setNotificationTimer] = useState<NodeJS.Timeout | null>(null)
 
   // Redirect to login if not authenticated (after hydration)
   useEffect(() => {
@@ -145,7 +145,13 @@ export default function DashboardPage() {
 
   // Show notification permission popup after a delay
   useEffect(() => {
-    if (!user || loading) return
+    if (!user || loading) {
+      if (notificationTimer) {
+        clearTimeout(notificationTimer)
+        setNotificationTimer(null)
+      }
+      return
+    }
 
     // Check if popup was recently dismissed
     const dismissedAt = localStorage.getItem('notification-popup-dismissed')
@@ -156,15 +162,46 @@ export default function DashboardPage() {
       if (hoursSinceDismissed < 24) return
     }
 
-    // Show popup after 3 seconds delay
+    // Clear any existing timer
+    if (notificationTimer) {
+      clearTimeout(notificationTimer)
+    }
+
+    // Show popup after 3 seconds delay, but only if not already subscribed
     const timer = setTimeout(() => {
-      setShowNotificationPopup(true)
+      // Double-check subscription status before showing
+      const checkAndShow = async () => {
+        try {
+          if ('serviceWorker' in navigator && 'PushManager' in window) {
+            const registration = await navigator.serviceWorker.ready
+            const subscription = await registration.pushManager.getSubscription()
+            const permission = Notification.permission
+
+            // Only show if not subscribed AND permission is not denied AND permission is not already granted (would be auto-subscribed)
+            if (!subscription && permission !== 'denied' && permission !== 'granted') {
+              setShowNotificationPopup(true)
+            }
+          }
+        } catch (error) {
+          // If we can't check, show the popup anyway (better to ask than miss the opportunity)
+          // But don't show if permission is denied
+          if (Notification.permission !== 'denied') {
+            setShowNotificationPopup(true)
+          }
+        }
+      }
+
+      checkAndShow()
     }, 3000)
 
-    return () => clearTimeout(timer)
-  }, [user, loading])
+    setNotificationTimer(timer)
 
-  const attemptedQuizIds = allAttempts.map((attempt: RecentAttempt) => attempt.quizId).filter(Boolean)
+    return () => {
+      if (timer) {
+        clearTimeout(timer)
+      }
+    }
+  }, [user, loading, notificationTimer])
   const unattemptedQuizzes = availableQuizzes.filter((quiz: Quiz) => !attemptedQuizIds.includes(quiz.id))
   const fullMockTests = unattemptedQuizzes.filter((q: Quiz) => q.sections.length > 1)
   const sectionalTests = unattemptedQuizzes.filter((q: Quiz) => q.sections.length === 1)

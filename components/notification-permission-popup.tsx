@@ -26,6 +26,30 @@ export default function NotificationPermissionPopup({ isOpen, onClose }: Notific
   const { toast } = useToast()
   const [isEnabling, setIsEnabling] = useState(false)
 
+  // Update permission state when it changes externally
+  useEffect(() => {
+    const handlePermissionChange = () => {
+      setPermission(Notification.permission)
+    }
+
+    // Listen for permission changes (if supported)
+    if ('permissions' in navigator) {
+      navigator.permissions.query({ name: 'notifications' }).then((permissionStatus) => {
+        permissionStatus.addEventListener('change', handlePermissionChange)
+        return () => permissionStatus.removeEventListener('change', handlePermissionChange)
+      })
+    }
+
+    // Fallback: check permission periodically
+    const interval = setInterval(() => {
+      if (Notification.permission !== permission) {
+        setPermission(Notification.permission)
+      }
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [permission])
+
   // Don't show if already subscribed or not supported
   useEffect(() => {
     if (isSubscribed || !isSupported) {
@@ -79,6 +103,8 @@ export default function NotificationPermissionPopup({ isOpen, onClose }: Notific
         description: "Failed to enable notifications. Please try again.",
         variant: "destructive"
       })
+      // Don't close on error - let user retry
+      // onClose()
     } finally {
       setIsEnabling(false)
     }
@@ -90,13 +116,13 @@ export default function NotificationPermissionPopup({ isOpen, onClose }: Notific
     onClose()
   }
 
-  if (!isOpen || isSubscribed || !isSupported) {
+  if (!isOpen || isSubscribed || !isSupported || permission === 'denied') {
     return null
   }
 
   return (
-    <div className="fixed bottom-4 right-4 left-4 sm:left-auto sm:right-4 z-50 w-auto max-w-sm sm:max-w-md animate-in slide-in-from-bottom-2 fade-in-0 duration-300">
-      <Card className="border-4 border-black shadow-[8px_8px_0px_0px_#000] sm:shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.65)]">
+    <div className="fixed bottom-4 right-4 z-50 w-full max-w-sm animate-in slide-in-from-bottom-2 fade-in-0 duration-300 sm:right-4 sm:left-auto sm:bottom-4 sm:max-w-md">
+      <Card className="border-4 border-black shadow-[8px_8px_0px_0px_#000] sm:shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.65)] mx-4 sm:mx-0">
         <CardContent className="p-4 sm:p-6">
           <div className="flex items-start justify-between mb-3 sm:mb-4">
             <div className="flex items-center gap-2 sm:gap-3">
