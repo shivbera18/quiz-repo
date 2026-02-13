@@ -20,6 +20,8 @@ interface Question {
 interface FlashQuestionsProps {
   isOpen: boolean
   onClose: () => void
+  // optional externally-provided questions (dashboard passes these)
+  questions?: Question[]
 }
 
 const operations = ["Addition", "Subtraction", "Multiplication", "Division"]
@@ -216,10 +218,10 @@ const generateLocalQuestions = (
   return questions
 }
 
-export function FlashQuestions({ isOpen, onClose }: FlashQuestionsProps) {
+export function FlashQuestions({ isOpen, onClose, questions: initialQuestions }: FlashQuestionsProps) {
   const [currentSection, setCurrentSection] = useState<"2-digit" | "3-digit" | "mixed">("2-digit")
   const [currentOperation, setCurrentOperation] = useState("Addition")
-  const [questions, setQuestions] = useState<Question[]>([])
+  const [questions, setQuestions] = useState<Question[]>(initialQuestions || [])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [userAnswer, setUserAnswer] = useState("")
   const [selectedOption, setSelectedOption] = useState<number | null>(null)

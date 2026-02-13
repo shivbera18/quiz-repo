@@ -101,13 +101,13 @@ export default function NotificationPermissionPopup({ isOpen, onClose }: Notific
     onClose()
   }
 
-  if (!isOpen || isSubscribed || permission === 'denied') {
+  if (!isOpen || isSubscribed || (permission as string) === 'denied') {
     return null
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-full max-w-sm animate-in slide-in-from-bottom-2 fade-in-0 duration-300 sm:right-4 sm:left-auto sm:bottom-4 sm:max-w-md">
-      <Card className="border-4 border-black shadow-[8px_8px_0px_0px_#000] sm:shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.65)] mx-4 sm:mx-0">
+    <div className="fixed bottom-4 right-4 z-50 w-full max-w-sm animate-in slide-in-from-bottom-2 fade-in-0 duration-300 sm:right-4 sm:left-auto sm:bottom-4 sm:max-w-md pointer-events-none">
+      <Card className="border-4 border-black shadow-[8px_8px_0px_0px_#000] sm:shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.65)] mx-4 sm:mx-0 pointer-events-auto">
         <CardContent className="p-4 sm:p-6">
           <div className="flex items-start justify-between mb-3 sm:mb-4">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -158,7 +158,7 @@ export default function NotificationPermissionPopup({ isOpen, onClose }: Notific
               </div>
             )}
 
-            {permission === 'denied' && (
+            {(permission as string) === 'denied' && (
               <div className="flex items-center gap-2 p-3 rounded-lg bg-orange-500/10 border-2 border-orange-500/20">
                 <AlertCircle className="h-4 w-4 text-orange-500 shrink-0" />
                 <p className="text-xs text-orange-600 font-medium">
@@ -179,7 +179,7 @@ export default function NotificationPermissionPopup({ isOpen, onClose }: Notific
             <Button
               className="flex-1 bg-primary border-2 border-black font-bold hover:bg-primary/90 text-xs sm:text-sm"
               onClick={handleEnableNotifications}
-              disabled={isLoading || isEnabling || !isSupported || permission === 'denied'}
+              disabled={isLoading || isEnabling || !isSupported || (permission as string) === 'denied'}
             >
               {isLoading || isEnabling ? 'Enabling...' : 'Enable'}
             </Button>

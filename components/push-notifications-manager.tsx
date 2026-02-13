@@ -107,7 +107,7 @@ export default function PushNotificationsManager({ compact = false }: PushNotifi
       }
     }
 
-    if (permission === 'denied') {
+    if ((permission as string) === 'denied') {
       return {
         icon: BellOff,
         text: "Blocked - enable in browser settings",
@@ -147,7 +147,7 @@ export default function PushNotificationsManager({ compact = false }: PushNotifi
         <Switch
           checked={isSubscribed}
           onCheckedChange={handleToggleNotifications}
-          disabled={!isSupported || isLoading || isEnabling || permission === 'denied'}
+          disabled={!isSupported || isLoading || isEnabling || (permission as string) === 'denied'}
         />
         <div className="flex items-center gap-1">
           <StatusIcon className={`h-4 w-4 ${statusInfo.color}`} />
@@ -202,7 +202,7 @@ export default function PushNotificationsManager({ compact = false }: PushNotifi
           </Alert>
         )}
 
-        {permission === 'denied' && (
+        {(permission as string) === 'denied' && (
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
