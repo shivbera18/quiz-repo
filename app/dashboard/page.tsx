@@ -69,6 +69,26 @@ export default function DashboardPage() {
     }
   }, [loading, user, router])
 
+  // Defensive cleanup on mount: close any accidental modal/overlay state
+  useEffect(() => {
+    // ensure flash modal and notification popup are closed to avoid invisible overlays
+    setShowFlashQuestions(false)
+    setShowNotificationPopup(false)
+
+    // also remove any stale localStorage dismissal flag older than 7 days (cleanliness)
+    try {
+      const dismissedAt = localStorage.getItem('notification-popup-dismissed')
+      if (dismissedAt) {
+        const ts = parseInt(dismissedAt)
+        if (Date.now() - ts > 1000 * 60 * 60 * 24 * 7) {
+          localStorage.removeItem('notification-popup-dismissed')
+        }
+      }
+    } catch (e) {
+      /* ignore */
+    }
+  }, [])
+
   useEffect(() => {
     if (!loading && user) {
       const fetchAttempts = async () => {
