@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/hooks/use-auth"
 import { FlashQuestions } from "@/components/flash-questions"
 import { staggerContainer, staggerItem } from "@/components/page-transition"
-import NotificationPermissionPopup from "@/components/notification-permission-popup"
+
 import {
   BookOpen,
   TrendingUp,
@@ -59,8 +59,7 @@ export default function DashboardPage() {
   const [loadingAttempts, setLoadingAttempts] = useState(true)
   const [showFlashQuestions, setShowFlashQuestions] = useState(false)
   const [flashQuestions, setFlashQuestions] = useState<any[]>([])
-  const [showNotificationPopup, setShowNotificationPopup] = useState(false)
-  const [notificationTimer, setNotificationTimer] = useState<NodeJS.Timeout | null>(null)
+
 
   // Redirect to login if not authenticated (after hydration)
   useEffect(() => {
@@ -73,7 +72,6 @@ export default function DashboardPage() {
   useEffect(() => {
     // ensure flash modal and notification popup are closed to avoid invisible overlays
     setShowFlashQuestions(false)
-    setShowNotificationPopup(false)
 
     // also remove any stale localStorage dismissal flag older than 7 days (cleanliness)
     try {
@@ -215,70 +213,7 @@ export default function DashboardPage() {
     }
   }, [loading, user])
 
-  // Show notification permission popup after a delay
-  useEffect(() => {
-    if (!user || loading) {
-      if (notificationTimer) {
-        clearTimeout(notificationTimer)
-        setNotificationTimer(null)
-      }
-      return
-    }
 
-    // Check if popup was recently dismissed
-    const dismissedAt = localStorage.getItem('notification-popup-dismissed')
-    if (dismissedAt) {
-      const dismissedTime = parseInt(dismissedAt)
-      const hoursSinceDismissed = (Date.now() - dismissedTime) / (1000 * 60 * 60)
-      // Don't show again for 24 hours
-      if (hoursSinceDismissed < 24) return
-    }
-
-    // Clear any existing timer
-    if (notificationTimer) {
-      clearTimeout(notificationTimer)
-    }
-
-    // Show popup after 3 seconds delay, but only if not already subscribed
-    const timer = setTimeout(() => {
-      // Double-check subscription status before showing
-      const checkAndShow = async () => {
-        try {
-          // Check if notifications are supported
-          const hasNotificationSupport = typeof window !== 'undefined' && 'Notification' in window
-          const hasServiceWorker = typeof navigator !== 'undefined' && 'serviceWorker' in navigator
-          const hasPushManager = typeof window !== 'undefined' && 'PushManager' in window
-
-          if (hasNotificationSupport && hasServiceWorker && hasPushManager) {
-            const registration = await navigator.serviceWorker.ready
-            const subscription = await registration.pushManager.getSubscription()
-            const permission = Notification.permission
-
-            // Only show if not subscribed AND permission is not denied AND permission is not already granted (would be auto-subscribed)
-            if (!subscription && permission !== 'denied' && permission !== 'granted') {
-              setShowNotificationPopup(true)
-            }
-          } else {
-            // If APIs aren't available, don't show popup to avoid confusion
-            console.log('Push notifications not fully supported')
-          }
-        } catch (error) {
-          // If we can't check, don't show the popup to avoid errors
-          console.log('Could not check notification status:', error)
-        }
-      }
-
-      checkAndShow()
-    }, 3000)
-
-    setNotificationTimer(timer)
-
-    return () => {
-      if (timer) {
-        clearTimeout(timer)
-      }
-    }
-  }, [user, loading, notificationTimer])
 
   const attemptedQuizIds = allAttempts.map(attempt => attempt.quizId)
   const unattemptedQuizzes = availableQuizzes.filter((quiz: Quiz) => !attemptedQuizIds.includes(quiz.id))
@@ -498,11 +433,7 @@ export default function DashboardPage() {
         </Card>
       )}
       
-      {/* Notification Permission Popup */}
-      <NotificationPermissionPopup
-        isOpen={showNotificationPopup}
-        onClose={() => setShowNotificationPopup(false)}
-      />
+
     </div>
   )
 }
