@@ -374,8 +374,8 @@ export function FlashQuestions({ isOpen, onClose, questions: initialQuestions }:
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4">
-      <div className="relative w-full max-w-4xl mx-auto max-h-screen overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4" onClick={onClose}>
+      <div className="relative w-full max-w-4xl mx-auto max-h-screen overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <Card className="neu-card bg-gradient-to-br from-card via-card to-background/95 border border-border/20" 
               onKeyDown={handleKeyPress} 
               tabIndex={0}>

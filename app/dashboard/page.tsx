@@ -288,20 +288,11 @@ export default function DashboardPage() {
       )}
 
       {/* Flash Questions Modal/Expanded View */}
-      {showFlashQuestions && (
-        <Card variant="neobrutalist">
-          <CardContent className="p-6">
-            <Button
-              variant="ghost"
-              onClick={() => setShowFlashQuestions(false)}
-              className="mb-4"
-            >
-              ← Back to Dashboard
-            </Button>
-            <FlashQuestions questions={flashQuestions} />
-          </CardContent>
-        </Card>
-      )}
+      <FlashQuestions
+        isOpen={showFlashQuestions}
+        onClose={() => setShowFlashQuestions(false)}
+        questions={flashQuestions}
+      />
 
       {/* Action Cards Grid - 2 per row on desktop */}
       {!showFlashQuestions && (
