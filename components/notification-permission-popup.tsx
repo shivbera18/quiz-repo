@@ -28,10 +28,53 @@ export default function NotificationPermissionPopup({ isOpen, onClose }: Notific
 
   // Simple effect to close popup when conditions change
   useEffect(() => {
-    if (isSubscribed || !isSupported || permission === 'denied') {
+    if (isSubscribed || !isSupported || (permission as string) === 'denied') {
       onClose()
     }
   }, [isSubscribed, isSupported, permission, onClose])
+
+  // When the popup is open, defensively neutralize any accidental full-screen overlays
+  useEffect(() => {
+    if (!isOpen) return
+
+    const modified: Array<{ el: HTMLElement; prev: string | null }> = []
+
+    try {
+      const els = Array.from(document.querySelectorAll<HTMLElement>('*'))
+      for (const el of els) {
+        if (el === document.body) continue
+        const style = window.getComputedStyle(el)
+        const rect = el.getBoundingClientRect()
+        const isFixedOrAbsolute = style.position === 'fixed' || style.position === 'absolute'
+        const coversViewport = rect.width >= window.innerWidth - 1 && rect.height >= window.innerHeight - 1
+        const zIndex = parseInt(style.zIndex || '0') || 0
+
+        if (!isFixedOrAbsolute || !coversViewport || zIndex < 40) continue
+
+        // ignore our own popup card (it is anchored bottom-right small)
+        if (el.contains(document.querySelector('.neu-card')) || el.querySelector('[data-notif-proxy]')) continue
+
+        // if element intercepts pointer events, neutralize it temporarily
+        if (style.pointerEvents !== 'none') {
+          modified.push({ el, prev: el.style.pointerEvents || null })
+          el.style.pointerEvents = 'none'
+          el.setAttribute('data-notif-neutralized', 'true')
+          console.warn('Notification popup neutralized blocking overlay:', el)
+        }
+      }
+    } catch (err) {
+      // ignore
+      console.warn('Overlay neutralization failed', err)
+    }
+
+    return () => {
+      for (const m of modified) {
+        if (m.prev === null) m.el.style.removeProperty('pointer-events')
+        else m.el.style.pointerEvents = m.prev
+        m.el.removeAttribute('data-notif-neutralized')
+      }
+    }
+  }, [isOpen])
 
   const handleEnableNotifications = async () => {
     if (!isSupported) {
