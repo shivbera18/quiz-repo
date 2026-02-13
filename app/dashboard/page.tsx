@@ -87,6 +87,57 @@ export default function DashboardPage() {
     } catch (e) {
       /* ignore */
     }
+
+    // Detect and disable any unexpected full-screen overlays that block clicks
+    const unblockOverlays = () => {
+      try {
+        const els = Array.from(document.querySelectorAll<HTMLElement>('*'))
+        const blockers: HTMLElement[] = []
+
+        for (const el of els) {
+          const style = window.getComputedStyle(el)
+          const rect = el.getBoundingClientRect()
+
+          // full-screen-ish and fixed/absolute positioned
+          const isFullScreen = rect.width >= window.innerWidth - 1 && rect.height >= window.innerHeight - 1 && (style.position === 'fixed' || style.position === 'absolute')
+          const zIndex = parseInt(style.zIndex || '0') || 0
+
+          if (!isFullScreen) continue
+          if (zIndex < 20) continue // low z-index overlays are fine
+
+          // ignore known legitimate overlays (modals rendered by our components)
+          if (el.closest('.neu-card') || el.querySelector('[role="dialog"]') || el.querySelector('button') || el.querySelector('a')) {
+            continue
+          }
+
+          // if element is transparent or invisible but still captures pointer events
+          const bgAlpha = (() => {
+            const bg = style.backgroundColor || ''
+            const match = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d*\.?\d+))?\)/)
+            if (match && match[4]) return parseFloat(match[4])
+            return bg === 'transparent' ? 0 : 1
+          })()
+
+          if (style.pointerEvents !== 'none' && bgAlpha < 0.05) {
+            blockers.push(el)
+          }
+        }
+
+        for (const b of blockers) {
+          console.warn('Found blocking overlay - disabling pointer-events:', b)
+          b.style.pointerEvents = 'none'
+          b.dataset.__overlay_unblocked = 'true'
+        }
+      } catch (err) {
+        // silent
+        console.warn('Overlay unblock check failed', err)
+      }
+    }
+
+    // run immediately and again shortly after (to catch dynamic mounts)
+    unblockOverlays()
+    const t = window.setTimeout(unblockOverlays, 300)
+    return () => window.clearTimeout(t)
   }, [])
 
   useEffect(() => {
