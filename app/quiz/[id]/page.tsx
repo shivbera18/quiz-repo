@@ -1,3 +1,4 @@
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 "use client"
 
 import { useEffect, useState } from "react"
@@ -301,7 +302,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
     localStorage.setItem("quizResults", JSON.stringify(existingResults))
 
     try {
-      const saveResponse = await fetch("/api/results", {
+      const saveResponse = await fetch(`${API_BASE}/results`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

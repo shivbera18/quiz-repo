@@ -1,4 +1,5 @@
 "use client"
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -232,7 +233,7 @@ export default function AdminPage() {
           setError("")
 
           // Fetch quizzes
-          const res = await fetch("/api/admin/quizzes", {
+const res = await fetch(`${API_BASE}/api/admin/quizzes`, {
             headers: {
               Authorization: `Bearer ${user.token || "admin-token-placeholder"}`,
             },

@@ -1,3 +1,4 @@
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 "use client"
 
 import { useEffect, useState } from "react"
@@ -138,11 +139,13 @@ export default function DashboardPage() {
     return () => window.clearTimeout(t)
   }, [])
 
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+
   useEffect(() => {
     if (!loading && user) {
       const fetchAttempts = async () => {
         try {
-          const response = await fetch("/api/results", {
+          const response = await fetch(`${API_BASE}/api/results`, {
             headers: {
               Authorization: `Bearer ${user.token || "student-token-placeholder"}`,
               "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -181,7 +184,7 @@ export default function DashboardPage() {
 
       fetchAttempts()
 
-      fetch("/api/quizzes", {
+      fetch(`${API_BASE}/api/quizzes`, {
         headers: {
           Authorization: `Bearer ${user.token || "student-token-placeholder"}`,
           "Cache-Control": "no-cache, no-store, must-revalidate",

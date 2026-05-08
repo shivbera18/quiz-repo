@@ -1,3 +1,4 @@
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 "use client"
 
 import { useEffect, useState } from "react"
@@ -36,7 +37,7 @@ export default function FullMockTestsPage() {
           const attempts = attemptsData.results || []
           setAttemptedQuizzes(attempts)
 
-          const quizzesRes = await fetch("/api/quizzes", {
+          const quizzesRes = await fetch(`${API_BASE}/api/quizzes`, {
             headers: { Authorization: `Bearer ${user.token || "student-token-placeholder"}` },
           })
           const quizzesData = await quizzesRes.json()
