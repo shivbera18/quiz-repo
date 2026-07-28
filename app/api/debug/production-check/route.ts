@@ -19,7 +19,12 @@ export async function GET(request: Request) {
     console.log('📋 Environment Variables:', envCheck);
 
     // Check 2: Database Connection
-    let dbCheck = { connected: false, error: null };
+    const dbCheck: {
+      connected: boolean
+      error: string | null
+      data?: { quizResults: number; quizzes: number; users: number }
+      sampleQuery?: { success: boolean; resultCount: number; sampleData: unknown[] }
+    } = { connected: false, error: null };
     try {
       const { PrismaClient } = await import("@/lib/generated/prisma");
       const prisma = new PrismaClient();
@@ -77,7 +82,7 @@ export async function GET(request: Request) {
       await prisma.$disconnect();
       
     } catch (error) {
-      dbCheck.error = error.message;
+      dbCheck.error = error instanceof Error ? error.message : String(error);
       console.error('❌ Database connection failed:', error);
     }
 
@@ -95,7 +100,7 @@ export async function GET(request: Request) {
       environment: envCheck,
       database: dbCheck,
       request: requestInfo,
-      recommendations: []
+      recommendations: [] as string[]
     };
 
     // Add recommendations based on checks
@@ -107,7 +112,7 @@ export async function GET(request: Request) {
       response.recommendations.push("⚠️ No quiz results found - database may be empty or using wrong database");
     }
     
-    if (dbCheck.connected && dbCheck.data?.quizResults > 0 && dbCheck.sampleQuery?.resultCount === 0) {
+    if (dbCheck.connected && (dbCheck.data?.quizResults ?? 0) > 0 && dbCheck.sampleQuery?.resultCount === 0) {
       response.recommendations.push("❌ Sample query returned no results - check Prisma schema or query logic");
     }
     
@@ -129,9 +134,9 @@ export async function GET(request: Request) {
     console.error('❌ Production check failed:', error);
     return Response.json({
       status: 'Production Environment Check Failed',
-      error: error.message,
-      stack: error.stack
-    }, { 
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    }, {
       status: 500,
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',

@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   try {
     // Test database connection
-    const { PrismaClient } = require('@prisma/client')
+    const { PrismaClient } = await import('@/lib/generated/prisma')
     const prisma = new PrismaClient()
     
     // Test connection
@@ -50,13 +50,14 @@ export async function GET() {
     })
     
   } catch (error) {
+    const err = error as { message?: string; name?: string; code?: string }
     return Response.json({
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV,
       error: {
-        message: error.message,
-        name: error.name,
-        code: error.code
+        message: err.message,
+        name: err.name,
+        code: err.code
       },
       database: {
         hasUrl: !!process.env.DATABASE_URL,

@@ -5,7 +5,17 @@ export async function GET(request: Request) {
   try {
     console.log('🧪 Vercel API Test Started');
     
-    const testResults = {
+    const testResults: {
+      timestamp: string
+      environment: string | undefined
+      vercel: { region: string; url: string }
+      database: { hasUrl: boolean; urlLength: number; urlStart: string }
+      prismaImport?: { importSuccess: boolean; error: string | null }
+      dbConnection?: { success: boolean }
+      dbCounts?: { quizResults: number; users: number; quizzes: number }
+      sampleQuery?: { found: boolean; data: unknown }
+      error?: string
+    } = {
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV,
       vercel: {
@@ -20,7 +30,7 @@ export async function GET(request: Request) {
     };
 
     // Test 1: Basic Prisma import
-    let prismaTest = { importSuccess: false, error: null };
+    const prismaTest: { importSuccess: boolean; error: string | null } = { importSuccess: false, error: null };
     try {
       const { PrismaClient } = await import("@/lib/generated/prisma");
       prismaTest.importSuccess = true;
@@ -35,7 +45,7 @@ export async function GET(request: Request) {
       const quizResultCount = await prisma.quizResult.count();
       const userCount = await prisma.user.count();
       const quizCount = await prisma.quiz.count();
-      
+
       testResults.dbCounts = {
         quizResults: quizResultCount,
         users: userCount,
@@ -78,9 +88,10 @@ export async function GET(request: Request) {
       await prisma.$disconnect();
 
     } catch (error) {
-      prismaTest.error = error.message;
+      const message = error instanceof Error ? error.message : String(error);
+      prismaTest.error = message;
       testResults.prismaImport = prismaTest;
-      testResults.error = error.message;
+      testResults.error = message;
     }
 
     console.log('✅ Vercel test completed:', testResults);
@@ -102,9 +113,9 @@ export async function GET(request: Request) {
     return Response.json({
       status: 'Vercel API Test Failed',
       success: false,
-      error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    }, { 
+      error: error instanceof Error ? error.message : String(error),
+      stack: process.env.NODE_ENV === 'development' && error instanceof Error ? error.stack : undefined
+    }, {
       status: 500,
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',

@@ -1,4 +1,5 @@
-import webpush from 'web-push'
+import webpush, { WebPushError } from 'web-push'
+import { Prisma } from '@/lib/generated/prisma'
 import { prisma } from './prisma-client'
 
 // Lazy VAPID configuration
@@ -90,11 +91,11 @@ export async function sendPushNotificationToUser(
 
         sent++
         console.log(`Push notification sent to user ${userId} subscription ${subscription.id}`)
-      } catch (error: any) {
+      } catch (error) {
         console.error(`Failed to send push notification to subscription ${subscription.id}:`, error)
 
         // If the subscription is invalid (410 Gone), mark it as inactive
-        if (error.statusCode === 410) {
+        if (error instanceof WebPushError && error.statusCode === 410) {
           await prisma.pushSubscription.update({
             where: { id: subscription.id },
             data: { isActive: false }
@@ -129,7 +130,7 @@ export async function sendPushNotificationToAllUsers(
 
   try {
     // Get all active subscriptions
-    const whereClause: any = { isActive: true }
+    const whereClause: Prisma.PushSubscriptionWhereInput = { isActive: true }
     if (excludeUserId) {
       whereClause.userId = { not: excludeUserId }
     }
@@ -201,11 +202,11 @@ export async function sendPushNotificationToAllUsers(
           })
 
           userSent++
-        } catch (error: any) {
+        } catch (error) {
           console.error(`Failed to send push notification to subscription ${subscription.id}:`, error)
 
           // If the subscription is invalid (410 Gone), mark it as inactive
-          if (error.statusCode === 410) {
+          if (error instanceof WebPushError && error.statusCode === 410) {
             await prisma.pushSubscription.update({
               where: { id: subscription.id },
               data: { isActive: false }

@@ -3,8 +3,11 @@ import { PrismaClient } from "@/lib/generated/prisma"
 
 // Global variable to store the Prisma instance for reuse across function invocations
 declare global {
+  // eslint-disable-next-line no-var -- ambient global declarations require `var`, not `let`/`const`
   var prisma: PrismaClient | undefined
 }
+
+type PrismaErrorDetails = { code?: string; meta?: unknown }
 
 class VercelPrismaClient {
   private static instance: PrismaClient | null = null;
@@ -48,7 +51,7 @@ class VercelPrismaClient {
     }
   }
   
-  static async testConnection(): Promise<{ success: boolean; error?: string; details?: any }> {
+  static async testConnection(): Promise<{ success: boolean; error?: string; details?: PrismaErrorDetails & { stack?: string } }> {
     try {
       const client = VercelPrismaClient.getInstance();
       
@@ -66,8 +69,8 @@ class VercelPrismaClient {
         success: false,
         error: error instanceof Error ? error.message : String(error),
         details: {
-          code: (error as any)?.code,
-          meta: (error as any)?.meta,
+          code: (error as PrismaErrorDetails)?.code,
+          meta: (error as PrismaErrorDetails)?.meta,
           stack: error instanceof Error ? error.stack : undefined
         }
       };
