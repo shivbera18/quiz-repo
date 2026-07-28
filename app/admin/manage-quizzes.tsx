@@ -47,9 +47,6 @@ function ManageQuizzesPage() {
       });
   }, []);
 
-  if (loading) return <div className="flex justify-center items-center h-64"><Loader2 className="animate-spin h-8 w-8 text-blue-500" /></div>;
-  if (error) return <div className="text-red-600 text-center py-8">{error}</div>;
-
   // Fetch quiz questions when manageQuizId changes
   useEffect(() => {
     if (manageQuizId) {
@@ -64,6 +61,10 @@ function ManageQuizzesPage() {
         .catch(() => setQuestionsLoading(false));
     }
   }, [manageQuizId]);
+
+  if (loading) return <div className="flex justify-center items-center h-64"><Loader2 className="animate-spin h-8 w-8 text-blue-500" /></div>;
+  if (error) return <div className="text-red-600 text-center py-8">{error}</div>;
+
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6 text-center">Manage Quizzes</h1>

@@ -48,13 +48,22 @@ export async function GET(request: NextRequest) {
         }
       }
       
+      let answers: any[] = []
+      try {
+        if (result.answers) {
+          answers = JSON.parse(result.answers)
+        }
+      } catch {
+        // leave answers empty if malformed
+      }
+
       acc[quizId].attempts.push({
         id: result.id,
         date: result.date,
         totalScore: result.totalScore,
-        correctAnswers: result.correctAnswers,
-        wrongAnswers: result.wrongAnswers,
-        unanswered: result.unanswered,
+        correctAnswers: answers.filter((a) => a.isCorrect === true).length,
+        wrongAnswers: answers.filter((a) => a.isCorrect === false && a.userAnswer !== null && a.userAnswer !== undefined).length,
+        unanswered: answers.filter((a) => a.isUnanswered === true || a.userAnswer === null || a.userAnswer === undefined).length,
         timeSpent: result.timeSpent,
         sections: result.sections
       })

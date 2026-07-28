@@ -22,6 +22,9 @@ interface FlashQuestionsProps {
   onClose: () => void
   // optional externally-provided questions (dashboard passes these)
   questions?: Question[]
+  // optional initial filters (dashboard pages pass these to preselect operation/digit count)
+  operationType?: string
+  maxDigits?: number
 }
 
 const operations = ["Addition", "Subtraction", "Multiplication", "Division"]
@@ -218,9 +221,9 @@ const generateLocalQuestions = (
   return questions
 }
 
-export function FlashQuestions({ isOpen, onClose, questions: initialQuestions }: FlashQuestionsProps) {
-  const [currentSection, setCurrentSection] = useState<"2-digit" | "3-digit" | "mixed">("2-digit")
-  const [currentOperation, setCurrentOperation] = useState("Addition")
+export function FlashQuestions({ isOpen, onClose, questions: initialQuestions, operationType, maxDigits }: FlashQuestionsProps) {
+  const [currentSection, setCurrentSection] = useState<"2-digit" | "3-digit" | "mixed">(maxDigits === 3 ? "3-digit" : "2-digit")
+  const [currentOperation, setCurrentOperation] = useState(operationType || "Addition")
   const [questions, setQuestions] = useState<Question[]>(initialQuestions || [])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [userAnswer, setUserAnswer] = useState("")

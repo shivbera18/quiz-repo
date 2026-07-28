@@ -47,8 +47,8 @@ async function main() {
       description: 'A sample quiz to test the system',
       timeLimit: 30,
       createdBy: admin.id,
-      sections: ['reasoning'],
-      questions: [
+      sections: JSON.stringify(['reasoning']),
+      questions: JSON.stringify([
         {
           id: 'q1',
           section: 'reasoning',
@@ -70,7 +70,7 @@ async function main() {
           correctAnswer: 1,
           explanation: 'Since cats are animals and some animals are pets, it\'s possible that some cats may be pets.'
         }
-      ],
+      ]),
       isActive: true,
       negativeMarking: true,
       negativeMarkValue: 0.25,

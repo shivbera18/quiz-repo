@@ -323,7 +323,7 @@ export function TopHeader() {
         {/* Profile Avatar - Desktop only - Neo Brutalism */}
         <Link href="/profile">
           <Avatar className="h-10 w-10 border-2 border-black dark:border-white/65 hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all cursor-pointer shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.65)] hover:shadow-[5px_5px_0px_0px_#000] dark:hover:shadow-[5px_5px_0px_0px_rgba(255,255,255,0.75)]">
-            <AvatarImage src={user.avatar || undefined} alt={user.name} />
+            <AvatarImage src={undefined} alt={user.name} />
             <AvatarFallback className="bg-yellow-400 text-black font-bold text-sm">
               {getInitials(user.name || "User")}
             </AvatarFallback>
