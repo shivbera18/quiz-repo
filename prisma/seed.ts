@@ -8,7 +8,14 @@ async function main() {
   // Create admin user
   const admin = await prisma.user.upsert({
     where: { email: 'admin@quizapp.com' },
-    update: {},
+    // Reset to baseline on every seed run so tests (and local dev) start from a
+    // deterministic state regardless of what a previous run mutated.
+    update: {
+      name: 'Admin User',
+      password: 'admin123',
+      isAdmin: true,
+      userType: 'admin',
+    },
     create: {
       id: 'admin-001',
       name: 'Admin User',
@@ -24,7 +31,12 @@ async function main() {
   // Create test student
   const student = await prisma.user.upsert({
     where: { email: 'student@test.com' },
-    update: {},
+    update: {
+      name: 'Test Student',
+      password: 'student123',
+      isAdmin: false,
+      userType: 'student',
+    },
     create: {
       id: 'student-001',
       name: 'Test Student',
@@ -40,7 +52,38 @@ async function main() {
   // Create sample quiz
   const quiz = await prisma.quiz.upsert({
     where: { id: 'sample-quiz-001' },
-    update: {},
+    update: {
+      title: 'Sample Reasoning Test',
+      description: 'A sample quiz to test the system',
+      timeLimit: 30,
+      sections: JSON.stringify(['reasoning']),
+      questions: JSON.stringify([
+        {
+          id: 'q1',
+          section: 'reasoning',
+          question: 'What comes next in the sequence: 2, 4, 8, 16, ?',
+          options: ['24', '32', '30', '20'],
+          correctAnswer: 1,
+          explanation: 'Each number is doubled: 2×2=4, 4×2=8, 8×2=16, 16×2=32'
+        },
+        {
+          id: 'q2',
+          section: 'reasoning',
+          question: 'If all cats are animals and some animals are pets, which must be true?',
+          options: [
+            'All cats are pets',
+            'Some cats may be pets',
+            'No cats are pets',
+            'All pets are cats'
+          ],
+          correctAnswer: 1,
+          explanation: 'Since cats are animals and some animals are pets, it\'s possible that some cats may be pets.'
+        }
+      ]),
+      isActive: true,
+      negativeMarking: true,
+      negativeMarkValue: 0.25,
+    },
     create: {
       id: 'sample-quiz-001',
       title: 'Sample Reasoning Test',
