@@ -96,11 +96,8 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    return NextResponse.json({ 
-      message: "Internal server error" 
+    return NextResponse.json({
+      message: "Internal server error"
     }, { status: 500 })
-  } finally {
-    // Always disconnect from database
-    await prisma.$disconnect()
   }
 }

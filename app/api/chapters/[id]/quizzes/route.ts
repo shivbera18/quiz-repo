@@ -38,7 +38,5 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
       { error: 'Failed to fetch chapter quizzes' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

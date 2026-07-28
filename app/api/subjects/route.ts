@@ -49,7 +49,5 @@ export async function GET() {
       { error: 'Failed to fetch subjects' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

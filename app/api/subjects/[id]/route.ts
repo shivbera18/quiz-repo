@@ -22,7 +22,5 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
       { error: 'Failed to fetch subject' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

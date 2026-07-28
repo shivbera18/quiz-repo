@@ -46,10 +46,7 @@ export async function DELETE(request: NextRequest) {
           console.log('✅ Result deleted in transaction:', deletedResult.id)
           return deletedResult
         })
-        
-        // Add a small delay to ensure database consistency
-        await new Promise(resolve => setTimeout(resolve, 100))
-        
+
         console.log('✅ Transaction completed, result deleted:', deletedResult.id)
         return NextResponse.json({ message: "Quiz result deleted successfully", deletedId: deletedResult.id })
       } catch (transactionError) {
