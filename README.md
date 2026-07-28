@@ -22,108 +22,49 @@ A comprehensive, AI-powered quiz management system built for educational institu
 
 | Component | Technology |
 |-----------|------------|
-| **Frontend** | Next.js 14, React 18, TypeScript |
+| **Frontend** | Next.js 15, React 18, TypeScript |
 | **Styling** | Tailwind CSS, Shadcn/ui |
 | **Backend** | Next.js API Routes |
-| **Database** | PostgreSQL (Production), SQLite (Development) |
+| **Database** | PostgreSQL |
 | **ORM** | Prisma |
-| **Authentication** | NextAuth.js |
+| **Authentication** | Custom (opaque token, not NextAuth) |
 | **AI Integration** | Google Gemini API |
+| **Testing** | Vitest (unit), Playwright (e2e) |
 | **Deployment** | Vercel |
 
 ## Prerequisites
 
-- Node.js 18.x or later
-- npm or pnpm
-- PostgreSQL database (for production)
-- Google Gemini API key
+- Node.js 20.x or later
+- pnpm (the repo has a committed `pnpm-lock.yaml` — use pnpm, not npm/yarn)
+- PostgreSQL database
+- Google Gemini API key (optional — only needed for AI generation features)
 
-## Installation
+## Installation & Deployment
 
-### Local Development Setup
+See **[HOSTING.md](HOSTING.md)** for the full setup guide — local development, running the test suites, and deploying online (Vercel + Neon, plus alternatives). Quick start:
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/shivbera18/quiz-repo.git
-   cd quiz-repo
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   # or
-   pnpm install
-   ```
-
-3. **Environment configuration**
-   ```bash
-   cp .env.local.example .env.local
-   ```
-   Edit `.env.local` with your database URL and API keys.
-
-4. **Database setup**
-   ```bash
-   npx prisma generate
-   npx prisma migrate dev
-   ```
-
-5. **Seed data**
-   ```bash
-   npm run seed
-   ```
-
-6. **Start development server**
-   ```bash
-   npm run dev
-   ```
-
-The application will be available at `http://localhost:3000`.
-
-## Deployment
-
-### Vercel Deployment
-
-1. **Database Setup**
-   - Create a PostgreSQL database on Neon, Supabase, or Railway
-   - Note the connection string
-
-2. **Repository Setup**
-   - Push code to GitHub repository
-   - Connect repository to Vercel
-
-3. **Environment Variables**
-   Configure the following in Vercel:
-   ```
-   DATABASE_URL=your_postgresql_connection_string
-   NEXTAUTH_SECRET=your_random_secret_key
-   NEXTAUTH_URL=https://your-app.vercel.app
-   GEMINI_API_KEY=your_google_gemini_api_key
-   ```
-
-4. **Deploy**
-   - Vercel will automatically build and deploy
-   - Run database migrations post-deployment
-
-### Production Database Migration
-
-After deployment, migrate the production database:
 ```bash
-export DATABASE_URL="your_production_database_url"
-npx prisma migrate deploy
+git clone https://github.com/shivbera18/quiz-repo.git
+cd quiz-repo
+pnpm install
+cp .env.example .env.local   # fill in DATABASE_URL at minimum
 npx prisma generate
+npx prisma migrate deploy
+DATABASE_URL="<your connection string>" pnpm db:seed
+pnpm dev
 ```
 
 ## Usage
 
-### Default Accounts
+### Default Accounts (after running `pnpm db:seed`)
 
 **Administrator Account**
-- Email: `admin@bank.com`
-- Password: `password`
+- Email: `admin@quizapp.com`
+- Password: `admin123`
 
 **Student Account**
 - Email: `student@test.com`
-- Password: `password`
+- Password: `student123`
 
 ### Key Workflows
 
