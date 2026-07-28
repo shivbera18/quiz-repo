@@ -1,0 +1,98 @@
+-- CreateEnum
+CREATE TYPE "AttemptStatus" AS ENUM ('IN_PROGRESS', 'SUBMITTED', 'EXPIRED', 'ABANDONED');
+
+-- CreateTable
+CREATE TABLE "AttemptSnapshot" (
+    "id" TEXT NOT NULL,
+    "quizId" TEXT NOT NULL,
+    "quizVersion" INTEGER NOT NULL DEFAULT 1,
+    "contentHash" TEXT NOT NULL,
+    "timeLimitSec" INTEGER NOT NULL,
+    "negativeMarking" BOOLEAN NOT NULL,
+    "negativeMarkValue" DOUBLE PRECISION NOT NULL,
+    "sections" JSONB NOT NULL,
+    "questions" JSONB NOT NULL,
+    "isReconstructed" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "AttemptSnapshot_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Attempt" (
+    "id" TEXT NOT NULL,
+    "quizId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "userName" TEXT NOT NULL,
+    "userEmail" TEXT NOT NULL,
+    "snapshotId" TEXT NOT NULL,
+    "status" "AttemptStatus" NOT NULL DEFAULT 'IN_PROGRESS',
+    "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "submittedAt" TIMESTAMP(3),
+    "submitSource" TEXT,
+    "clientIdemKey" TEXT,
+    "rawScore" DOUBLE PRECISION,
+    "totalScore" DOUBLE PRECISION,
+    "maxScore" DOUBLE PRECISION,
+    "correctCount" INTEGER,
+    "wrongCount" INTEGER,
+    "unansweredCount" INTEGER,
+    "negativeMarking" BOOLEAN NOT NULL,
+    "negativeMarkValue" DOUBLE PRECISION NOT NULL,
+    "timeSpentMs" INTEGER,
+    "scoringVersion" INTEGER NOT NULL DEFAULT 1,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Attempt_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AttemptAnswer" (
+    "attemptId" TEXT NOT NULL,
+    "questionId" TEXT NOT NULL,
+    "section" TEXT NOT NULL,
+    "selectedOption" INTEGER,
+    "markedForReview" BOOLEAN NOT NULL DEFAULT false,
+    "visited" BOOLEAN NOT NULL DEFAULT false,
+    "timeSpentMs" INTEGER NOT NULL DEFAULT 0,
+    "answeredAt" TIMESTAMP(3),
+    "clientSeq" BIGINT NOT NULL DEFAULT 0,
+    "isCorrect" BOOLEAN,
+    "awarded" DOUBLE PRECISION,
+
+    CONSTRAINT "AttemptAnswer_pkey" PRIMARY KEY ("attemptId","questionId")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "AttemptSnapshot_quizId_contentHash_key" ON "AttemptSnapshot"("quizId", "contentHash");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Attempt_userId_clientIdemKey_key" ON "Attempt"("userId", "clientIdemKey");
+
+-- CreateIndex
+CREATE INDEX "Attempt_userId_submittedAt_idx" ON "Attempt"("userId", "submittedAt");
+
+-- CreateIndex
+CREATE INDEX "Attempt_quizId_totalScore_idx" ON "Attempt"("quizId", "totalScore");
+
+-- CreateIndex (hand-written: Prisma's schema DSL cannot express a partial index)
+-- Enforces "one in-progress attempt per user per quiz" at the database level.
+CREATE UNIQUE INDEX "attempt_one_inflight" ON "Attempt"("userId", "quizId") WHERE "status" = 'IN_PROGRESS';
+
+-- CreateIndex (hand-written: Prisma's schema DSL cannot express a partial index)
+-- The expiry sweeper's only index; stays tiny because it excludes every finished attempt.
+CREATE INDEX "attempt_sweeper" ON "Attempt"("expiresAt") WHERE "status" = 'IN_PROGRESS';
+
+-- AddForeignKey
+ALTER TABLE "Attempt" ADD CONSTRAINT "Attempt_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Attempt" ADD CONSTRAINT "Attempt_quizId_fkey" FOREIGN KEY ("quizId") REFERENCES "Quiz"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Attempt" ADD CONSTRAINT "Attempt_snapshotId_fkey" FOREIGN KEY ("snapshotId") REFERENCES "AttemptSnapshot"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AttemptAnswer" ADD CONSTRAINT "AttemptAnswer_attemptId_fkey" FOREIGN KEY ("attemptId") REFERENCES "Attempt"("id") ON DELETE CASCADE ON UPDATE CASCADE;
