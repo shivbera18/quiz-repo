@@ -172,7 +172,7 @@ export default function ResultsPage(props: { params: Promise<{ id: string }> }) 
         // First try to fetch from API
         if (user?.token) {
           console.log("Trying to fetch from API...")
-          const response = await fetch(`/api/results/${params.id}`, {
+          const response = await fetch(`/api/attempts/${params.id}/result`, {
             headers: {
               Authorization: `Bearer ${user.token}`,
               "Cache-Control": "no-cache, no-store, must-revalidate",
