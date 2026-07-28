@@ -74,7 +74,7 @@ export default function FAQSection() {
             </span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Got questions? We've got answers. If you can't find what you're looking for, feel free to contact us.
+            Got questions? We&apos;ve got answers. If you can&apos;t find what you&apos;re looking for, feel free to contact us.
           </p>
         </motion.div>
 

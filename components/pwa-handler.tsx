@@ -109,7 +109,7 @@ export default function PWAHandler() {
           <div className="flex-1">
             <h3 className="font-semibold text-sm">Install Quiz App</h3>
             <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-              Tap the share button <span className="font-mono">⎋</span> and select "Add to Home Screen"
+              Tap the share button <span className="font-mono">⎋</span> and select &quot;Add to Home Screen&quot;
             </p>
           </div>
           <Button variant="ghost" size="sm" onClick={handleDismiss}>

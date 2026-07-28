@@ -2,7 +2,7 @@
 import { Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
-import { motion } from "framer-motion"
+import { motion, type Transition } from "framer-motion"
 
 const iconVariants = {
   initial: { scale: 0, rotate: -180, opacity: 0 },
@@ -10,7 +10,7 @@ const iconVariants = {
   exit: { scale: 0, rotate: 180, opacity: 0 }
 }
 
-const transition = {
+const transition: Transition = {
   type: "spring",
   stiffness: 200,
   damping: 15,

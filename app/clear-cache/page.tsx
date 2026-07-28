@@ -85,12 +85,12 @@ export default function ClearCachePage() {
           borderRadius: '8px',
           marginTop: '20px'
         }}>
-          <h3>📝 Manual Steps (if button doesn't work):</h3>
+          <h3>📝 Manual Steps (if button doesn&apos;t work):</h3>
           <ol>
             <li><strong>Hard Refresh:</strong> Press Ctrl+F5 or Ctrl+Shift+R</li>
             <li><strong>Clear Browser Cache:</strong> 
               <ul>
-                <li>Chrome: F12 → Network tab → Right-click → "Empty Cache and Hard Reload"</li>
+                <li>Chrome: F12 → Network tab → Right-click → &quot;Empty Cache and Hard Reload&quot;</li>
                 <li>Firefox: Ctrl+Shift+Delete → Clear cache</li>
               </ul>
             </li>

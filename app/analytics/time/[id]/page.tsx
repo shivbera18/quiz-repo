@@ -725,7 +725,7 @@ export default function TimeAnalysisPage() {
                     <p className="font-medium text-green-700 dark:text-green-400">Good Time Management on Correct Answers</p>
                     <p className="text-sm text-green-600 dark:text-green-500">
                       You spent less time ({formatTimeMs(avgTimeCorrect)}) on correct answers compared to wrong ones ({formatTimeMs(avgTimeWrong)}). 
-                      This suggests you're confident when you know the answer.
+                      This suggests you&apos;re confident when you know the answer.
                     </p>
                   </div>
                 </div>

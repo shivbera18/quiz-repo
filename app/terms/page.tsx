@@ -46,7 +46,7 @@ export default function TermsPage() {
                 Acceptance of Terms
               </h2>
               <p className="text-muted-foreground leading-relaxed">
-                By accessing and using Quizzy ("the Service"), you accept and agree to be bound by the terms and provisions of this agreement. If you do not agree to these terms, please do not use our Service.
+                By accessing and using Quizzy (&quot;the Service&quot;), you accept and agree to be bound by the terms and provisions of this agreement. If you do not agree to these terms, please do not use our Service.
               </p>
             </section>
 
@@ -93,7 +93,7 @@ export default function TermsPage() {
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="h-6 w-6 rounded bg-destructive/20 flex items-center justify-center text-destructive mt-0.5">✕</span>
-                  <span>Attempt to access other users' accounts or data</span>
+                  <span>Attempt to access other users&apos; accounts or data</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="h-6 w-6 rounded bg-destructive/20 flex items-center justify-center text-destructive mt-0.5">✕</span>
@@ -148,7 +148,7 @@ export default function TermsPage() {
                 Disclaimer of Warranties
               </h2>
               <p className="text-muted-foreground leading-relaxed">
-                The Service is provided "as is" without any warranties, express or implied. We do not guarantee that the Service will be uninterrupted, secure, or error-free. While we strive to provide accurate content, we make no guarantees about the accuracy or completeness of quiz questions or their alignment with actual exam patterns.
+                The Service is provided &quot;as is&quot; without any warranties, express or implied. We do not guarantee that the Service will be uninterrupted, secure, or error-free. While we strive to provide accurate content, we make no guarantees about the accuracy or completeness of quiz questions or their alignment with actual exam patterns.
               </p>
             </section>
 

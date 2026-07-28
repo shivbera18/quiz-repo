@@ -144,7 +144,7 @@ export default function DiagnosePage() {
         {diagnostics.tests.apiData?.length > 0 ? (
           <div>
             <p>✅ <strong>API is working correctly and returning {diagnostics.tests.apiData.length} subjects.</strong></p>
-            <p>🔍 If subjects aren't showing on the sectional tests page, the issue is likely:</p>
+            <p>🔍 If subjects aren&apos;t showing on the sectional tests page, the issue is likely:</p>
             <ul>
               <li>• Component rendering issue</li>
               <li>• State management problem</li>

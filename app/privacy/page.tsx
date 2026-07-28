@@ -46,7 +46,7 @@ export default function PrivacyPage() {
                 Introduction
               </h2>
               <p className="text-muted-foreground leading-relaxed">
-                Welcome to Quizzy ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our quiz preparation platform.
+                Welcome to Quizzy (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our quiz preparation platform.
               </p>
             </section>
 

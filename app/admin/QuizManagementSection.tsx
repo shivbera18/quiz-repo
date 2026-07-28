@@ -5,8 +5,26 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Edit, Trash2, Upload, ListChecks, Plus } from "lucide-react";
 
+interface QuizSummary {
+  id: string;
+  title: string;
+  questionCount: number;
+}
+
+interface ChapterSummary {
+  id: string;
+  name: string;
+  quizzes: QuizSummary[];
+}
+
+interface SubjectSummary {
+  id: string;
+  name: string;
+  chapters: ChapterSummary[];
+}
+
 export default function QuizManagementSection({ onEditQuiz }: { onEditQuiz?: (quiz: any) => void }) {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<SubjectSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedSubjectId, setSelectedSubjectId] = useState("");
