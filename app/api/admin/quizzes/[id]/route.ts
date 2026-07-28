@@ -4,7 +4,8 @@ import { parseJsonField, stringifyForDatabase } from "@/lib/database-utils"
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authHeader = request.headers.get("authorization")
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -36,7 +37,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  await props.params;
   try {
     const authHeader = request.headers.get("authorization")
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -53,7 +55,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authHeader = request.headers.get("authorization")
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -80,7 +83,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authHeader = request.headers.get("authorization")
     if (!authHeader || !authHeader.startsWith("Bearer ")) {

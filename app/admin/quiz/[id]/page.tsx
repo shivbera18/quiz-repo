@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState } from "react"
+import { useEffect, useState, use } from "react";
 import type React from "react"
 
 import { useRouter } from "next/navigation"
@@ -45,7 +45,8 @@ interface Question {
   createdAt: string
 }
 
-export default function QuizManagementPage({ params }: { params: { id: string } }) {
+export default function QuizManagementPage(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const { user, loading } = useAuth(true) // Require admin access
   const [quiz, setQuiz] = useState<Quiz | null>(null)
   const [quizLoading, setQuizLoading] = useState(true)

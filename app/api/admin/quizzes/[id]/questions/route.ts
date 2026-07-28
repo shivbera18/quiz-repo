@@ -3,7 +3,8 @@ import { type NextRequest, NextResponse } from "next/server"
 // Force this route to be dynamic (not statically rendered)
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  await props.params;
   try {
     const authHeader = request.headers.get("authorization")
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -24,7 +25,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authHeader = request.headers.get("authorization")
     if (!authHeader || !authHeader.startsWith("Bearer ")) {

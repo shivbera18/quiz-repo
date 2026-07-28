@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     // Fetch quiz by ID from database
     const quiz = await prisma.quiz.findUnique({ where: { id: params.id } })

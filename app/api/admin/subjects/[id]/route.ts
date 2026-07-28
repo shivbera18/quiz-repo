@@ -4,10 +4,8 @@ import { prisma } from "@/lib/prisma"
 // Force dynamic rendering to ensure fresh data
 export const dynamic = 'force-dynamic'
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authHeader = request.headers.get("authorization")
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -73,10 +71,8 @@ export async function DELETE(
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authHeader = request.headers.get("authorization")
     if (!authHeader || !authHeader.startsWith("Bearer ")) {

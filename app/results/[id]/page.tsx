@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, use } from "react";
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -117,7 +117,8 @@ interface Result {
   timeSpent?: number
 }
 
-export default function ResultsPage({ params }: { params: { id: string } }) {
+export default function ResultsPage(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const { user, loading: authLoading } = useAuth()
   const [result, setResult] = useState<Result | null>(null)
   const [loading, setLoading] = useState(true)
