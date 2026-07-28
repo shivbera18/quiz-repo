@@ -155,7 +155,7 @@ Number of questions: ${questionsPerSection}`
         const text = response.text()
         
         // Extract JSON from the response
-        let jsonMatch = text.match(/\{[\s\S]*\}/)
+        const jsonMatch = text.match(/\{[\s\S]*\}/)
         if (!jsonMatch) {
           throw new Error(`No valid JSON found in AI response for section ${section}`)
         }

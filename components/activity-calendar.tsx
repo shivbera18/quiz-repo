@@ -71,7 +71,7 @@ export function ActivityCalendar({ attempts }: ActivityCalendarProps) {
 
     // Check from today backwards for current streak
     const todayStr = today.toDateString()
-    let checkDate = new Date(today)
+    const checkDate = new Date(today)
     
     while (checkDate >= oneYearAgo) {
       const dateStr = checkDate.toDateString()

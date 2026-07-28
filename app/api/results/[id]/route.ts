@@ -124,7 +124,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     // Merge explanations and options into parsedAnswers
     parsedAnswers = parsedAnswers.map((answer: any) => {
-      let updatedAnswer = { ...answer };
+      const updatedAnswer = { ...answer };
       
       if (answer.questionId) {
         if (!updatedAnswer.explanation) {

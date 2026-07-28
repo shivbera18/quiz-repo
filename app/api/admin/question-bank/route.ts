@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(url.searchParams.get("limit") || "20")
 
     // Build where clause for filtering
-    let whereClause: any = {}
+    const whereClause: any = {}
     
     if (section) {
       whereClause.section = section
