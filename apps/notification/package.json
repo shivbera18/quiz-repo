@@ -1,0 +1,34 @@
+{
+  "name": "notification-svc",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "worker:dev": "tsx watch src/fanout-worker.ts",
+    "worker:start": "tsx src/fanout-worker.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo \"(no lint configured for this service yet)\"",
+    "prisma:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.1.0",
+    "@prisma/client": "^6.10.1",
+    "@quiz/contracts": "workspace:*",
+    "@quiz/kafka-kit": "workspace:*",
+    "@quiz/observability": "workspace:*",
+    "@quiz/redis-kit": "workspace:*",
+    "fastify": "^5.10.0",
+    "ioredis": "^5.4.2",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/web-push": "^3.6.4",
+    "prisma": "^6.10.1",
+    "tsx": "^4.20.3",
+    "typescript": "^5"
+  }
+}

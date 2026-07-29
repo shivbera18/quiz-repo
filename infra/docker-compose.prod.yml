@@ -1,0 +1,89 @@
+# Hardening overlay for a deployment reachable from the public internet.
+# Use together with the base file, never alone:
+#   docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml up -d --build
+#
+# What this changes: adds Caddy (the only container bound to a public
+# interface, terminating TLS) and rebinds every other service's port to
+# 127.0.0.1 -- so even if the cloud firewall is ever misconfigured, Postgres/
+# Redis/Redpanda/the gateway/every service API are only reachable from the
+# VM itself (or over an SSH tunnel: `ssh -L 5433:localhost:5433 you@vm`),
+# never from the internet. The cloud-level firewall (Oracle's Security List,
+# a security group, etc.) doing its job is still the primary control -- this
+# is defense in depth on top of that, not a replacement for it. See
+# HOSTING.md's Oracle Cloud walkthrough.
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+
+  web:
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  gateway:
+    ports:
+      - "127.0.0.1:4000:4000"
+
+  identity-svc:
+    ports:
+      - "127.0.0.1:4001:4001"
+
+  catalog-svc:
+    ports:
+      - "127.0.0.1:4002:4002"
+
+  assessment-svc:
+    ports:
+      - "127.0.0.1:4003:4003"
+
+  analytics-svc:
+    ports:
+      - "127.0.0.1:4004:4004"
+
+  notification-svc:
+    ports:
+      - "127.0.0.1:4005:4005"
+
+  postgres:
+    ports:
+      - "127.0.0.1:5433:5432"
+
+  redis:
+    ports:
+      - "127.0.0.1:6380:6379"
+
+  redpanda:
+    ports:
+      - "127.0.0.1:19092:19092"
+      - "127.0.0.1:8082:8082"
+      - "127.0.0.1:9644:9644"
+
+  redpanda-console:
+    ports:
+      - "127.0.0.1:8090:8080"
+
+  minio:
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+
+volumes:
+  caddy-data:
+  caddy-config:

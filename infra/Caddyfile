@@ -1,0 +1,16 @@
+# Caddy terminates TLS and is the only container reachable from the public
+# internet in a hardened deployment (see infra/docker-compose.prod.yml). It
+# fronts `web` only -- nothing in the browser talks to the gateway directly
+# today (every apps/web/app/api/** route is a same-origin server-side proxy
+# to it; see apps/web/lib/gateway-client.ts), so the gateway and every
+# backend service only ever need to be reachable on the Docker-internal
+# network, never from the internet. Automatic HTTPS via Let's Encrypt --
+# just needs a real domain pointed at this host's IP and ports 80/443 open.
+#
+# Replace DOMAIN_PLACEHOLDER before deploying (see HOSTING.md's Oracle Cloud
+# walkthrough). For an IP-only deployment with no domain yet, replace the
+# site address with `:80` and drop the automatic-HTTPS story until you have one.
+
+DOMAIN_PLACEHOLDER {
+	reverse_proxy web:3000
+}

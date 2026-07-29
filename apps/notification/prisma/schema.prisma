@@ -1,0 +1,84 @@
+// notification-svc: every slow, flaky, third-party-dependent thing lives here
+// (web-push to Apple/Google/Mozilla), plus long-lived SSE connections -- the
+// one service that can never run on a serverless platform.
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  output        = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Announcement {
+  id          String             @id @default(uuid())
+  title       String
+  content     String
+  priority    String             @default("normal")
+  isActive    Boolean            @default(true)
+  createdBy   String
+  createdAt   DateTime           @default(now())
+  expiresAt   DateTime?
+  readBy      AnnouncementRead[]
+}
+
+model AnnouncementRead {
+  id             String       @id @default(uuid())
+  announcementId String
+  userId         String
+  readAt         DateTime     @default(now())
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+}
+
+model PushSubscription {
+  id         String    @id @default(uuid())
+  userId     String
+  endpoint   String    @unique
+  p256dh     String
+  auth       String
+  userAgent  String?
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  lastUsedAt DateTime?
+
+  @@unique([userId, endpoint])
+  @@index([userId, isActive])
+}
+
+// Local projection fed by quiz.identity.user-changed.v1 -- used only for push
+// targeting (name in the payload, email for future digest features). A copy,
+// not a foreign key; eventually consistent by seconds.
+model UserRef {
+  userId    String   @id
+  email     String
+  name      String
+  updatedAt DateTime @default(now())
+}
+
+// Consumer-side idempotency, same pattern as every other service.
+model ProcessedEvent {
+  eventId       String   @id
+  consumerGroup String
+  processedAt   DateTime @default(now())
+
+  @@index([consumerGroup])
+}
+
+// Transactional outbox: announcement-published publishes from here, in the
+// same transaction as the Announcement insert.
+model Outbox {
+  id            BigInt    @id @default(autoincrement())
+  aggregateType String
+  aggregateId   String
+  topic         String
+  key           String
+  payload       Json
+  headers       Json
+  createdAt     DateTime  @default(now())
+  publishedAt   DateTime?
+}

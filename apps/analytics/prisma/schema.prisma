@@ -1,0 +1,213 @@
+// analytics-svc: owns zero authoritative data. Every table here is derived
+// from Kafka events and is 100% rebuildable by resetting the rollup
+// consumer's group to offset 0 -- which is what makes it safe to drop,
+// reindex, or promote to its own database with no migration plan (see
+// ARCHITECTURE.md's "Data ownership").
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  output        = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---- Dimensions, fed by compacted quiz.catalog.*-changed / quiz.identity.user-changed ----
+
+model DimUser {
+  userId     String    @id
+  name       String
+  email      String
+  userType   String
+  isAdmin    Boolean
+  registeredAt DateTime?
+  updatedAt  DateTime  @default(now())
+  deletedAt  DateTime?
+}
+
+model DimQuiz {
+  quizId        String   @id
+  quizVersion   Int
+  title         String
+  chapterId     String?
+  subjectId     String?
+  questionCount Int
+  sectionNames  String[] @default([])
+  isActive      Boolean
+  createdAt     DateTime?
+  updatedAt     DateTime @default(now())
+}
+
+model DimChapter {
+  chapterId String @id
+  subjectId String
+  name      String
+}
+
+model DimSubject {
+  subjectId String @id
+  name      String
+}
+
+// ---- The replayable base fact ----
+
+model AttemptFact {
+  attemptId       String    @id
+  userId          String
+  quizId          String
+  chapterId       String?
+  subjectId       String?
+  submittedAt     DateTime
+  submittedDate   DateTime  // UTC-midnight-truncated by the rollup consumer at write time (plain column, not a DB-generated one -- Prisma has no first-class support for writing around a GENERATED column, and the consumer already has the exact timestamp in hand)
+  totalScore      Float
+  rawScore        Float
+  maxScore        Float
+  correctCount    Int
+  wrongCount      Int
+  unansweredCount Int
+  timeSpentMs     Int
+  submitSource    String
+  scoringVersion  Int
+
+  @@index([userId, submittedAt])
+  @@index([quizId, submittedAt])
+  @@index([submittedDate])
+  @@index([quizId, totalScore])
+}
+
+model AttemptSectionFact {
+  attemptId   String
+  section     String
+  userId      String
+  quizId      String
+  subjectId   String?
+  submittedAt DateTime
+  correct     Int
+  wrong       Int
+  unanswered  Int
+  total       Int
+  scorePct    Float
+  timeSpentMs Int
+
+  @@id([attemptId, section])
+  @@index([userId, section, submittedAt])
+}
+
+// Per-question difficulty analysis -- impossible in the old schema.
+model QuestionStat {
+  quizId        String
+  questionId    String
+  section       String
+  attempts      Int      @default(0)
+  correct       Int      @default(0)
+  wrong         Int      @default(0)
+  unanswered    Int      @default(0)
+  sumTimeMs     BigInt   @default(0)
+  optionCounts  Json     @default("{}") // {"0": 12, "1": 30, ...} distractor analysis
+  updatedAt     DateTime @default(now())
+
+  @@id([quizId, questionId])
+}
+
+model UserStats {
+  userId            String    @id
+  attempts          Int       @default(0)
+  firstAttemptAt    DateTime?
+  lastAttemptAt     DateTime?
+  sumScore          Float     @default(0)
+  sumTimeMs         BigInt    @default(0)
+  bestScore         Float?
+  avgScore          Float?
+  last20Scores      Float[]   @default([])
+  last20Avg         Float?
+  currentStreakDays Int       @default(0)
+  longestStreakDays Int       @default(0)
+  lastActiveDate    DateTime?
+  updatedAt         DateTime  @default(now())
+}
+
+model QuizStats {
+  quizId        String   @id
+  attempts      Int      @default(0)
+  uniqueUsers   Int      @default(0)
+  abandonCount  Int      @default(0)
+  sumScore      Float    @default(0)
+  sumTimeMs     BigInt   @default(0)
+  avgScore      Float?
+  avgTimeMs     Int?
+  bestScore     Float?
+  passCount     Int      @default(0)
+  updatedAt     DateTime @default(now())
+}
+
+// Powers every "last 30 days" chart with ~30 rows instead of scanning the fact
+// table. Prisma composite @@id can't reference nullable columns, so "all
+// quizzes"/"all subjects" is the literal sentinel "__all__" rather than NULL
+// (NULL would also silently break the @@id's uniqueness guarantee in
+// Postgres, which treats NULLs as distinct from each other).
+model DailyRollup {
+  bucketDate  DateTime
+  quizId      String   @default("__all__")
+  subjectId   String   @default("__all__")
+  attempts    Int      @default(0)
+  uniqueUsers Int      @default(0)
+  sumScore    Float    @default(0)
+  sumTimeMs   BigInt   @default(0)
+
+  @@id([bucketDate, quizId, subjectId])
+}
+
+model UserDailyActivity {
+  userId       String
+  activityDate DateTime
+  attempts     Int      @default(0)
+  sumTimeMs    BigInt   @default(0)
+  bestScore    Float?
+
+  @@id([userId, activityDate])
+}
+
+// Exact unique_users via INSERT ... ON CONFLICT DO NOTHING; increment
+// quiz_stats.unique_users only when the insert actually happened. HyperLogLog
+// was considered and rejected -- see ARCHITECTURE.md's cargo-cult audit.
+model QuizUserSeen {
+  quizId String
+  userId String
+
+  @@id([quizId, userId])
+}
+
+model ExportJob {
+  id          String    @id @default(uuid())
+  requestedBy String
+  kind        String // "quiz-results" | "user-performance"
+  filters     Json
+  status      String    @default("pending") // pending | running | done | failed
+  objectKey   String?
+  rowCount    Int?
+  bytes       Int?
+  error       String?
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+}
+
+// Consumer-side idempotency for every topic this service consumes. Checked
+// and inserted in the same transaction as the projection upsert it guards --
+// that's what makes replaying a consumer group from offset 0 safe.
+model ProcessedEvent {
+  eventId       String   @id
+  consumerGroup String
+  processedAt   DateTime @default(now())
+
+  @@index([consumerGroup])
+}
+
+model BackfillState {
+  job        String    @id
+  lastCursor String?
+  doneRows   BigInt    @default(0)
+  status     String    @default("pending")
+  updatedAt  DateTime  @default(now())
+}

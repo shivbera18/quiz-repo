@@ -1,0 +1,115 @@
+// catalog-svc: subjects/chapters/quizzes/question bank. Write-rare, read-heavy,
+// and the sole holder of answer keys among the public-facing services --
+// GET /v1/quizzes/:id returns metadata only; correctAnswer only ever leaves
+// this service via the internal /internal/quizzes/:id/full endpoint, which the
+// gateway never routes to and only assessment-svc calls.
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  output        = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Subject {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  icon        String?
+  color       String?
+  chapters    Chapter[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Chapter {
+  id          String             @id @default(uuid())
+  name        String
+  description String?
+  subjectId   String
+  subject     Subject            @relation(fields: [subjectId], references: [id])
+  questions   QuestionBankItem[]
+  quizzes     Quiz[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+model Quiz {
+  id                String    @id @default(uuid())
+  title             String
+  description       String
+  timeLimit         Int // minutes
+  createdAt         DateTime  @default(now())
+  createdBy         String
+  sections          String // JSON string array of section names
+  questions         String    @default("[]") // JSON string; includes correctAnswer -- never sent to the gateway directly
+  isActive          Boolean   @default(true)
+  startTime         DateTime?
+  endTime           DateTime?
+  negativeMarking   Boolean   @default(true)
+  negativeMarkValue Float     @default(0.25)
+  version           Int       @default(1) // optimistic concurrency: bump on every PATCH, reject stale writes
+  chapterId         String?
+  chapter           Chapter?  @relation(fields: [chapterId], references: [id])
+
+  @@index([chapterId])
+  @@index([isActive])
+}
+
+model QuestionBankItem {
+  id            String   @id @default(uuid())
+  section       String
+  question      String
+  options       String // JSON string array of 4 options
+  correctAnswer Int
+  explanation   String   @default("")
+  difficulty    String   @default("medium")
+  tags          String   @default("[]")
+  image         String   @default("") // TODO(follow-up): move to object storage; base64 in a text column dominates row size today
+  source        String   @default("")
+  isVerified    Boolean  @default(false)
+  usageCount    Int      @default(0)
+  createdBy     String   @default("admin")
+  chapterId     String?
+  chapter       Chapter? @relation(fields: [chapterId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Backs POST /v1/ai/quiz-generations (202 Accepted + jobId). The worker writes
+// partialQuestions as each section completes, so a mid-job failure resumes
+// instead of discarding everything already generated -- fixes the real data
+// loss bug in the old app/api/ai/generate-quiz/route.ts, which returned 500 on
+// the first failed section and threw away every section already generated.
+model AiGenerationJob {
+  id                String    @id @default(uuid())
+  requestedBy       String
+  title             String
+  sections          String // JSON string array
+  difficulty        String
+  questionsPerSection Int
+  status            String    @default("pending") // pending | in_progress | partial | succeeded | failed
+  partialQuestions  Json      @default("{}") // { [section]: Question[] } accumulated as each section completes
+  resultQuizId      String?
+  failures          Json      @default("[]") // [{section, reason}]
+  createdAt         DateTime  @default(now())
+  completedAt       DateTime?
+}
+
+// Transactional outbox for quiz/chapter/subject-changed events (compacted
+// topics -- see ARCHITECTURE.md for why: analytics/notification bootstrap
+// their dim_* projections from these by replaying from offset 0).
+model Outbox {
+  id            BigInt    @id @default(autoincrement())
+  aggregateType String
+  aggregateId   String
+  topic         String
+  key           String
+  payload       Json
+  headers       Json
+  createdAt     DateTime  @default(now())
+  publishedAt   DateTime?
+}

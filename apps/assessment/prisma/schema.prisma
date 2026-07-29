@@ -1,0 +1,136 @@
+// assessment-svc: the only high-write path in the system (autosave), and the
+// only service where a bug loses user work. userId/quizId are soft references
+// -- no cross-schema/cross-service foreign key is possible or attempted; that
+// is enforced by the Postgres role grants, not just convention.
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  output        = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  EXPIRED
+  ABANDONED
+}
+
+model Attempt {
+  id                String        @id @default(uuid())
+  quizId            String // soft ref into catalog-svc, no FK
+  userId            String // soft ref into identity-svc, no FK
+  userName          String // frozen at attempt time -- see AttemptSnapshot doc below
+  userEmail         String
+  snapshotId        String
+  status            AttemptStatus @default(IN_PROGRESS)
+  startedAt         DateTime      @default(now())
+  expiresAt         DateTime
+  submittedAt       DateTime?
+  submitSource      String?
+  clientIdemKey     String?
+
+  rawScore          Float?
+  totalScore        Float?
+  maxScore          Float?
+  correctCount      Int?
+  wrongCount        Int?
+  unansweredCount   Int?
+  negativeMarking   Boolean
+  negativeMarkValue Float
+  timeSpentMs       Int?
+  scoringVersion    Int           @default(1)
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  snapshot          AttemptSnapshot @relation(fields: [snapshotId], references: [id])
+  answers           AttemptAnswer[]
+
+  @@unique([userId, clientIdemKey])
+  @@index([userId, submittedAt])
+  @@index([quizId, totalScore])
+  // Two more indexes exist only as raw SQL in the migration (partial indexes
+  // aren't expressible in the Prisma schema DSL):
+  //   attempt_one_inflight: UNIQUE (user_id, quiz_id) WHERE status = 'IN_PROGRESS'
+  //   attempt_sweeper: INDEX (expires_at) WHERE status = 'IN_PROGRESS'
+}
+
+// Immutable copy of the quiz (including answer keys) taken the moment an
+// attempt starts, fetched once from catalog-svc's internal full-quiz endpoint.
+// Scoring always reads from here, never re-fetches from catalog -- so an admin
+// editing a quiz mid-exam can't change questions or marking under a student
+// mid-attempt. Deduped on (quizId, contentHash).
+model AttemptSnapshot {
+  id                String   @id @default(uuid())
+  quizId            String
+  quizTitle         String
+  quizVersion       Int      @default(1)
+  contentHash       String
+  timeLimitSec      Int
+  negativeMarking   Boolean
+  negativeMarkValue Float
+  sections          Json
+  questions         Json // includes correctAnswer + explanation -- never serialized to a client pre-submit
+  isReconstructed   Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  attempts          Attempt[]
+
+  @@unique([quizId, contentHash])
+}
+
+model AttemptAnswer {
+  attemptId       String
+  questionId      String
+  section         String
+  selectedOption  Int?
+  markedForReview Boolean   @default(false)
+  visited         Boolean   @default(false)
+  timeSpentMs     Int       @default(0)
+  answeredAt      DateTime?
+  clientSeq       BigInt    @default(0)
+  isCorrect       Boolean?
+  awarded         Float?
+
+  attempt         Attempt   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@id([attemptId, questionId])
+}
+
+// Legacy table from the pre-Attempt scoring design. Kept for the historical
+// data it already holds and the /v1/attempts?legacy=1-style back-compat
+// listing -- new attempts are never written here.
+model QuizResult {
+  id        String   @id @default(uuid())
+  quizId    String
+  userId    String
+  userName  String
+  userEmail String
+  date      DateTime @default(now())
+  totalScore Int
+  sections  String
+  answers   String
+  timeSpent Int
+
+  @@index([userId, date])
+  @@index([quizId])
+}
+
+// Transactional outbox: attempt-submitted / attempt-started publish from here,
+// in the same transaction as the Attempt status flip.
+model Outbox {
+  id            BigInt    @id @default(autoincrement())
+  aggregateType String
+  aggregateId   String
+  topic         String
+  key           String
+  payload       Json
+  headers       Json
+  createdAt     DateTime  @default(now())
+  publishedAt   DateTime?
+}

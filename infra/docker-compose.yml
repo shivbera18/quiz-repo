@@ -1,0 +1,410 @@
+# Full stack, local dev AND the base for a real deployment. Run from the repo root:
+#   pnpm compose:up      (== docker compose -f infra/docker-compose.yml up -d --build)
+#   pnpm compose:logs
+#   pnpm compose:down
+#
+# Host ports 5433/6380 (not 5432/6379) are deliberate: this machine already
+# runs Postgres 17 and Memurai as Windows services on the default ports, so
+# the container stack uses the next port up to avoid a collision. See
+# HOSTING.md.
+#
+# Every credential below has a LOCAL-DEV-ONLY default (matching
+# infra/postgres/init/01-schemas-roles.sh) so `docker compose up` works with
+# zero setup. For anything beyond your own machine, set real values in
+# infra/.env (see infra/.env.example) -- Compose reads that file
+# automatically because it sits next to this one. Nothing here needs the
+# compose file itself edited for a real deployment.
+#
+# For a deployment reachable from the public internet, layer
+# docker-compose.prod.yml on top (see HOSTING.md's Oracle Cloud walkthrough)
+# -- it adds Caddy for TLS and rebinds every port below to 127.0.0.1 so nothing
+# except Caddy is actually internet-facing, regardless of cloud firewall
+# config (defense in depth, not a replacement for firewalling the VM itself).
+#
+# Observability (Jaeger/Prometheus/Grafana) is deliberately NOT in this file
+# -- see the "known gaps" note in HOSTING.md -- so the default `up` stays fast
+# and doesn't ship decorative, non-functional containers.
+
+name: quiz-platform
+
+services:
+  # ------------------------------------------------------------- data plane
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: quiz_admin
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:-quiz_admin_pw}
+      POSTGRES_DB: quiz
+      IDENTITY_RW_PASSWORD: ${IDENTITY_RW_PASSWORD:-identity_rw_pw}
+      CATALOG_RW_PASSWORD: ${CATALOG_RW_PASSWORD:-catalog_rw_pw}
+      ASSESSMENT_RW_PASSWORD: ${ASSESSMENT_RW_PASSWORD:-assessment_rw_pw}
+      ANALYTICS_RW_PASSWORD: ${ANALYTICS_RW_PASSWORD:-analytics_rw_pw}
+      NOTIFICATION_RW_PASSWORD: ${NOTIFICATION_RW_PASSWORD:-notification_rw_pw}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quiz_admin -d quiz"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redpanda:
+    image: redpandadata/redpanda:v24.2.18
+    restart: unless-stopped
+    command:
+      - redpanda
+      - start
+      - --smp=1
+      - --memory=512M
+      - --overprovisioned
+      - --node-id=0
+      - --check=false
+      - --kafka-addr=PLAINTEXT://0.0.0.0:9092,OUTSIDE://0.0.0.0:19092
+      - --advertise-kafka-addr=PLAINTEXT://redpanda:9092,OUTSIDE://localhost:19092
+      - --pandaproxy-addr=0.0.0.0:8082
+      - --advertise-pandaproxy-addr=localhost:8082
+    ports:
+      - "19092:19092" # Kafka API, for services running on the host (outside Compose)
+      - "8082:8082" # pandaproxy (REST)
+      - "9644:9644" # admin API, used by the healthcheck below
+    volumes:
+      - redpanda-data:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -q 'Healthy:.*true'"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redpanda-console:
+    image: redpandadata/console:v2.7.2
+    restart: unless-stopped
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+    ports:
+      - "8090:8080"
+    depends_on:
+      redpanda:
+        condition: service_healthy
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # web console
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-shot: creates the export bucket and exits. `mc` has no long-running
+  # process, so this container is expected to reach status "exited (0)" --
+  # no restart policy, it's not meant to run again once it succeeds.
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin} &&
+      mc mb --ignore-existing local/quiz-exports
+      "
+
+  # -------------------------------------------------------------- services
+  gateway:
+    build:
+      context: ..
+      dockerfile: apps/gateway/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: "4000"
+      REDIS_URL: redis://redis:6379
+      IDENTITY_SVC_URL: http://identity-svc:4001
+      CATALOG_SVC_URL: http://catalog-svc:4002
+      ASSESSMENT_SVC_URL: http://assessment-svc:4003
+      ANALYTICS_SVC_URL: http://analytics-svc:4004
+      NOTIFICATION_SVC_URL: http://notification-svc:4005
+    depends_on:
+      identity-svc:
+        condition: service_healthy
+      catalog-svc:
+        condition: service_healthy
+      assessment-svc:
+        condition: service_healthy
+      analytics-svc:
+        condition: service_healthy
+      notification-svc:
+        condition: service_healthy
+
+  identity-svc:
+    build:
+      context: ..
+      dockerfile: apps/identity/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "4001:4001"
+    environment:
+      PORT: "4001"
+      DATABASE_URL: postgresql://identity_rw:${IDENTITY_RW_PASSWORD:-identity_rw_pw}@postgres:5432/quiz?schema=identity
+      KAFKA_BROKERS: redpanda:9092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4001/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  catalog-svc:
+    build:
+      context: ..
+      dockerfile: apps/catalog/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "4002:4002"
+    environment:
+      PORT: "4002"
+      DATABASE_URL: postgresql://catalog_rw:${CATALOG_RW_PASSWORD:-catalog_rw_pw}@postgres:5432/quiz?schema=catalog
+      KAFKA_BROKERS: redpanda:9092
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4002/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  catalog-ai-worker:
+    build:
+      context: ..
+      dockerfile: apps/catalog/Dockerfile.ai-worker
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://catalog_rw:${CATALOG_RW_PASSWORD:-catalog_rw_pw}@postgres:5432/quiz?schema=catalog
+      KAFKA_BROKERS: redpanda:9092
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+
+  assessment-svc:
+    build:
+      context: ..
+      dockerfile: apps/assessment/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "4003:4003"
+    environment:
+      PORT: "4003"
+      DATABASE_URL: postgresql://assessment_rw:${ASSESSMENT_RW_PASSWORD:-assessment_rw_pw}@postgres:5432/quiz?schema=assessment
+      KAFKA_BROKERS: redpanda:9092
+      CATALOG_SVC_URL: http://catalog-svc:4002
+      IDENTITY_SVC_URL: http://identity-svc:4001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+      catalog-svc:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4003/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  assessment-worker:
+    build:
+      context: ..
+      dockerfile: apps/assessment/Dockerfile.worker
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://assessment_rw:${ASSESSMENT_RW_PASSWORD:-assessment_rw_pw}@postgres:5432/quiz?schema=assessment
+      KAFKA_BROKERS: redpanda:9092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+
+  analytics-svc:
+    build:
+      context: ..
+      dockerfile: apps/analytics/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "4004:4004"
+    environment:
+      PORT: "4004"
+      DATABASE_URL: postgresql://analytics_rw:${ANALYTICS_RW_PASSWORD:-analytics_rw_pw}@postgres:5432/quiz?schema=analytics
+      KAFKA_BROKERS: redpanda:9092
+      REDIS_URL: redis://redis:6379
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: us-east-1
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      EXPORT_BUCKET: quiz-exports
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4004/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  analytics-rollup-consumer:
+    build:
+      context: ..
+      dockerfile: apps/analytics/Dockerfile.rollup-consumer
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://analytics_rw:${ANALYTICS_RW_PASSWORD:-analytics_rw_pw}@postgres:5432/quiz?schema=analytics
+      KAFKA_BROKERS: redpanda:9092
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  analytics-export-worker:
+    build:
+      context: ..
+      dockerfile: apps/analytics/Dockerfile.export-worker
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://analytics_rw:${ANALYTICS_RW_PASSWORD:-analytics_rw_pw}@postgres:5432/quiz?schema=analytics
+      KAFKA_BROKERS: redpanda:9092
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: us-east-1
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      EXPORT_BUCKET: quiz-exports
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+
+  notification-svc:
+    build:
+      context: ..
+      dockerfile: apps/notification/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "4005:4005"
+    environment:
+      PORT: "4005"
+      DATABASE_URL: postgresql://notification_rw:${NOTIFICATION_RW_PASSWORD:-notification_rw_pw}@postgres:5432/quiz?schema=notification
+      KAFKA_BROKERS: redpanda:9092
+      REDIS_URL: redis://redis:6379
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_EMAIL: ${VAPID_EMAIL:-you@example.com}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4005/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  notification-worker:
+    build:
+      context: ..
+      dockerfile: apps/notification/Dockerfile.worker
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://notification_rw:${NOTIFICATION_RW_PASSWORD:-notification_rw_pw}@postgres:5432/quiz?schema=notification
+      KAFKA_BROKERS: redpanda:9092
+      REDIS_URL: redis://redis:6379
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_EMAIL: ${VAPID_EMAIL:-you@example.com}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # -------------------------------------------------------------------- web
+  # Next.js, UI-only -- every app/api/** route here is a thin forward to the
+  # gateway (see apps/web/lib/gateway-client.ts). GATEWAY_URL is read
+  # server-side at request time by those route handlers. This is the ONLY
+  # container a browser ever talks to (directly, or via Caddy in front of it
+  # in docker-compose.prod.yml) -- see that file's own header comment.
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+      GATEWAY_URL: http://gateway:4000
+    depends_on:
+      gateway:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  redpanda-data:
+  minio-data:

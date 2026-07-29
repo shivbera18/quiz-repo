@@ -1,0 +1,20 @@
+# Separate image/process from the API -- web-push calls to third-party
+# services (Apple/Google/Mozilla) are exactly the kind of flaky dependency
+# that shouldn't share a container with SSE connection handling.
+# Build with: docker build -f apps/notification/Dockerfile.worker -t quiz-notification-worker .
+FROM node:22-alpine
+
+RUN npm install -g pnpm@10.12.3
+
+WORKDIR /app
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json turbo.json ./
+COPY packages ./packages
+COPY apps/notification ./apps/notification
+
+RUN pnpm install --frozen-lockfile
+RUN pnpm --filter notification-svc prisma:generate
+
+ENV NODE_ENV=production
+
+CMD ["pnpm", "--filter", "notification-svc", "worker:start"]

@@ -20,38 +20,43 @@ A comprehensive, AI-powered quiz management system built for educational institu
 
 ## Technology Stack
 
+A Turborepo/pnpm monorepo: an API gateway, five backend services, and a Next.js frontend, behind one shared Postgres (schema-per-service), Redis, and Kafka (via Redpanda). See [ARCHITECTURE.md](ARCHITECTURE.md) for the full design rationale.
+
 | Component | Technology |
 |-----------|------------|
-| **Frontend** | Next.js 15, React 18, TypeScript |
+| **Frontend** | Next.js 15, React 18, TypeScript (`apps/web`) |
 | **Styling** | Tailwind CSS, Shadcn/ui |
-| **Backend** | Next.js API Routes |
-| **Database** | PostgreSQL |
-| **ORM** | Prisma |
-| **Authentication** | Custom (opaque token, not NextAuth) |
+| **Gateway & services** | Fastify (`apps/gateway`, `apps/identity`, `apps/catalog`, `apps/assessment`, `apps/analytics`, `apps/notification`) |
+| **Database** | PostgreSQL — one instance, one schema + role per service |
+| **ORM** | Prisma (a separate client/schema per service) |
+| **Messaging** | Kafka API (Redpanda) — event-carried state transfer + a transactional outbox per service |
+| **Cache / rate limiting / leaderboards** | Redis |
+| **Object storage** | MinIO (S3 API) — CSV export storage |
+| **Authentication** | Custom opaque token, unchanged from the original design — verified centrally by identity-svc, never re-parsed by other services |
 | **AI Integration** | Google Gemini API |
 | **Testing** | Vitest (unit), Playwright (e2e) |
-| **Deployment** | Vercel |
+| **Local orchestration** | Docker Compose (`infra/docker-compose.yml`) |
 
 ## Prerequisites
 
-- Node.js 20.x or later
-- pnpm (the repo has a committed `pnpm-lock.yaml` — use pnpm, not npm/yarn)
-- PostgreSQL database
+- Node.js 22 and pnpm (the repo has a committed `pnpm-lock.yaml` — use pnpm, not npm/yarn)
+- Docker Desktop — the realistic way to run 11+ processes plus Postgres/Redis/Kafka/MinIO locally
 - Google Gemini API key (optional — only needed for AI generation features)
 
 ## Installation & Deployment
 
-See **[HOSTING.md](HOSTING.md)** for the full setup guide — local development, running the test suites, and deploying online (Vercel + Neon, plus alternatives). Quick start:
+See **[HOSTING.md](HOSTING.md)** for the full setup guide — local development with Docker Compose, running the test suites, and deploying online. Quick start:
 
 ```bash
 git clone https://github.com/shivbera18/quiz-repo.git
 cd quiz-repo
 pnpm install
-cp .env.example .env.local   # fill in DATABASE_URL at minimum
-npx prisma generate
-npx prisma migrate deploy
-DATABASE_URL="<your connection string>" pnpm db:seed
-pnpm dev
+pnpm compose:up                              # builds and starts all 11 backend processes + infra
+# then, per service (see HOSTING.md Part 1 step 4):
+docker compose -f infra/docker-compose.yml exec identity-svc pnpm db:migrate
+docker compose -f infra/docker-compose.yml exec identity-svc pnpm db:seed
+# ...repeat db:migrate for catalog-svc, assessment-svc, analytics-svc, notification-svc
+GATEWAY_URL=http://localhost:4000 pnpm --filter web dev
 ```
 
 ## Usage
@@ -78,15 +83,26 @@ pnpm dev
 
 ```
 quiz-repo/
-├── app/                    # Next.js App Router pages
-│   ├── api/               # Backend API routes
-│   ├── admin/             # Admin interface
-│   ├── auth/              # Authentication pages
-│   └── dashboard/         # Student dashboard
-├── components/            # Reusable React components
-├── lib/                   # Utility functions and configurations
-├── prisma/                # Database schema and migrations
-└── public/                # Static assets
+├── apps/
+│   ├── web/                # Next.js frontend -- UI only; every app/api/** route
+│   │   │                   # forwards to the gateway (apps/web/lib/gateway-client.ts)
+│   │   ├── app/            # App Router pages + thin API-forward route handlers
+│   │   ├── components/     # Reusable React components
+│   │   └── hooks/
+│   ├── gateway/             # Fastify: auth (via identity-svc introspection), routing, rate limiting
+│   ├── identity/             # users, opaque tokens
+│   ├── catalog/               # subjects/chapters/quizzes/question bank + AI quiz generation worker
+│   ├── assessment/           # Attempt-based server-side scoring + legacy QuizResult reporting
+│   ├── analytics/           # read models fed by Kafka (rollup consumer) + CSV export worker
+│   └── notification/       # announcements, push notifications, SSE
+├── packages/
+│   ├── contracts/          # shared Zod DTOs + Kafka event types
+│   ├── kafka-kit/           # producer/consumer/outbox helpers
+│   ├── redis-kit/          # Redis client + typed key builders
+│   └── observability/      # structured logging + trace-id propagation
+└── infra/
+    ├── docker-compose.yml  # the whole stack
+    └── postgres/init/      # per-service schema + role setup
 ```
 
 ## Contributing

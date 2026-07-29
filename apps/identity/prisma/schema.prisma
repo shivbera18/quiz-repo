@@ -1,0 +1,56 @@
+// identity-svc: the only service allowed to read password values or the users
+// table. Auth intentionally stays on the pre-existing scheme (plaintext
+// password compare, opaque `${userId}-${timestamp}-${random}` token) --
+// deferred by explicit instruction, not an oversight. The service boundary is
+// justified by blast radius, not by this being cryptographically hardened.
+//
+// No multiSchema/@@schema needed: this service connects as the `identity_rw`
+// role, whose search_path is pinned to the `identity` schema in
+// infra/postgres/init/01-schemas-roles.sql, so plain unqualified tables land
+// there automatically.
+generator client {
+  provider      = "prisma-client-js"
+  // Custom, service-local output: all 5 services depend on the identical
+  // @prisma/client version, so pnpm hoists that package to ONE shared
+  // content-addressed store location. Without this, `prisma generate` for
+  // any one service overwrites every other service's generated client in
+  // place -- the default output path is not actually service-local in this
+  // monorepo shape, even though the generated *types* (User, Outbox, etc.)
+  // are completely different per service.
+  output        = "../src/generated/prisma"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  password     String
+  isAdmin      Boolean
+  userType     String
+  createdAt    DateTime  @default(now())
+  lastLogin    DateTime?
+  totalQuizzes Int       @default(0)
+  averageScore Int       @default(0)
+}
+
+// Transactional outbox: a user create/update writes here in the same
+// transaction, and a separate publisher (packages/kafka-kit's
+// publishOutboxBatch) ships it to quiz.identity.user-changed.v1. This is what
+// makes "DB write + event" atomic without Kafka transactions.
+model Outbox {
+  id            BigInt    @id @default(autoincrement())
+  aggregateType String
+  aggregateId   String
+  topic         String
+  key           String
+  payload       Json
+  headers       Json
+  createdAt     DateTime  @default(now())
+  publishedAt   DateTime?
+}

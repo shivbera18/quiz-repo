@@ -1,23 +1,30 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
-/.pnp
+node_modules
+.pnp
 .pnp.js
 
+# turborepo build cache -- large binary archives, machine-local, never useful to commit
+.turbo/
+
+# Claude Code local settings (permissions/session config, not project source)
+.claude/settings.local.json
+
 # testing
-/coverage
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
 
 # next.js
-/.next/
-/out/
+.next/
+out/
 
 # production
-/build
+build/
+dist/
 
 # misc
 .DS_Store
@@ -29,15 +36,15 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# local env files
-.env
-.env*.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local.dev
-.env.local.production.backup
-.env.production.example
+# local env files -- blanket pattern with explicit exceptions, not a growing
+# list of specific filenames. The previous version missed .env.production
+# specifically, which had a live Neon DB password committed to history as a
+# result; a real secret leak this pattern change is meant to make structurally
+# impossible instead of one exception line away from happening again.
+.env*
+!.env.example
+!.env.production.example
+!infra/.env.example
 
 # vercel
 .vercel
@@ -55,13 +62,15 @@ prisma/*.db*
 *.sqlite3
 
 # backup data (SENSITIVE - contains user data)
-/backup-data/
+# NOTE: this used to be a blanket `*.json` ignore with per-file exceptions, which
+# silently dropped .eslintrc.json from version control for this repo's entire
+# history (it matched the pattern and had no exception). Replaced with what the
+# comment actually describes protecting against -- data exports -- so new
+# legitimate config files (turbo.json, per-package package.json/tsconfig.json,
+# etc.) don't need a new exception line added every time one is created.
 backup-data/
-*.json
-!components.json
-!package.json
-!tsconfig.json
-!.eslintrc.json
+*.export.json
+*-export.json
 
 # database schema backups
 prisma/schema.*.backup
@@ -87,8 +96,9 @@ test-admin-analytics-data.json
 setup-production-db.bat
 setup-production-db.sh
 
-# generated files
-/lib/generated/
+# generated files (Prisma clients, wherever a service's schema.prisma points them)
+**/generated/prisma/
+**/lib/generated/
 
 # IDE files
 .vscode/

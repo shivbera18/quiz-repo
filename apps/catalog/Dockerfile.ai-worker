@@ -1,0 +1,19 @@
+# Separate image/process from the API -- a 30-120s Gemini call per section
+# shouldn't share a container (or a request thread pool) with a 5ms quiz list.
+# Build with: docker build -f apps/catalog/Dockerfile.ai-worker -t quiz-catalog-ai-worker .
+FROM node:22-alpine
+
+RUN npm install -g pnpm@10.12.3
+
+WORKDIR /app
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json turbo.json ./
+COPY packages ./packages
+COPY apps/catalog ./apps/catalog
+
+RUN pnpm install --frozen-lockfile
+RUN pnpm --filter catalog-svc prisma:generate
+
+ENV NODE_ENV=production
+
+CMD ["pnpm", "--filter", "catalog-svc", "worker:start"]
