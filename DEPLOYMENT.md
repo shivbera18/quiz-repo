@@ -53,106 +53,15 @@ The browser only ever talks to Vercel. Vercel's server-side route handlers (ever
 
 ## Part 1 — One-time Oracle VPS setup
 
-Skip to Part 2 if you've already done this (created the VM, installed Docker, opened the firewall).
+This part now lives in its own document: **[ORACLE_SETUP.md](ORACLE_SETUP.md)** — account creation, VM shape, the ARM64 image-compatibility check worth doing up front, both firewall layers, DNS, Docker install, cloning the repo (including the private-repo auth options), secrets, the first deploy, migrations, verification, backups, and log rotation, plus its own troubleshooting section.
 
-### 1. Create the VM, if you haven't already
-
-Compute → Instances → Create Instance. Shape `VM.Standard.A1.Flex`, set to the full Always Free allowance (4 OCPUs / 24GB RAM). Image: Ubuntu 22.04+. See [HOSTING.md's Oracle Cloud walkthrough](HOSTING.md#oracle-cloud-free-tier-walkthrough) for the full click-path if you need it — this guide assumes the VM already exists and you can SSH into it.
-
-### 2. Open the firewall — both layers
-
-- **Cloud-level**: Networking → Virtual Cloud Networks → your VCN → Security Lists → Ingress Rules → add TCP 80 and 443 from `0.0.0.0/0`.
-- **OS-level**: `sudo iptables -L -n` once you're on the box; if 80/443 aren't allowed, `sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT` (and 443), then persist it.
-
-Do **not** open 5433/6380/19092/8082/8090/9000/9001/9644/4000–4005 at the cloud level — `docker-compose.prod.yml` already rebinds all of those to `127.0.0.1`.
-
-### 3. DNS
-
-Add an `A` record: `api.your-domain.com` → the VM's public IP. This is the domain the gateway will be reachable at (not your main domain — that one points at Vercel in Part 3).
-
-### 4. Install Docker
-
-```bash
-ssh ubuntu@<vm-public-ip>
-curl -fsSL https://get.docker.com | sudo sh
-sudo usermod -aG docker $USER
-newgrp docker
-sudo systemctl enable --now docker
-```
-
-### 5. Clone the repo
-
-```bash
-cd ~
-git clone https://github.com/shivbera18/quiz-repo-microservice.git
-cd quiz-repo-microservice
-```
-
-**If this repo is private**, anonymous HTTPS clone/pull will fail. Either:
-- Clone over SSH instead, after adding this VM's public key (`cat ~/.ssh/id_ed25519.pub`, generate one with `ssh-keygen -t ed25519` if it doesn't exist) as a **read-only Deploy Key** under the repo's GitHub Settings → Deploy keys, then `git clone git@github.com:shivbera18/quiz-repo-microservice.git`; or
-- Embed a fine-grained Personal Access Token (repo-scoped, read-only) in the HTTPS remote: `git remote set-url origin https://<PAT>@github.com/shivbera18/quiz-repo-microservice.git`.
-
-Either way, the CI-triggered redeploy in Part 2 runs `git pull` as this same user against this same clone, so whichever auth method you set up here needs to keep working unattended (an SSH deploy key with no passphrase, or a long-lived PAT — not something that prompts interactively).
-
-### 6. Configure secrets
-
-```bash
-cd infra
-cp .env.example .env
-nano .env
-```
-
-Fill in every password field with a real value (`node -e "console.log(require('crypto').randomBytes(24).toString('base64url'))"` per field). This is also where your Neon/other real credentials would go **if** you were pointing this stack at an external Postgres instead of the bundled container — see the note at the end of this section.
-
-```bash
-cd ..
-nano infra/Caddyfile
-# replace DOMAIN_PLACEHOLDER with api.your-domain.com
-```
-
-> **Using Neon instead of the bundled Postgres container**: if you want the backend's Postgres to actually be Neon (rather than the `postgres` container this compose file runs on the VM itself), skip `infra/.env`'s `*_RW_PASSWORD`/`POSTGRES_ADMIN_PASSWORD` fields, remove the `postgres` service from what you bring up in step 7, and instead set each service's `DATABASE_URL` directly (as real environment overrides in `infra/docker-compose.yml`, or better, in a small `infra/docker-compose.override.yml` you keep local and don't commit) to `postgresql://<neon-role>:<neon-password>@<neon-host>/quiz?schema=<service-schema>&sslmode=require`. You'd still need to run `infra/postgres/init/01-schemas-roles.sh`'s SQL once against the Neon database yourself (Neon's SQL editor, or `psql` against the Neon connection string) since that script only auto-runs against the bundled container on first boot, never against an external database. Send over the Neon connection details when you have them and this can be wired up precisely rather than left as a template.
-
-### 7. First deploy
-
-```bash
-docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml \
-  up -d --build \
-  postgres redis redpanda redpanda-console minio minio-init \
-  gateway identity-svc catalog-svc catalog-ai-worker \
-  assessment-svc assessment-worker \
-  analytics-svc analytics-rollup-consumer analytics-export-worker \
-  notification-svc notification-worker \
-  caddy
-```
-
-First build compiles all 11 backend Dockerfiles from source on a 4-core ARM box — 10–20 minutes is normal. `web` is deliberately not in this list; it isn't deployed here at all (Part 3 handles it via Vercel).
-
-### 8. Migrate and seed
-
-```bash
-docker compose -f infra/docker-compose.yml exec identity-svc pnpm db:migrate
-docker compose -f infra/docker-compose.yml exec identity-svc pnpm db:seed
-docker compose -f infra/docker-compose.yml exec catalog-svc pnpm db:migrate
-docker compose -f infra/docker-compose.yml exec catalog-svc pnpm db:seed
-docker compose -f infra/docker-compose.yml exec assessment-svc pnpm db:migrate
-docker compose -f infra/docker-compose.yml exec analytics-svc pnpm db:migrate
-docker compose -f infra/docker-compose.yml exec notification-svc pnpm db:migrate
-```
-
-### 9. Verify the backend is reachable
-
-```bash
-curl https://api.your-domain.com/healthz
-# {"status":"ok"}
-```
-
-If this fails, see [Troubleshooting](#part-6--troubleshooting) before moving to Part 2 — everything after this point assumes the gateway is actually reachable at this URL.
+**Follow it start to finish now, then come back here and continue at Part 2.** By the end of it you should have `curl https://api.your-domain.com/healthz` returning `{"status":"ok"}` — everything below assumes that's true.
 
 ---
 
 ## Part 2 — GitHub Actions auto-deploy setup
 
-This wires up `.github/workflows/deploy-oracle.yml`, which SSHs into the VM and reruns step 7+8 above automatically whenever CI passes on `main`.
+This wires up `.github/workflows/deploy-oracle.yml`, which SSHs into the VM and reruns [ORACLE_SETUP.md](ORACLE_SETUP.md)'s deploy and migrate steps automatically whenever CI passes on `main`.
 
 ### 1. Generate a dedicated deploy key
 
@@ -241,7 +150,7 @@ The only case needing a manual step is a change to `infra/.env` itself (new secr
 ## Part 5 — End-to-end verification
 
 - `curl https://api.your-domain.com/healthz` → `{"status":"ok"}`
-- Visit the Vercel URL, log in with a seeded account (`admin@quizapp.com` / `admin123` or `student@test.com` / `student123`, from Part 1 step 8).
+- Visit the Vercel URL, log in with a seeded account (`admin@quizapp.com` / `admin123` or `student@test.com` / `student123`, from [ORACLE_SETUP.md](ORACLE_SETUP.md)'s Step 13).
 - Take the sample quiz end-to-end: start → answer → submit → see the score.
 - Admin: create/edit a quiz, check the question bank, check announcements.
 - Push a trivial commit (e.g. a comment change) and confirm both `CI` and `Deploy backend to Oracle VPS` go green in the Actions tab, and that Vercel shows a new deployment.
@@ -260,7 +169,7 @@ The only case needing a manual step is a change to `infra/.env` itself (new secr
 - Confirm the public key half is actually in `~/.ssh/authorized_keys` on the VM for the exact user in `ORACLE_USER`.
 
 **`deploy-oracle.yml` fails at `git pull`**
-- The repo is private and the VM's clone has no working credentials — see Part 1 step 5's private-repo note.
+- The repo is private and the VM's clone has no working credentials — see [ORACLE_SETUP.md's Step 9](ORACLE_SETUP.md#step-9--clone-the-repository) private-repo note.
 
 **Vercel build fails with a pnpm/workspace-related error**
 - Confirm Root Directory is exactly `apps/web` (Project Settings → General) and that `pnpm-lock.yaml` at the true repo root is committed and up to date (`pnpm install` locally, without `--frozen-lockfile`, if Vercel complains about a stale lockfile).
