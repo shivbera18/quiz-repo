@@ -2,6 +2,8 @@
 
 This is the complete, start-to-finish guide for setting up the Oracle Cloud "Always Free" VM that runs this project's backend (gateway + 5 services + their workers, Postgres, Redis, Redpanda, MinIO). It assumes nothing exists yet — if you've already created the VM, jump to [Step 5](#step-5-first-ssh-connection).
 
+This guide targets **Oracle Linux 9** (the OS Oracle's console defaults to, and the one with the most reliable ARM/`A1.Flex` image availability across regions — Ubuntu's aarch64 image build isn't listed in every tenancy/region). Default username is **`opc`**, package manager is **`dnf`**, and the OS-level firewall is **`firewalld`** — all different from a typical Ubuntu box. If you managed to get an Ubuntu aarch64 image working in your region instead, the only steps that differ are 3–6b and 8 (username, package manager, firewall, Docker install); everything from Step 9 onward is identical either way.
+
 This is the one place this repo documents Oracle VPS setup in depth — [HOSTING.md](HOSTING.md) and [DEPLOYMENT.md](DEPLOYMENT.md) both link here instead of repeating it, so follow this document start to finish and then continue in **[DEPLOYMENT.md](DEPLOYMENT.md) starting at Part 2** for the GitHub Actions auto-deploy and Vercel setup.
 
 ## What you'll have at the end
@@ -34,7 +36,7 @@ This is the one place this repo documents Oracle VPS setup in depth — [HOSTING
 3. **Name**: something like `quiz-platform-vm`.
 4. **Placement**: leave the default availability domain unless you have a reason to change it.
 5. **Image and shape** → click **Edit**:
-   - **Image**: select **Ubuntu**, pick the newest **22.04** or **24.04** LTS version offered.
+   - **Image**: select **Oracle Linux**, pick the newest **9** build offered (this is also what the console defaults to if you don't touch this field).
    - **Shape**: click **Change shape**, select the **Ampere** family, choose **VM.Standard.A1.Flex**, then set:
      - **Number of OCPUs**: `4`
      - **Memory (GB)**: `24`
@@ -49,7 +51,7 @@ This is the one place this repo documents Oracle VPS setup in depth — [HOSTING
 
 Once the instance shows **Running**, open it and note:
 - **Public IP address** (shown on the instance's detail page) — you'll need this constantly, consider writing it down or setting a shell variable for it.
-- The default username for Ubuntu images on Oracle is **`ubuntu`**.
+- The default username for Oracle Linux images on Oracle Cloud is **`opc`**.
 
 ## Step 4 — Fix the private key's permissions and connect
 
@@ -57,21 +59,21 @@ If you're on macOS/Linux (or Git Bash/WSL on Windows):
 
 ```bash
 chmod 600 ~/Downloads/ssh-key-2026-07-29.key   # SSH refuses to use a key with overly-open permissions
-ssh -i ~/Downloads/ssh-key-2026-07-29.key ubuntu@<vm-public-ip>
+ssh -i ~/Downloads/ssh-key-2026-07-29.key opc@<vm-public-ip>
 ```
 
 On Windows PowerShell, `chmod` doesn't exist — instead, right-click the `.key` file → Properties → Security → Advanced → remove inheritance and restrict access to just your user account, or simply use WSL/Git Bash for the `ssh` commands in this guide (recommended — the rest of this guide assumes a Unix-like shell).
 
-Type `yes` when asked to confirm the host's fingerprint on first connection. You should land at an `ubuntu@<hostname>:~$` prompt.
+Type `yes` when asked to confirm the host's fingerprint on first connection. You should land at an `opc@<hostname>:~$` prompt.
 
 ## Step 5 — First SSH connection
 
-(If you skipped here because the VM already exists: confirm you can `ssh ubuntu@<vm-public-ip>` before continuing.)
+(If you skipped here because the VM already exists: confirm you can `ssh opc@<vm-public-ip>` before continuing.)
 
 Update the box once, as a sanity check that networking/DNS resolution work from inside the VM:
 
 ```bash
-sudo apt-get update && sudo apt-get upgrade -y
+sudo dnf update -y
 ```
 
 ## Step 6 — Open the firewall (both layers)
@@ -90,21 +92,24 @@ Oracle Cloud has **two independent firewalls** — missing the second one is the
 
 **Deliberately do not** add rules for 5433, 6380, 19092, 8082, 8090, 9000, 9001, 9644, or 4000–4005 — those stay closed at this layer. `docker-compose.prod.yml` (used later) rebinds all of them to `127.0.0.1` as a second layer of protection, but this cloud firewall staying closed is the actual control.
 
-### 6b. OS-level (iptables)
+### 6b. OS-level (firewalld)
 
-Back on the SSH session:
-
-```bash
-sudo iptables -L -n
-```
-
-Look for `ACCEPT` rules covering ports 80/443. Oracle's Ubuntu images are usually permissive by default, but if you see a restrictive default (common on Oracle Linux images, less common on Ubuntu), open them explicitly:
+Oracle Linux 9 ships with `firewalld` active by default, and it blocks 80/443 out of the box even after the Security List (6a) is open — this is the layer people most often forget on Oracle Linux specifically. Back on the SSH session:
 
 ```bash
-sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT
-sudo iptables -I INPUT -p tcp --dport 443 -j ACCEPT
-sudo netfilter-persistent save   # if this command doesn't exist: sudo apt-get install -y iptables-persistent, then retry
+sudo firewall-cmd --list-all
 ```
+
+Check the `ports:` line. If 80/443 aren't listed, open them:
+
+```bash
+sudo firewall-cmd --permanent --add-port=80/tcp
+sudo firewall-cmd --permanent --add-port=443/tcp
+sudo firewall-cmd --reload
+sudo firewall-cmd --list-all   # confirm 80/tcp and 443/tcp now show under ports:
+```
+
+(If `firewall-cmd` isn't found at all — some minimal images ship without it — check `sudo iptables -L -n` for `ACCEPT` rules on 80/443 instead, and add them with `sudo iptables -I INPUT -p tcp --dport <port> -j ACCEPT` followed by `sudo dnf install -y iptables-services && sudo service iptables save` if you need it to persist a reboot.)
 
 ## Step 7 — Point DNS at the VM
 
@@ -124,12 +129,17 @@ Once it prints your VM's IP, move on — Caddy (Step 12) needs this working befo
 
 ## Step 8 — Install Docker
 
+Docker's convenience script (`get.docker.com`) doesn't reliably detect Oracle Linux, so install the CentOS-compatible repo directly instead (Oracle Linux 9 is RHEL-compatible, and Docker's CentOS packages install cleanly on it):
+
 ```bash
-curl -fsSL https://get.docker.com | sudo sh
+sudo dnf install -y dnf-utils
+sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo systemctl enable --now docker
 sudo usermod -aG docker $USER
 newgrp docker              # applies the new group to this session without needing to log out/in
-sudo systemctl enable --now docker
 docker --version            # sanity check
+docker compose version      # confirm the v2 plugin (used throughout this guide) is present
 ```
 
 ## Step 9 — Clone the repository
@@ -239,11 +249,11 @@ There's no managed-Postgres PITR safety net on a self-hosted container the way N
 mkdir -p ~/backups
 sudo tee /etc/cron.daily/quiz-db-backup > /dev/null <<'SCRIPT'
 #!/bin/bash
-set -a; source /home/ubuntu/quiz-repo-microservice/infra/.env; set +a
-docker compose -f /home/ubuntu/quiz-repo-microservice/infra/docker-compose.yml exec -T \
+set -a; source /home/opc/quiz-repo-microservice/infra/.env; set +a
+docker compose -f /home/opc/quiz-repo-microservice/infra/docker-compose.yml exec -T \
   -e PGPASSWORD="${POSTGRES_ADMIN_PASSWORD:-quiz_admin_pw}" postgres \
-  pg_dump -U quiz_admin quiz | gzip > /home/ubuntu/backups/quiz-$(date +%F).sql.gz
-find /home/ubuntu/backups -mtime +14 -delete
+  pg_dump -U quiz_admin quiz | gzip > /home/opc/backups/quiz-$(date +%F).sql.gz
+find /home/opc/backups -mtime +14 -delete
 SCRIPT
 sudo chmod +x /etc/cron.daily/quiz-db-backup
 ```
@@ -285,11 +295,11 @@ docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml logs
 docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml up -d --force-recreate
 
 # reach a normally-localhost-only port from your own machine (e.g. Redpanda Console)
-ssh -L 8090:localhost:8090 ubuntu@<vm-public-ip>
+ssh -L 8090:localhost:8090 opc@<vm-public-ip>
 # then open http://localhost:8090 on YOUR machine
 ```
 
-`restart: unless-stopped` (already set on every service) means a VM reboot brings the whole stack back up on its own, as long as Step 8's `systemctl enable docker` ran successfully.
+`restart: unless-stopped` (already set on every service) means a VM reboot brings the whole stack back up on its own, as long as Step 8's `systemctl enable --now docker` ran successfully.
 
 ## Troubleshooting
 
@@ -297,12 +307,16 @@ ssh -L 8090:localhost:8090 ubuntu@<vm-public-ip>
 - Port 22 isn't actually open in the Security List (Step 6a), or you're using the wrong IP (double-check the instance detail page — the public IP can look similar to the private one).
 
 **`Permission denied (publickey)`**
-- Wrong key file, wrong username (must be `ubuntu` for these images), or the key's file permissions are too open (`chmod 600` the key file again).
+- Wrong key file, wrong username (must be `opc` for Oracle Linux images), or the key's file permissions are too open (`chmod 600` the key file again).
 
 **`curl https://api.your-domain.com/healthz` times out or connection-refuses**
 - `dig +short api.your-domain.com` doesn't show your VM's IP yet — DNS hasn't propagated, wait longer.
 - Security List doesn't actually have the 80/443 rules saved (go back and re-check — it's easy to click "Add" without the rule actually persisting if a required field was empty).
+- `firewalld` (Step 6b) is still blocking the ports at the OS level even though the Security List is open — re-run `sudo firewall-cmd --list-all` and confirm 80/443 show under `ports:`.
 - `docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml logs caddy` — a `DOMAIN_PLACEHOLDER` never replaced in `infra/Caddyfile` is the most common cause; Caddy can't request a certificate for a literal placeholder string.
+
+**A container fails to start with a permission/mount error, or Postgres can't write to its data directory**
+- SELinux is enforcing by default on Oracle Linux 9 (it isn't on Ubuntu, so this only shows up here). Confirm with `getenforce`. Check for denials with `sudo ausearch -m avc -ts recent` — if you see AVC denials referencing Docker's volume paths, the quick unblock is `sudo setenforce 0` (temporary, until reboot) to confirm SELinux is actually the cause, then either add proper SELinux volume labels (mount options `:z`/`:Z` in `infra/docker-compose.yml`) for a real fix, or persist permissive mode via `/etc/selinux/config` if you'd rather not deal with labeling on a single-purpose box.
 
 **A container shows `(unhealthy)` in `docker compose ps`**
 - `docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml logs <service-name>` — almost always either a missing migration (service can't reach its schema yet, run Step 13) or a wrong `DATABASE_URL`/role password (compare `infra/.env` against what `infra/postgres/init/01-schemas-roles.sh` expects).

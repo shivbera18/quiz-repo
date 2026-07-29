@@ -76,7 +76,7 @@ This produces `gh-actions-deploy-key` (private) and `gh-actions-deploy-key.pub` 
 ### 2. Authorize the public key on the VM
 
 ```bash
-ssh ubuntu@<vm-public-ip> "echo '<contents of gh-actions-deploy-key.pub>' >> ~/.ssh/authorized_keys"
+ssh opc@<vm-public-ip> "echo '<contents of gh-actions-deploy-key.pub>' >> ~/.ssh/authorized_keys"
 ```
 
 ### 3. Add repository secrets
@@ -86,7 +86,7 @@ GitHub → `quiz-repo-microservice` → Settings → Secrets and variables → A
 | Secret | Value |
 |---|---|
 | `ORACLE_HOST` | the VM's public IP (or a domain if you've pointed one at it for SSH) |
-| `ORACLE_USER` | `ubuntu` |
+| `ORACLE_USER` | `opc` (Oracle Linux default user — see [ORACLE_SETUP.md](ORACLE_SETUP.md)) |
 | `ORACLE_SSH_KEY` | the full contents of `gh-actions-deploy-key` (the **private** key, not `.pub`) |
 | `ORACLE_PORT` | only if you're not using port 22 |
 
