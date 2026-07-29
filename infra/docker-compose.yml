@@ -160,6 +160,12 @@ services:
         condition: service_healthy
       notification-svc:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   identity-svc:
     build:

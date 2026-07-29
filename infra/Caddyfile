@@ -1,16 +1,25 @@
 # Caddy terminates TLS and is the only container reachable from the public
-# internet in a hardened deployment (see infra/docker-compose.prod.yml). It
-# fronts `web` only -- nothing in the browser talks to the gateway directly
-# today (every apps/web/app/api/** route is a same-origin server-side proxy
-# to it; see apps/web/lib/gateway-client.ts), so the gateway and every
-# backend service only ever need to be reachable on the Docker-internal
-# network, never from the internet. Automatic HTTPS via Let's Encrypt --
-# just needs a real domain pointed at this host's IP and ports 80/443 open.
+# internet in a hardened deployment (see infra/docker-compose.prod.yml).
 #
-# Replace DOMAIN_PLACEHOLDER before deploying (see HOSTING.md's Oracle Cloud
-# walkthrough). For an IP-only deployment with no domain yet, replace the
-# site address with `:80` and drop the automatic-HTTPS story until you have one.
+# It fronts the GATEWAY, not `web` -- in the Oracle VPS + Vercel topology
+# (see DEPLOYMENT.md), apps/web runs on Vercel, not on this VM. Vercel's
+# serverless functions run apps/web/app/api/**'s route handlers
+# (apps/web/lib/gateway-client.ts), and THOSE need to reach the gateway over
+# the public internet, since Vercel can't resolve this VM's Docker-internal
+# service names. That call is server-to-server (Vercel's function to this
+# domain), never a browser-to-gateway call, so there's no CORS to configure
+# here either way.
+#
+# If you ever also run `web` on this same VPS instead of Vercel (fully
+# self-hosted, see HOSTING.md's original walkthrough), add a second site
+# block here for it and point Vercel at nothing -- don't run both fronting
+# the same domain.
+#
+# Replace DOMAIN_PLACEHOLDER (e.g. api.your-domain.com) before deploying --
+# see DEPLOYMENT.md. For an IP-only deployment with no domain yet, replace
+# the site address with `:80` and drop the automatic-HTTPS story until you
+# have one.
 
 DOMAIN_PLACEHOLDER {
-	reverse_proxy web:3000
+	reverse_proxy gateway:4000
 }

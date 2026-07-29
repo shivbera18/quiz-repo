@@ -4,6 +4,8 @@ How to run this app **locally** and put it **online**, as the codebase stands to
 
 If you're looking for the old single-Next.js-app hosting instructions (Vercel + Neon, no separate services): that version of the app no longer exists in this codebase. Everything below reflects the current, split architecture.
 
+**Already have an Oracle VPS + Vercel and just want the exact deploy steps + auto-deploy-on-push setup?** See [DEPLOYMENT.md](DEPLOYMENT.md) instead — it's the tight operational checklist for that specific topology. This document is the broader reference (all hosting options, every env var, every known gap).
+
 ## Contents
 
 - [System overview](#system-overview)

@@ -45,7 +45,7 @@ A Turborepo/pnpm monorepo: an API gateway, five backend services, and a Next.js 
 
 ## Installation & Deployment
 
-See **[HOSTING.md](HOSTING.md)** for the full setup guide — local development with Docker Compose, running the test suites, and deploying online. Quick start:
+See **[HOSTING.md](HOSTING.md)** for the full setup guide — local development with Docker Compose, running the test suites, and deploying online. Deploying specifically to an Oracle VPS (backend) + Vercel (frontend) with auto-deploy on every push? See **[DEPLOYMENT.md](DEPLOYMENT.md)** instead. Quick start:
 
 ```bash
 git clone https://github.com/shivbera18/quiz-repo.git

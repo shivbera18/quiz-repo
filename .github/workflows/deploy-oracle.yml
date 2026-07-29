@@ -1,0 +1,54 @@
+name: Deploy backend to Oracle VPS
+
+# Gated on CI passing on main, not just "push to main" directly -- a broken
+# commit shouldn't redeploy the backend. If you'd rather deploy instantly
+# without waiting for CI (e.g. while iterating fast on a throwaway box),
+# switch the trigger to `on: push: branches: [main]` instead; see
+# DEPLOYMENT.md's note on this exact trade-off.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch: {} # manual "Run workflow" button, for redeploying without a new commit
+
+jobs:
+  deploy:
+    name: SSH deploy + migrate
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.ORACLE_HOST }}
+          username: ${{ secrets.ORACLE_USER }}
+          key: ${{ secrets.ORACLE_SSH_KEY }}
+          port: ${{ secrets.ORACLE_PORT || 22 }}
+          # Everything here is idempotent -- safe to run on every push, even
+          # ones with no infra changes. See DEPLOYMENT.md for what REPO_DIR
+          # needs to be set to during the one-time VM setup.
+          script: |
+            set -e
+            cd ~/quiz-repo-microservice
+            git pull origin main
+
+            docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml \
+              up -d --build \
+              postgres redis redpanda redpanda-console minio minio-init \
+              gateway identity-svc catalog-svc catalog-ai-worker \
+              assessment-svc assessment-worker \
+              analytics-svc analytics-rollup-consumer analytics-export-worker \
+              notification-svc notification-worker \
+              caddy
+
+            # prisma migrate deploy is idempotent -- already-applied migrations
+            # are skipped, so running this unconditionally on every deploy is safe.
+            docker compose -f infra/docker-compose.yml exec -T identity-svc pnpm db:migrate
+            docker compose -f infra/docker-compose.yml exec -T catalog-svc pnpm db:migrate
+            docker compose -f infra/docker-compose.yml exec -T assessment-svc pnpm db:migrate
+            docker compose -f infra/docker-compose.yml exec -T analytics-svc pnpm db:migrate
+            docker compose -f infra/docker-compose.yml exec -T notification-svc pnpm db:migrate
+
+            # Old image layers pile up on every rebuild -- keep the VM's disk sane.
+            docker image prune -f

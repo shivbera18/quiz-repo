@@ -6,9 +6,11 @@ on:
   pull_request:
 
 env:
-  # Vitest and typecheck/lint don't touch a database, but Prisma client generation
-  # (part of `pnpm build`) resolves this at generate-time even without connecting.
-  DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/quizdb?sslmode=disable"
+  # Every service's Prisma client generate step only needs this env var to be
+  # PRESENT (schema validation), not a real reachable database -- none of
+  # these jobs touch a live Postgres. See apps/assessment/tests/scoring.test.ts
+  # for the one test suite that exists today (pure functions, no DB either).
+  DATABASE_URL: "postgresql://ci:ci@localhost:5432/quiz?schema=public"
 
 jobs:
   lint-typecheck-unit:
@@ -29,10 +31,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Generate Prisma client
-        run: pnpm prisma:generate
+      - name: Generate Prisma clients (identity/catalog/assessment/analytics/notification)
+        run: pnpm db:generate
 
-      - name: Typecheck
+      - name: Typecheck (all 11 workspace packages via turbo)
         run: pnpm typecheck
 
       - name: Lint
@@ -41,61 +43,12 @@ jobs:
       - name: Unit tests
         run: pnpm test
 
-  e2e:
-    name: End-to-end tests
-    runs-on: ubuntu-latest
-    needs: lint-typecheck-unit
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: quizdb
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/quizdb?sslmode=disable"
-      NODE_ENV: test
-    steps:
-      - uses: actions/checkout@v4
+      - name: Build apps/web (real Next.js production build, not just tsc)
+        run: pnpm --filter web build
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Apply migrations
-        run: pnpm exec prisma migrate deploy
-
-      - name: Generate Prisma client
-        run: pnpm prisma:generate
-
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Build
-        run: pnpm build
-
-      - name: Run e2e tests
-        run: pnpm test:e2e
-
-      - name: Upload Playwright report
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 7
+  # No e2e job here yet -- apps/web/tests-e2e/*.spec.ts predate the service
+  # split and haven't been re-pointed at the gateway-backed flow (documented
+  # as a known gap in HOSTING.md). Standing up the full 11-process stack +
+  # Postgres/Redis/Redpanda/MinIO just to run specs that don't match the
+  # current contract isn't worth the CI time or the false confidence yet --
+  # a real follow-up, not silently dropped.
