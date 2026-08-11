@@ -44,11 +44,11 @@ jobs:
 
             # prisma migrate deploy is idempotent -- already-applied migrations
             # are skipped, so running this unconditionally on every deploy is safe.
-            docker compose -f infra/docker-compose.yml exec -T identity-svc pnpm db:migrate
-            docker compose -f infra/docker-compose.yml exec -T catalog-svc pnpm db:migrate
-            docker compose -f infra/docker-compose.yml exec -T assessment-svc pnpm db:migrate
-            docker compose -f infra/docker-compose.yml exec -T analytics-svc pnpm db:migrate
-            docker compose -f infra/docker-compose.yml exec -T notification-svc pnpm db:migrate
+            docker compose -f infra/docker-compose.yml exec -T identity-svc pnpm --filter identity-svc db:migrate
+            docker compose -f infra/docker-compose.yml exec -T catalog-svc pnpm --filter catalog-svc db:migrate
+            docker compose -f infra/docker-compose.yml exec -T assessment-svc pnpm --filter assessment-svc db:migrate
+            docker compose -f infra/docker-compose.yml exec -T analytics-svc pnpm --filter analytics-svc db:migrate
+            docker compose -f infra/docker-compose.yml exec -T notification-svc pnpm --filter notification-svc db:migrate
 
             # Old image layers pile up on every rebuild -- keep the VM's disk sane.
             docker image prune -f
