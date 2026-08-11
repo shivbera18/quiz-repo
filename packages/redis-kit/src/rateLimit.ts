@@ -74,8 +74,8 @@ export async function checkRateLimit(
 // gateway; ai-gen and export are re-checked inside their own services too
 // (defence in depth -- anything that bypasses the gateway bypasses the limit).
 export const RATE_LIMIT_POLICIES = {
-  loginByIp: { name: "login:ip", limit: 10, windowMs: 5 * 60_000 },
-  loginByEmail: { name: "login:email", limit: 5, windowMs: 15 * 60_000 },
+  loginByIp: { name: "login:ip", limit: 50, windowMs: 5 * 60_000 },
+  loginByEmail: { name: "login:email", limit: 30, windowMs: 15 * 60_000 },
   signupByIp: { name: "signup:ip", limit: 3, windowMs: 60 * 60_000 },
   aiGenByUser: { name: "ai-gen:user", limit: 5, windowMs: 60 * 60_000 },
   exportByUser: { name: "export:user", limit: 3, windowMs: 60 * 60_000 },
