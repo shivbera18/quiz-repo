@@ -169,7 +169,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-      start_period: 10s
+      start_period: 30s
 
   identity-svc:
     build:
@@ -298,8 +298,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      minio-init:
-        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:4004/healthz"]
       interval: 5s
@@ -342,8 +340,6 @@ services:
         condition: service_healthy
       redpanda:
         condition: service_healthy
-      minio-init:
-        condition: service_completed_successfully
 
   notification-svc:
     build:

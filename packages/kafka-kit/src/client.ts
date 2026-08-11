@@ -5,7 +5,10 @@ export function createKafka(clientId: string, brokers = (process.env.KAFKA_BROKE
     clientId,
     brokers,
     logLevel: logLevel.WARN,
-    retry: { retries: 8 },
+    retry: {
+      initialRetryTime: 300,
+      retries: 15,
+    },
   })
 }
 
