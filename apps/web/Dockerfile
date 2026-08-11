@@ -12,9 +12,14 @@ FROM node:22-alpine AS builder
 RUN npm install -g pnpm@10.12.3
 WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json turbo.json ./
+COPY packages/contracts/package.json ./packages/contracts/package.json
+COPY packages/kafka-kit/package.json ./packages/kafka-kit/package.json
+COPY packages/observability/package.json ./packages/observability/package.json
+COPY packages/redis-kit/package.json ./packages/redis-kit/package.json
+COPY apps/web/package.json ./apps/web/package.json
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
 COPY packages ./packages
 COPY apps/web ./apps/web
-RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm --filter web build
 
