@@ -72,9 +72,8 @@ services:
     ports:
       - "127.0.0.1:5433:5432"
 
-  redis:
-    ports:
-      - "127.0.0.1:6380:6379"
+  # redis, redpanda, minio, postgres, caddy operate on internal Docker network.
+  # No host port bindings needed for internal storage engines in production overlay.
 
   redpanda:
     ports:
