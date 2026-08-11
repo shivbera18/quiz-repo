@@ -70,20 +70,40 @@ jobs:
 
             # Prune dangling build objects before building to guarantee free space
             docker image prune -f
-            docker builder prune -f --keep-storage 2GB
+            docker builder prune -f --keep-storage 1GB
 
             # Tune Redpanda for low-RAM VM
             sed -i 's/--memory=512M/--memory=200M/' infra/docker-compose.yml
 
-            # Phase 1: Build core infrastructure & primary API services (populates pnpm store cache)
-            docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml \
-              build gateway identity-svc catalog-svc assessment-svc analytics-svc notification-svc
+            # Build every service ONE AT A TIME (never batched, never
+            # parallel) -- COMPOSE_PARALLEL_LIMIT=1 is a belt-and-suspenders
+            # safety net on top of that. Two things this buys us on a
+            # low-RAM t3.small:
+            #
+            # 1. Each app's API service is built immediately before its own
+            #    worker(s). Both are now built from ONE multi-stage Dockerfile
+            #    per app (see apps/*/Dockerfile) that shares a `base` stage --
+            #    node_modules + the generated Prisma client. Building them
+            #    back-to-back means the worker build is a 100% BuildKit cache
+            #    hit (near-instant, zero additional layer storage) instead of
+            #    an independent ~800MB rebuild racing the API build for the
+            #    same pnpm store cache mount.
+            # 2. No two `pnpm install` processes ever touch the shared
+            #    `--mount=type=cache,id=pnpm` store at the same time, which
+            #    used to cause CPU/RAM contention when Compose built several
+            #    services in parallel.
+            export COMPOSE_PARALLEL_LIMIT=1
+            for svc in gateway identity-svc \
+                       catalog-svc catalog-ai-worker \
+                       assessment-svc assessment-worker \
+                       analytics-svc analytics-rollup-consumer analytics-export-worker \
+                       notification-svc notification-worker; do
+              docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml build "$svc"
+            done
 
-            # Phase 2: Build background workers (reuses 100% cached pnpm store, zero CPU/RAM thrashing)
-            docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml \
-              build catalog-ai-worker assessment-worker analytics-rollup-consumer analytics-export-worker notification-worker
-
-            # Phase 3: Start full backend stack
+            # Start the full backend stack. Data-plane containers first
+            # (Compose already serializes these via depends_on/healthchecks),
+            # then the app processes.
             docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml \
               up -d \
               postgres redis redpanda minio minio-init \
@@ -92,6 +112,12 @@ jobs:
               analytics-svc analytics-rollup-consumer analytics-export-worker \
               notification-svc notification-worker \
               caddy
+
+            # Reclaim the now-superseded previous images as early as
+            # possible -- a fresh build set + the still-running old
+            # containers can otherwise both be on disk at once, which is the
+            # single biggest transient storage spike in this whole script.
+            docker image prune -f
 
             # Wait 10 seconds for services to initialize
             sleep 10
