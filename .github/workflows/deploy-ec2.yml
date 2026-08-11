@@ -4,6 +4,16 @@ name: Deploy backend to EC2
 on:
   push:
     branches: [main]
+    paths:
+      - "apps/gateway/**"
+      - "apps/identity/**"
+      - "apps/catalog/**"
+      - "apps/assessment/**"
+      - "apps/analytics/**"
+      - "apps/notification/**"
+      - "packages/**"
+      - "infra/**"
+      - ".github/workflows/deploy-ec2.yml"
   workflow_dispatch: {}
 
 jobs:
