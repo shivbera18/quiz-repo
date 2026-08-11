@@ -20,6 +20,6 @@
 # the site address with `:80` and drop the automatic-HTTPS story until you
 # have one.
 
-DOMAIN_PLACEHOLDER {
+:80 {
 	reverse_proxy gateway:4000
 }
