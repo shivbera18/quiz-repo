@@ -165,7 +165,7 @@ services:
       notification-svc:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4000/healthz"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/healthz"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -188,7 +188,7 @@ services:
       redpanda:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4001/healthz"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4001/healthz"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -212,7 +212,7 @@ services:
       redpanda:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4002/healthz"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4002/healthz"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -254,7 +254,7 @@ services:
       catalog-svc:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4003/healthz"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4003/healthz"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -299,7 +299,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4004/healthz"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4004/healthz"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -364,7 +364,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4005/healthz"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4005/healthz"]
       interval: 5s
       timeout: 5s
       retries: 10
