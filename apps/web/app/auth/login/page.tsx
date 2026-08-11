@@ -25,7 +25,7 @@ export default function LoginPage() {
 
   // Demo credentials for quick login
   const demoCredentials = {
-    student: { email: "student@example.com", password: "password" },
+    student: { email: "student@test.com", password: "student123" },
     admin: { email: "admin@quizapp.com", password: "admin123" }
   }
 

@@ -37,6 +37,21 @@ async function main() {
     },
   })
 
+  await prisma.user.upsert({
+    where: { email: "student@example.com" },
+    update: { name: "Demo Student", password: "student123", isAdmin: false, userType: "student" },
+    create: {
+      id: "student-002",
+      name: "Demo Student",
+      email: "student@example.com",
+      password: "student123",
+      isAdmin: false,
+      userType: "student",
+      totalQuizzes: 0,
+      averageScore: 0,
+    },
+  })
+
   console.log("Seeded:", { admin: admin.email, student: student.email })
 }
 

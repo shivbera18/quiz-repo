@@ -177,6 +177,7 @@ async function main() {
           delete clean["x-user-name"]
           delete clean["x-user-email"]
           delete clean["x-user-is-admin"]
+          delete clean["expect"]
           const user = (request as any).authUser as IntrospectedUser | undefined
           if (user) {
             clean["x-user-id"] = user.userId
