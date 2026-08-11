@@ -387,12 +387,12 @@ export function FlashQuestions({ isOpen, onClose, questions: initialQuestions, o
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4" onClick={onClose}>
-      <div className="relative w-full max-w-4xl mx-auto max-h-screen overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <Card className="neu-card bg-gradient-to-br from-card via-card to-background/95 border border-border/20" 
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-2 sm:p-4" onClick={onClose}>
+      <div className="relative w-full max-w-4xl mx-auto h-full" onClick={(e) => e.stopPropagation()}>
+        <Card className="neu-card bg-gradient-to-br from-card via-card to-background/95 border border-border/20 h-full flex flex-col" 
               onKeyDown={handleKeyPress} 
               tabIndex={0}>
-          <CardContent className="p-3 sm:p-6">
+          <CardContent className="p-3 sm:p-6 flex-1 overflow-y-auto flex flex-col min-h-0">
             {/* Header */}
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <div className="flex items-center gap-2 sm:gap-3">
@@ -486,6 +486,7 @@ export function FlashQuestions({ isOpen, onClose, questions: initialQuestions, o
             )}
 
             {/* Question Area */}
+            <div className="flex-1 overflow-y-auto min-h-0">
             {showFinalResults ? (
               <div className="neu-card p-4 sm:p-8 mb-4 sm:mb-6">
                 <div className="text-center mb-6">
@@ -667,6 +668,7 @@ export function FlashQuestions({ isOpen, onClose, questions: initialQuestions, o
                 </div>
               </div>
             ) : null}
+            </div>
 
             {/* Navigation */}
             {!showFinalResults && (
