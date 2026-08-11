@@ -5,19 +5,10 @@
 # What this changes: adds Caddy (the only container bound to a public
 # interface, terminating TLS in front of the GATEWAY -- see infra/Caddyfile's
 # own comment for why it's the gateway and not `web` in the Oracle+Vercel
-# topology this file is written for) and rebinds every other service's port
-# to 127.0.0.1 -- so even if the cloud firewall is ever misconfigured,
-# Postgres/Redis/Redpanda/every service API are only reachable from the VM
-# itself (or over an SSH tunnel: `ssh -L 5433:localhost:5433 you@vm`), never
-# from the internet. The cloud-level firewall (Oracle's Security List, a
-# security group, etc.) doing its job is still the primary control -- this is
-# defense in depth on top of that, not a replacement for it. See
-# DEPLOYMENT.md's Oracle Cloud walkthrough.
-#
-# `web` isn't started at all in this topology (it runs on Vercel instead) --
-# its port override below is left in place only for the fallback case where
-# you choose to self-host it on this same VM too (see HOSTING.md); DEPLOYMENT.md's
-# `docker compose up` command lists every other service explicitly and omits `web`.
+# topology this file is written for). Internal microservices and data stores
+# communicate strictly within the isolated Docker bridge network -- no host
+# port proxies (docker-proxy) are created, eliminating host port collisions
+# and preventing unauthorized host interface exposure.
 
 services:
   caddy:
@@ -44,51 +35,41 @@ services:
       retries: 10
       start_period: 15s
 
+  # Remove host port overrides for internal services (gateway, identity, catalog,
+  # assessment, analytics, notification, postgres, redis, redpanda, minio).
+  # They communicate exclusively over the internal Docker network container-to-container.
   gateway:
-    ports:
-      - "127.0.0.1:4000:4000"
+    ports: []
 
   identity-svc:
-    ports:
-      - "127.0.0.1:4001:4001"
+    ports: []
 
   catalog-svc:
-    ports:
-      - "127.0.0.1:4002:4002"
+    ports: []
 
   assessment-svc:
-    ports:
-      - "127.0.0.1:4003:4003"
+    ports: []
 
   analytics-svc:
-    ports:
-      - "127.0.0.1:4004:4004"
+    ports: []
 
   notification-svc:
-    ports:
-      - "127.0.0.1:4005:4005"
+    ports: []
 
   postgres:
-    ports:
-      - "127.0.0.1:5433:5432"
+    ports: []
 
-  # redis, redpanda, minio, postgres, caddy operate on internal Docker network.
-  # No host port bindings needed for internal storage engines in production overlay.
+  redis:
+    ports: []
 
   redpanda:
-    ports:
-      - "127.0.0.1:19092:19092"
-      - "127.0.0.1:8082:8082"
-      - "127.0.0.1:9644:9644"
+    ports: []
 
   redpanda-console:
-    ports:
-      - "127.0.0.1:8090:8080"
+    ports: []
 
   minio:
-    ports:
-      - "127.0.0.1:9000:9000"
-      - "127.0.0.1:9001:9001"
+    ports: []
 
 volumes:
   caddy-data:
