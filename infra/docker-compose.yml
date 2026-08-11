@@ -130,8 +130,8 @@ services:
     entrypoint: >
       /bin/sh -c "
       i=0;
-      until mc alias set local http://minio:9000 \"\${MINIO_ROOT_USER:-minioadmin}\" \"\${MINIO_ROOT_PASSWORD:-minioadmin}\" || [ \$i -gt 15 ]; do
-        i=\$((i+1));
+      until mc alias set local http://minio:9000 \"\${MINIO_ROOT_USER:-minioadmin}\" \"\${MINIO_ROOT_PASSWORD:-minioadmin}\" || [ \$$i -gt 15 ]; do
+        i=\$$((i+1));
         sleep 2;
       done &&
       mc mb --ignore-existing local/quiz-exports
