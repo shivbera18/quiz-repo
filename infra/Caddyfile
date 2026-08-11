@@ -15,11 +15,10 @@
 # block here for it and point Vercel at nothing -- don't run both fronting
 # the same domain.
 #
-# Replace DOMAIN_PLACEHOLDER (e.g. api.your-domain.com) before deploying --
-# see DEPLOYMENT.md. For an IP-only deployment with no domain yet, replace
-# the site address with `:80` and drop the automatic-HTTPS story until you
-# have one.
+# This sslip.io hostname resolves directly to the EC2 public IP, allowing
+# Caddy to obtain a publicly trusted certificate without separate DNS setup.
+# Replace it with a custom API domain when one is available.
 
-:80 {
+16-170-103-71.sslip.io {
 	reverse_proxy gateway:4000
 }
