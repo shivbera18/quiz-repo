@@ -212,6 +212,7 @@ services:
     build:
       context: ..
       dockerfile: apps/catalog/Dockerfile
+      target: svc
     restart: unless-stopped
     logging: *default-logging
     ports:
@@ -236,7 +237,8 @@ services:
   catalog-ai-worker:
     build:
       context: ..
-      dockerfile: apps/catalog/Dockerfile.ai-worker
+      dockerfile: apps/catalog/Dockerfile
+      target: worker
     restart: unless-stopped
     logging: *default-logging
     environment:
@@ -253,6 +255,7 @@ services:
     build:
       context: ..
       dockerfile: apps/assessment/Dockerfile
+      target: svc
     restart: unless-stopped
     logging: *default-logging
     ports:
@@ -280,7 +283,8 @@ services:
   assessment-worker:
     build:
       context: ..
-      dockerfile: apps/assessment/Dockerfile.worker
+      dockerfile: apps/assessment/Dockerfile
+      target: worker
     restart: unless-stopped
     logging: *default-logging
     environment:
@@ -296,6 +300,7 @@ services:
     build:
       context: ..
       dockerfile: apps/analytics/Dockerfile
+      target: svc
     restart: unless-stopped
     logging: *default-logging
     ports:
@@ -327,7 +332,8 @@ services:
   analytics-rollup-consumer:
     build:
       context: ..
-      dockerfile: apps/analytics/Dockerfile.rollup-consumer
+      dockerfile: apps/analytics/Dockerfile
+      target: rollup-consumer
     restart: unless-stopped
     logging: *default-logging
     environment:
@@ -345,7 +351,8 @@ services:
   analytics-export-worker:
     build:
       context: ..
-      dockerfile: apps/analytics/Dockerfile.export-worker
+      dockerfile: apps/analytics/Dockerfile
+      target: export-worker
     restart: unless-stopped
     logging: *default-logging
     environment:
@@ -366,6 +373,7 @@ services:
     build:
       context: ..
       dockerfile: apps/notification/Dockerfile
+      target: svc
     restart: unless-stopped
     logging: *default-logging
     ports:
@@ -395,7 +403,8 @@ services:
   notification-worker:
     build:
       context: ..
-      dockerfile: apps/notification/Dockerfile.worker
+      dockerfile: apps/notification/Dockerfile
+      target: worker
     restart: unless-stopped
     logging: *default-logging
     environment:
