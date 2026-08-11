@@ -312,6 +312,16 @@ export function FlashQuestions({ isOpen, onClose, questions: initialQuestions, o
     
     setTotalAnswered(prev => prev + 1)
     setShowAnswer(true)
+
+    // Auto-advance to next question automatically if not on the last question
+    if (currentQuestionIndex < totalQuestions - 1) {
+      setTimeout(() => {
+        setCurrentQuestionIndex(prev => prev + 1)
+        setUserAnswer("")
+        setSelectedOption(null)
+        setShowAnswer(false)
+      }, 500)
+    }
   }
 
   const handleNext = () => {
@@ -681,15 +691,17 @@ export function FlashQuestions({ isOpen, onClose, questions: initialQuestions, o
                   Reset
                 </Button>
 
-                <Button
-                  onClick={handleNext}
-                  disabled={!showAnswer || isGenerating}
-                  variant="outline"
-                  className="neu-button flex-1 sm:flex-none text-xs sm:text-sm px-2 sm:px-4 py-2"
-                >
-                  {currentQuestionIndex < totalQuestions - 1 ? "Next" : "Results"}
-                  <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
-                </Button>
+                {currentQuestionIndex === totalQuestions - 1 && (
+                  <Button
+                    onClick={handleNext}
+                    disabled={!showAnswer || isGenerating}
+                    variant="outline"
+                    className="neu-button flex-1 sm:flex-none text-xs sm:text-sm px-2 sm:px-4 py-2"
+                  >
+                    Results
+                    <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
+                  </Button>
+                )}
               </div>
             )}
           </CardContent>

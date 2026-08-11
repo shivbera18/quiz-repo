@@ -225,6 +225,13 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
     if (question) {
       postAnswerSync(questionId, question.section, selectedAnswer, questionStatuses[questionId]?.markedForReview || false)
     }
+
+    // Auto-advance to next question if not on the last question
+    if (currentQuestionIndex < questions.length - 1) {
+      setTimeout(() => {
+        navigateToQuestion(currentQuestionIndex + 1)
+      }, 300)
+    }
   }
 
   const handleMarkForReview = () => {
@@ -656,25 +663,29 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
                 <CheckCheck className="h-4 w-4" />
                 Save & Mark
               </Button>
-              <Button
-                variant="neobrutalistInverted"
-                onClick={handleSaveAndNext}
-                disabled={!userAnswer || currentQuestionIndex === questions.length - 1}
-                className="h-10 gap-2 bg-green-600 hover:bg-green-700 text-white border-green-900"
-              >
-                <Save className="h-4 w-4" />
-                Save & Next
-              </Button>
+              {currentQuestionIndex === questions.length - 1 && (
+                <Button
+                  variant="neobrutalistInverted"
+                  onClick={handleSaveAndNext}
+                  disabled={!userAnswer}
+                  className="h-10 gap-2 bg-green-600 hover:bg-green-700 text-white border-green-900"
+                >
+                  <Save className="h-4 w-4" />
+                  Save Answer
+                </Button>
+              )}
             </div>
 
-            <Button
-              variant="neobrutalist"
-              onClick={() => navigateToQuestion(Math.min(questions.length - 1, currentQuestionIndex + 1))}
-              disabled={currentQuestionIndex === questions.length - 1}
-              className="h-10 px-4"
-            >
-              Next <ChevronRight className="ml-2 h-4 w-4" />
-            </Button>
+            {currentQuestionIndex === questions.length - 1 ? (
+              <Button
+                variant="neobrutalist"
+                onClick={() => handleSubmit("user")}
+                disabled={submitting}
+                className="h-10 px-4 bg-primary text-primary-foreground"
+              >
+                Submit <Send className="ml-2 h-4 w-4" />
+              </Button>
+            ) : null}
           </div>
 
           {/* Mobile Layout */}
@@ -706,17 +717,19 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
                 Save & Mark
               </Button>
             </div>
-            <div className="flex gap-1.5">
-              <Button
-                variant="default"
-                onClick={handleSaveAndNext}
-                disabled={!userAnswer || currentQuestionIndex === questions.length - 1}
-                className="flex-1 h-9 gap-1.5 text-xs bg-green-600 hover:bg-green-700"
-              >
-                <Save className="h-3.5 w-3.5" />
-                Save & Next
-              </Button>
-            </div>
+            {currentQuestionIndex === questions.length - 1 && (
+              <div className="flex gap-1.5">
+                <Button
+                  variant="default"
+                  onClick={handleSaveAndNext}
+                  disabled={!userAnswer}
+                  className="flex-1 h-9 gap-1.5 text-xs bg-green-600 hover:bg-green-700"
+                >
+                  <Save className="h-3.5 w-3.5" />
+                  Save Answer
+                </Button>
+              </div>
+            )}
             <div className="flex gap-1.5">
               <Button
                 variant="ghost"
@@ -726,13 +739,15 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
               >
                 <ChevronLeft className="mr-1 h-3.5 w-3.5" /> Prev
               </Button>
-              <Button
-                onClick={() => navigateToQuestion(Math.min(questions.length - 1, currentQuestionIndex + 1))}
-                disabled={currentQuestionIndex === questions.length - 1}
-                className="flex-1 h-9 text-xs"
-              >
-                Next <ChevronRight className="ml-1 h-3.5 w-3.5" />
-              </Button>
+              {currentQuestionIndex === questions.length - 1 && (
+                <Button
+                  onClick={() => handleSubmit("user")}
+                  disabled={submitting}
+                  className="flex-1 h-9 text-xs bg-primary text-primary-foreground"
+                >
+                  Submit <Send className="ml-1 h-3.5 w-3.5" />
+                </Button>
+              )}
             </div>
           </div>
         </div>
