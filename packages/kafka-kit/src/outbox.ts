@@ -32,25 +32,33 @@ export interface OutboxStore {
 }
 
 export async function publishOutboxBatch(producer: Producer, store: OutboxStore, batchSize = 100): Promise<number> {
-  return store.withClaimedBatch(batchSize, async (rows) => {
-    if (rows.length === 0) return 0
+  try {
+    return await store.withClaimedBatch(batchSize, async (rows) => {
+      if (rows.length === 0) return 0
 
-    await producer.sendBatch({
-      topicMessages: rows.map((row) => ({
-        topic: row.topic,
-        messages: [
-          {
-            key: row.key,
-            value: row.payload === null ? null : JSON.stringify(row.payload),
-            headers: (row.headers ?? {}) as Record<string, string>,
-          },
-        ],
-      })),
+      await producer.sendBatch({
+        topicMessages: rows.map((row) => ({
+          topic: row.topic,
+          messages: [
+            {
+              key: row.key,
+              value: row.payload === null ? null : JSON.stringify(row.payload),
+              headers: (row.headers ?? {}) as Record<string, string>,
+            },
+          ],
+        })),
+      })
+
+      await store.markPublished(rows.map((r) => r.id))
+      return rows.length
     })
-
-    await store.markPublished(rows.map((r) => r.id))
-    return rows.length
-  })
+  } catch (err: any) {
+    // If database schema / Outbox relation does not exist yet (pre-migration), do not throw unhandled error
+    if (err?.code === "P2010" || err?.meta?.code === "42P01" || String(err).includes("relation \"Outbox\" does not exist")) {
+      return 0
+    }
+    throw err
+  }
 }
 
 export function startOutboxPublisher(producer: Producer, store: OutboxStore, intervalMs = 2000) {
