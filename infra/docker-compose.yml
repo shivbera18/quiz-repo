@@ -27,11 +27,18 @@
 
 name: quiz-platform
 
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   # ------------------------------------------------------------- data plane
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    logging: *default-logging
     environment:
       POSTGRES_USER: quiz_admin
       POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:-quiz_admin_pw}
@@ -55,6 +62,7 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "6380:6379"
     healthcheck:
@@ -66,6 +74,7 @@ services:
   redpanda:
     image: redpandadata/redpanda:v24.2.18
     restart: unless-stopped
+    logging: *default-logging
     command:
       - redpanda
       - start
@@ -93,6 +102,7 @@ services:
   redpanda-console:
     image: redpandadata/console:v2.7.2
     restart: unless-stopped
+    logging: *default-logging
     environment:
       KAFKA_BROKERS: redpanda:9092
     ports:
@@ -104,6 +114,7 @@ services:
   minio:
     image: minio/minio:latest
     restart: unless-stopped
+    logging: *default-logging
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
@@ -124,6 +135,7 @@ services:
   # no restart policy, it's not meant to run again once it succeeds.
   minio-init:
     image: minio/mc:latest
+    logging: *default-logging
     depends_on:
       minio:
         condition: service_healthy
@@ -143,6 +155,7 @@ services:
       context: ..
       dockerfile: apps/gateway/Dockerfile
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "4000:4000"
     environment:
@@ -176,6 +189,7 @@ services:
       context: ..
       dockerfile: apps/identity/Dockerfile
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "4001:4001"
     environment:
@@ -199,6 +213,7 @@ services:
       context: ..
       dockerfile: apps/catalog/Dockerfile
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "4002:4002"
     environment:
@@ -223,6 +238,7 @@ services:
       context: ..
       dockerfile: apps/catalog/Dockerfile.ai-worker
     restart: unless-stopped
+    logging: *default-logging
     environment:
       DATABASE_URL: postgresql://catalog_rw:${CATALOG_RW_PASSWORD:-catalog_rw_pw}@postgres:5432/quiz?schema=catalog
       KAFKA_BROKERS: redpanda:9092
@@ -238,6 +254,7 @@ services:
       context: ..
       dockerfile: apps/assessment/Dockerfile
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "4003:4003"
     environment:
@@ -265,6 +282,7 @@ services:
       context: ..
       dockerfile: apps/assessment/Dockerfile.worker
     restart: unless-stopped
+    logging: *default-logging
     environment:
       DATABASE_URL: postgresql://assessment_rw:${ASSESSMENT_RW_PASSWORD:-assessment_rw_pw}@postgres:5432/quiz?schema=assessment
       KAFKA_BROKERS: redpanda:9092
@@ -279,6 +297,7 @@ services:
       context: ..
       dockerfile: apps/analytics/Dockerfile
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "4004:4004"
     environment:
@@ -310,6 +329,7 @@ services:
       context: ..
       dockerfile: apps/analytics/Dockerfile.rollup-consumer
     restart: unless-stopped
+    logging: *default-logging
     environment:
       DATABASE_URL: postgresql://analytics_rw:${ANALYTICS_RW_PASSWORD:-analytics_rw_pw}@postgres:5432/quiz?schema=analytics
       KAFKA_BROKERS: redpanda:9092
@@ -327,6 +347,7 @@ services:
       context: ..
       dockerfile: apps/analytics/Dockerfile.export-worker
     restart: unless-stopped
+    logging: *default-logging
     environment:
       DATABASE_URL: postgresql://analytics_rw:${ANALYTICS_RW_PASSWORD:-analytics_rw_pw}@postgres:5432/quiz?schema=analytics
       KAFKA_BROKERS: redpanda:9092
@@ -346,6 +367,7 @@ services:
       context: ..
       dockerfile: apps/notification/Dockerfile
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "4005:4005"
     environment:
@@ -375,6 +397,7 @@ services:
       context: ..
       dockerfile: apps/notification/Dockerfile.worker
     restart: unless-stopped
+    logging: *default-logging
     environment:
       DATABASE_URL: postgresql://notification_rw:${NOTIFICATION_RW_PASSWORD:-notification_rw_pw}@postgres:5432/quiz?schema=notification
       KAFKA_BROKERS: redpanda:9092
