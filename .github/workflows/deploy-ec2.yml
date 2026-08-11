@@ -10,12 +10,36 @@ jobs:
     name: SSH deploy + migrate
     runs-on: ubuntu-latest
     steps:
+      - name: Normalize SSH private key
+        id: ssh_key
+        env:
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          key_file="$RUNNER_TEMP/ec2_ssh_key.pem"
+          printf '%s\n' "$EC2_SSH_KEY" | tr -d '\r' > "$key_file"
+          # Ensure trailing newline exists
+          if [ -n "$(tail -c 1 "$key_file")" ]; then
+            echo "" >> "$key_file"
+          fi
+          chmod 600 "$key_file"
+          echo "key_path=$key_file" >> "$GITHUB_OUTPUT"
+
+      - name: Read normalized SSH key
+        id: read_key
+        run: |
+          key_content=$(cat "${{ steps.ssh_key.outputs.key_path }}")
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "key<<$EOF" >> "$GITHUB_OUTPUT"
+          echo "$key_content" >> "$GITHUB_OUTPUT"
+          echo "$EOF" >> "$GITHUB_OUTPUT"
+
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
+          key: ${{ steps.read_key.outputs.key }}
           port: 22
           command_timeout: 30m
           script: |
@@ -37,7 +61,7 @@ jobs:
             # Tune Redpanda for low-RAM VM
             sed -i 's/--memory=512M/--memory=200M/' infra/docker-compose.yml
 
-            # Build and deploy stack
+            # Build and deploy backend stack (excluding web, since web runs on Vercel)
             docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml \
               up -d --build \
               postgres redis redpanda minio minio-init \
@@ -62,5 +86,5 @@ jobs:
             docker compose -f infra/docker-compose.yml exec -T catalog-svc pnpm --filter catalog-svc db:seed || true
 
             # Clean up build cache and old image layers to preserve disk space
-            docker image prune -f
-            docker builder prune -f --keep-storage 1GB
+            docker image prune -af
+            docker builder prune -af --keep-storage 1GB
