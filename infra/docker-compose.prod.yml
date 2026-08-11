@@ -26,8 +26,7 @@ services:
         condition: service_healthy
 
   web:
-    ports:
-      - "127.0.0.1:3000:3000"
+    ports: []
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
       interval: 10s
