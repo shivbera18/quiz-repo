@@ -28,7 +28,7 @@ jobs:
           command_timeout: 30m
           script: |
             set -e
-            cd ~/quiz-platform
+            cd ~/quiz-repo-microservice
             git pull origin main
 
             # Tune Redpanda for low-RAM VM (idempotent — safe to re-run)

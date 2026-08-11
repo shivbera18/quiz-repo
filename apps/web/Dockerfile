@@ -11,14 +11,12 @@
 FROM node:22-alpine AS builder
 RUN npm install -g pnpm@10.12.3
 WORKDIR /app
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json turbo.json ./
-COPY apps/web/package.json ./apps/web/
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json turbo.json ./
 COPY packages ./packages
+COPY apps/web ./apps/web
 RUN pnpm install --frozen-lockfile
-COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-WORKDIR /app/apps/web
-RUN npm run build
+RUN pnpm --filter web build
 
 FROM node:22-alpine AS runner
 WORKDIR /app
