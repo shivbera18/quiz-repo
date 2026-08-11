@@ -11,7 +11,7 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json turbo.js
 COPY packages ./packages
 COPY apps/assessment ./apps/assessment
 
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
 RUN pnpm --filter assessment-svc prisma:generate
 
 ENV NODE_ENV=production
