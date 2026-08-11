@@ -58,6 +58,10 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
+            # Reclaim disk space BEFORE build starts
+            docker system prune -af
+            docker builder prune -af
+
             # Tune Redpanda for low-RAM VM
             sed -i 's/--memory=512M/--memory=200M/' infra/docker-compose.yml
 
@@ -85,6 +89,5 @@ jobs:
             docker compose -f infra/docker-compose.yml exec -T identity-svc pnpm --filter identity-svc db:seed || true
             docker compose -f infra/docker-compose.yml exec -T catalog-svc pnpm --filter catalog-svc db:seed || true
 
-            # Clean up build cache and old image layers to preserve disk space
+            # Clean up residual build layers
             docker image prune -af
-            docker builder prune -af --keep-storage 1GB
