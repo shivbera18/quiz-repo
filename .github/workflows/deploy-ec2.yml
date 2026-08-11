@@ -14,19 +14,21 @@ jobs:
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER || 'ubuntu' }}
+          username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           command_timeout: 30m
           script: |
             set -e
-            if [ -d "$HOME/quiz-repo-microservice" ]; then
+            if [ -d "$HOME/quiz-platform" ]; then
+              cd "$HOME/quiz-platform"
+            elif [ -d "$HOME/quiz-repo-microservice" ]; then
               cd "$HOME/quiz-repo-microservice"
             elif [ -d "$HOME/quiz-repo" ]; then
               cd "$HOME/quiz-repo"
             else
-              git clone https://github.com/shivbera18/quiz-repo-microservice.git "$HOME/quiz-repo-microservice"
-              cd "$HOME/quiz-repo-microservice"
+              git clone https://github.com/shivbera18/quiz-repo-microservice.git "$HOME/quiz-platform"
+              cd "$HOME/quiz-platform"
             fi
 
             git fetch origin main
