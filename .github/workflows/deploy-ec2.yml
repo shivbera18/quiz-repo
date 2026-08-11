@@ -65,9 +65,17 @@ jobs:
             # Tune Redpanda for low-RAM VM
             sed -i 's/--memory=512M/--memory=200M/' infra/docker-compose.yml
 
-            # Build and deploy backend stack (excluding web, since web runs on Vercel)
+            # Phase 1: Build core infrastructure & primary API services (populates pnpm store cache)
             docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml \
-              up -d --build \
+              build gateway identity-svc catalog-svc assessment-svc analytics-svc notification-svc
+
+            # Phase 2: Build background workers (reuses 100% cached pnpm store, zero CPU/RAM thrashing)
+            docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml \
+              build catalog-ai-worker assessment-worker analytics-rollup-consumer analytics-export-worker notification-worker
+
+            # Phase 3: Start full backend stack
+            docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml \
+              up -d \
               postgres redis redpanda minio minio-init \
               gateway identity-svc catalog-svc catalog-ai-worker \
               assessment-svc assessment-worker \
