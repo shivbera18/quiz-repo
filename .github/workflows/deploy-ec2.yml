@@ -61,7 +61,7 @@ jobs:
             elif [ -d "$HOME/quiz-repo" ]; then
               cd "$HOME/quiz-repo"
             else
-              git clone https://github.com/shivbera18/quiz-repo-microservice.git "$HOME/quiz-platform"
+              git clone https://github.com/shivbera18/quiz-repo.git "$HOME/quiz-platform"
               cd "$HOME/quiz-platform"
             fi
 
