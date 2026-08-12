@@ -46,21 +46,21 @@ export default function RecentAttemptsPage() {
           if (response.ok) {
             const data = await response.json()
             const attempts = data.results || []
-            const sortedAttempts = attempts.sort((a: any, b: any) => 
+            const sortedAttempts = attempts.sort((a: RecentAttempt, b: RecentAttempt) => 
               new Date(b.date).getTime() - new Date(a.date).getTime()
             )
             setRecentAttempts(sortedAttempts.slice(0, 10)) // Show last 10 attempts
           } else {
-            const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
+            const results: RecentAttempt[] = JSON.parse(localStorage.getItem("quizResults") || "[]")
             const sortedResults = results
-              .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+              .sort((a: RecentAttempt, b: RecentAttempt) => new Date(b.date).getTime() - new Date(a.date).getTime())
             setRecentAttempts(sortedResults.slice(0, 10))
           }
         } catch (error) {
           console.error("Failed to fetch attempts:", error)
-          const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
+          const results: RecentAttempt[] = JSON.parse(localStorage.getItem("quizResults") || "[]")
           const sortedResults = results
-            .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .sort((a: RecentAttempt, b: RecentAttempt) => new Date(b.date).getTime() - new Date(a.date).getTime())
           setRecentAttempts(sortedResults.slice(0, 10))
         } finally {
           setLoadingAttempts(false)
