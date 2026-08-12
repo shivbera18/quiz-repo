@@ -40,13 +40,21 @@ interface RecentAttempt {
   }
 }
 
+interface DashboardQuestionItem {
+  id?: string
+  question?: string
+  options?: string[]
+  correctAnswer?: number
+  section?: string
+}
+
 interface Quiz {
   id: string
   title: string
   description: string
   duration: number
   sections: string[]
-  questions: any[]
+  questions: DashboardQuestionItem[]
   isActive: boolean
 }
 
@@ -152,25 +160,25 @@ export default function DashboardPage() {
           if (response.ok) {
             const data = await response.json()
             const attempts = data.results || []
-            const sortedAttempts = attempts.sort((a: any, b: any) =>
+            const sortedAttempts = attempts.sort((a: RecentAttempt, b: RecentAttempt) =>
               new Date(b.date).getTime() - new Date(a.date).getTime()
             )
 
             setAllAttempts(sortedAttempts)
             setRecentAttempts(sortedAttempts.slice(0, 5))
           } else {
-            const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
+            const results: RecentAttempt[] = JSON.parse(localStorage.getItem("quizResults") || "[]")
             const sortedResults = results
-              .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+              .sort((a: RecentAttempt, b: RecentAttempt) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
             setAllAttempts(sortedResults)
             setRecentAttempts(sortedResults.slice(0, 5))
           }
         } catch (error) {
           console.error("Failed to fetch attempts:", error)
-          const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
+          const results: RecentAttempt[] = JSON.parse(localStorage.getItem("quizResults") || "[]")
           const sortedResults = results
-            .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .sort((a: RecentAttempt, b: RecentAttempt) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
           setAllAttempts(sortedResults)
           setRecentAttempts(sortedResults.slice(0, 5))
@@ -194,7 +202,7 @@ export default function DashboardPage() {
           setAvailableQuizzes(activeQuizzes)
 
           const allQuestions = activeQuizzes.flatMap((quiz: Quiz) =>
-            quiz.questions?.map((q: any) => ({
+            quiz.questions?.map((q: DashboardQuestionItem) => ({
               id: q.id || Math.random().toString(),
               question: q.question,
               options: q.options,
