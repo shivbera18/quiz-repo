@@ -23,7 +23,17 @@ interface SubjectSummary {
   chapters: ChapterSummary[];
 }
 
-export default function QuizManagementSection({ onEditQuiz }: { onEditQuiz?: (quiz: any) => void }) {
+interface QuizQuestion {
+  id?: string;
+  question: string;
+  options: string[];
+  correctAnswer: number;
+  explanation?: string;
+  section?: string;
+  difficulty?: string;
+}
+
+export default function QuizManagementSection({ onEditQuiz }: { onEditQuiz?: (quiz: QuizSummary) => void }) {
   const [data, setData] = useState<SubjectSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -34,7 +44,7 @@ export default function QuizManagementSection({ onEditQuiz }: { onEditQuiz?: (qu
   const [editQuizSubjectId, setEditQuizSubjectId] = useState<string>("");
   const [editQuizChapterId, setEditQuizChapterId] = useState<string>("");
   const [manageQuizId, setManageQuizId] = useState<string | null>(null);
-  const [quizQuestions, setQuizQuestions] = useState<any[]>([]);
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [quizTitle, setQuizTitle] = useState<string>("");
   const [questionsLoading, setQuestionsLoading] = useState(false);
 
