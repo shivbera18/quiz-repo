@@ -279,7 +279,7 @@ interface NormalizedQuestionItem {
   const estimatedTimePerQuestion = questions.length > 0 ? totalQuizTimeMs / questions.length : 0
   
   // Normalize all questions - use actual time if available, otherwise estimate
-  const normalizedQuestions: NormalizedQuestionItem[] = questions.map((q: Record<string, unknown>, idx: number) => {
+  const normalizedQuestions: NormalizedQuestionItem[] = questions.map((q: any, idx: number) => {
     const selectedAnswer = (q.selectedAnswer ?? q.userAnswer ?? null) as number | null
     const isUnanswered = q.isUnanswered === true || selectedAnswer === null || selectedAnswer === undefined
     

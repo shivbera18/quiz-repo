@@ -33,7 +33,7 @@ interface QuizQuestion {
   difficulty?: string;
 }
 
-export default function QuizManagementSection({ onEditQuiz }: { onEditQuiz?: (quiz: QuizSummary) => void }) {
+export default function QuizManagementSection({ onEditQuiz }: { onEditQuiz?: (quiz: any) => void }) {
   const [data, setData] = useState<SubjectSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
