@@ -82,10 +82,19 @@ Keep numbers reasonable for mental math practice.`
       throw new Error('No JSON found in Gemini response')
     }
 
-    const questions = JSON.parse(jsonMatch[0])
+    interface RawQuestionInput {
+      question?: string
+      answer?: number
+      options?: string[]
+      correctOptionIndex?: number
+      operation?: string
+      difficulty?: string
+    }
+
+    const questions: RawQuestionInput[] = JSON.parse(jsonMatch[0])
     
     // Validate and fix each question
-    return questions.map((q: any, index: number) => ({
+    return questions.map((q: RawQuestionInput, index: number) => ({
       id: `gemini-${operation}-${difficulty}-${index}`,
       question: q.question || `${Math.floor(Math.random() * 50) + 10} + ${Math.floor(Math.random() * 50) + 10}`,
       answer: q.answer || 0,
