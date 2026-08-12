@@ -1,0 +1,41 @@
+name: Database Off-Site Backup
+
+on:
+  schedule:
+    # Runs daily at 02:00 UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    name: Create & Save Database Dump
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Prepare SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2_key.pem
+          chmod 600 ~/.ssh/ec2_key.pem
+
+      - name: Generate Database Dump on EC2 & Download
+        run: |
+          BACKUP_DATE=$(date +'%Y-%m-%d_%H%M%S')
+          echo "BACKUP_DATE=$BACKUP_DATE" >> $GITHUB_ENV
+          
+          # SSH to EC2, run pg_dumpall inside postgres container, stream compressed SQL back to runner
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem ubuntu@${{ secrets.EC2_HOST }} \
+            "docker exec quiz-platform-postgres-1 pg_dumpall -U quiz_admin" | gzip > "db_backup_${BACKUP_DATE}.sql.gz"
+          
+          # Check backup file size
+          ls -lh "db_backup_${BACKUP_DATE}.sql.gz"
+
+      - name: Upload Backup Artifact to GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ env.BACKUP_DATE }}
+          path: db_backup_*.sql.gz
+          retention-days: 90
