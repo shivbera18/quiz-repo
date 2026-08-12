@@ -6,13 +6,20 @@ import { QuizList } from "@/components/quiz/quiz-list"
 import { QuizFilters } from "@/components/quiz/quiz-filters"
 import { MobilePageHeader } from "@/components/layout/mobile-page-header"
 
+interface QuizAttemptSummary {
+  id?: string
+  quizId?: string
+  totalScore?: number
+  date?: string
+}
+
 interface Quiz {
   id: string
   title: string
   description: string
   duration: number
   sections: string[]
-  questions: any[]
+  questions: unknown[]
   isActive: boolean
   difficulty?: string
 }
@@ -20,7 +27,7 @@ interface Quiz {
 export default function FullMockTestsPage() {
   const { user, loading } = useAuth()
   const [availableQuizzes, setAvailableQuizzes] = useState<Quiz[]>([])
-  const [attemptedQuizzes, setAttemptedQuizzes] = useState<any[]>([])
+  const [attemptedQuizzes, setAttemptedQuizzes] = useState<QuizAttemptSummary[]>([])
   const [filteredQuizzes, setFilteredQuizzes] = useState<Quiz[]>([])
   const [activeFilters, setActiveFilters] = useState({ difficulty: "all", duration: [0, 180] })
   const [isLoadingData, setIsLoadingData] = useState(true)
@@ -44,7 +51,7 @@ export default function FullMockTestsPage() {
           // Parse sections if they're JSON strings
           const activeQuizzes = quizzesData
             .filter((q: Quiz) => q.isActive && q.questions?.length > 0)
-            .map((quiz: any) => {
+            .map((quiz: Quiz) => {
               let sections = quiz.sections
               if (typeof sections === 'string') {
                 try {
@@ -69,7 +76,7 @@ export default function FullMockTestsPage() {
   }, [loading, user])
 
   useEffect(() => {
-    const attemptedQuizIds = attemptedQuizzes.map((attempt: any) => attempt.quizId).filter(Boolean)
+    const attemptedQuizIds = attemptedQuizzes.map((attempt: QuizAttemptSummary) => attempt.quizId).filter(Boolean)
     const unattemptedQuizzes = availableQuizzes.filter((quiz: Quiz) => !attemptedQuizIds.includes(quiz.id))
 
     console.log('Available quizzes:', availableQuizzes.length)
