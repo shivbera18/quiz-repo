@@ -15,4 +15,5 @@ const nextConfig = {
   outputFileTracingRoot: path.join(__dirname, "../../"),
 }
 
+// Trigger Vercel frontend redeploy for EC2 microservice connection
 export default nextConfig
