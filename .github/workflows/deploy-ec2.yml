@@ -1,4 +1,5 @@
-name: Deploy backend to EC2
+# EC2 Deployment Trigger: Single repository push mode
+name: Deploy Backend Stack to EC2
 # Last deployment trigger: 2026-08-12
 
 on:
