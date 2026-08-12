@@ -69,9 +69,19 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            # Prune dangling build objects before building to guarantee free space
-            docker image prune -f
-            docker builder prune -f --keep-storage 1GB
+            APP_SERVICES="gateway identity-svc \
+                          catalog-svc catalog-ai-worker \
+                          assessment-svc assessment-worker \
+                          analytics-svc analytics-rollup-consumer analytics-export-worker \
+                          notification-svc notification-worker \
+                          caddy"
+
+            # Free disk held by the previously running app containers/images before
+            # building replacements.
+            docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml stop $APP_SERVICES || true
+            docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml rm -f $APP_SERVICES || true
+            docker image prune -a -f
+            docker builder prune -a -f --keep-storage 2GB
 
             # Tune Redpanda for low-RAM VM
             sed -i 's/--memory=512M/--memory=200M/' infra/docker-compose.yml
