@@ -23,7 +23,7 @@ interface AIGeneratedQuestion {
 interface AIQuestionGeneratorProps {
   isOpen: boolean
   onClose: () => void
-  onGenerate: (questions: any[]) => void
+  onGenerate: (questions: AIGeneratedQuestion[]) => void
   userToken: string
   availableSections: string[]
 }
