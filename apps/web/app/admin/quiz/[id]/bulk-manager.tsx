@@ -144,7 +144,7 @@ export default function BulkManager({ quiz, onQuizUpdate, onClose }: BulkManager
 
         // Validate options are not empty
         const emptyOptions = questionData.options
-          .map((opt: any, idx: number) => (!opt || opt.toString().trim() === "" ? idx + 1 : null))
+          .map((opt: unknown, idx: number) => (!opt || String(opt).trim() === "" ? idx + 1 : null))
           .filter((idx: number | null) => idx !== null)
 
         if (emptyOptions.length > 0) {
