@@ -383,9 +383,9 @@ services:
       DATABASE_URL: postgresql://notification_rw:${NOTIFICATION_RW_PASSWORD:-notification_rw_pw}@postgres:5432/quiz?schema=notification
       KAFKA_BROKERS: redpanda:9092
       REDIS_URL: redis://redis:6379
-      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
-      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
-      VAPID_EMAIL: ${VAPID_EMAIL:-you@example.com}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-BNC5_612V-a7IYII4CWUMkfax-EZIu_1C9HnmkpgDgK5H7yvlQxyMxG2-fa6CHaSzG9jfUyJ5RPUOLtNdSjTzj8}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-1ZWELtyKk8P0_60Qmx-wndP_Z7JoUT9nVMB93Q3yxFs}
+      VAPID_EMAIL: ${VAPID_EMAIL:-admin@quiz-app.com}
     depends_on:
       postgres:
         condition: service_healthy
@@ -411,9 +411,9 @@ services:
       DATABASE_URL: postgresql://notification_rw:${NOTIFICATION_RW_PASSWORD:-notification_rw_pw}@postgres:5432/quiz?schema=notification
       KAFKA_BROKERS: redpanda:9092
       REDIS_URL: redis://redis:6379
-      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
-      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
-      VAPID_EMAIL: ${VAPID_EMAIL:-you@example.com}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-BNC5_612V-a7IYII4CWUMkfax-EZIu_1C9HnmkpgDgK5H7yvlQxyMxG2-fa6CHaSzG9jfUyJ5RPUOLtNdSjTzj8}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-1ZWELtyKk8P0_60Qmx-wndP_Z7JoUT9nVMB93Q3yxFs}
+      VAPID_EMAIL: ${VAPID_EMAIL:-admin@quiz-app.com}
     depends_on:
       postgres:
         condition: service_healthy

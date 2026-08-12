@@ -154,11 +154,12 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       let subscription = await registration.pushManager.getSubscription()
 
       if (!subscription) {
+        const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "BNC5_612V-a7IYII4CWUMkfax-EZIu_1C9HnmkpgDgK5H7yvlQxyMxG2-fa6CHaSzG9jfUyJ5RPUOLtNdSjTzj8"
         // Subscribe with userVisibleOnly: true for better UX
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           // Cast to BufferSource to satisfy TS in strict lib setups
-          applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!) as unknown as BufferSource
+          applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as unknown as BufferSource
         })
       }
 
