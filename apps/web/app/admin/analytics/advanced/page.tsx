@@ -48,6 +48,36 @@ interface QuizResult {
   }
 }
 
+interface RawResultAnswer {
+  questionId?: string
+  selectedAnswer?: number | null
+  isCorrect?: boolean
+  isUnanswered?: boolean
+  section?: string
+  question?: string
+  options?: string[]
+  correctAnswer?: number
+  timeSpent?: number
+}
+
+interface RawResult {
+  id?: string
+  _id?: string
+  date?: string
+  createdAt?: string
+  quizName?: string
+  quizId?: string
+  totalScore?: number
+  timeSpent?: number
+  userId?: string
+  userName?: string
+  userEmail?: string
+  sections?: string | Record<string, number>
+  answers?: string | RawResultAnswer[]
+  quiz?: { id?: string; title?: string }
+  user?: { id?: string; name?: string; email?: string }
+}
+
 export default function AdvancedAnalyticsPage() {
   const { user, loading } = useAuth(true)
   const [results, setResults] = useState<QuizResult[]>([])
@@ -98,15 +128,14 @@ export default function AdvancedAnalyticsPage() {
       if (!response.ok) {
         throw new Error(`Failed to fetch analytics: ${response.status}`)
       }
-
       const data = await response.json()
       console.log("✅ Advanced Analytics: Fetched fresh data:", data.results?.length || 0, "results")
       
       // Transform the data to match our QuizResult interface - no localStorage fallback
-      const transformedResults = (data.results || []).map((result: any) => {
+      const transformedResults = (data.results || []).map((result: RawResult) => {
         // Parse JSON strings safely
         let sections = { reasoning: 0, quantitative: 0, english: 0 }
-        let answers: any[] = []
+        let answers: RawResultAnswer[] = []
         
         try {
           if (result.sections && typeof result.sections === 'string') {
@@ -135,11 +164,11 @@ export default function AdvancedAnalyticsPage() {
           quizName: result.quiz?.title || result.quizName || 'Unknown Quiz',
           quizId: result.quizId || result.quiz?.id || '',
           totalScore: result.totalScore || 0,
-          correctAnswers: answers.filter((a: any) => a.isCorrect).length,
-          wrongAnswers: answers.filter((a: any) => !a.isCorrect && !a.isUnanswered && a.selectedAnswer !== null && a.selectedAnswer !== undefined).length,
-          unanswered: answers.filter((a: any) => a.isUnanswered || a.selectedAnswer === null || a.selectedAnswer === undefined).length,
+          correctAnswers: answers.filter((a: RawResultAnswer) => a.isCorrect).length,
+          wrongAnswers: answers.filter((a: RawResultAnswer) => !a.isCorrect && !a.isUnanswered && a.selectedAnswer !== null && a.selectedAnswer !== undefined).length,
+          unanswered: answers.filter((a: RawResultAnswer) => a.isUnanswered || a.selectedAnswer === null || a.selectedAnswer === undefined).length,
           sections,
-          answers: answers.map((a: any) => ({
+          answers: answers.map((a: RawResultAnswer) => ({
             questionId: a.questionId,
             selectedAnswer: a.selectedAnswer,
             isCorrect: a.isCorrect,
@@ -161,9 +190,9 @@ export default function AdvancedAnalyticsPage() {
       })
       
       // Log user info for debugging
-      const usersFound = transformedResults.filter((r: any) => r.user?.id).length
+      const usersFound = transformedResults.filter((r: { user?: { id?: string } }) => r.user?.id).length
       console.log(`📊 Advanced Analytics: Transformed ${transformedResults.length} results, ${usersFound} with user data`)
-      console.log(`👥 Unique users:`, [...new Set(transformedResults.map((r: any) => r.user?.name || r.user?.email).filter(Boolean))])
+      console.log(`👥 Unique users:`, [...new Set(transformedResults.map((r: { user?: { name?: string; email?: string } }) => r.user?.name || r.user?.email).filter(Boolean))])
       setResults(transformedResults)
       
     } catch (error) {
