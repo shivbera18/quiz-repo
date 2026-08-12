@@ -103,7 +103,7 @@ jobs:
             done
 
             # Prune lingering stopped containers to prevent name conflicts
-            docker container prune -f
+            docker container prune -f || true
 
             # Start the full backend stack. Data-plane containers first
             # (Compose already serializes these via depends_on/healthchecks),
