@@ -258,63 +258,77 @@ export default function TimeAnalysisPage() {
   
   const totalQuizTimeMs = normalizeTotalTime(result.timeSpent || 0)
   
+interface NormalizedQuestionItem {
+  id: string
+  questionNumber: number
+  question: string
+  timeSpent: number
+  isCorrect: boolean | null
+  selectedAnswer: number | null
+  userAnswer: number | null
+  correctAnswer: number
+  section: string
+  isEstimated: boolean
+  isUnanswered: boolean
+}
+
   // Check if we have per-question time data
-  const hasPerQuestionTime = questions.length > 0 && questions.some((q: any) => q.timeSpent && q.timeSpent > 0)
+  const hasPerQuestionTime = questions.length > 0 && questions.some((q: { timeSpent?: number }) => q.timeSpent && q.timeSpent > 0)
   
   // Calculate estimated time per question if no per-question time data
   const estimatedTimePerQuestion = questions.length > 0 ? totalQuizTimeMs / questions.length : 0
   
   // Normalize all questions - use actual time if available, otherwise estimate
-  const normalizedQuestions = questions.map((q: any, idx: number) => {
-    const selectedAnswer = q.selectedAnswer ?? q.userAnswer ?? null
+  const normalizedQuestions: NormalizedQuestionItem[] = questions.map((q: Record<string, unknown>, idx: number) => {
+    const selectedAnswer = (q.selectedAnswer ?? q.userAnswer ?? null) as number | null
     const isUnanswered = q.isUnanswered === true || selectedAnswer === null || selectedAnswer === undefined
     
     return {
       ...q,
-      id: q.id || q.questionId || `q-${idx}`,
+      id: String(q.id || q.questionId || `q-${idx}`),
       questionNumber: idx + 1,
-      question: q.question || q.questionText || `Question ${idx + 1}`,
+      question: String(q.question || q.questionText || `Question ${idx + 1}`),
       timeSpent: hasPerQuestionTime 
-        ? normalizeTime(q.timeSpent || 0)
+        ? normalizeTime(Number(q.timeSpent || 0))
         : estimatedTimePerQuestion, // Use estimated time when no per-question data
-      isCorrect: q.isCorrect,
+      isCorrect: (q.isCorrect as boolean | null) ?? null,
       selectedAnswer: selectedAnswer,
       userAnswer: selectedAnswer, // Keep both for compatibility
-      correctAnswer: q.correctAnswer ?? 0,
-      section: q.section || q.category || "General",
-      isEstimated: !q.timeSpent || q.timeSpent <= 0, // Flag to show if time is estimated
+      correctAnswer: Number(q.correctAnswer ?? 0),
+      section: String(q.section || q.category || "General"),
+      isEstimated: !q.timeSpent || Number(q.timeSpent) <= 0, // Flag to show if time is estimated
       isUnanswered: isUnanswered,
     }
   })
 
-  const totalTime = normalizedQuestions.reduce((sum: number, q: any) => sum + q.timeSpent, 0)
+  const totalTime = normalizedQuestions.reduce((sum: number, q: NormalizedQuestionItem) => sum + q.timeSpent, 0)
   // Use calculated total time from questions if available and reasonable, otherwise use reported total time
   const displayTotalTime = hasPerQuestionTime && totalTime > 0 ? totalTime : totalQuizTimeMs
   const avgTime = normalizedQuestions.length > 0 ? totalTime / normalizedQuestions.length : 0
-  const maxTime = normalizedQuestions.length > 0 ? Math.max(...normalizedQuestions.map((q: any) => q.timeSpent)) : 0
-  const minTime = normalizedQuestions.length > 0 ? Math.min(...normalizedQuestions.map((q: any) => q.timeSpent)) : 0
+  const maxTime = normalizedQuestions.length > 0 ? Math.max(...normalizedQuestions.map((q: NormalizedQuestionItem) => q.timeSpent)) : 0
+  const minTime = normalizedQuestions.length > 0 ? Math.min(...normalizedQuestions.map((q: NormalizedQuestionItem) => q.timeSpent)) : 0
   
-  const slowestQuestion = normalizedQuestions.find((q: any) => q.timeSpent === maxTime)
-  const fastestQuestion = normalizedQuestions.find((q: any) => q.timeSpent === minTime)
+  const slowestQuestion = normalizedQuestions.find((q: NormalizedQuestionItem) => q.timeSpent === maxTime)
+  const fastestQuestion = normalizedQuestions.find((q: NormalizedQuestionItem) => q.timeSpent === minTime)
 
   // Time by correctness
-  const correctQuestions = normalizedQuestions.filter((q: any) => q.isCorrect === true)
-  const wrongQuestions = normalizedQuestions.filter((q: any) => q.isCorrect === false && !q.isUnanswered)
-  const unansweredQuestions = normalizedQuestions.filter((q: any) => q.isUnanswered === true)
+  const correctQuestions = normalizedQuestions.filter((q: NormalizedQuestionItem) => q.isCorrect === true)
+  const wrongQuestions = normalizedQuestions.filter((q: NormalizedQuestionItem) => q.isCorrect === false && !q.isUnanswered)
+  const unansweredQuestions = normalizedQuestions.filter((q: NormalizedQuestionItem) => q.isUnanswered === true)
   
   const avgTimeCorrect = correctQuestions.length > 0 
-    ? correctQuestions.reduce((sum: number, q: any) => sum + q.timeSpent, 0) / correctQuestions.length 
+    ? correctQuestions.reduce((sum: number, q: NormalizedQuestionItem) => sum + q.timeSpent, 0) / correctQuestions.length 
     : 0
   const avgTimeWrong = wrongQuestions.length > 0 
-    ? wrongQuestions.reduce((sum: number, q: any) => sum + q.timeSpent, 0) / wrongQuestions.length 
+    ? wrongQuestions.reduce((sum: number, q: NormalizedQuestionItem) => sum + q.timeSpent, 0) / wrongQuestions.length 
     : 0
   const avgTimeUnanswered = unansweredQuestions.length > 0 
-    ? unansweredQuestions.reduce((sum: number, q: any) => sum + q.timeSpent, 0) / unansweredQuestions.length 
+    ? unansweredQuestions.reduce((sum: number, q: NormalizedQuestionItem) => sum + q.timeSpent, 0) / unansweredQuestions.length 
     : 0
 
   // Section-wise time analysis
   const sectionTimes: { [key: string]: { total: number; count: number; correct: number; wrong: number } } = {}
-  normalizedQuestions.forEach((q: any) => {
+  normalizedQuestions.forEach((q: NormalizedQuestionItem) => {
     const section = q.section || "General"
     if (!sectionTimes[section]) {
       sectionTimes[section] = { total: 0, count: 0, correct: 0, wrong: 0 }
@@ -334,7 +348,7 @@ export default function TimeAnalysisPage() {
   }))
 
   // Chart data for per-question time
-  const chartData = normalizedQuestions.map((q: any, idx: number) => ({
+  const chartData = normalizedQuestions.map((q: NormalizedQuestionItem, idx: number) => ({
     name: `Q${idx + 1}`,
     time: Math.round(q.timeSpent / 1000), // Convert to seconds for display
     timeMs: q.timeSpent,
@@ -349,11 +363,10 @@ export default function TimeAnalysisPage() {
     { range: "0-10s", min: 0, max: 10000, count: 0, correct: 0 },
     { range: "10-30s", min: 10000, max: 30000, count: 0, correct: 0 },
     { range: "30-60s", min: 30000, max: 60000, count: 0, correct: 0 },
-    { range: "1-2m", min: 60000, max: 120000, count: 0, correct: 0 },
-    { range: "2m+", min: 120000, max: Infinity, count: 0, correct: 0 },
+    { range: "60s+", min: 60000, max: Infinity, count: 0, correct: 0 },
   ]
-  
-  normalizedQuestions.forEach((q: any) => {
+
+  normalizedQuestions.forEach((q: NormalizedQuestionItem) => {
     const bucket = timeDistribution.find((b) => q.timeSpent >= b.min && q.timeSpent < b.max)
     if (bucket) {
       bucket.count += 1
