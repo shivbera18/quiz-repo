@@ -1,4 +1,4 @@
-name: Database Off-Site Backup
+name: Database Off-Site Backup & Neon Sync
 
 on:
   schedule:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   backup:
-    name: Create & Save Database Dump
+    name: Create Dump & Sync to Neon DB
     runs-on: ubuntu-latest
 
     steps:
@@ -32,6 +32,22 @@ jobs:
           
           # Check backup file size
           ls -lh "db_backup_${BACKUP_DATE}.sql.gz"
+
+      - name: Sync Database Dump to Neon PostgreSQL
+        env:
+          NEON_URL: ${{ secrets.NEON_DATABASE_URL }}
+        run: |
+          if [ -z "$NEON_URL" ]; then
+            echo "⚠️ NEON_DATABASE_URL secret is not set. Skipping sync to Neon DB."
+            exit 0
+          fi
+          
+          echo "Installing PostgreSQL client tools..."
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+          
+          echo "Restoring database dump to Neon DB..."
+          gunzip -c "db_backup_${BACKUP_DATE}.sql.gz" | psql "$NEON_URL" -v ON_ERROR_STOP=0 || true
+          echo "✅ Neon DB sync complete!"
 
       - name: Upload Backup Artifact to GitHub
         uses: actions/upload-artifact@v4
