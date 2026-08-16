@@ -1,0 +1,7 @@
+# Pi-installed package caches are reproducible from settings.json.
+/npm/
+/git/
+
+# Local MCP runtime state; server definitions live in ../.mcp.json.
+/mcp-memory.jsonl
+/mcp-traces/
