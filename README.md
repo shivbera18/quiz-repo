@@ -105,6 +105,19 @@ quiz-repo/
     └── postgres/init/      # per-service schema + role setup
 ```
 
+## Agentic Development with Pi
+
+This repository includes project skills, specialist subagents, code diagnostics, browser automation, current documentation research, task tracking, and MCP servers for Pi. See **[docs/PI_AGENTIC_WORKFLOW.md](docs/PI_AGENTIC_WORKFLOW.md)** for setup, commands, recommended implementation/review loops, verification, and Git workflows.
+
+Quick start:
+
+```powershell
+cd C:\path\to\quiz-repo
+pi
+```
+
+Then run `/reload`, `/subagents-doctor`, and `/mcp status` inside Pi.
+
 ## Contributing
 
 1. Fork the repository
