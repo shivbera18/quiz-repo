@@ -435,7 +435,7 @@ Only **one** layout (`app/layout.tsx`); 13 `loading.tsx`; **no `error.tsx`, `not
 | Path | Contents |
 |---|---|
 | `lib/` | `gateway-client.ts` (§6.1) · `json-upload-processor.ts` · `math-symbol-processor.ts` · `utils.ts` (`cn`) |
-| `hooks/` | `use-auth.tsx` (display-only session hint) · `use-mobile.tsx` · `use-push-notifications.tsx` (reads `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, has a hardcoded fallback) · `use-toast.ts` |
+|`hooks/`|`use-auth.tsx` (display-only session hint) · `use-mobile.tsx` · `use-push-notifications.tsx` (requires `NEXT_PUBLIC_VAPID_PUBLIC_KEY`) · `use-toast.ts`|
 | `components/` (92 files) | 13 top-level (`activity-calendar`, `advanced-analytics`, `flash-questions`, `math-renderer`, `page-transition`, `protected-route`, `push-notifications-manager`, `pwa-handler`, `service-worker-registration`, `simple-advanced-analytics`, `student-analytics`, `theme-provider`, `theme-toggle`) · `analytics/` (2 v2 files) · `landing/` (7) · `layout/` (6: `app-shell`, `footer`, `mobile-page-header`, `sidebar-context`, `sidebar`, `top-header`) · `quiz/` (2) · `svgs/` (7) · `ui/` (53 shadcn primitives) |
 | `public/` | `sw.js` (service worker) · `offline.html` · `manifest` via `app/manifest.ts` · `icons/` (192/512 png+svg) · `doodles/` · `logo-light.svg` |
 | config | `next.config.mjs` (`images.unoptimized`, `output: standalone`, `outputFileTracingRoot` = repo root) · `tailwind.config.ts` · `postcss.config.mjs` · `components.json` · `.eslintrc.json` · `tsconfig.json` (`paths: {"@/*": ["./*"]}`) · `Dockerfile` (2-stage, `CMD ["node","apps/web/server.js"]`) |
@@ -1390,10 +1390,10 @@ assembled `DATABASE_URL`/`S3_*` values first.
 | analytics (all 3) | `PORT` / `DATABASE_URL` / `KAFKA_BROKERS` / `REDIS_URL` | 4004 / yes / yes / yes | role `analytics_rw` |
 | analytics (+export-worker) | `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `EXPORT_BUCKET` | for exports | MinIO locally; omit `S3_ENDPOINT` for real AWS |
 | notification (+worker) | `PORT` / `DATABASE_URL` / `KAFKA_BROKERS` / `REDIS_URL` | 4005 / yes / yes / yes | role `notification_rw` |
-| notification (+worker) | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_EMAIL` | no | missing ⇒ push no-ops with a warning |
-| web | `GATEWAY_URL` | **yes** | server-side, read per request by every `app/api/**` handler |
-| web | `GEMINI_API_KEY` | no | the two direct-Gemini routes only |
-| web | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | no | browser subscribe; has a hardcoded fallback |
+|notification (+worker)|`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_EMAIL`|no|all three required; missing ⇒ push no-op with a warning|
+|web|`GATEWAY_URL`|**yes**|server-side, read per request by every `app/api/**` handler|
+|web|`GEMINI_API_KEY`|no|the two direct-Gemini routes only|
+|web|`NEXT_PUBLIC_VAPID_PUBLIC_KEY`|for push|must match notification `VAPID_PUBLIC_KEY`; embedded at web build time|
 | all backend | `LOG_LEVEL`, `NODE_ENV` | no | `info`; non-production enables `pino-pretty` |
 
 Package-level defaults if unset: `KAFKA_BROKERS` → `localhost:19092`, `REDIS_URL` →

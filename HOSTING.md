@@ -218,8 +218,9 @@ This table is what each service reads from `process.env` directly. It's a differ
 | analytics-svc (+ rollup-consumer + export-worker) | `DATABASE_URL`, `KAFKA_BROKERS`, `REDIS_URL` | Yes | role `analytics_rw`, schema `analytics` |
 | analytics-svc (+ export-worker) | `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `EXPORT_BUCKET` | Yes (for exports) | MinIO locally; real S3 in prod (omit `S3_ENDPOINT` to use AWS's default) |
 | notification-svc (+ worker) | `DATABASE_URL`, `KAFKA_BROKERS`, `REDIS_URL` | Yes | role `notification_rw`, schema `notification` |
-| notification-svc (+ worker) | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_EMAIL` | No | push notifications no-op with a logged warning without these |
+| notification-svc (+ worker) | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_EMAIL` | For push | all three required; missing values disable push delivery |
 | apps/web | `GATEWAY_URL` | Yes | server-side only, read at request time by every `app/api/**` route handler |
+| apps/web | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | For push | must match notification `VAPID_PUBLIC_KEY`; embedded at build time |
 | apps/web | `GEMINI_API_KEY` | No | used directly by the two AI routes apps/web still owns (`api/ai/generate-questions`, `api/generate-flashcards`) — see [known gaps](#part-7--post-deploy-checklist-and-known-gaps) for why those weren't moved into catalog-svc |
 
 `KAFKA_BROKERS` defaults to `localhost:19092` everywhere if unset (useful for Part 2's "run one service outside Docker" flow); inside Docker Compose it's always explicitly `redpanda:9092`. `REDIS_URL` defaults to `redis://localhost:6380`.
