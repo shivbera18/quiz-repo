@@ -1427,7 +1427,7 @@ export default function AdminPage() {
               <span className="hidden sm:inline">Add Subject</span>
               <span className="sm:hidden">New Subject</span>
             </Button>
-            <Button onClick={() => setShowChapterForm(true)} className="w-full sm:w-auto" size="sm" variant="neobrutalist">
+            <Button onClick={() => { setError(""); setSuccess(""); setShowChapterForm(true) }} className="w-full sm:w-auto" size="sm" variant="neobrutalist">
               <Plus className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Add Chapter</span>
               <span className="sm:hidden">New Chapter</span>
@@ -1631,10 +1631,26 @@ export default function AdminPage() {
                   </Select>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="space-y-4">
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+                  <div className="flex gap-2">
                   <Button onClick={async () => {
                     // Create or update chapter
                     try {
+                      setError("")
+                      setSuccess("")
+                      if (!newChapter.name.trim()) {
+                        setError("Chapter name is required")
+                        return
+                      }
+                      if (!selectedSubjectForChapter) {
+                        setError("Please select a subject")
+                        return
+                      }
                       const isEdit = editingChapter !== null
                       const url = isEdit
                         ? `/api/admin/chapters/${editingChapter.id}`
@@ -1652,7 +1668,10 @@ export default function AdminPage() {
                           subjectId: selectedSubjectForChapter,
                         }),
                       })
-                      if (!res.ok) throw new Error(`Failed to ${isEdit ? 'update' : 'create'} chapter`)
+                      if (!res.ok) {
+                        const body = await res.json().catch(() => null)
+                        throw new Error(body?.message || `Failed to ${isEdit ? 'update' : 'create'} chapter`)
+                      }
 
                       const data = await res.json()
                       // Refresh subjects list to get updated chapters
@@ -1667,7 +1686,7 @@ export default function AdminPage() {
                       setEditingChapter(null)
                       setShowChapterForm(false)
                     } catch (err) {
-                      setError(`Failed to ${editingChapter ? 'update' : 'create'} chapter`)
+                      setError(err instanceof Error ? err.message : `Failed to ${editingChapter ? 'update' : 'create'} chapter`)
                     }
                   }} variant="neobrutalist">
                     {editingChapter ? "Update Chapter" : "Create Chapter"}
@@ -1689,6 +1708,7 @@ export default function AdminPage() {
                   >
                     Cancel
                   </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
