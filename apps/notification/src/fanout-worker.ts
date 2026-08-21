@@ -1,17 +1,5 @@
-// notification-svc's worker: dimension projections (UserRef) plus the
-// two-stage push fan-out described in ARCHITECTURE.md. One
-// announcement-published record never turns into N synchronous HTTP sends
-// from a request thread (that was the actual bug at
-// lib/push-notification-utils.ts:167-228) -- instead:
-//   1. ANNOUNCEMENT_PUBLISHED -> broadcast over Redis pub/sub for SSE
-//      (instant, no DB read needed) + page through PushSubscription 100 at a
-//      time, producing one PUSH_SEND_REQUESTED record per subscription.
-//   2. PUSH_SEND_REQUESTED -> actually calls the web-push API for that one
-//      subscription.
-// Both stages are handled by this one process/consumer group for now (the
-// architecture's deployable count for notification-svc is api + one worker);
-// they're logically distinct groups, not a single job.
-import { randomUUID } from "node:crypto"
+// Pages active subscriptions into per-subscription push jobs so announcement
+// requests never wait on external browser push services.
 import { PrismaClient } from "./generated/prisma/index.js"
 import { createLogger } from "@quiz/observability"
 import { createKafka, runConsumer, getProducer, createEnvelope, TOPICS } from "@quiz/kafka-kit"
@@ -34,14 +22,16 @@ const processedEventStore = {
 }
 
 async function markProcessed(eventId: string) {
-  await prisma.processedEvent.create({ data: { eventId, consumerGroup: CONSUMER_GROUP } }).catch(() => null)
+  await prisma.processedEvent.create({ data: { eventId, consumerGroup: CONSUMER_GROUP } }).catch((err: { code?: string }) => {
+    if (err.code !== "P2002") throw err
+  })
 }
 
 async function main() {
   const kafka = createKafka("notification-fanout-worker")
   const producer = await getProducer(kafka)
 
-  await runConsumer<AnnouncementPublishedData | PushSendRequestedData | UserChangedData | UserErasureRequestedData>(kafka, {
+  const consumer = await runConsumer<AnnouncementPublishedData | PushSendRequestedData | UserChangedData | UserErasureRequestedData>(kafka, {
     groupId: CONSUMER_GROUP,
     topics: [TOPICS.ANNOUNCEMENT_PUBLISHED, TOPICS.PUSH_SEND_REQUESTED, TOPICS.USER_CHANGED, TOPICS.USER_ERASURE_REQUESTED],
     store: processedEventStore,
@@ -74,7 +64,6 @@ async function main() {
                   topic: TOPICS.PUSH_SEND_REQUESTED,
                   messages: subs.map((sub) => {
                     const payload: PushSendRequestedData = {
-                      requestId: randomUUID(),
                       announcementId: data.announcementId,
                       userId: sub.userId,
                       subscriptionId: sub.id,
@@ -85,7 +74,6 @@ async function main() {
                         tag: `announcement-${data.announcementId}`,
                         priority: data.priority,
                       },
-                      dedupeKey: `${data.announcementId}:${sub.id}`,
                     }
                     return {
                       key: sub.userId,
@@ -108,9 +96,14 @@ async function main() {
 
         case TOPICS.PUSH_SEND_REQUESTED: {
           const data = envelope.data as PushSendRequestedData
-          const result = await sendPushToSubscription(prisma, data.subscriptionId, data.payload)
-          if (!result.sent) {
-            logger.warn({ subscriptionId: data.subscriptionId, reason: result.reason }, "push not sent")
+          try {
+            const result = await sendPushToSubscription(prisma, data.subscriptionId, data.payload)
+            if (!result.sent) {
+              logger.warn({ announcementId: data.announcementId, subscriptionId: data.subscriptionId, reason: result.reason }, "push not sent")
+            }
+          } catch (err) {
+            logger.error({ err, announcementId: data.announcementId, subscriptionId: data.subscriptionId }, "push delivery failed")
+            throw err
           }
           await markProcessed(envelope.eventId)
           return
@@ -145,6 +138,15 @@ async function main() {
   })
 
   logger.info("notification-fanout-worker running")
+
+  const close = async () => {
+    await consumer.disconnect()
+    await producer.disconnect()
+    redis.disconnect()
+    await prisma.$disconnect()
+  }
+  process.on("SIGTERM", close)
+  process.on("SIGINT", close)
 }
 
 main().catch((err) => {

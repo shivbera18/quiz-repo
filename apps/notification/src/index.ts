@@ -100,20 +100,26 @@ async function main() {
     if (!requireAdmin(request, reply)) return
     const user = requireUser(request, reply)
     if (!user) return
-    const { title, content, priority, expiresAt } = (request.body as any) ?? {}
-    if (!title || !content) {
+    const { title, content, priority = "normal", expiresAt } = (request.body as Record<string, unknown>) ?? {}
+    if (typeof title !== "string" || !title.trim() || typeof content !== "string" || !content.trim()) {
       reply.code(400)
       return { message: "Title and content are required" }
     }
+    if (!["low", "normal", "high", "urgent"].includes(String(priority))) {
+      reply.code(400)
+      return { message: "Invalid priority" }
+    }
+    const expiry = expiresAt ? new Date(String(expiresAt)) : null
+    if (expiry && Number.isNaN(expiry.getTime())) {
+      reply.code(400)
+      return { message: "Invalid expiry date" }
+    }
 
-    // The announcement write and its outbox row land in one transaction --
-    // fanout-worker.ts does the actual push/SSE fan-out asynchronously. This
-    // replaces the monolith's inline sendPushNotificationToAllUsers() call,
-    // which awaited one HTTP send + one DB update per subscription inside
-    // this same request (see ARCHITECTURE.md's push fan-out note).
+    // Persist the announcement and its fanout event atomically; the worker
+    // handles external push delivery after this request returns.
     const announcement = await prisma.$transaction(async (tx) => {
       const created = await tx.announcement.create({
-        data: { title, content, priority: priority || "normal", expiresAt: expiresAt ? new Date(expiresAt) : null, createdBy: user.userId },
+        data: { title: title.trim(), content: content.trim(), priority: String(priority), expiresAt: expiry, createdBy: user.userId },
       })
       const payload: AnnouncementPublishedData = { announcementId: created.id, title: created.title, content: created.content, priority: created.priority }
       await tx.outbox.create({
@@ -166,12 +172,7 @@ async function main() {
     return { success: true, message: "Announcement deleted" }
   })
 
-  // Re-publishes the same ANNOUNCEMENT_PUBLISHED event with a fresh eventId --
-  // fanout-worker.ts's idempotency check is keyed on eventId, so this is
-  // treated as a brand new fan-out (re-broadcasts SSE and re-sends push to
-  // every active subscription), not a no-op replay. Direct produce, not the
-  // transactional outbox: there's no paired local write this time, just a
-  // re-announce of state that already exists.
+  // Re-publishing has no paired state change, so direct Kafka production is sufficient.
   app.post("/v1/admin/announcements/:id/repush", async (request, reply) => {
     if (!requireAdmin(request, reply)) return
     const { id } = request.params as { id: string }
@@ -207,16 +208,21 @@ async function main() {
   app.post("/v1/push-subscriptions", async (request, reply) => {
     const user = requireUser(request, reply)
     if (!user) return
-    const { endpoint, keys: pushKeys } = (request.body as any) ?? {}
-    if (!endpoint || !pushKeys?.p256dh || !pushKeys?.auth) {
+    const { endpoint, keys: pushKeys } = (request.body as { endpoint?: unknown; keys?: { p256dh?: unknown; auth?: unknown } }) ?? {}
+    if (typeof endpoint !== "string" || !endpoint.startsWith("https://") || typeof pushKeys?.p256dh !== "string" || typeof pushKeys.auth !== "string") {
       reply.code(400)
       return { message: "Invalid subscription data" }
     }
 
+    const existing = await prisma.pushSubscription.findUnique({ where: { endpoint } })
+    if (existing && existing.userId !== user.userId) {
+      await prisma.pushSubscription.delete({ where: { id: existing.id } })
+    }
     const subscription = await prisma.pushSubscription.upsert({
       where: { userId_endpoint: { userId: user.userId, endpoint } },
       update: { p256dh: pushKeys.p256dh, auth: pushKeys.auth, userAgent: request.headers["user-agent"], isActive: true, lastUsedAt: new Date() },
-      create: { userId: user.userId, endpoint, p256dh: pushKeys.p256dh, auth: pushKeys.auth, userAgent: request.headers["user-agent"] as string | undefined, lastUsedAt: new Date() },
+      create: { userId: user.userId, endpoint, p256dh: pushKeys.p256dh, auth: pushKeys.auth, userAgent: request.headers["user-agent"] },
+      select: { id: true, isActive: true },
     })
 
     return { success: true, subscription }
@@ -299,17 +305,16 @@ async function main() {
     }
     request.raw.on("close", cleanup)
   })
-
   const kafkaClient = createKafka("notification-svc")
   const producer = await getProducer(kafkaClient)
   const stopOutbox = startOutboxPublisher(producer, createOutboxStore(prisma))
 
   const close = async () => {
     stopOutbox()
-    await producer.disconnect()
-    await prisma.$disconnect()
     await app.close()
-    process.exit(0)
+    await producer.disconnect()
+    redis.disconnect()
+    await prisma.$disconnect()
   }
   process.on("SIGTERM", close)
   process.on("SIGINT", close)
