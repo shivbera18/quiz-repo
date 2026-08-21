@@ -81,14 +81,13 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
   }, [questions, selectedSection, selectedDifficulty, searchQuery, selectedTags])
   const fetchQuestions = async () => {
     try {
-      setAdminLoading(true)
-      setError("")
-      
-      const params = new URLSearchParams()
+      const params = new URLSearchParams({ limit: "1000" })
       if (selectedSection && selectedSection !== "all") params.append('section', selectedSection)
       if (selectedDifficulty && selectedDifficulty !== "all") params.append('difficulty', selectedDifficulty)
       if (searchQuery) params.append('search', searchQuery)
-      if (selectedTags.length > 0) params.append('tags', selectedTags.join(','))
+      if (selectedTags.length > 0) {
+        for (const tag of selectedTags) params.append('tag', tag)
+      }
       
       const res = await fetch(`/api/admin/question-bank?${params}`, {
         headers: {
