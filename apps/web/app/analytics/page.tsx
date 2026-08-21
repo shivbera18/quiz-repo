@@ -7,16 +7,8 @@ import StudentAnalytics from "@/components/student-analytics"
 import { useAuth } from "@/hooks/use-auth"
 import { MobilePageHeader } from "@/components/layout/mobile-page-header"
 
-interface SubmittedAttempt {
+interface AttemptSummary {
   attemptId: string
-  quizId: string
-  startedAt: string
-  submittedAt: string | null
-  totalScore: number | null
-  correctCount: number | null
-  wrongCount: number | null
-  unansweredCount: number | null
-  timeSpentMs: number | null
 }
 
 interface AnalyticsResult {
@@ -30,7 +22,17 @@ interface AnalyticsResult {
   unanswered: number
   timeSpent: number
   sections: Record<string, number>
-  answers: []
+  answers: Array<{
+    questionId: string
+    selectedAnswer: number | null
+    isCorrect: boolean
+    section?: string
+    question?: string
+    options?: string[]
+    correctAnswer?: number
+    timeSpent?: number
+    isUnanswered?: boolean
+  }>
 }
 
 export default function AnalyticsPage() {
@@ -43,24 +45,22 @@ export default function AnalyticsPage() {
     if (!user) return
     setRefreshing(true)
     try {
-      const res = await fetch(`/api/attempts?status=SUBMITTED&_t=${Date.now()}`, {
+      const attemptsResponse = await fetch(`/api/attempts?status=SUBMITTED&_t=${Date.now()}`, {
         headers: { Authorization: `Bearer ${user.token || "student-token-placeholder"}` }
       })
-      if (!res.ok) throw new Error("Failed to fetch submitted attempts")
-      const data = await res.json()
-      setResults(((data.attempts || []) as SubmittedAttempt[]).map((attempt) => ({
-        _id: attempt.attemptId,
-        date: attempt.submittedAt || attempt.startedAt,
-        quizName: "Quiz attempt",
-        quizId: attempt.quizId,
-        totalScore: attempt.totalScore || 0,
-        correctAnswers: attempt.correctCount || 0,
-        wrongAnswers: attempt.wrongCount || 0,
-        unanswered: attempt.unansweredCount || 0,
-        timeSpent: Math.round((attempt.timeSpentMs || 0) / 1000),
-        sections: {},
-        answers: [],
-      })))
+      if (!attemptsResponse.ok) throw new Error("Failed to fetch submitted attempts")
+      const attemptsData = await attemptsResponse.json()
+      const attempts = (attemptsData.attempts || []) as AttemptSummary[]
+      const results = await Promise.all(attempts.map(async ({ attemptId }) => {
+        const response = await fetch(`/api/attempts/${attemptId}/result`, {
+          headers: { Authorization: `Bearer ${user.token || "student-token-placeholder"}` }
+        })
+        if (!response.ok) throw new Error(`Failed to fetch result ${attemptId}`)
+        const data = await response.json()
+        const result = data.result
+        return { ...result, answers: result.questions || [] } as AnalyticsResult
+      }))
+      setResults(results)
     } catch (error) {
       console.error("Failed to fetch analytics:", error)
     } finally {
