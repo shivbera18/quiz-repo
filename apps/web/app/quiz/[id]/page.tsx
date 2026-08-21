@@ -65,9 +65,9 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [showNavigator, setShowNavigator] = useState(false)
-  // Time tracking per question
   const [questionTimes, setQuestionTimes] = useState<Record<string, number>>({})
-  const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now())
+  const questionTimesRef = useRef<Record<string, number>>({})
+  const questionStartTimeRef = useRef<number>(Date.now())
   const clientSeqRef = useRef(0)
   const submittedRef = useRef(false)
   const router = useRouter()
@@ -123,10 +123,10 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
 
         // Resume must continue above the highest clientSeq the server already
         // stored, or every re-answer of a previously saved question is dropped.
-        clientSeqRef.current = maxClientSeq
-
         setQuestionStatuses(statuses)
         setQuestionTimes(times)
+        questionTimesRef.current = times
+        questionStartTimeRef.current = Date.now()
         setAnswers(restoredAnswers)
       } catch (error) {
         console.error(error)
@@ -163,15 +163,16 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
   const recordTimeOnCurrentQuestion = () => {
     if (questions.length === 0) return
     const currentQuestion = questions[currentQuestionIndex]
-    const timeSpentOnQuestion = Date.now() - questionStartTime
 
-    setQuestionTimes(prev => ({
-      ...prev,
-      [currentQuestion.id]: (prev[currentQuestion.id] || 0) + timeSpentOnQuestion
-    }))
+    // Refs are the source of truth: state updates are async, and both
+    // postAnswerSync (autosave) and handleSubmit read timing synchronously
+    // right after this runs.
+    const timeSpentOnQuestion = Date.now() - questionStartTimeRef.current
+    const updatedTotal = (questionTimesRef.current[currentQuestion.id] || 0) + timeSpentOnQuestion
+    questionTimesRef.current = { ...questionTimesRef.current, [currentQuestion.id]: updatedTotal }
+    setQuestionTimes(questionTimesRef.current)
 
-    // Reset start time for next question
-    setQuestionStartTime(Date.now())
+    questionStartTimeRef.current = Date.now()
   }
 
   // Navigate to a specific question index with time tracking
@@ -194,7 +195,7 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
   ) => {
     if (!attemptId) return Promise.resolve()
     const clientSeq = ++clientSeqRef.current
-    const timeSpentMs = explicitTimeSpentMs !== undefined ? explicitTimeSpentMs : (questionTimes[questionId] || 0)
+    const timeSpentMs = explicitTimeSpentMs !== undefined ? explicitTimeSpentMs : (questionTimesRef.current[questionId] || 0)
     return fetch(`/api/attempts/${attemptId}/answers`, {
       method: "PATCH",
       headers: {
@@ -307,13 +308,11 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
     // Calculate final time spent on the current question accurately
     const currentQuestion = questions[currentQuestionIndex]
     let currentQuestionTotalTimeMs = 0
-    if (currentQuestion && questionStartTime) {
-      const additionalTime = Math.max(0, Date.now() - questionStartTime)
-      currentQuestionTotalTimeMs = (questionTimes[currentQuestion.id] || 0) + additionalTime
-      setQuestionTimes((prev) => ({
-        ...prev,
-        [currentQuestion.id]: currentQuestionTotalTimeMs,
-      }))
+    if (currentQuestion) {
+      const additionalTime = Math.max(0, Date.now() - questionStartTimeRef.current)
+      currentQuestionTotalTimeMs = (questionTimesRef.current[currentQuestion.id] || 0) + additionalTime
+      questionTimesRef.current = { ...questionTimesRef.current, [currentQuestion.id]: currentQuestionTotalTimeMs }
+      setQuestionTimes(questionTimesRef.current)
     }
 
     // Guarantee the last thing the user touched is persisted before the server
