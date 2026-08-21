@@ -131,6 +131,7 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
       } catch (error) {
         console.error(error)
         router.push("/dashboard")
+      } finally {
         setLoading(false)
       }
     }
