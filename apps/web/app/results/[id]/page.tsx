@@ -274,13 +274,16 @@ export default function ResultsPage(props: { params: Promise<{ id: string }> }) 
     const wrong = result.wrongAnswers || (Array.isArray(result.questions) ? result.questions.filter((q) => !q.isCorrect && q.selectedAnswer !== -1).length : 0)
     const unanswered = result.unanswered || (Array.isArray(result.questions) ? result.questions.filter((q) => q.selectedAnswer === -1).length : 0)
 
-    // Performance by difficulty (based on section performance)
-    const sectionPerformance = [
-      { section: "Reasoning", score: Number((result.sections?.reasoning || 0).toFixed(2)), color: "#8884d8" },
-      { section: "Quantitative", score: Number((result.sections?.quantitative || 0).toFixed(2)), color: "#82ca9d" },
-      { section: "English", score: Number((result.sections?.english || 0).toFixed(2)), color: "#ffc658" },
-    ].filter((s) => s.score > 0)
-
+    // Performance by section -- keys are dynamic (server builds them from the
+    // quiz snapshot), so derive chart rows from whatever sections exist.
+    const palette = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#00c49f", "#d0ed57"]
+    const sectionPerformance = Object.entries(result.sections || {})
+      .map(([section, score], idx) => ({
+        section: section.charAt(0).toUpperCase() + section.slice(1),
+        score: Number(Number(score || 0).toFixed(2)),
+        color: palette[idx % palette.length],
+      }))
+      .filter((s) => s.score > 0)
     // Answer distribution
     const answerDistribution = [
       { name: "Correct", value: correct, color: "#22c55e" },
@@ -449,8 +452,8 @@ export default function ResultsPage(props: { params: Promise<{ id: string }> }) 
             {result.rawScore !== undefined && (
               <div className="mt-4 space-y-1 text-sm font-medium">
                 <p>Raw Score: {result.rawScore.toFixed(2)}</p>
-                {result.negativeMarking && result.negativeMarks && result.negativeMarks > 0 && (
-                  <p className="text-red-600 font-bold">Penalty: -{result.negativeMarks}</p>
+                {result.negativeMarking && result.rawScore > result.totalScore && (
+                  <p className="text-red-600 font-bold">Penalty: -{(result.rawScore - result.totalScore).toFixed(2)}</p>
                 )}
               </div>
             )}
@@ -477,8 +480,10 @@ export default function ResultsPage(props: { params: Promise<{ id: string }> }) 
             <div className="text-2xl sm:text-3xl font-black text-red-600">
               {result.wrongAnswers || (Array.isArray(result.questions) ? result.questions.filter((q) => !q.isCorrect && q.selectedAnswer !== -1).length : 0)}
             </div>
-            {result.negativeMarking && (
-              <p className="text-sm text-muted-foreground font-medium">-{result.negativeMarks || 0} marks</p>
+            {result.negativeMarking && result.rawScore !== undefined && result.rawScore > result.totalScore && (
+              <p className="text-sm text-muted-foreground font-medium">
+                -{(result.rawScore - result.totalScore).toFixed(2)} marks
+              </p>
             )}
           </Card>
 
@@ -559,7 +564,7 @@ export default function ResultsPage(props: { params: Promise<{ id: string }> }) 
         {/* Section Performance */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {Object.entries(result.sections)
-            .filter(([section, score]) => score > 0 && getSectionStats(section).total > 0)
+            .filter(([section]) => getSectionStats(section).total > 0)
             .map(([section, score]) => {
               const stats = getSectionStats(section)
               const sectionColors: { [key: string]: { bg: string; border: string; progress: string } } = {
@@ -759,7 +764,7 @@ export default function ResultsPage(props: { params: Promise<{ id: string }> }) 
                 All Questions
               </Button>
               {Object.entries(result.sections)
-                .filter(([section, score]) => score > 0 && getSectionStats(section).total > 0)
+                .filter(([section]) => getSectionStats(section).total > 0)
                 .map(([section]) => (
                   <Button
                     key={section}
