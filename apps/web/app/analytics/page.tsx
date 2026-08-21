@@ -7,9 +7,35 @@ import StudentAnalytics from "@/components/student-analytics"
 import { useAuth } from "@/hooks/use-auth"
 import { MobilePageHeader } from "@/components/layout/mobile-page-header"
 
+interface SubmittedAttempt {
+  attemptId: string
+  quizId: string
+  startedAt: string
+  submittedAt: string | null
+  totalScore: number | null
+  correctCount: number | null
+  wrongCount: number | null
+  unansweredCount: number | null
+  timeSpentMs: number | null
+}
+
+interface AnalyticsResult {
+  _id: string
+  date: string
+  quizName: string
+  quizId: string
+  totalScore: number
+  correctAnswers: number
+  wrongAnswers: number
+  unanswered: number
+  timeSpent: number
+  sections: Record<string, number>
+  answers: []
+}
+
 export default function AnalyticsPage() {
   const { user } = useAuth()
-  const [results, setResults] = useState<any[]>([])
+  const [results, setResults] = useState<AnalyticsResult[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -17,19 +43,24 @@ export default function AnalyticsPage() {
     if (!user) return
     setRefreshing(true)
     try {
-      const res = await fetch(`/api/analytics?_t=${Date.now()}`, {
+      const res = await fetch(`/api/attempts?status=SUBMITTED&_t=${Date.now()}`, {
         headers: { Authorization: `Bearer ${user.token || "student-token-placeholder"}` }
       })
-      if (res.ok) {
-        const data = await res.json()
-        setResults(data.results || [])
-      } else {
-        const fallbackRes = await fetch(`/api/results?_t=${Date.now()}`, {
-          headers: { Authorization: `Bearer ${user.token || "student-token-placeholder"}` }
-        })
-        const fallbackData = await fallbackRes.json()
-        setResults(fallbackData.results || [])
-      }
+      if (!res.ok) throw new Error("Failed to fetch submitted attempts")
+      const data = await res.json()
+      setResults(((data.attempts || []) as SubmittedAttempt[]).map((attempt) => ({
+        _id: attempt.attemptId,
+        date: attempt.submittedAt || attempt.startedAt,
+        quizName: "Quiz attempt",
+        quizId: attempt.quizId,
+        totalScore: attempt.totalScore || 0,
+        correctAnswers: attempt.correctCount || 0,
+        wrongAnswers: attempt.wrongCount || 0,
+        unanswered: attempt.unansweredCount || 0,
+        timeSpent: Math.round((attempt.timeSpentMs || 0) / 1000),
+        sections: {},
+        answers: [],
+      })))
     } catch (error) {
       console.error("Failed to fetch analytics:", error)
     } finally {

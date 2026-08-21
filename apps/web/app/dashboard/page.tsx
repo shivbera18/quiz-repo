@@ -23,21 +23,16 @@ import {
 } from "lucide-react"
 
 interface RecentAttempt {
-  _id: string
-  date: string
-  totalScore: number
-  quizName: string
+  attemptId: string
   quizId: string
-  rawScore?: number
-  correctAnswers: number
-  wrongAnswers: number
-  unanswered: number
-  timeSpent: number
-  sections: {
-    reasoning: number
-    quantitative: number
-    english: number
-  }
+  status: string
+  startedAt: string
+  submittedAt: string | null
+  totalScore: number | null
+  correctCount: number | null
+  wrongCount: number | null
+  unansweredCount: number | null
+  timeSpentMs: number | null
 }
 
 interface DashboardQuestionItem {
@@ -150,38 +145,21 @@ export default function DashboardPage() {
     if (!loading && user) {
       const fetchAttempts = async () => {
         try {
-          const response = await fetch("/api/results", {
+          const response = await fetch("/api/attempts?status=SUBMITTED", {
             headers: {
               Authorization: `Bearer ${user.token || "student-token-placeholder"}`,
               "Cache-Control": "no-cache, no-store, must-revalidate",
             },
           })
-
-          if (response.ok) {
-            const data = await response.json()
-            const attempts = data.results || []
-            const sortedAttempts = attempts.sort((a: RecentAttempt, b: RecentAttempt) =>
-              new Date(b.date).getTime() - new Date(a.date).getTime()
-            )
-
-            setAllAttempts(sortedAttempts)
-            setRecentAttempts(sortedAttempts.slice(0, 5))
-          } else {
-            const results: RecentAttempt[] = JSON.parse(localStorage.getItem("quizResults") || "[]")
-            const sortedResults = results
-              .sort((a: RecentAttempt, b: RecentAttempt) => new Date(b.date).getTime() - new Date(a.date).getTime())
-
-            setAllAttempts(sortedResults)
-            setRecentAttempts(sortedResults.slice(0, 5))
-          }
+          if (!response.ok) throw new Error("Failed to fetch attempts")
+          const data = await response.json()
+          const attempts = data.attempts || []
+          setAllAttempts(attempts)
+          setRecentAttempts(attempts.slice(0, 5))
         } catch (error) {
           console.error("Failed to fetch attempts:", error)
-          const results: RecentAttempt[] = JSON.parse(localStorage.getItem("quizResults") || "[]")
-          const sortedResults = results
-            .sort((a: RecentAttempt, b: RecentAttempt) => new Date(b.date).getTime() - new Date(a.date).getTime())
-
-          setAllAttempts(sortedResults)
-          setRecentAttempts(sortedResults.slice(0, 5))
+          setAllAttempts([])
+          setRecentAttempts([])
         } finally {
           setLoadingAttempts(false)
         }
@@ -260,7 +238,7 @@ export default function DashboardPage() {
             <div className="min-w-0 flex-1">
               <p className="text-xs text-muted-foreground font-bold">Avg Score</p>
               <p className="text-xl sm:text-2xl font-black truncate">
-                {(allAttempts.reduce((sum, a) => sum + a.totalScore, 0) / allAttempts.length).toFixed(0)}%
+                {(allAttempts.reduce((sum, a) => sum + (a.totalScore || 0), 0) / allAttempts.length).toFixed(0)}%
               </p>
             </div>
           </div>
@@ -270,7 +248,7 @@ export default function DashboardPage() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs text-muted-foreground font-bold">Best Score</p>
-              <p className="text-xl sm:text-2xl font-black truncate">{Math.max(...allAttempts.map(a => a.totalScore)).toFixed(0)}%</p>
+              <p className="text-xl sm:text-2xl font-black truncate">{Math.max(...allAttempts.map(a => a.totalScore || 0)).toFixed(0)}%</p>
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white/65 shadow-[6px_6px_0px_0px_#000] sm:shadow-[8px_8px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.65)] sm:dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_rgba(255,255,255,0.75)] transition-all">
@@ -280,7 +258,7 @@ export default function DashboardPage() {
             <div className="min-w-0 flex-1">
               <p className="text-xs text-muted-foreground font-bold">Study Time</p>
               <p className="text-xl sm:text-2xl font-black">
-                {(allAttempts.reduce((sum, a) => sum + (a.timeSpent || 0), 0) / 60).toFixed(0)}m
+                {(allAttempts.reduce((sum, a) => sum + (a.timeSpentMs || 0), 0) / 60_000).toFixed(0)}m
               </p>
             </div>
           </div>
@@ -392,24 +370,18 @@ export default function DashboardPage() {
             {recentAttempts.length > 0 ? (
               <div className="space-y-2">
                 {recentAttempts.slice(0, 3).map((attempt) => (
-                  <div key={attempt._id} className="flex items-center justify-between p-3 rounded-lg border-2 border-black dark:border-white/65 bg-card hover:bg-accent/50 transition-colors">
+                  <div key={attempt.attemptId} className="flex items-center justify-between p-3 rounded-lg border-2 border-black dark:border-white/65 bg-card hover:bg-accent/50 transition-colors">
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm truncate">{attempt.quizName}</p>
+                      <p className="font-bold text-sm truncate">Quiz attempt</p>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(attempt.date).toLocaleDateString()}
+                        {new Date(attempt.submittedAt || attempt.startedAt).toLocaleDateString()}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge 
-                        className={`text-xs font-bold ${
-                          attempt.totalScore >= 70 
-                            ? 'bg-green-400 text-black border-black' 
-                            : 'bg-orange-400 text-black border-black'
-                        }`}
-                      >
-                        {Math.round(attempt.totalScore)}%
+                      <Badge className={`text-xs font-bold ${(attempt.totalScore || 0) >= 70 ? 'bg-green-400 text-black border-black' : 'bg-orange-400 text-black border-black'}`}>
+                        {Math.round(attempt.totalScore || 0)}%
                       </Badge>
-                      <Link href={`/results/${attempt._id}`}>
+                      <Link href={`/results/${attempt.attemptId}`}>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
                           <Eye className="h-4 w-4" />
                         </Button>
