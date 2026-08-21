@@ -17,9 +17,9 @@ interface Quiz {
   id: string
   title: string
   description: string
-  duration: number
-  sections: string[]
-  questions: unknown[]
+  timeLimitSec: number
+  sectionNames: string[]
+  questionCount: number
   isActive: boolean
   difficulty?: string
 }
@@ -48,20 +48,7 @@ export default function FullMockTestsPage() {
           })
           const quizzesData = await quizzesRes.json()
 
-          // Parse sections if they're JSON strings
-          const activeQuizzes = quizzesData
-            .filter((q: Quiz) => q.isActive && q.questions?.length > 0)
-            .map((quiz: Quiz) => {
-              let sections = quiz.sections
-              if (typeof sections === 'string') {
-                try {
-                  sections = JSON.parse(sections)
-                } catch {
-                  sections = []
-                }
-              }
-              return { ...quiz, sections: Array.isArray(sections) ? sections : [] }
-            })
+          const activeQuizzes = quizzesData.filter((q: Quiz) => q.isActive && q.questionCount > 0)
 
           setAvailableQuizzes(activeQuizzes)
         } catch (error) {
@@ -83,10 +70,7 @@ export default function FullMockTestsPage() {
     console.log('Attempted quiz IDs:', attemptedQuizIds)
     console.log('Unattempted quizzes:', unattemptedQuizzes.length)
 
-    const fullMockTests = unattemptedQuizzes.filter((q: Quiz) => {
-      const sectionCount = Array.isArray(q.sections) ? q.sections.length : 0
-      return sectionCount > 1
-    })
+    const fullMockTests = unattemptedQuizzes.filter((q: Quiz) => q.sectionNames.length > 1)
 
     console.log('Full mock tests:', fullMockTests.length, fullMockTests)
 
@@ -94,9 +78,8 @@ export default function FullMockTestsPage() {
       const matchDifficulty = activeFilters.difficulty === "all" ||
         !quiz.difficulty ||
         quiz.difficulty === activeFilters.difficulty
-      const matchDuration = !quiz.duration || quiz.duration <= activeFilters.duration[1]
-
-      console.log('Quiz:', quiz.title, 'Difficulty:', quiz.difficulty, 'Duration:', quiz.duration, 'Matches:', matchDifficulty && matchDuration)
+      const durationMinutes = quiz.timeLimitSec / 60
+      const matchDuration = durationMinutes <= activeFilters.duration[1]
 
       return matchDifficulty && matchDuration
     })

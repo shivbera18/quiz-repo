@@ -10,9 +10,9 @@ interface Quiz {
   id: string
   title: string
   description: string
-  duration: number
-  sections: string[]
-  questions: any[]
+  timeLimitSec: number
+  sectionNames: string[]
+  questionCount: number
   isActive: boolean
   difficulty?: string
 }
@@ -41,20 +41,7 @@ export default function SectionalTestsPage() {
           })
           const quizzesData = await quizzesRes.json()
 
-          // Parse sections if they're JSON strings
-          const activeQuizzes = quizzesData
-            .filter((q: Quiz) => q.isActive && q.questions?.length > 0)
-            .map((quiz: any) => {
-              let sections = quiz.sections
-              if (typeof sections === 'string') {
-                try {
-                  sections = JSON.parse(sections)
-                } catch {
-                  sections = []
-                }
-              }
-              return { ...quiz, sections: Array.isArray(sections) ? sections : [] }
-            })
+          const activeQuizzes = quizzesData.filter((q: Quiz) => q.isActive && q.questionCount > 0)
 
           setAvailableQuizzes(activeQuizzes)
         } catch (error) {
@@ -71,16 +58,13 @@ export default function SectionalTestsPage() {
   useEffect(() => {
     const attemptedQuizIds = attemptedQuizzes.map((attempt: any) => attempt.quizId).filter(Boolean)
     const unattemptedQuizzes = availableQuizzes.filter((quiz: Quiz) => !attemptedQuizIds.includes(quiz.id))
-    const sectionalTests = unattemptedQuizzes.filter((q: Quiz) => {
-      const sectionCount = Array.isArray(q.sections) ? q.sections.length : 0
-      return sectionCount === 1
-    })
+    const sectionalTests = unattemptedQuizzes.filter((q: Quiz) => q.sectionNames.length === 1)
 
     const filtered = sectionalTests.filter(quiz => {
       const matchDifficulty = activeFilters.difficulty === "all" ||
         !quiz.difficulty ||
         quiz.difficulty === activeFilters.difficulty
-      const matchDuration = !quiz.duration || quiz.duration <= activeFilters.duration[1]
+      const matchDuration = quiz.timeLimitSec / 60 <= activeFilters.duration[1]
       return matchDifficulty && matchDuration
     })
 

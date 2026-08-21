@@ -52,9 +52,9 @@ interface Quiz {
   id: string
   title: string
   description: string
-  duration: number
-  sections: string[]
-  questions: DashboardQuestionItem[]
+  timeLimitSec: number
+  sectionNames: string[]
+  questionCount: number
   isActive: boolean
 }
 
@@ -198,21 +198,7 @@ export default function DashboardPage() {
         .then((res) => res.ok ? res.json() : [])
         .then((data) => {
           const quizzesArray = Array.isArray(data) ? data : (data.value || data)
-          const activeQuizzes = quizzesArray.filter((q: Quiz) => q.isActive && q.questions?.length > 0)
-          setAvailableQuizzes(activeQuizzes)
-
-          const allQuestions = activeQuizzes.flatMap((quiz: Quiz) =>
-            quiz.questions?.map((q: DashboardQuestionItem) => ({
-              id: q.id || Math.random().toString(),
-              question: q.question,
-              options: q.options,
-              correctAnswer: q.correctAnswer,
-              section: q.section || 'General'
-            })) || []
-          )
-
-          const shuffled = allQuestions.sort(() => Math.random() - 0.5)
-          setFlashQuestions(shuffled.slice(0, 10))
+          setAvailableQuizzes(quizzesArray.filter((q: Quiz) => q.isActive && q.questionCount > 0))
         })
         .catch((error) => {
           console.error("Error fetching quizzes:", error)
@@ -225,8 +211,8 @@ export default function DashboardPage() {
 
   const attemptedQuizIds = allAttempts.map(attempt => attempt.quizId)
   const unattemptedQuizzes = availableQuizzes.filter((quiz: Quiz) => !attemptedQuizIds.includes(quiz.id))
-  const fullMockTests = unattemptedQuizzes.filter((q: Quiz) => q.sections.length > 1)
-  const sectionalTests = unattemptedQuizzes.filter((q: Quiz) => q.sections.length === 1)
+  const fullMockTests = unattemptedQuizzes.filter((q: Quiz) => q.sectionNames.length > 1)
+  const sectionalTests = unattemptedQuizzes.filter((q: Quiz) => q.sectionNames.length === 1)
 
   if (loading) {
     return (
