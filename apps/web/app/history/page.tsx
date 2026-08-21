@@ -45,7 +45,7 @@ export default function HistoryPage() {
       // Fetch attempts from API
       const fetchAttempts = async () => {
         try {
-          const response = await fetch("/api/results", {
+          const response = await fetch("/api/attempts?status=SUBMITTED&limit=100", {
             headers: {
               Authorization: `Bearer ${user.token || "student-token-placeholder"}`,
               "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -54,9 +54,57 @@ export default function HistoryPage() {
           
           if (response.ok) {
             const data = await response.json()
-            const attempts = data.results || []
-            setAttempts(attempts)
-            setFilteredAttempts(attempts)
+            const attemptSummaries = (data.attempts || []) as Array<{
+              attemptId: string
+              quizId: string
+              status: string
+              submittedAt: string
+              totalScore: number
+              correctCount: number
+              wrongCount: number
+              unansweredCount: number
+              timeSpentMs: number
+            }>
+
+            const enriched = await Promise.all(
+              attemptSummaries.map(async (att) => {
+                try {
+                  const res = await fetch(`/api/attempts/${att.attemptId}/result`, {
+                    headers: { Authorization: `Bearer ${user.token || "student-token-placeholder"}` },
+                  })
+                  if (res.ok) {
+                    const resJson = await res.json()
+                    const r = resJson.result
+                    return {
+                      _id: r._id,
+                      quizId: r.quizId,
+                      quizName: r.quizName,
+                      date: r.date,
+                      timeSpent: r.timeSpent,
+                      totalScore: r.totalScore,
+                      correctAnswers: r.correctAnswers,
+                      wrongAnswers: r.wrongAnswers,
+                      unanswered: r.unanswered,
+                      sections: r.sections || { reasoning: 0, quantitative: 0, english: 0 },
+                    } as HistoryAttempt
+                  }
+                } catch {}
+                return {
+                  _id: att.attemptId,
+                  quizId: att.quizId,
+                  quizName: "Quiz Attempt",
+                  date: att.submittedAt,
+                  timeSpent: Math.round((att.timeSpentMs || 0) / 1000),
+                  totalScore: att.totalScore || 0,
+                  correctAnswers: att.correctCount || 0,
+                  wrongAnswers: att.wrongCount || 0,
+                  unanswered: att.unansweredCount || 0,
+                  sections: { reasoning: 0, quantitative: 0, english: 0 },
+                } as HistoryAttempt
+              })
+            )
+            setAttempts(enriched)
+            setFilteredAttempts(enriched)
           } else {
             // Fallback to localStorage
             const results = JSON.parse(localStorage.getItem("quizResults") || "[]")

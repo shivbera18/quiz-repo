@@ -36,7 +36,7 @@ export default function RecentAttemptsPage() {
     if (!loading && user) {
       const fetchAttempts = async () => {
         try {
-          const response = await fetch("/api/results", {
+          const response = await fetch("/api/attempts?status=SUBMITTED&limit=10", {
             headers: {
               Authorization: `Bearer ${user.token || "student-token-placeholder"}`,
               "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -45,23 +45,66 @@ export default function RecentAttemptsPage() {
           
           if (response.ok) {
             const data = await response.json()
-            const attempts = data.results || []
-            const sortedAttempts = attempts.sort((a: RecentAttempt, b: RecentAttempt) => 
-              new Date(b.date).getTime() - new Date(a.date).getTime()
+            const attemptSummaries = (data.attempts || []) as Array<{
+              attemptId: string
+              quizId: string
+              status: string
+              submittedAt: string
+              totalScore: number
+              correctCount: number
+              wrongCount: number
+              unansweredCount: number
+              timeSpentMs: number
+            }>
+
+            const enriched = await Promise.all(
+              attemptSummaries.map(async (att) => {
+                try {
+                  const res = await fetch(`/api/attempts/${att.attemptId}/result`, {
+                    headers: { Authorization: `Bearer ${user.token || "student-token-placeholder"}` },
+                  })
+                  if (res.ok) {
+                    const resJson = await res.json()
+                    const r = resJson.result
+                    return {
+                      _id: r._id,
+                      id: r._id,
+                      quizId: r.quizId,
+                      quizName: r.quizName,
+                      date: r.date,
+                      timeSpent: r.timeSpent,
+                      totalScore: r.totalScore,
+                      correctAnswers: r.correctAnswers,
+                      wrongAnswers: r.wrongAnswers,
+                      unanswered: r.unanswered,
+                      sections: r.sections || { reasoning: 0, quantitative: 0, english: 0 },
+                    } as RecentAttempt
+                  }
+                } catch {}
+                return {
+                  _id: att.attemptId,
+                  id: att.attemptId,
+                  quizId: att.quizId,
+                  quizName: "Quiz Attempt",
+                  date: att.submittedAt,
+                  timeSpent: Math.round((att.timeSpentMs || 0) / 1000),
+                  totalScore: att.totalScore || 0,
+                  correctAnswers: att.correctCount || 0,
+                  wrongAnswers: att.wrongCount || 0,
+                  unanswered: att.unansweredCount || 0,
+                  sections: { reasoning: 0, quantitative: 0, english: 0 },
+                } as RecentAttempt
+              })
             )
-            setRecentAttempts(sortedAttempts.slice(0, 10)) // Show last 10 attempts
+            setRecentAttempts(enriched.slice(0, 10))
           } else {
             const results: RecentAttempt[] = JSON.parse(localStorage.getItem("quizResults") || "[]")
-            const sortedResults = results
-              .sort((a: RecentAttempt, b: RecentAttempt) => new Date(b.date).getTime() - new Date(a.date).getTime())
-            setRecentAttempts(sortedResults.slice(0, 10))
+            setRecentAttempts(results.slice(0, 10))
           }
         } catch (error) {
           console.error("Failed to fetch attempts:", error)
           const results: RecentAttempt[] = JSON.parse(localStorage.getItem("quizResults") || "[]")
-          const sortedResults = results
-            .sort((a: RecentAttempt, b: RecentAttempt) => new Date(b.date).getTime() - new Date(a.date).getTime())
-          setRecentAttempts(sortedResults.slice(0, 10))
+          setRecentAttempts(results.slice(0, 10))
         } finally {
           setLoadingAttempts(false)
         }
