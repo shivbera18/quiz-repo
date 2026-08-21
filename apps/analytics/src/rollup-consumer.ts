@@ -261,24 +261,30 @@ async function handleAttemptSubmitted(data: AttemptSubmittedData, eventId: strin
       },
     })
 
+    const existingDaily = await tx.userDailyActivity.findUnique({
+      where: { userId_activityDate: { userId: data.userId, activityDate: submittedDate } },
+    })
+
     await tx.userDailyActivity.upsert({
       where: { userId_activityDate: { userId: data.userId, activityDate: submittedDate } },
       update: {
         attempts: { increment: 1 },
         sumTimeMs: { increment: BigInt(data.timeSpentMs) },
-        bestScore: Math.max(0, data.totalScore),
+        bestScore: Math.max(existingDaily?.bestScore ?? 0, data.totalScore),
       },
       create: { userId: data.userId, activityDate: submittedDate, attempts: 1, sumTimeMs: BigInt(data.timeSpentMs), bestScore: data.totalScore },
     })
 
+    const rollupBuckets = [
+      { quizId: data.quizId, subjectId: "__all__" },
+      ...(subjectId ? [{ quizId: "__all__", subjectId }] : []),
+      { quizId: "__all__", subjectId: "__all__" },
+    ]
+
     await upsertDailyRollupDeltas(
       tx,
       submittedDate,
-      [
-        { quizId: data.quizId, subjectId: "__all__" },
-        { quizId: "__all__", subjectId: subjectId ?? "__all__" },
-        { quizId: "__all__", subjectId: "__all__" },
-      ],
+      rollupBuckets,
       { attempts: 1, uniqueUsers: isNewUserForQuiz ? 1 : 0, sumScore: data.totalScore, sumTimeMs: BigInt(data.timeSpentMs) }
     )
   })
