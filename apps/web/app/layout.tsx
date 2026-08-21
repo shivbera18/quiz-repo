@@ -5,7 +5,7 @@ import Script from "next/script"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { PageTransition } from "@/components/page-transition"
-import PWAHandler from "@/components/pwa-handler"
+import ServiceWorkerRegistration from "@/components/service-worker-registration"
 import { AppShell } from "@/components/layout/app-shell"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -71,7 +71,7 @@ export default function RootLayout({
               {children}
             </AppShell>
           </PageTransition>
-          {/* <PWAHandler /> */}
+          <ServiceWorkerRegistration />
         </ThemeProvider>
         
         {/* Umami Analytics */}

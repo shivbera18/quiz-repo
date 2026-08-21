@@ -1,13 +1,10 @@
 // Service Worker for Quiz App PWA
-const CACHE_NAME = 'quiz-app-v1';
-const STATIC_CACHE = 'quiz-app-static-v1';
-const DYNAMIC_CACHE = 'quiz-app-dynamic-v1';
+const STATIC_CACHE = 'quiz-app-static-v2';
+const DYNAMIC_CACHE = 'quiz-app-dynamic-v2';
 
 // Resources to cache immediately
 const STATIC_ASSETS = [
-  '/',
-  '/dashboard',
-  '/manifest.json',
+  '/manifest.webmanifest',
   '/icons/icon-192x192.svg',
   '/icons/icon-512x512.svg'
 ];
@@ -40,13 +37,17 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - serve public same-origin resources from cache, fallback to network
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
-  if (event.request.method !== 'GET') return;
-  
-  // Skip external requests
-  if (!event.request.url.startsWith(self.location.origin)) return;
+  const requestUrl = new URL(event.request.url);
+  const isStaticAsset = requestUrl.pathname.startsWith('/_next/static/') ||
+    requestUrl.pathname.startsWith('/icons/') ||
+    requestUrl.pathname === '/manifest.webmanifest';
+
+  if (event.request.method !== 'GET' ||
+    requestUrl.origin !== self.location.origin ||
+    !isStaticAsset ||
+    event.request.headers.has('authorization')) return;
 
   event.respondWith(
     caches.match(event.request)
@@ -55,30 +56,19 @@ self.addEventListener('fetch', (event) => {
           return cachedResponse;
         }
 
-        // Not in cache, fetch from network
         return fetch(event.request)
           .then((response) => {
-            // Don't cache non-successful responses
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
+            const cacheControl = response.headers.get('cache-control') || '';
+            const isCacheable = response.status === 200 &&
+              response.type === 'basic' &&
+              !/(?:no-store|private)/i.test(cacheControl);
 
-            // Clone the response for caching
-            const responseToCache = response.clone();
+            if (!isCacheable) return response;
 
-            // Cache dynamic content
-            caches.open(DYNAMIC_CACHE)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return response;
-          })
-          .catch(() => {
-            // Network failed, return offline page for navigation requests
-            if (event.request.mode === 'navigate') {
-              return caches.match('/');
-            }
+            return caches.open(DYNAMIC_CACHE)
+              .then((cache) => cache.put(event.request, response.clone()))
+              .catch(() => undefined)
+              .then(() => response);
           });
       })
   );
@@ -98,8 +88,18 @@ self.addEventListener('push', (event) => {
 
   let data = {};
   if (event.data) {
-    data = event.data.json();
+    const rawData = event.data.text();
+    try {
+      const parsed = JSON.parse(rawData);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) data = parsed;
+    } catch {
+      data = { body: rawData };
+    }
   }
+  const notificationData = data.data && typeof data.data === 'object' && !Array.isArray(data.data)
+    ? data.data
+    : {};
+  const priority = notificationData.priority || data.priority;
 
   const options = {
     body: data.body || 'New announcement available!',
@@ -109,7 +109,7 @@ self.addEventListener('push', (event) => {
     data: {
       dateOfArrival: Date.now(),
       primaryKey: data.id || 1,
-      url: data.url || '/dashboard'
+      url: notificationData.url || data.url || '/dashboard'
     },
     actions: [
       {
@@ -122,17 +122,17 @@ self.addEventListener('push', (event) => {
         title: 'Dismiss'
       }
     ],
-    requireInteraction: data.priority === 'urgent' || data.priority === 'high',
+    requireInteraction: priority === 'urgent' || priority === 'high',
     silent: false,
     tag: data.tag || 'announcement' // Group similar notifications
   };
 
   // Set title based on priority
   let title = 'Quiz App';
-  if (data.priority === 'urgent') {
-    title = '🚨 URGENT: Quiz App';
-  } else if (data.priority === 'high') {
-    title = '⚠️ Quiz App';
+  if (priority === 'urgent') {
+    title = '🚨 URGENT: ' + (data.title || 'Quiz App');
+  } else if (priority === 'high') {
+    title = '⚠️ ' + (data.title || 'Quiz App');
   } else if (data.title) {
     title = data.title;
   }
@@ -152,22 +152,27 @@ self.addEventListener('notificationclick', (event) => {
     return;
   }
 
-  // Default action or 'view' action
-  const urlToOpen = event.notification.data?.url || '/dashboard';
+  let targetUrl;
+  try {
+    targetUrl = new URL(event.notification.data?.url || '/dashboard', self.location.origin);
+    if (targetUrl.origin !== self.location.origin || !['http:', 'https:'].includes(targetUrl.protocol)) {
+      targetUrl = new URL('/dashboard', self.location.origin);
+    }
+  } catch {
+    targetUrl = new URL('/dashboard', self.location.origin);
+  }
 
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true })
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then((windowClients) => {
-        // Check if there is already a window/tab open with the target URL
-        for (let client of windowClients) {
-          if (client.url === urlToOpen && 'focus' in client) {
+        for (const client of windowClients) {
+          if (client.url === targetUrl.href && 'focus' in client) {
             return client.focus();
           }
         }
 
-        // If not, open a new window/tab
-        if (clients.openWindow) {
-          return clients.openWindow(urlToOpen);
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(targetUrl.href);
         }
       })
   );
