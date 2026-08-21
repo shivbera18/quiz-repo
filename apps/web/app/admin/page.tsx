@@ -683,18 +683,7 @@ export default function AdminPage() {
           totalAttempts,
           totalQuizzes: quizData.length,
           activeQuizzes: quizData.filter((q: any) => q.isActive !== false).length,
-          // Calculate total questions by parsing JSON strings properly
-          totalQuestions: quizData.reduce((sum: number, quiz: any) => {
-            let questions = quiz.questions || [];
-            if (typeof questions === 'string') {
-              try {
-                questions = JSON.parse(questions);
-              } catch (e) {
-                questions = [];
-              }
-            }
-            return sum + (Array.isArray(questions) ? questions.length : 0);
-          }, 0),
+          totalQuestions: quizData.reduce((sum: number, quiz: { questionCount?: number }) => sum + (quiz.questionCount || 0), 0),
           averageScore,
           recentActivity: results.slice(-5)
         }
