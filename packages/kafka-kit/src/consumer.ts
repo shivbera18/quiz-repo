@@ -32,6 +32,7 @@ export async function runConsumer<T>(
   const consumer = kafka.consumer({
     groupId: opts.groupId,
     maxWaitTimeInMs: 500,
+    ...(opts.maxPollIntervalMs ? { maxPollIntervalMs: opts.maxPollIntervalMs } : {}),
   })
   await consumer.connect()
   await Promise.all(opts.topics.map((topic) => consumer.subscribe({ topic, fromBeginning: true })))
