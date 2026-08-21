@@ -181,10 +181,12 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
     questionId: string,
     section: string,
     selectedAnswer: number | null,
-    markedForReview: boolean
+    markedForReview: boolean,
+    explicitTimeSpentMs?: number
   ) => {
     if (!attemptId) return Promise.resolve()
     const clientSeq = ++clientSeqRef.current
+    const timeSpentMs = explicitTimeSpentMs !== undefined ? explicitTimeSpentMs : (questionTimes[questionId] || 0)
     return fetch(`/api/attempts/${attemptId}/answers`, {
       method: "PATCH",
       headers: {
@@ -199,7 +201,7 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
             selectedAnswer,
             markedForReview,
             visited: true,
-            timeSpentMs: questionTimes[questionId] || 0,
+            timeSpentMs,
             clientSeq,
           },
         ],
@@ -287,18 +289,26 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
     submittedRef.current = true
     setSubmitting(true)
 
-    recordTimeOnCurrentQuestion()
+    // Calculate final time spent on the current question accurately
+    const currentQuestion = questions[currentQuestionIndex]
+    let currentQuestionTotalTimeMs = 0
+    if (currentQuestion && questionStartTime) {
+      const additionalTime = Math.max(0, Date.now() - questionStartTime)
+      currentQuestionTotalTimeMs = (questionTimes[currentQuestion.id] || 0) + additionalTime
+      setQuestionTimes((prev) => ({
+        ...prev,
+        [currentQuestion.id]: currentQuestionTotalTimeMs,
+      }))
+    }
 
     // Guarantee the last thing the user touched is persisted before the server
     // scores the attempt -- every other autosave call is fire-and-forget, but
     // this one must land first.
-    const currentQuestion = questions[currentQuestionIndex]
     if (currentQuestion) {
       const currentAnswer = answers.find((a) => a.questionId === currentQuestion.id)?.selectedAnswer ?? null
       const currentMarked = questionStatuses[currentQuestion.id]?.markedForReview || false
-      await postAnswerSync(currentQuestion.id, currentQuestion.section, currentAnswer, currentMarked)
+      await postAnswerSync(currentQuestion.id, currentQuestion.section, currentAnswer, currentMarked, currentQuestionTotalTimeMs)
     }
-
     try {
       const response = await fetch(`/api/attempts/${attemptId}/submit`, {
         method: "POST",
