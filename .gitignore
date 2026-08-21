@@ -11,6 +11,10 @@ node_modules
 # Claude Code local settings (permissions/session config, not project source)
 .claude/settings.local.json
 
+# twin runtime state (claims ledger, run logs) -- only .twin/AGENTS.md is tracked
+.twin/*
+!.twin/AGENTS.md
+
 # testing
 coverage/
 test-results/

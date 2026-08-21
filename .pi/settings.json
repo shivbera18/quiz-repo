@@ -1,5 +1,6 @@
 {
   "skills": [
+    ".pi/skills/twin/skills",
     "../.claude/skills"
   ],
   "enableSkillCommands": true,
