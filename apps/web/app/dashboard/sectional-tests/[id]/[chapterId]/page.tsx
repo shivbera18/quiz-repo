@@ -140,7 +140,7 @@ export default function ChapterQuizzesPage() {
                   </div>
                 </div>
                 <div className="sm:ml-6 w-full sm:w-auto">
-                  <Link href={`/quiz/${quiz.id}`} className="block w-full">
+                  <Link href={`/quiz/${quiz.id}?fromSubject=${subjectId}&fromChapter=${chapterId}`} className="block w-full">
                     <Button className="flex items-center justify-center w-full sm:w-auto space-x-2 mt-4 sm:mt-0">
                       <Play className="h-4 w-4" />
                       <span>Start Quiz</span>

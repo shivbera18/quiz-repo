@@ -32,7 +32,7 @@ export default function SectionalTestsPage() {
     if (!loading && user) {
       const fetchData = async () => {
         try {
-          const attemptsRes = await fetch("/api/attempts?status=SUBMITTED", {
+          const attemptsRes = await fetch("/api/attempts?status=SUBMITTED&limit=100", {
             headers: { Authorization: `Bearer ${user.token || "student-token-placeholder"}` },
           })
           if (!attemptsRes.ok) throw new Error("Failed to fetch attempts")

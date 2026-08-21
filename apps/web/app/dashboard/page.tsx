@@ -145,7 +145,7 @@ export default function DashboardPage() {
     if (!loading && user) {
       const fetchAttempts = async () => {
         try {
-          const response = await fetch("/api/attempts?status=SUBMITTED", {
+          const response = await fetch("/api/attempts?status=SUBMITTED&limit=100", {
             headers: {
               Authorization: `Bearer ${user.token || "student-token-placeholder"}`,
               "Cache-Control": "no-cache, no-store, must-revalidate",
