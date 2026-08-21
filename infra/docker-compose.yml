@@ -8,12 +8,10 @@
 # the container stack uses the next port up to avoid a collision. See
 # HOSTING.md.
 #
-# Every credential below has a LOCAL-DEV-ONLY default (matching
-# infra/postgres/init/01-schemas-roles.sh) so `docker compose up` works with
-# zero setup. For anything beyond your own machine, set real values in
-# infra/.env (see infra/.env.example) -- Compose reads that file
-# automatically because it sits next to this one. Nothing here needs the
-# compose file itself edited for a real deployment.
+# Database credentials below have LOCAL-DEV-ONLY defaults. Optional features
+# such as browser push stay disabled until configured in infra/.env. For
+# anything beyond your own machine, set real values there; Compose loads it
+# automatically because it sits next to this file.
 #
 # For a deployment reachable from the public internet, layer
 # docker-compose.prod.yml on top (see HOSTING.md's Oracle Cloud walkthrough)
@@ -383,9 +381,9 @@ services:
       DATABASE_URL: postgresql://notification_rw:${NOTIFICATION_RW_PASSWORD:-notification_rw_pw}@postgres:5432/quiz?schema=notification
       KAFKA_BROKERS: redpanda:9092
       REDIS_URL: redis://redis:6379
-      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-BNC5_612V-a7IYII4CWUMkfax-EZIu_1C9HnmkpgDgK5H7yvlQxyMxG2-fa6CHaSzG9jfUyJ5RPUOLtNdSjTzj8}
-      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-1ZWELtyKk8P0_60Qmx-wndP_Z7JoUT9nVMB93Q3yxFs}
-      VAPID_EMAIL: ${VAPID_EMAIL:-shivbera45@gmail.com}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_EMAIL: ${VAPID_EMAIL:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -411,9 +409,9 @@ services:
       DATABASE_URL: postgresql://notification_rw:${NOTIFICATION_RW_PASSWORD:-notification_rw_pw}@postgres:5432/quiz?schema=notification
       KAFKA_BROKERS: redpanda:9092
       REDIS_URL: redis://redis:6379
-      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-BNC5_612V-a7IYII4CWUMkfax-EZIu_1C9HnmkpgDgK5H7yvlQxyMxG2-fa6CHaSzG9jfUyJ5RPUOLtNdSjTzj8}
-      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-1ZWELtyKk8P0_60Qmx-wndP_Z7JoUT9nVMB93Q3yxFs}
-      VAPID_EMAIL: ${VAPID_EMAIL:-shivbera45@gmail.com}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_EMAIL: ${VAPID_EMAIL:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -432,6 +430,8 @@ services:
     build:
       context: ..
       dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
     restart: unless-stopped
     ports:
       - "3000:3000"
