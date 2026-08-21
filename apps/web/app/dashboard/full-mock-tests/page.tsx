@@ -21,7 +21,6 @@ interface Quiz {
   sectionNames: string[]
   questionCount: number
   isActive: boolean
-  difficulty?: string
 }
 
 export default function FullMockTestsPage() {
@@ -74,15 +73,7 @@ export default function FullMockTestsPage() {
 
     console.log('Full mock tests:', fullMockTests.length, fullMockTests)
 
-    const filtered = fullMockTests.filter(quiz => {
-      const matchDifficulty = activeFilters.difficulty === "all" ||
-        !quiz.difficulty ||
-        quiz.difficulty === activeFilters.difficulty
-      const durationMinutes = quiz.timeLimitSec / 60
-      const matchDuration = durationMinutes <= activeFilters.duration[1]
-
-      return matchDifficulty && matchDuration
-    })
+    const filtered = fullMockTests.filter(quiz => quiz.timeLimitSec / 60 <= activeFilters.duration[1])
 
     console.log('Filtered quizzes:', filtered.length)
     setFilteredQuizzes(filtered)

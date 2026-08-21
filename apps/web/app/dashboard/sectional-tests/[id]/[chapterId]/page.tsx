@@ -10,16 +10,11 @@ import Link from 'next/link';
 import { ThemeToggle } from "@/components/theme-toggle";
 
 interface Quiz {
-  id: string;
-  title: string;
-  description: string;
-  questionCount: number;
-  timeLimit: number;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
-  isCompleted: boolean;
-  bestScore: number | null;
-  attempts: number;
-  lastAttempted: string | null;
+  id: string
+  title: string
+  description: string
+  questionCount: number
+  timeLimit: number
 }
 
 interface ChapterInfo {
@@ -70,14 +65,6 @@ export default function ChapterQuizzesPage() {
     }
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Easy': return 'bg-green-100 text-green-800';
-      case 'Medium': return 'bg-yellow-100 text-yellow-800';
-      case 'Hard': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   if (loading) {
     return (
@@ -139,12 +126,6 @@ export default function ChapterQuizzesPage() {
                       {index + 1}
                     </div>
                     <h3 className="text-lg font-semibold break-words">{quiz.title}</h3>
-                    <Badge className={getDifficultyColor(quiz.difficulty)}>
-                      {quiz.difficulty}
-                    </Badge>
-                    {quiz.isCompleted && (
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                    )}
                   </div>
                   <p className="text-gray-600 mb-3 break-words">{quiz.description}</p>
                   <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500">
@@ -156,23 +137,13 @@ export default function ChapterQuizzesPage() {
                       <Clock className="h-4 w-4" />
                       <span>{quiz.timeLimit} minutes</span>
                     </div>
-                    {quiz.attempts > 0 && (
-                      <div className="flex items-center space-x-1">
-                        <span>Attempts: {quiz.attempts}</span>
-                      </div>
-                    )}
-                    {quiz.bestScore !== null && (
-                      <div className="flex items-center space-x-1">
-                        <span>Best: {quiz.bestScore}%</span>
-                      </div>
-                    )}
                   </div>
                 </div>
                 <div className="sm:ml-6 w-full sm:w-auto">
                   <Link href={`/quiz/${quiz.id}`} className="block w-full">
                     <Button className="flex items-center justify-center w-full sm:w-auto space-x-2 mt-4 sm:mt-0">
                       <Play className="h-4 w-4" />
-                      <span>{quiz.isCompleted ? 'Retake' : 'Start Quiz'}</span>
+                      <span>Start Quiz</span>
                     </Button>
                   </Link>
                 </div>

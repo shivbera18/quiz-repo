@@ -10,15 +10,11 @@ import Link from 'next/link';
 import { ThemeToggle } from "@/components/theme-toggle";
 
 interface Chapter {
-  id: string;
-  name: string;
-  description: string;
-  quizCount: number;
-  questionCount: number;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
-  estimatedTime: number;
-  completedQuizzes: number;
-  bestScore: number | null;
+  id: string
+  name: string
+  description: string
+  quizCount: number
+  questionCount: number
 }
 
 interface Subject {
@@ -65,14 +61,6 @@ export default function SubjectChaptersPage() {
     }
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Easy': return 'bg-green-100 text-green-800';
-      case 'Medium': return 'bg-yellow-100 text-yellow-800';
-      case 'Hard': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   if (loading) {
     return (
@@ -125,17 +113,8 @@ export default function SubjectChaptersPage() {
         {chapters.map((chapter) => (
           <Card key={chapter.id} className="hover:shadow-lg transition-shadow border-2 hover:border-blue-200">
             <CardHeader>
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <CardTitle className="text-lg mb-2">{chapter.name}</CardTitle>
-                  <CardDescription className="text-sm">
-                    {chapter.description}
-                  </CardDescription>
-                </div>
-                <Badge className={getDifficultyColor(chapter.difficulty)}>
-                  {chapter.difficulty}
-                </Badge>
-              </div>
+              <CardTitle className="text-lg mb-2">{chapter.name}</CardTitle>
+              <CardDescription className="text-sm">{chapter.description}</CardDescription>
             </CardHeader>
             
             <CardContent>
@@ -146,41 +125,17 @@ export default function SubjectChaptersPage() {
                   <span>{chapter.questionCount} Questions</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Clock className="h-4 w-4 text-green-500" />
-                  <span>{chapter.estimatedTime}min</span>
-                </div>
-                <div className="flex items-center space-x-2">
                   <BookOpen className="h-4 w-4 text-purple-500" />
-                  <span>{chapter.quizCount} Quiz{chapter.quizCount !== 1 ? 'es' : ''}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Trophy className="h-4 w-4 text-orange-500" />
-                  <span>
-                    {chapter.bestScore ? `${chapter.bestScore}%` : 'Not attempted'}
-                  </span>
+                  <span>{chapter.quizCount} Quiz{chapter.quizCount !== 1 ? 'zes' : ''}</span>
                 </div>
               </div>
 
-              {/* Progress */}
-              <div className="mb-4">
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Progress</span>
-                  <span>{chapter.completedQuizzes}/{chapter.quizCount}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full transition-all"
-                    style={{ 
-                      width: `${chapter.quizCount > 0 ? (chapter.completedQuizzes / chapter.quizCount) * 100 : 0}%` 
-                    }}
-                  ></div>
-                </div>
-              </div>
+
 
               {/* Action Button */}
               <Link href={`/dashboard/sectional-tests/${subjectId}/${chapter.id}`}>
                 <Button className="w-full">
-                  {chapter.completedQuizzes > 0 ? 'Continue Practice' : 'Start Chapter'}
+                  {chapter.quizCount > 0 ? 'Start Chapter' : 'No Quizzes Yet'}
                 </Button>
               </Link>
             </CardContent>

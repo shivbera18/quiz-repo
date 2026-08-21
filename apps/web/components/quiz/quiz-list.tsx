@@ -14,7 +14,6 @@ interface Quiz {
     timeLimitSec: number
     sectionNames: string[]
     questionCount: number
-    difficulty?: string
 }
 
 interface QuizListProps {
@@ -61,7 +60,7 @@ export function QuizList({ quizzes, emptyMessage = "No quizzes found." }: QuizLi
                             <CardHeader className="pb-3">
                                 <div className="flex items-start justify-between mb-3">
                                     <Badge className="capitalize text-xs font-bold bg-yellow-300 text-black border-2 border-black hover:bg-yellow-400">
-                                        {quiz.difficulty || "General"}
+                                        General
                                     </Badge>
                                     {quiz.sectionNames.length > 1 && (
                                         <Badge className="text-xs font-bold bg-blue-300 text-black border-2 border-black hover:bg-blue-400">Full Mock</Badge>

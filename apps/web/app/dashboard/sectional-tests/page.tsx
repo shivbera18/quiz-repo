@@ -14,7 +14,6 @@ interface Quiz {
   sectionNames: string[]
   questionCount: number
   isActive: boolean
-  difficulty?: string
 }
 
 export default function SectionalTestsPage() {
@@ -60,13 +59,7 @@ export default function SectionalTestsPage() {
     const unattemptedQuizzes = availableQuizzes.filter((quiz: Quiz) => !attemptedQuizIds.includes(quiz.id))
     const sectionalTests = unattemptedQuizzes.filter((q: Quiz) => q.sectionNames.length === 1)
 
-    const filtered = sectionalTests.filter(quiz => {
-      const matchDifficulty = activeFilters.difficulty === "all" ||
-        !quiz.difficulty ||
-        quiz.difficulty === activeFilters.difficulty
-      const matchDuration = quiz.timeLimitSec / 60 <= activeFilters.duration[1]
-      return matchDifficulty && matchDuration
-    })
+    const filtered = sectionalTests.filter(quiz => quiz.timeLimitSec / 60 <= activeFilters.duration[1])
 
     setFilteredQuizzes(filtered)
   }, [availableQuizzes, attemptedQuizzes, activeFilters])
