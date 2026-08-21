@@ -234,7 +234,7 @@ export default function AdminPage() {
           // Fetch quizzes
           const res = await fetch("/api/admin/quizzes", {
             headers: {
-              "X-Authorization": `Bearer ${user.token || "admin-token-placeholder"}`,
+              Authorization: `Bearer ${user.token || "admin-token-placeholder"}`,
             },
           })
           if (!res.ok) throw new Error("Failed to fetch quizzes")
@@ -401,7 +401,7 @@ export default function AdminPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Authorization": `Bearer ${user?.token || "admin-token-placeholder"}`,
+          Authorization: `Bearer ${user?.token || "admin-token-placeholder"}`,
         },
         body: JSON.stringify({
           title: newQuiz.title.trim(),
@@ -470,7 +470,7 @@ export default function AdminPage() {
       // Refetch quizzes to show the new one
       const updatedQuizzes = await fetch("/api/admin/quizzes", {
         headers: {
-          "X-Authorization": `Bearer ${user?.token || "admin-token-placeholder"}`,
+          Authorization: `Bearer ${user?.token || "admin-token-placeholder"}`,
         },
       })
       if (updatedQuizzes.ok) {
@@ -552,7 +552,7 @@ export default function AdminPage() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "X-Authorization": `Bearer ${user?.token || "admin-token-placeholder"}`,
+          Authorization: `Bearer ${user?.token || "admin-token-placeholder"}`,
         },
         body: JSON.stringify({
           title: newQuiz.title,
@@ -603,7 +603,7 @@ export default function AdminPage() {
       const res = await fetch(`/api/admin/quizzes/${quizId}`, {
         method: "DELETE",
         headers: {
-          "X-Authorization": `Bearer ${user?.token || "admin-token-placeholder"}`,
+          Authorization: `Bearer ${user?.token || "admin-token-placeholder"}`,
         },
       })
       if (!res.ok) throw new Error("Failed to delete quiz")
@@ -628,7 +628,7 @@ export default function AdminPage() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "X-Authorization": `Bearer ${user?.token || "admin-token-placeholder"}`,
+          Authorization: `Bearer ${user?.token || "admin-token-placeholder"}`,
         },
         body: JSON.stringify({
           ...quiz,
@@ -1530,7 +1530,7 @@ export default function AdminPage() {
                       method,
                       headers: {
                         "Content-Type": "application/json",
-                        "X-Authorization": `Bearer ${user?.token || "admin-token-placeholder"}`,
+                        Authorization: `Bearer ${user?.token || "admin-token-placeholder"}`,
                       },
                       body: JSON.stringify(newSubject),
                     })
@@ -1661,7 +1661,7 @@ export default function AdminPage() {
                         method,
                         headers: {
                           "Content-Type": "application/json",
-                          "X-Authorization": `Bearer ${user?.token || "admin-token-placeholder"}`,
+                          Authorization: `Bearer ${user?.token || "admin-token-placeholder"}`,
                         },
                         body: JSON.stringify({
                           ...newChapter,
@@ -1770,7 +1770,7 @@ export default function AdminPage() {
                               const res = await fetch(`/api/admin/subjects/${subject.id}?t=${Date.now()}`, {
                                 method: "DELETE",
                                 headers: {
-                                  "X-Authorization": `Bearer ${user?.token || "admin-token-placeholder"}`,
+                                  Authorization: `Bearer ${user?.token || "admin-token-placeholder"}`,
                                   'Cache-Control': 'no-cache',
                                 },
                               })
@@ -1833,7 +1833,7 @@ export default function AdminPage() {
                                       const res = await fetch(`/api/admin/chapters/${chapter.id}?t=${Date.now()}`, {
                                         method: "DELETE",
                                         headers: {
-                                          "X-Authorization": `Bearer ${user?.token || "admin-token-placeholder"}`,
+                                          Authorization: `Bearer ${user?.token || "admin-token-placeholder"}`,
                                           'Cache-Control': 'no-cache',
                                         },
                                       })

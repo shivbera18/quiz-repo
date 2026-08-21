@@ -5,7 +5,7 @@
 // gateway-side path.
 import { NextRequest, NextResponse } from "next/server"
 
-const GATEWAY_URL = process.env.GATEWAY_URL || "http://localhost:4000"
+const GATEWAY_URL = (process.env.GATEWAY_URL || "http://localhost:4000").trim()
 
 export async function proxyToGateway(request: NextRequest, gatewayPath: string): Promise<NextResponse> {
   const incomingUrl = new URL(request.url)
