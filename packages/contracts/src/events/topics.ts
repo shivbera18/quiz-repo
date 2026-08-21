@@ -122,12 +122,10 @@ export interface AnnouncementPublishedData {
 }
 
 export interface PushSendRequestedData {
-  requestId: string
   announcementId: string
   userId: string
   subscriptionId: string
   payload: { title: string; body: string; url?: string; tag?: string; priority?: string }
-  dedupeKey: string
 }
 
 // Keyed by jobId, not requestedBy -- there is no ordering requirement between
