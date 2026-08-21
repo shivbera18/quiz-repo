@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Edit, Trash2, Upload, ListChecks, Plus } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 interface QuizSummary {
   id: string;
@@ -33,7 +34,8 @@ interface QuizQuestion {
   difficulty?: string;
 }
 
-export default function QuizManagementSection({ onEditQuiz }: { onEditQuiz?: (quiz: any) => void }) {
+export default function QuizManagementSection({ onEditQuiz }: { onEditQuiz?: (quiz: QuizSummary & { chapterId?: string; subjectId?: string }) => void }) {
+  const { user } = useAuth();
   const [data, setData] = useState<SubjectSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -43,13 +45,17 @@ export default function QuizManagementSection({ onEditQuiz }: { onEditQuiz?: (qu
   const [editQuizTitle, setEditQuizTitle] = useState<string>("");
   const [editQuizSubjectId, setEditQuizSubjectId] = useState<string>("");
   const [editQuizChapterId, setEditQuizChapterId] = useState<string>("");
+  const [editQuizVersion, setEditQuizVersion] = useState<number>(1);
   const [manageQuizId, setManageQuizId] = useState<string | null>(null);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [quizTitle, setQuizTitle] = useState<string>("");
   const [questionsLoading, setQuestionsLoading] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin/subjects-chapters-quizzes")
+    if (!user?.token) return;
+    fetch("/api/admin/subjects-chapters-quizzes", {
+      headers: { Authorization: `Bearer ${user.token}` },
+    })
       .then((res) => res.json())
       .then((json) => {
         setData(json.subjects || []);
@@ -59,12 +65,14 @@ export default function QuizManagementSection({ onEditQuiz }: { onEditQuiz?: (qu
         setError("Failed to load data");
         setLoading(false);
       });
-  }, []);
+  }, [user]);
 
   useEffect(() => {
-    if (manageQuizId) {
+    if (manageQuizId && user?.token) {
       setQuestionsLoading(true);
-      fetch(`/api/admin/quizzes/${manageQuizId}`)
+      fetch(`/api/admin/quizzes/${manageQuizId}`, {
+        headers: { Authorization: `Bearer ${user.token}` },
+      })
         .then(res => res.json())
         .then(json => {
           setQuizQuestions(json.quiz?.questions || []);
@@ -73,8 +81,7 @@ export default function QuizManagementSection({ onEditQuiz }: { onEditQuiz?: (qu
         })
         .catch(() => setQuestionsLoading(false));
     }
-  }, [manageQuizId]);
-
+  }, [manageQuizId, user]);
   if (loading) return <div className="flex justify-center items-center h-32"><Loader2 className="animate-spin h-8 w-8 text-blue-500" /></div>;
   if (error) return <div className="text-red-600 text-center py-8">{error}</div>;
 
@@ -142,9 +149,14 @@ export default function QuizManagementSection({ onEditQuiz }: { onEditQuiz?: (qu
                         setEditQuizTitle(quiz.title);
                         setEditQuizSubjectId(selectedSubjectId);
                         setEditQuizChapterId(selectedChapterId);
+                        if (user?.token) {
+                          fetch(`/api/admin/quizzes/${quiz.id}`, { headers: { Authorization: `Bearer ${user.token}` } })
+                            .then(res => res.json())
+                            .then(json => { if (json.quiz?.version) setEditQuizVersion(json.quiz.version); })
+                            .catch(() => {});
+                        }
                       }
                     }}
-                    title="Edit Quiz"
                   >
                     <Edit className="h-4 w-4 mr-1" /> Edit Quiz
                   </Button>
@@ -205,26 +217,25 @@ export default function QuizManagementSection({ onEditQuiz }: { onEditQuiz?: (qu
               <div className="flex gap-2 mt-6">
                 <Button variant="secondary" onClick={() => setEditQuizId(null)}>Cancel</Button>
                 <Button variant="secondary" onClick={async () => {
-                  // Save logic for editing quiz
-                  if (!editQuizId) return;
+                  if (!editQuizId || !user?.token) return;
                   const res = await fetch(`/api/admin/quizzes/${editQuizId}`, {
                     method: "PATCH",
                     headers: {
                       "Content-Type": "application/json",
-                      Authorization: `Bearer admin-token-placeholder`, // Replace with real token if available
+                      Authorization: `Bearer ${user.token}`,
                     },
                     body: JSON.stringify({
+                      version: editQuizVersion,
                       title: editQuizTitle,
                       chapterId: editQuizChapterId,
-                      // You can add more fields as needed
                     }),
                   });
                   if (res.ok) {
-                    // Optionally refresh data
                     setEditQuizId(null);
-                    // Refetch quizzes to update UI
                     setLoading(true);
-                    fetch("/api/admin/subjects-chapters-quizzes")
+                    fetch("/api/admin/subjects-chapters-quizzes", {
+                      headers: { Authorization: `Bearer ${user.token}` },
+                    })
                       .then((res) => res.json())
                       .then((json) => {
                         setData(json.subjects || []);
@@ -234,9 +245,6 @@ export default function QuizManagementSection({ onEditQuiz }: { onEditQuiz?: (qu
                         setError("Failed to load data");
                         setLoading(false);
                       });
-                  } else {
-                    // Handle error
-                    setError("Failed to update quiz");
                   }
                 }}>
                   Save

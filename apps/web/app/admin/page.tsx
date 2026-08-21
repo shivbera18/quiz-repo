@@ -1271,7 +1271,8 @@ export default function AdminPage() {
       )}
 
       <QuizManagementSection onEditQuiz={(quiz) => {
-        setEditingQuiz(quiz);
+        const fullQuiz = quizzes.find((q) => q.id === quiz.id)
+        setEditingQuiz(fullQuiz || (quiz as unknown as Quiz));
         setShowQuizForm(true);
       }} />
 
