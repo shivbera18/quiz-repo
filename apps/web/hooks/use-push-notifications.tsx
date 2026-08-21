@@ -30,72 +30,14 @@ export function usePushNotifications(): UsePushNotificationsReturn {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Check if push notifications are supported
   useEffect(() => {
-    const checkSupport = () => {
-      // Check for all required APIs
-      const hasNotification = typeof window !== 'undefined' && 'Notification' in window
-      const hasServiceWorker = typeof navigator !== 'undefined' && 'serviceWorker' in navigator
-      const hasPushManager = typeof window !== 'undefined' && 'PushManager' in window
-
-      // Push notifications require HTTPS (except localhost)
-      const isSecure = typeof location !== 'undefined' && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-
-      const supported = hasNotification && hasServiceWorker && hasPushManager && isSecure
-      setIsSupported(supported)
-
-      if (supported && typeof window !== 'undefined' && 'Notification' in window) {
-        setPermission(Notification.permission)
-      }
-    }
-
-    checkSupport()
-
-    // Listen for permission changes
-    const handlePermissionChange = () => {
-      if (typeof window !== 'undefined' && 'Notification' in window) {
-        setPermission(Notification.permission)
-        // Re-check subscription when permission changes
-        if (user && isSupported) {
-          checkSubscriptionStatus()
-        }
-      }
-    }
-
-    if (typeof navigator !== 'undefined' && 'permissions' in navigator) {
-      navigator.permissions.query({ name: 'notifications' }).then((permissionStatus) => {
-        permissionStatus.addEventListener('change', handlePermissionChange)
-        return () => permissionStatus.removeEventListener('change', handlePermissionChange)
-      }).catch(() => {
-        // Fallback for browsers that don't support permissions API
-      })
-    }
-
-    // Listen for our custom permission change event
-    const customPermissionHandler = () => {
-      if (typeof window !== 'undefined' && 'Notification' in window) {
-        setPermission(Notification.permission)
-        if (user && isSupported) {
-          checkSubscriptionStatus()
-        }
-      }
-    }
-    window.addEventListener('permission-changed', customPermissionHandler)
-
-    return () => {
-      window.removeEventListener('permission-changed', customPermissionHandler)
-    }
-  }, [user, isSupported])
-
-  // Check subscription status when user changes
-  useEffect(() => {
-    if (user && isSupported) {
-      checkSubscriptionStatus()
-    }
-  }, [user, isSupported])
+    const supported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window && window.isSecureContext
+    setIsSupported(supported)
+    if (supported) setPermission(Notification.permission)
+  }, [])
 
   const checkSubscriptionStatus = useCallback(async () => {
-    if (!isSupported || !user || typeof window === 'undefined') {
+    if (!isSupported || !user) {
       setIsSubscribed(false)
       return
     }
@@ -103,34 +45,23 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     try {
       const registration = await navigator.serviceWorker.ready
       const subscription = await registration.pushManager.getSubscription()
-
-      // Double-check that permission is still granted
-      const currentPermission = Notification.permission
-      const hasValidSubscription = !!(subscription && currentPermission === 'granted')
-
-      setIsSubscribed(hasValidSubscription)
-      setPermission(currentPermission)
+      setIsSubscribed(Boolean(subscription) && Notification.permission === 'granted')
+      setPermission(Notification.permission)
     } catch (err) {
       console.error('Error checking subscription status:', err)
-      // On error, assume not subscribed to be safe
       setIsSubscribed(false)
     }
   }, [isSupported, user])
 
-  const requestPermission = useCallback(async (): Promise<NotificationPermission> => {
-    if (!isSupported || typeof window === 'undefined' || !('Notification' in window)) {
-      throw new Error('Push notifications are not supported')
-    }
+  useEffect(() => {
+    void checkSubscriptionStatus()
+  }, [checkSubscriptionStatus])
 
-    try {
-      const result = await Notification.requestPermission()
-      setPermission(result)
-      return result
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to request permission'
-      setError(errorMessage)
-      throw err
-    }
+  const requestPermission = useCallback(async (): Promise<NotificationPermission> => {
+    if (!isSupported) throw new Error('Push notifications are not supported')
+    const result = await Notification.requestPermission()
+    setPermission(result)
+    return result
   }, [isSupported])
 
   const subscribe = useCallback(async () => {
@@ -138,10 +69,13 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       throw new Error('Cannot subscribe: missing requirements')
     }
 
-    // Check current permission before proceeding
-    const currentPermission = typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default'
-    if (currentPermission !== 'granted') {
+    if (Notification.permission !== 'granted') {
       throw new Error('Cannot subscribe: permission not granted')
+    }
+
+    const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+    if (!vapidPublicKey) {
+      throw new Error('Browser notifications are not configured')
     }
 
     setIsLoading(true)
@@ -149,31 +83,22 @@ export function usePushNotifications(): UsePushNotificationsReturn {
 
     try {
       const registration = await navigator.serviceWorker.ready
-
-      // Check if already subscribed
       let subscription = await registration.pushManager.getSubscription()
 
       if (!subscription) {
-        const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "BNC5_612V-a7IYII4CWUMkfax-EZIu_1C9HnmkpgDgK5H7yvlQxyMxG2-fa6CHaSzG9jfUyJ5RPUOLtNdSjTzj8"
-        // Subscribe with userVisibleOnly: true for better UX
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          // Cast to BufferSource to satisfy TS in strict lib setups
-          applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as unknown as BufferSource
+          applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as BufferSource,
         })
       }
 
-      if (!subscription) {
-        throw new Error('Failed to create subscription')
-      }
+      const p256dh = subscription.getKey('p256dh')
+      const auth = subscription.getKey('auth')
+      if (!p256dh || !auth) throw new Error('Browser returned an invalid push subscription')
 
-      // Convert subscription to the format expected by our API
       const subscriptionData: PushSubscriptionData = {
         endpoint: subscription.endpoint,
-        keys: {
-          p256dh: arrayBufferToBase64(subscription.getKey('p256dh')!),
-          auth: arrayBufferToBase64(subscription.getKey('auth')!)
-        }
+        keys: { p256dh: arrayBufferToBase64(p256dh), auth: arrayBufferToBase64(auth) },
       }
 
       // Send subscription to server
@@ -191,23 +116,18 @@ export function usePushNotifications(): UsePushNotificationsReturn {
         throw new Error(errorData.message || 'Failed to save subscription')
       }
 
-      // Update local state immediately
       setIsSubscribed(true)
       setPermission(Notification.permission)
-
-      // Re-check subscription status to ensure consistency
-      await checkSubscriptionStatus()
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to subscribe'
       setError(errorMessage)
-      // Re-check subscription status on error to ensure state consistency
-      await checkSubscriptionStatus()
+      setIsSubscribed(false)
       throw err
     } finally {
       setIsLoading(false)
     }
-  }, [isSupported, user, checkSubscriptionStatus])
+  }, [isSupported, user])
 
   const unsubscribe = useCallback(async () => {
     if (!isSupported || !user) {
@@ -222,42 +142,28 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       const subscription = await registration.pushManager.getSubscription()
 
       if (subscription) {
-        // Get endpoint before unsubscribing
         const endpoint = subscription.endpoint
-
-        // Unsubscribe from push service
-        await subscription.unsubscribe()
-
-        // Remove from server
         const response = await fetch(`/api/push-subscription?endpoint=${encodeURIComponent(endpoint)}`, {
           method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${user.token}`
-          }
+          headers: { 'Authorization': `Bearer ${user.token}` },
         })
 
-        if (!response.ok) {
+        if (!response.ok && response.status !== 404) {
           const errorData = await response.json()
           throw new Error(errorData.message || 'Failed to remove subscription')
         }
+        await subscription.unsubscribe()
       }
 
-      // Update local state immediately
       setIsSubscribed(false)
-
-      // Re-check subscription status to ensure consistency
-      await checkSubscriptionStatus()
-
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to unsubscribe'
       setError(errorMessage)
-      // Re-check subscription status on error to ensure state consistency
-      await checkSubscriptionStatus()
       throw err
     } finally {
       setIsLoading(false)
     }
-  }, [isSupported, user, checkSubscriptionStatus])
+  }, [isSupported, user])
 
   return {
     isSupported,
@@ -271,7 +177,6 @@ export function usePushNotifications(): UsePushNotificationsReturn {
   }
 }
 
-// Utility functions for VAPID key conversion
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - base64String.length % 4) % 4)
   const base64 = (base64String + padding)

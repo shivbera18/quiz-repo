@@ -9,6 +9,8 @@
 # traced subset is worth the extra stage here in a way it wouldn't be for
 # the others.
 FROM node:22-alpine AS builder
+ARG NEXT_PUBLIC_VAPID_PUBLIC_KEY
+ENV NEXT_PUBLIC_VAPID_PUBLIC_KEY=$NEXT_PUBLIC_VAPID_PUBLIC_KEY
 RUN npm install -g pnpm@10.12.3
 WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json turbo.json ./

@@ -74,18 +74,9 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Background sync (for future offline functionality)
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'background-sync') {
-    console.log('Background sync triggered');
-    // Handle background sync tasks here
-  }
-});
 
-// Push notifications (enhanced implementation)
+// Display browser push payloads from notification-svc.
 self.addEventListener('push', (event) => {
-  console.log('Push received:', event);
-
   let data = {};
   if (event.data) {
     const rawData = event.data.text();
@@ -105,37 +96,12 @@ self.addEventListener('push', (event) => {
     body: data.body || 'New announcement available!',
     icon: '/icons/icon-192x192.svg',
     badge: '/icons/icon-192x192.svg',
-    vibrate: [100, 50, 100],
-    data: {
-      dateOfArrival: Date.now(),
-      primaryKey: data.id || 1,
-      url: notificationData.url || data.url || '/dashboard'
-    },
-    actions: [
-      {
-        action: 'view',
-        title: 'View',
-        icon: '/icons/icon-192x192.svg'
-      },
-      {
-        action: 'dismiss',
-        title: 'Dismiss'
-      }
-    ],
+    data: { url: notificationData.url || data.url || '/dashboard' },
     requireInteraction: priority === 'urgent' || priority === 'high',
-    silent: false,
-    tag: data.tag || 'announcement' // Group similar notifications
+    tag: data.tag || 'announcement'
   };
 
-  // Set title based on priority
-  let title = 'Quiz App';
-  if (priority === 'urgent') {
-    title = '🚨 URGENT: ' + (data.title || 'Quiz App');
-  } else if (priority === 'high') {
-    title = '⚠️ ' + (data.title || 'Quiz App');
-  } else if (data.title) {
-    title = data.title;
-  }
+  const title = data.title || 'Quiz App';
 
   event.waitUntil(
     self.registration.showNotification(title, options)
@@ -144,13 +110,7 @@ self.addEventListener('push', (event) => {
 
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
-  console.log('Notification click received:', event);
-
   event.notification.close();
-
-  if (event.action === 'dismiss') {
-    return;
-  }
 
   let targetUrl;
   try {
@@ -176,10 +136,4 @@ self.addEventListener('notificationclick', (event) => {
         }
       })
   );
-});
-
-// Handle notification close (for analytics)
-self.addEventListener('notificationclose', (event) => {
-  console.log('Notification closed:', event);
-  // Could send analytics data here
 });

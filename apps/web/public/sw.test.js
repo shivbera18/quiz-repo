@@ -182,7 +182,7 @@ test("push handler supports notification service payloads", async () => {
   handlers.push(event)
   await wait()
 
-  assert.equal(shown[0].title, "⚠️ Exam update")
+  assert.equal(shown[0].title, "Exam update")
   assert.equal(shown[0].options.body, "New schedule")
   assert.equal(shown[0].options.data.url, "/dashboard")
   assert.equal(shown[0].options.tag, "announcement-1")
@@ -212,7 +212,7 @@ test("notification clicks focus same-origin targets and reject external URLs", a
   }
   const { handlers } = loadWorker({ clients })
   const notification = { data: { url: "/dashboard" }, close() {} }
-  const focusedEvent = waitableEvent({ action: "view", notification })
+  const focusedEvent = waitableEvent({ notification })
 
   handlers.notificationclick(focusedEvent.event)
   await focusedEvent.wait()
@@ -221,7 +221,7 @@ test("notification clicks focus same-origin targets and reject external URLs", a
 
   clients.matchAll = () => Promise.resolve([])
   notification.data.url = "https://evil.test/phish"
-  const externalEvent = waitableEvent({ action: "view", notification })
+  const externalEvent = waitableEvent({ notification })
   handlers.notificationclick(externalEvent.event)
   await externalEvent.wait()
   assert.deepEqual(opened, ["https://quiz.test/dashboard"])
