@@ -106,7 +106,9 @@ export default function AdminAnalyticsPage() {
       const fetchAnalytics = async () => {
         try {
           console.log('[LOADING] Admin Analytics: Fetching fresh data...')
-          const response = await fetch(`/api/admin/analytics?_t=${Date.now()}`)
+          const response = await fetch(`/api/admin/analytics?_t=${Date.now()}`, {
+            headers: { Authorization: `Bearer ${user.token}` },
+          })
           
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`)
@@ -387,7 +389,7 @@ export default function AdminAnalyticsPage() {
       const response = await fetch(`/api/admin/results?id=${resultId}`, {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("adminToken") || "admin-token"}`
+          "Authorization": `Bearer ${user?.token}`
         }
       })
 
@@ -436,7 +438,7 @@ export default function AdminAnalyticsPage() {
       const response = await fetch(`/api/admin/results?${params}`, {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("adminToken") || "admin-token"}`
+          "Authorization": `Bearer ${user?.token}`
         }
       })
 
@@ -465,7 +467,9 @@ export default function AdminAnalyticsPage() {
 
   const viewUserDetails = async (userId: string) => {
     try {
-      const response = await fetch(`/api/admin/user-performance?userId=${userId}`)
+      const response = await fetch(`/api/admin/user-performance?userId=${userId}`, {
+        headers: { Authorization: `Bearer ${user?.token}` },
+      })
       const data = await response.json()
       
       if (response.ok) {
@@ -485,7 +489,9 @@ export default function AdminAnalyticsPage() {
   const forceServerRefresh = async () => {
     try {
       console.log('[LOADING] Force refreshing admin analytics...')
-      const response = await fetch("/api/admin/analytics?_t=" + Date.now())
+      const response = await fetch("/api/admin/analytics?_t=" + Date.now(), {
+        headers: { Authorization: `Bearer ${user?.token}` },
+      })
       if (response.ok) {
         const data = await response.json()
         const apiResults = data.results || []

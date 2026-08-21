@@ -123,7 +123,9 @@ export default function AdvancedAnalyticsPage() {
       
       console.log('🔄 Advanced Analytics: Fetching fresh data from API...')
       // Add cache busting to ensure fresh data
-      const response = await fetch(`/api/admin/analytics?_t=${Date.now()}`)
+      const response = await fetch(`/api/admin/analytics?_t=${Date.now()}`, {
+        headers: { Authorization: `Bearer ${user?.token}` },
+      })
       
       if (!response.ok) {
         throw new Error(`Failed to fetch analytics: ${response.status}`)
