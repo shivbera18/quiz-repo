@@ -1,49 +1,72 @@
 ---
 name: notifications-realtime-push
-description: Build or debug announcements, SSE streaming, stream tickets, Web Push subscriptions, service-worker delivery, fanout, retries, and notification deduplication.
+description: Master skill for announcements, web push notifications, two-stage event fanout, SSE event streaming, single-use stream tickets, and VAPID delivery. Trigger whenever modifying notification-svc, editing fanout-worker.ts, sse.ts, or push.ts, updating push subscription routes, or changing announcement publishing workflows.
 ---
 
-# Notifications, SSE, and Push
+# Notifications, Realtime SSE & Web Push
 
-Maintain one announcement flow across API, Kafka, Redis, SSE, push delivery, and browser state.
+`apps/notification` (port 4005) handles browser announcements, real-time Server-Sent Events (SSE), and third-party Web Push notifications via VAPID. It is isolated from core services to prevent slow external push APIs (Apple/Google/Mozilla) from degrading HTTP endpoints.
 
-## Entry points
+## Entry Points & Structure
 
-- API: `apps/notification/src/index.ts`.
-- Fanout worker: `apps/notification/src/fanout-worker.ts`.
-- SSE: `apps/notification/src/sse.ts`.
-- Web Push: `apps/notification/src/push.ts`.
-- Notification outbox: `apps/notification/src/outbox-store.ts`.
-- Frontend: `push-notifications-manager.tsx`, `use-push-notifications.tsx`, `service-worker-registration.tsx`, and `public/sw.js`.
-- Compose process: notification API and fanout worker.
+- **API Routes:** `apps/notification/src/index.ts`.
+- **Fanout Worker:** `apps/notification/src/fanout-worker.ts` (`groupId: "notification-fanout-worker"`).
+- **SSE Stream & Ticket Engine:** `apps/notification/src/sse.ts`.
+- **Web Push Engine:** `apps/notification/src/push.ts`.
+- **Prisma Models:** `apps/notification/prisma/schema.prisma` (`Announcement`, `AnnouncementRead`, `PushSubscription`, `UserRef`, `ProcessedEvent`, `Outbox`).
 
-## Required behavior
+## Two-Stage Push Fanout Pattern
 
-- Announcement create/update/repush endpoints enforce admin authorization in notification-svc.
-- Persist announcement and outbox event atomically.
-- SSE uses a short-lived single-use ticket because browser `EventSource` cannot attach Authorization headers.
-- Ticket issuance requires normal authentication; ticket consumption must validate expiry and prevent replay.
-- Keep heartbeat, disconnect cleanup, reconnection, and proxy buffering behavior correct for SSE.
-- Store push endpoints/keys as secrets and never log them.
-- Fan out subscriptions in pages; do not synchronously send N pushes from the API request.
-- Use `dedupeKey`/event processing to prevent duplicate delivery under Kafka replay.
-- Disable or remove subscriptions on permanent Web Push responses such as 404/410.
-- User erasure hard-deletes subscriptions and user reference data.
+To avoid blocking request threads during mass delivery, push notifications use a strict two-stage asynchronous fanout:
 
-## Workflow
-
-1. Trace announcement → outbox → fanout event → Redis SSE broadcast and paged push requests → web-push → service worker click/navigation.
-2. Check both foreground and background notification behavior.
-3. Handle permission states `default`, `granted`, and `denied` without repeatedly prompting.
-4. Validate VAPID configuration and origin/service-worker scope without exposing private keys.
-5. Test reconnect, ticket replay, duplicate event, repush, stale endpoint, partial fanout failure, unsubscribe, and user erasure.
-
-## Verification
-
-```bash
-pnpm --filter notification-svc typecheck
-pnpm --filter web typecheck
-pnpm --filter @quiz/contracts typecheck
+```
+POST /v1/admin/announcements ──▶ Insert Announcement + Outbox ANNOUNCEMENT_PUBLISHED (1 Tx)
+                                                │
+                                                ▼
+Stage 1 Worker: ANNOUNCEMENT_PUBLISHED ──▶ 1. SSE Broadcast (Instant)
+                                       ──▶ 2. Keyset Page Subscriptions (100/page)
+                                       ──▶ 3. Emit batch PUSH_SEND_REQUESTED per sub
+                                                │
+                                                ▼
+Stage 2 Worker: PUSH_SEND_REQUESTED    ──▶ sendPushToSubscription()
+                                           (HTTP 410 -> set isActive: false)
 ```
 
-Browser push requires HTTPS or localhost and valid VAPID configuration. State when verification is limited to local SSE or mocked push.
+1. **Stage 1 (`ANNOUNCEMENT_PUBLISHED`):**
+   - Calls `publishBroadcast(redis, "announcement", ...)` to push immediately to all open SSE connections.
+   - Keyset-pages `PushSubscription where isActive = true` (100 per page).
+   - Emits one `PUSH_SEND_REQUESTED` event per subscription via `producer.sendBatch` (key = `userId`).
+   - **Secret Protection Rule:** `PUSH_SEND_REQUESTED` payloads carry ONLY `subscriptionId` and `announcementId`. Secrets (`endpoint`, `p256dh`, `auth`) MUST NEVER be published to Kafka.
+2. **Stage 2 (`PUSH_SEND_REQUESTED`):**
+   - Fetches target subscription and executes `sendPushToSubscription()`.
+   - **Handling HTTP 410 (Gone):** Expired browser subscriptions return 410 from push services. The worker marks `isActive: false` soft delete. This is treated as SUCCESS, not an error.
+
+## SSE Stream Architecture & Ticket Auth (`/v1/stream`)
+
+EventSource browser APIs cannot send `Authorization: Bearer` headers. Authentication uses single-use tickets:
+
+1. **Mint Ticket (`POST /v1/stream/tickets`):** Authenticated user gets a 30s UUID ticket stored in Redis (`q:sse:ticket:<t>`).
+2. **Connect Stream (`GET /v1/stream?ticket=...`):**
+   - Gateway lists `/v1/stream` as public.
+   - Endpoint validates and deletes ticket atomically using Redis **`GETDEL`** (single-use, unreplayable). Returns 401 if missing/invalid.
+   - Calls `reply.hijack()` and sets `Content-Type: text/event-stream`, `Cache-Control: no-cache`, `Connection: keep-alive`, `X-Accel-Buffering: no`.
+   - 15s Heartbeat (`: ping\n\n`) keeps connection alive through load balancers.
+   - Replays missed messages from `Last-Event-ID` header using Redis backlog ZSET (`q:sse:backlog:<userId>`, capped 50 messages, TTL 1 hour).
+   - Duplicates Redis client and subscribes to `pubsubUser(userId)` and `pubsubBroadcast()`.
+   - Cleans up subscribers on socket disconnect (`request.raw.on("close")`).
+
+## User Erasure (`USER_ERASURE_REQUESTED`)
+
+When identity-svc emits `USER_ERASURE_REQUESTED`, notification-svc HARD DELETES `PushSubscription` and `UserRef` records (unlike analytics' redact-only policy, because push endpoints are active push secrets).
+
+## Verification Checklist
+
+```bash
+pnpm --filter notification-svc prisma:generate
+pnpm --filter notification-svc typecheck
+pnpm --filter @quiz/redis-kit typecheck
+```
+
+- Verify SSE connection returns 401 when re-using a consumed ticket (`GETDEL`).
+- Verify HTTP 410 from web-push deactivates subscription without throwing uncaught errors.
+- Verify `PUSH_SEND_REQUESTED` payloads do not contain `p256dh` or `auth` secrets.

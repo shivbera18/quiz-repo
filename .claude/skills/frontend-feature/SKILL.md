@@ -1,47 +1,61 @@
 ---
 name: frontend-feature
-description: Build or modify quiz-platform UI features in the Next.js web app. Use for pages, React components, forms, client state, styling, accessibility, PWA behavior, gateway calls, and browser-facing changes under apps/web.
+description: Master skill for building and modifying Next.js 15 App Router pages, React components, Tailwind styling, web app API forwarders, client state, and UI features in apps/web. Trigger whenever editing files in apps/web, creating App Router routes in app/, modifying components/, styling with Tailwind/shadcn, or wiring frontend API routes to the gateway.
 ---
 
-# Frontend Feature
+# Next.js Frontend Development (`apps/web`)
 
-Implement frontend work in `apps/web` while preserving the gateway-only data boundary.
+`apps/web` is a Next.js 15.5.21 App Router application (`output: "standalone"`). It provides the user interface and thin API forwarders. **It contains NO database code and imports NO `@quiz/*` packages or Prisma models.**
 
-## Context
+## Architecture & Single Egress Point
 
-- Framework: Next.js 15 App Router, React, TypeScript.
-- UI: Tailwind CSS, shadcn/ui conventions, Framer Motion.
-- API access belongs in `apps/web/lib/gateway-client.ts` or thin App Router proxies.
-- Shared request/response validation belongs in `@quiz/contracts`.
-- The web app must never import Prisma clients or connect directly to a database.
+```
+Browser  ──▶  Next.js Page / app/api/** Forwarder  ──▶  lib/gateway-client.ts (proxyToGateway)
+                                                                 │
+                                                                 ▼
+                                                    API Gateway (GATEWAY_URL:4000)
+```
 
-## Workflow
+1. **The Single Egress Point:** `apps/web/lib/gateway-client.ts` exports **`proxyToGateway(request, gatewayPath)`**.
+   - Reads `GATEWAY_URL` (default `http://localhost:4000`).
+   - Copies `authorization` and `content-type` headers.
+   - Sets `cache: "no-store"`.
+   - Returns `503 Service Unavailable` if upstream gateway is unreachable.
+2. **Rule:** NEVER add Prisma, a database client, or direct service URLs (`localhost:4001`) to `apps/web`. New backend capabilities MUST go through the gateway proxy.
+3. **Stateless Gemini Exceptions:** `app/api/ai/generate-questions/route.ts` and `app/api/generate-flashcards/route.ts` call Gemini directly and persist nothing.
 
-1. Read the affected route, nearby components, `apps/web/lib/gateway-client.ts`, and related contract schemas before editing.
-2. Decide the server/client boundary deliberately. Add `"use client"` only when hooks, browser APIs, or interaction require it.
-3. Reuse existing components, hooks, utility classes, loading states, and error patterns before creating abstractions.
-4. If the API shape changes, update `packages/contracts` and backend behavior first; do not invent a frontend-only duplicate type.
-5. Handle loading, empty, error, disabled, and success states.
-6. Preserve responsiveness, keyboard operation, semantic markup, labels, focus visibility, and reduced-motion usability.
-7. Add or update Playwright coverage for a critical user flow when behavior changes.
+## Next.js 15 Conventions
 
-## Guardrails
+- **Async Params:** Route handlers and pages MUST await `params`:
+  ```tsx
+  export default async function QuizPage(props: { params: Promise<{ id: string }> }) {
+    const { id } = await props.params;
+    // ...
+  }
+  ```
+- **Dynamic Route Handlers:** All route forwarders in `app/api/**` MUST export `export const dynamic = "force-dynamic"`.
+- **Asymmetric Admin Updates:** Quizzes use `PATCH` (requires `version` for optimistic locking), while subjects & chapters use `PUT`.
 
-- Do not expose service URLs, secrets, database credentials, or privileged tokens to client bundles.
-- Do not trust role or score checks performed only in the browser; backend services must enforce them.
-- Avoid unrelated visual rewrites.
-- Keep gateway-client errors actionable without leaking sensitive response details.
-- When editing push/PWA behavior, inspect `app/manifest.ts`, `public/sw.js`, and the existing notification hooks/components together.
+## Key Directory Structure
 
-## Verification
+- `app/`: 35 page routes, single `app/layout.tsx`.
+- `app/api/**`: 37 forwarder route files (52 HTTP handlers) proxying to gateway paths `/v1/*`.
+- `lib/`: `gateway-client.ts`, `json-upload-processor.ts`, `math-symbol-processor.ts`, `utils.ts` (`cn`).
+- `hooks/`: `use-auth.tsx` (display-only session hint), `use-mobile.tsx`, `use-push-notifications.tsx`, `use-toast.ts`.
+- `components/`:
+  - `layout/`: `app-shell.tsx`, `sidebar.tsx`, `top-header.tsx`, `footer.tsx`.
+  - `ui/`: 53 shadcn/ui primitives.
+  - `quiz/`, `landing/`, `analytics/`.
+- `public/`: `sw.js` (service worker), `manifest.ts`, `offline.html`, `icons/`.
 
-Run the narrowest checks first, then broader checks when appropriate:
+## Verification Checklist
 
 ```bash
 pnpm --filter web typecheck
 pnpm --filter web lint
-pnpm --filter web build
-pnpm --filter web test:e2e
+pnpm --filter web build             # Test production standalone build
 ```
 
-Before finishing, report the affected routes/components, API or contract changes, checks run, and any checks blocked by missing services or environment variables.
+- Verify no Prisma or backend package imports exist in `apps/web`.
+- Verify Next.js 15 `await props.params` is used on dynamic pages/routes.
+- Verify `app/api/**` route handler exports `export const dynamic = "force-dynamic"`.

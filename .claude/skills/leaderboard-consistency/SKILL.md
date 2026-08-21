@@ -1,41 +1,66 @@
 ---
 name: leaderboard-consistency
-description: Implement or diagnose global, subject, chapter, and quiz leaderboard ranking, Redis sorted sets, cache keys, ties, updates, and consistency with analytics facts.
+description: Master skill for Redis sorted set leaderboards, tie-breaking score encoding, leaderboard ranking queries, weekly rotation, and leaderboard consistency with analytics facts. Trigger whenever editing packages/redis-kit/src/leaderboard.ts, modifying leaderboard API routes in apps/analytics/src/index.ts, or adjusting score recording logic in rollup-consumer.ts.
 ---
 
-# Leaderboard Consistency
+# Leaderboard Consistency & Ranking
 
-Keep ranking semantics explicit and Redis updates replay-safe.
+Leaderboards run on Redis Sorted Sets (ZSETs). Scores are recorded asynchronously by `analytics-svc`'s `rollup-consumer` upon receiving an `ATTEMPT_SUBMITTED` event.
 
-## Entry points
+## Key Builders & Redis Primitives
 
-- API: `GET /v1/leaderboards/:scope` in `apps/analytics/src/index.ts`.
-- Event updates: `apps/analytics/src/rollup-consumer.ts`.
-- Redis helpers: `packages/redis-kit/src/leaderboard.ts`.
-- Key builders: `packages/redis-kit/src/keys.ts`.
-- Gateway prefix: `/v1/leaderboards`.
+All leaderboard keys are constructed in `packages/redis-kit/src/keys.ts`:
 
-## Workflow
+- `q:lb:quiz:<id>` - Per-quiz ZSET.
+- `q:lb:subject:<id>` - Per-subject ZSET.
+- `q:lb:global` - Global all-time ZSET.
+- `q:lb:weekly:<YYYY-Www>` - Weekly ZSET (TTL: **9 days**).
+- `q:lb:names` - Hash mapping `userId -> userName` for fast display name resolution without database joins.
 
-1. Define the scope syntax and reject malformed scopes instead of creating arbitrary Redis keys.
-2. Define score semantics: best score, cumulative score, average, latest, or another metric. Do not mix semantics between API and consumer.
-3. Define tie ordering and whether ranks are ordinal, dense, or competition ranks.
-4. Ensure duplicate `ATTEMPT_SUBMITTED` events cannot apply the same score twice.
-5. If updating a user's best score, make comparison/update atomic; avoid read-then-write races.
-6. Keep user display data outside or alongside the ranking structure without embedding sensitive fields in public results.
-7. Bound result size and validate pagination/top-N limits.
-8. Reconcile Redis from Postgres projections after cache loss rather than treating Redis as irreplaceable truth.
+## Tie-Breaking Score Encoding
 
-## Failure cases
+Leaderboards rank by accuracy first, then speed (faster attempts rank higher for equal scores). This is achieved via a single floating-point score encoding function (`encodeLeaderboardScore` in `packages/redis-kit/src/leaderboard.ts`):
 
-Test equal scores, negative-marked scores, repeated attempts, deleted/renamed users, missing dimensions, Redis restart, concurrent submissions, malformed scope, empty board, and event replay.
+```ts
+const score = Math.round(scorePct * 100) * 1_000_000 + (999_999 - Math.min(timeSpentSec, 999_999));
+```
 
-## Verification
+- **Accuracy component:** `round(scorePct * 100) * 1_000_000` (e.g. 85.5% → 855000000).
+- **Time component:** `999_999 - min(timeSpentSec, 999_999)` (e.g. 120s → 999879).
+- **Precision Guarantee:** Max score ~1.0e13, well inside IEEE 754 float64 exact-integer limit ($2^{53} \approx 9.0 \times 10^{15}$).
+- **Decoding:**
+  - `scorePct = Math.floor(score / 1_000_000) / 100`
+  - `timeSpentSec = 999_999 - (Math.floor(score) % 1_000_000)`
+
+## Best Attempt Update Rule (`ZADD ... GT`)
+
+To enforce "best attempt counts" without read-modify-write race conditions, updates use Redis pipeline with the `GT` flag (`Greater Than`):
+
+```ts
+pipeline.zadd(key, "GT", score, userId);
+```
+
+If the user's new attempt has a lower score, Redis ignores the update atomically.
+
+## Implicit Weekly Rotation
+
+Weekly leaderboards use ISO week string keys (e.g. `q:lb:weekly:2026-W34`).
+- Setting `EXPIRE 9 days` ensures old weekly keys auto-cleanup.
+- No cron job or reset script is required; Monday midnight cleanly switches to the new ISO week key.
+
+## Retrieval API (`GET /v1/leaderboards/:scope`)
+
+- `scope` must be `global`, `weekly`, `quiz:<id>`, or `subject:<id>`. (Returns `400` on invalid scope).
+- Parameter `?limit` defaulted 10 (range 1–100).
+- Uses `ZREVRANGE ... WITHSCORES` + `HMGET q:lb:names` to return ranked arrays with `rank`, `userId`, `userName`, `scorePct`, and `timeSpentSec`.
+
+## Verification Checklist
 
 ```bash
 pnpm --filter @quiz/redis-kit typecheck
 pnpm --filter analytics-svc typecheck
-pnpm --filter gateway typecheck
 ```
 
-For behavior changes, compare API output with analytics facts for a fixed fixture and document ranking/tie rules.
+- Verify equal accuracy attempts correctly rank the faster completion higher.
+- Verify `ZADD GT` prevents a worse attempt from overwriting a user's high score.
+- Verify `HMGET` gracefully falls back to `"Unknown"` if `userName` is absent from `q:lb:names`.

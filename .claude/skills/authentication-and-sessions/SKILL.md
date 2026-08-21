@@ -1,47 +1,79 @@
 ---
 name: authentication-and-sessions
-description: Modify or harden signup, login, tokens, introspection, user roles, gateway auth caching, logout, password storage, and session expiry in identity-svc and the web app.
+description: Master skill for user signup, login, opaque token format, token introspection, role enforcement, gateway auth header scrubbing, password handling, and session state. Trigger whenever editing identity-svc routes in apps/identity/src/index.ts, modifying gateway auth caching in apps/gateway/src/auth.ts, updating User model in identity/prisma/schema.prisma, or working on auth UI in apps/web.
 ---
 
-# Authentication and Sessions
+# Authentication & Session Management
 
-Treat identity changes as migrations of security behavior, not isolated endpoint edits.
+Authentication is terminated ONCE at `apps/gateway` (port 4000). Downstream microservices NEVER parse bearer tokens — they rely entirely on trusted `x-user-*` HTTP headers injected by the gateway after token introspection.
 
-## Entry points
+## Architecture & Entry Points
 
-- Identity API: `apps/identity/src/index.ts`.
-- Contracts: `packages/contracts/src/dto/auth.ts`.
-- Gateway introspection client: `apps/gateway/src/auth.ts`.
-- Auth/rate-limit hook: `apps/gateway/src/index.ts`.
-- Redis token-cache keys: `packages/redis-kit`.
-- Frontend auth: `apps/web/hooks/use-auth.tsx`, login/signup pages, protected routes, and auth proxies.
+- **Identity Service API:** `apps/identity/src/index.ts` (port 4001).
+- **Outbox Publisher:** `apps/identity/src/outbox-store.ts` (in-process publisher, 2s interval).
+- **Gateway Introspection Engine:** `apps/gateway/src/auth.ts` (`introspectToken`).
+- **Gateway Auth Hook:** `apps/gateway/src/index.ts` (`rewriteRequestHeaders`).
+- **Contracts DTOs:** `packages/contracts/src/dto/auth.ts` (`loginRequestSchema`, `signupRequestSchema`, `TokenIntrospectionDTO`).
+- **Prisma Model:** `User`, `Outbox` in `apps/identity/prisma/schema.prisma`.
+- **Frontend Hook:** `apps/web/hooks/use-auth.tsx`.
 
-## Current risks to account for
+## Token Scheme & Parsing
 
-The identity service currently compares plaintext passwords and mints predictable unsigned token strings parsed by timestamp. These are documented deferred hardening gaps. Do not extend this design for new security-sensitive features. Work involving auth hardening should migrate to password hashing (Argon2id or bcrypt with appropriate cost) and cryptographically random opaque sessions stored/revocable server-side, or properly signed short-lived tokens plus refresh/session revocation.
+- **Format:** `${userId}-${Date.now()}-${random36}`.
+- **Parsing:** `parseToken()` splits on the **last two dashes** because UUID user IDs contain dashes.
+- **Expiry:** Maximum token age is **30 days**.
+- **Storage:** Opaque tokens are stateless strings. Invalidation is handled by Redis token cache eviction.
 
-## Migration workflow
+## Identity Routes (`apps/identity/src/index.ts`)
 
-1. Define session lifetime, idle/absolute expiry, logout, revocation, role changes, and multi-device behavior.
-2. Add password hashes alongside legacy passwords if a gradual login-time rehash is required; never log or return either.
-3. Use constant-time library verification and generic invalid-credential responses.
-4. Normalize email consistently and preserve a database uniqueness constraint.
-5. Store only a token hash for opaque sessions where practical.
-6. Invalidate gateway introspection cache on logout, revocation, password reset, deletion, and role changes; keep cache TTL below the accepted revocation delay.
-7. Ensure direct service access cannot forge `x-user-*` trust headers through the deployment network boundary.
-8. Add CSRF protection if moving auth to cookies; use Secure, HttpOnly, SameSite settings appropriate to the deployment.
+1. **`POST /v1/auth/login`:**
+   - Validates `loginRequestSchema`. Checks user existence & compares password.
+   - Cross-checks `userType`/`isAdmin` (returns 403 on role mismatch).
+   - In ONE transaction: updates `lastLogin` date AND inserts an Outbox `USER_CHANGED` event.
+   - Returns `{ token, user }`.
+2. **`POST /v1/auth/signup`:**
+   - Validates `signupRequestSchema`. Returns 400 if email exists.
+   - Creates user with `isAdmin: false, userType: "student"`.
+   - In ONE transaction: creates `User` AND inserts Outbox `USER_CHANGED` event.
+3. **`POST /v1/internal/introspect` (INTERNAL ONLY):**
+   - Receives `{ token }`. Returns `{ valid, userId, name, email, isAdmin }`.
+   - NEVER throws on invalid/expired tokens — returns `{ valid: false }`.
+4. **`GET /v1/internal/users` & `GET /v1/users/:id`:** Internal user lookups for legacy reporting.
 
-## Tests
+## Gateway Auth & Header Injection (`apps/gateway/src/auth.ts`)
 
-Cover signup duplication races, wrong password, admin/student role mismatch, expired/revoked token, logout, role change with cached introspection, user deletion, malformed token, brute-force rate limiting, and legacy-password migration if applicable.
-
-## Verification
-
-```bash
-pnpm --filter identity-svc typecheck
-pnpm --filter gateway typecheck
-pnpm --filter @quiz/contracts typecheck
-pnpm --filter web typecheck
+```
+Browser Request (Authorization: Bearer <token>)
+                      │
+                      ▼
+Gateway: Check Redis q:auth:token:<token> (120s TTL)
+   ├── Cache Hit  ──▶ Use cached JSON
+   └── Cache Miss ──▶ Call POST identity-svc:4001/v1/internal/introspect
+                      Cache result for 120s (Negative results cached as "")
+                      │
+                      ▼
+Gateway: Header Scrubbing & Rewrite
+   ├── SCRUB:  x-user-id, x-user-name, x-user-email, x-user-is-admin, expect
+   └── INJECT: x-user-id, x-user-name, x-user-email, x-user-is-admin
+                      │
+                      ▼
+Proxy to Downstream Microservice (Downstream trusts x-user-* headers)
 ```
 
-Never expose test credentials or live token values in logs/reports. Describe compatibility and forced-login effects explicitly.
+## Authorization in Microservices (`auth.ts`)
+
+Downstream services use helper functions reading `x-user-*` headers:
+- `requireUser(request)`: Returns `{ userId, name, email, isAdmin }` or throws 401.
+- `requireAdmin(request)`: Checks `x-user-is-admin === "true"` or throws 403.
+
+## Verification Checklist
+
+```bash
+pnpm --filter identity-svc prisma:generate
+pnpm --filter identity-svc typecheck
+pnpm --filter gateway typecheck
+```
+
+- Verify `parseToken` correctly splits tokens when `userId` is a UUID containing dashes.
+- Verify gateway strips caller-supplied `x-user-is-admin` header on public requests.
+- Verify `USER_CHANGED` outbox event is committed in the same transaction as user creation/login.

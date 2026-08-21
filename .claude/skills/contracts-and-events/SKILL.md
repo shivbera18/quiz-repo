@@ -1,55 +1,94 @@
 ---
 name: contracts-and-events
-description: Design or change shared Zod DTOs, Kafka event schemas, topics, producers, consumers, and transactional outbox behavior. Use whenever an API payload or asynchronous message crosses app or service boundaries.
+description: Master skill for shared Zod DTOs, Kafka event schemas, topic definitions, producers, consumers, transactional outbox, and inter-service payloads. Trigger whenever changing Zod schemas in @quiz/contracts, adding or modifying Kafka topics, editing outbox-store.ts in any service, updating Kafka consumers or producers in kafka-kit, or modifying data formats that cross microservice boundaries.
 ---
 
 # Contracts and Events
 
-Treat `packages/contracts` as the source of truth for data crossing boundaries.
+`packages/contracts` is the single source of truth for all schemas crossing service boundaries. `packages/kafka-kit` provides the Kafka client, consumer runner, and outbox publisher.
 
-## Relevant areas
+## Structure & Exports
 
-- `packages/contracts/src/dto/`: API request/response schemas.
-- `packages/contracts/src/events/`: event envelope, event schemas, and topics.
-- `packages/kafka-kit/`: Kafka client, consumers, and outbox helpers.
-- Service `outbox-store.ts` files: transactionally persisted events.
-- Worker/consumer files in catalog, analytics, assessment, and notification.
+- **DTOs (`packages/contracts/src/dto/`):**
+  - `auth.ts`: `loginRequestSchema`, `signupRequestSchema`, `TokenIntrospectionDTO`, `AuthUserDTO`.
+  - `attempts.ts`: `startAttemptRequestSchema`, `autosaveRequestSchema`, `submitAttemptRequestSchema`, `AttemptQuestionDTO` (NO answer key), `StartAttemptResponseDTO`.
+  - `catalog.ts`: Pure interfaces (no Zod): `QuizSummaryDTO`, `FullQuizQuestionDTO` (HAS answer key), `FullQuizDTO`, `SubjectDTO`, `ChapterDTO`.
+- **Topics & Events (`packages/contracts/src/events/topics.ts`):** 13 defined topics under `TOPICS`.
+- **Envelope (`packages/contracts/src/events/envelope.ts`):** `EventEnvelope<T>` created via `createEnvelope(eventType, data, options)`.
+- **Kafka Kit (`packages/kafka-kit/src/`):**
+  - `client.ts`: `createKafka`, `getProducer` (singleton, `idempotent: true`, `maxInFlightRequests: 5`).
+  - `outbox.ts`: `publishOutboxBatch`, `startOutboxPublisher` (polls every 2s).
+  - `consumer.ts`: `runConsumer` (handles subscription, logging, and idempotency pre-check).
 
-## Workflow
+## The 13 Kafka Topics
 
-1. Find every producer, consumer, HTTP caller, handler, and test for the shape being changed.
-2. Update the Zod schema and inferred TypeScript type together; export it from the package index where needed.
-3. Prefer backward-compatible evolution: optional/defaulted additive fields before required or renamed fields.
-4. For a breaking event change, introduce a versioned event name/schema and support migration explicitly.
-5. Produce events in the same database transaction as the domain write using the existing outbox pattern.
-6. Parse and validate messages at the consumer boundary before side effects.
-7. Make consumers idempotent. Assume duplicate delivery, retries, delayed delivery, and out-of-order events.
-8. Update all producers, consumers, fixtures, and documentation before declaring completion.
+| Key | Topic Name | Producer | Consumer(s) | Keying Strategy | Compaction |
+|---|---|---|---|---|---|
+| `ATTEMPT_SUBMITTED` | `quiz.assessment.attempt-submitted.v1` | assessment (outbox) | analytics rollup | `userId` | Fact (No) |
+| `ATTEMPT_STARTED` | `quiz.assessment.attempt-started.v1` | assessment (direct) | analytics rollup | `userId` | Fact (No) |
+| `QUIZ_CHANGED` | `quiz.catalog.quiz-changed.v1` | catalog (outbox) | analytics rollup | `quizId` | Compacted |
+| `CHAPTER_CHANGED` | `quiz.catalog.chapter-changed.v1` | catalog (direct) | analytics rollup | `chapterId` | Compacted |
+| `SUBJECT_CHANGED` | `quiz.catalog.subject-changed.v1` | catalog (direct) | analytics rollup | `subjectId` | Compacted |
+| `USER_CHANGED` | `quiz.identity.user-changed.v1` | identity (outbox) | analytics, notification | `userId` | Compacted |
+| `USER_ERASURE_REQUESTED` | `quiz.identity.user-erasure-requested.v1` | identity (direct) | analytics, notification | `userId` | Fact (No) |
+| `ANNOUNCEMENT_PUBLISHED` | `quiz.notification.announcement-published.v1` | notification (outbox) | notification worker | `announcementId` | Fact (No) |
+| `PUSH_SEND_REQUESTED` | `quiz.notification.push-send-requested.v1` | notification worker | notification worker | `userId` | Fact (No) |
+| `AI_QUIZ_GENERATION_REQUESTED` | `quiz.ai.quiz-generation-requested.v1` | catalog (direct) | catalog ai-worker | `jobId` | Fact (No) |
+| `AI_QUIZ_GENERATION_COMPLETED` | `quiz.ai.quiz-generation-completed.v1` | catalog ai-worker | none (UI polls DB) | `jobId` | Fact (No) |
+| `EXPORT_REQUESTED` | `quiz.analytics.export-requested.v1` | analytics (direct) | analytics export-worker | `jobId` | Fact (No) |
+| `EXPORT_COMPLETED` | `quiz.analytics.export-completed.v1` | analytics export-worker | none (UI polls DB) | `jobId` | Fact (No) |
 
-## Event checklist
+## Standard Event Envelope
 
-- Stable event ID and event type.
-- Occurrence timestamp and schema/version strategy.
-- Aggregate/entity identifiers needed by consumers.
-- No secrets, passwords, tokens, or unnecessary personal data.
-- Correlation/trace metadata preserved where supported.
-- Retry behavior does not duplicate notifications, rollups, or exports.
-- Poison messages fail observably rather than being silently ignored.
+Every Kafka payload MUST be wrapped in an `EventEnvelope`:
 
-## Guardrails
+```ts
+interface EventEnvelope<T> {
+  eventId: string;       // randomUUID - primary consumer deduplication key
+  eventType: string;     // e.g. "quiz.assessment.attempt-submitted.v1"
+  eventVersion: number;  // default 1
+  occurredAt: string;    // ISO-8601 string
+  producer: string;      // e.g. "assessment-svc@1.4.0"
+  traceId?: string;      // propagated x-trace-id
+  data: T;
+}
+```
 
-- Do not publish Kafka messages directly after a database commit when loss between commit and publish is possible; use the outbox.
-- Do not import service-internal Prisma models as public contracts.
-- Do not casually rename topic constants or consumer group IDs; that can replay or strand data.
-- Keep contracts transport-oriented and avoid embedding service implementation details.
+## Transactional Outbox Pattern
 
-## Verification
+Use outbox when database write and event emission MUST be atomic (`ATTEMPT_SUBMITTED`, `QUIZ_CHANGED`, `USER_CHANGED`, `ANNOUNCEMENT_PUBLISHED`).
+
+1. Insert outbox record inside the domain transaction:
+   ```ts
+   await tx.outbox.create({
+     data: {
+       id: crypto.randomUUID(),
+       topic: TOPICS.ATTEMPT_SUBMITTED,
+       key: userId,
+       payload: envelope,
+       headers: { traceId }
+     }
+   });
+   ```
+2. `startOutboxPublisher` polls every 2 seconds using `withClaimedBatch` (`FOR UPDATE SKIP LOCKED` claim + send + `markPublished` in one transaction).
+3. Null payloads (`payload: null`) represent **tombstones** on compacted topics for deleted entities.
+
+## Consumer Idempotency Pattern
+
+Every consumer MUST be idempotent on `envelope.eventId`.
+
+- **Strict Pattern (analytics-svc - COPY THIS):** `runConsumer` checks `hasProcessed(eventId)`. Inside the projection transaction, `markProcessed(tx, eventId)` inserts into `ProcessedEvent`. A primary key collision rolls back the entire projection write.
+- **Long Handlers:** Consumers with long processing loops (e.g. `catalog-ai-worker`, `analytics-export-worker`) MUST set `maxPollIntervalMs: 15 * 60_000` on the consumer to prevent rebalance evictions during processing.
+
+## Verification Checklist
 
 ```bash
 pnpm --filter @quiz/contracts typecheck
 pnpm --filter @quiz/kafka-kit typecheck
-pnpm --filter <producer-package> typecheck
-pnpm --filter <consumer-package> typecheck
+pnpm --filter <producer-service> typecheck
+pnpm --filter <consumer-service> typecheck
 ```
 
-Add focused schema and idempotency tests where test infrastructure exists. Report compatibility assumptions and all producers/consumers reviewed.
+- Verify new events use `createEnvelope` and include `eventId` + `occurredAt`.
+- Verify outbox implementation uses `FOR UPDATE SKIP LOCKED`.
+- Check topic retention & compaction settings in Redpanda Console (http://localhost:8090).

@@ -1,57 +1,53 @@
 ---
 name: security-review
-description: Review or harden authentication, authorization, input handling, quiz integrity, API exposure, secrets, uploads, rate limits, dependencies, and deployment security in the quiz platform.
+description: Master skill for security reviews, authentication hardening, header scrubbing, answer key isolation, rate limit policy evaluation, formula injection prevention, and vulnerability assessments. Trigger whenever reviewing code for security risks, modifying gateway header scrubbing, inspecting answer key paths, evaluating rate limits, checking secret exposure, or hardening authorization controls.
 ---
 
-# Security Review
+# Security Review & Trust Architecture
 
-Perform threat-driven review with special attention to quiz integrity and microservice trust boundaries.
+This skill defines the security invariants and trust boundaries across the platform.
 
-## Review process
+## 9 Critical Security Invariants
 
-1. Identify assets, actors, entry points, service boundaries, stored data, and abuse goals.
-2. Trace untrusted data from browser/API/event/upload through validation, authorization, persistence, logging, and output.
-3. Rank findings by exploitability and impact; include file/line evidence and a concrete remediation.
-4. Apply focused fixes only when requested or clearly within task scope, then add negative tests.
-5. Distinguish confirmed vulnerabilities from defense-in-depth suggestions.
+1. **Gateway Header Scrubbing (Trust Boundary):**
+   - The Gateway MUST strip inbound `x-user-id`, `x-user-name`, `x-user-email`, and `x-user-is-admin` headers from every incoming browser request before proxying.
+   - Headers are re-set ONLY from valid identity introspection (`introspectToken`).
+   - Downstream services trust `x-user-*` headers because the gateway is the sole public ingress.
+2. **Answer Key Physical Isolation:**
+   - Answer keys (`correctAnswer`, `explanation`) live exclusively in `catalog-svc`.
+   - Public API routes (`GET /v1/quizzes/:id`) MUST NOT include `correctAnswer`.
+   - `AttemptQuestionDTO` in `@quiz/contracts` structurally omits `correctAnswer`.
+   - Keys are revealed ONLY via `GET /v1/attempts/:id/result` AFTER `status === SUBMITTED`.
+   - Answer keys MUST NEVER be emitted onto Kafka event topics.
+3. **Internal Endpoint Unreachability (`/internal/*`):**
+   - Internal routes (`GET catalog-svc/internal/quizzes/:id/full`, `POST identity-svc/v1/internal/introspect`) MUST NOT be registered in `apps/gateway/src/index.ts`.
+   - Internal endpoints are physically unreachable from outside the private container network.
+4. **Postgres Role & Schema Isolation:**
+   - 5 distinct Postgres login roles (`identity_rw`, `catalog_rw`, `assessment_rw`, `analytics_rw`, `notification_rw`).
+   - `REVOKE ALL ON SCHEMA FROM PUBLIC;` + search path pinning prevents cross-schema SQL joins and data breaches even if SQL injection occurs in one service.
+5. **Rate Limiting & Cost Control:**
+   - Abuse limits: `loginByIp` (50/5m), `loginByEmail` (30/15m), `signupByIp` (3/60m).
+   - Expensive operation limits: `aiGenByUser` (5/h), `exportByUser` (3/h).
+   - High-frequency limits: `answersByAttempt` (120/m), `submitByAttempt` (5/m).
+6. **CSV Formula Injection Prevention (`csvEscape`):**
+   - All string fields exported in CSVs starting with `=`, `+`, `-`, `@`, `\t`, or `\r` MUST be escaped with a leading single quote (`'`).
+7. **Single-Use Ticket Authentication for SSE:**
+   - SSE connections use 30s single-use tickets consumed via Redis **`GETDEL`** (`q:sse:ticket:<t>`) to prevent URL token leakage and stream replay attacks.
+8. **Push Secret Protection:**
+   - `PUSH_SEND_REQUESTED` event payloads carry ONLY `subscriptionId` and `announcementId`.
+   - Web push secrets (`endpoint`, `p256dh`, `auth`) MUST NEVER be published to Kafka topics.
+9. **Known Baseline Security Debt (Documented Invariants):**
+   - `identity-svc` currently stores and compares passwords in plaintext.
+   - Tokens are opaque unsigned strings `${userId}-${ts}-${rand36}` (max age 30 days).
 
-## Checklist
+## Verification Checklist
 
-### Identity and access
+```bash
+pnpm --filter gateway typecheck
+pnpm --filter security-review typecheck 2>/dev/null || pnpm typecheck
+```
 
-- Token/session validation, expiry, revocation, and secure cookie/header handling.
-- Service-side role and resource-ownership checks on every sensitive operation.
-- Gateway checks are not the only authorization layer.
-- Login and expensive endpoints have appropriate rate limits without unsafe fail-open behavior.
-
-### Quiz integrity
-
-- Correct answers and scoring rules are not exposed before completion.
-- Scores are calculated server-side.
-- Attempt ownership, timing, finalization, and duplicate submissions are enforced atomically.
-- Admin-only quiz/question/analytics actions cannot be reached by ordinary users.
-
-### Input and output
-
-- Zod validates HTTP and Kafka boundaries.
-- Upload type, size, count, parsing complexity, and object keys are constrained.
-- CSV exports prevent spreadsheet formula injection.
-- Errors and logs do not leak secrets, answer keys, internals, or personal data.
-- URLs and downstream requests are protected from SSRF/open redirects where applicable.
-
-### Infrastructure and data
-
-- `.env*` secrets remain ignored; examples contain placeholders only.
-- Database roles stay schema-scoped and least-privileged.
-- Production ports are not exposed around Caddy.
-- CORS, TLS, headers, backups, dependencies, Kafka, Redis, and MinIO access are reviewed.
-
-## Guardrails
-
-- Never include real exploit tokens, credentials, or user data in reports/tests.
-- Do not run destructive or high-volume attack tooling against non-local systems without explicit authorization.
-- Do not weaken controls merely to make a failing flow work.
-
-## Verification and output
-
-Run relevant typechecks and negative tests. Report findings ordered by severity with: title, evidence, impact, realistic attack path, remediation, and verification. If no vulnerability is found, state the scope and residual risks rather than claiming the system is secure.
+- Verify spoofed `x-user-is-admin` headers are stripped by the gateway.
+- Verify answer keys are not exposed in `/v1/quizzes/:id` metadata responses.
+- Verify internal endpoints (`/internal/*`) are absent from the gateway proxy table.
+- Verify CSV export fields starting with `=` are escaped with `'`.

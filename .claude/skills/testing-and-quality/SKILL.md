@@ -1,48 +1,56 @@
 ---
 name: testing-and-quality
-description: Create, repair, or run unit, integration, and Playwright end-to-end tests for the quiz platform. Use for regressions, acceptance criteria, flaky tests, scoring tests, browser flows, and pre-merge verification.
+description: Master skill for unit testing, scoring golden fixtures, Vitest execution, Playwright e2e specs, ESLint verification, and test-driven quality assurance. Trigger whenever running or writing tests, modifying apps/assessment/tests/scoring.test.ts, working on apps/web/tests-e2e/, updating vitest or playwright configs, or performing pre-merge quality verification.
 ---
 
-# Testing and Quality
+# Testing & Quality Assurance
 
-Choose the smallest test layer that proves the behavior, then broaden verification based on risk.
+This skill governs unit, integration, and end-to-end verification across the monorepo.
 
-## Existing tools
+## Monorepo Test Inventory
 
-- Vitest is currently configured in at least `assessment-svc` for scoring/service tests.
-- Playwright is configured in `apps/web/playwright.config.ts` for browser flows.
-- Turborepo exposes root `test` and `test:e2e` tasks.
-- TypeScript checks exist in every workspace package.
+| Suite / Test Target | Path | Runner | Description |
+|---|---|---|---|
+| **Scoring Golden Fixtures** | `apps/assessment/tests/scoring.test.ts` | Vitest | 26 table-driven fixtures testing score calculation, negative marking, section totals, and 0-score floor. **THE SINGLE SAFETY NET FOR SCORING.** |
+| **Web E2E Quiz Flow** | `apps/web/tests-e2e/quiz-flow.spec.ts` | Playwright | Student quiz taking, timer rendering, autosave, and result submission. |
+| **Web E2E Admin Flow** | `apps/web/tests-e2e/admin-edit-flow.spec.ts` | Playwright | Admin quiz creation, question editing, and propagation. |
 
-Inspect actual paths and package scripts before adding tests; do not rely only on architecture documentation because code and docs can drift.
+## Scoring Test Rule
 
-## Workflow
+`apps/assessment/tests/scoring.test.ts` protects the core scoring engine (`scoreQuiz` in `apps/assessment/src/lib/scoring.ts`).
+**INVARIANT:** Any change to scoring logic MUST be accompanied by updated or new golden fixtures in `scoring.test.ts` in the exact same commit, with an explicit stated reason for the score semantics shift.
 
-1. Translate the requirement or bug into observable acceptance cases.
-2. Locate the nearest existing test and copy its conventions.
-3. Add a regression test that fails for the original defect before or alongside the fix when practical.
-4. Cover boundaries: invalid input, auth/role failures, empty state, time expiry, duplicate submission, retries, and downstream failure as relevant.
-5. Keep tests deterministic: control time and randomness, use stable seeded data, and avoid arbitrary sleeps.
-6. For distributed behavior, assert persisted outcomes and idempotency rather than only "message was sent."
-7. For Playwright, prefer accessible role/label selectors or stable test IDs over CSS structure and text that changes frequently.
-8. Clean up created data or use isolated identifiers.
+## The Verification Ladder
 
-## Quiz-specific invariants
-
-Prioritize tests for server-side scoring, answer secrecy before completion, attempt ownership, timer expiry, one-time/final submission semantics, admin authorization, leaderboard idempotency, and notification deduplication.
-
-## Commands
+Execute steps in order before submitting code or merging PRs:
 
 ```bash
+# 1. Mandatory Schema Generation & Typecheck:
+pnpm db:generate
+pnpm typecheck
+
+# 2. Assessment Scoring Unit Tests (Vitest):
 pnpm --filter assessment-svc test
-pnpm --filter web test:e2e
-pnpm --filter <package> typecheck
-pnpm test
-pnpm test:e2e
+
+# 3. Web Linting (ESLint):
+pnpm --filter web lint
+
+# 4. Standalone Web Production Build:
+pnpm --filter web build
+
+# 5. Full Container Stack Smoke Verification:
+pnpm compose:up
+curl http://localhost:4000/healthz
 ```
 
-Playwright may require seeded backend services and environment variables. Read `apps/web/playwright.config.ts` and its global setup first. If configured paths do not match files on disk, report and fix the configuration deliberately rather than moving files blindly.
+## Manual Infrastructure Verification
 
-## Completion report
+- **Event Flow Verification:** Open **Redpanda Console** (http://localhost:8090). Inspect topic payload envelopes and verify consumer group lag is `0` for `analytics-rollup-consumer` and `notification-fanout-worker`.
+- **Export Verification:** Open **MinIO Console** (http://localhost:9001, `minioadmin`/`minioadmin`). Verify generated CSV files exist under `quiz-exports` bucket.
+- **Database Role Verification:** Execute `docker compose exec postgres psql -U assessment_rw -d quiz` to verify schema search paths and role grants.
 
-List scenarios added, commands and results, untested risks, and environmental blockers. Never claim a test passed unless it was actually run successfully.
+## Verification Checklist
+
+- Verify `pnpm db:generate` was run before running typechecks.
+- Verify `pnpm --filter assessment-svc test` passes with 26/26 golden fixtures succeeding.
+- Verify `pnpm --filter web build` compiles cleanly without dynamic import or parameter errors.

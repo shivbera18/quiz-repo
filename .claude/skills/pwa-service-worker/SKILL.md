@@ -1,48 +1,62 @@
 ---
 name: pwa-service-worker
-description: Change or debug the web app manifest, service-worker registration, caching, offline behavior, update rollout, installability, icons, and push notification handlers.
+description: Master skill for PWA web manifest, service worker caching, offline HTML fallback, VAPID push registration, push event handlers, and update rollouts in apps/web. Trigger whenever editing apps/web/public/sw.js, modifying app/manifest.ts, adjusting components/service-worker-registration.tsx, updating hooks/use-push-notifications.tsx, or debugging offline/PWA installability behavior.
 ---
 
-# PWA and Service Worker
+# PWA & Service Worker Management
 
-Make service-worker changes without trapping users on stale application code or caching private API data.
+`apps/web` provides Progressive Web App (PWA) capabilities including offline fallback, asset caching, service worker lifecycle management, and web push delivery.
 
-## Entry points
+## Key Files & Structure
 
-- Manifest: `apps/web/app/manifest.ts`.
-- Registration: `apps/web/components/service-worker-registration.tsx`.
-- PWA lifecycle: `apps/web/components/pwa-handler.tsx`.
-- Worker: `apps/web/public/sw.js`.
-- Offline page: `apps/web/public/offline.html`.
-- Icons: `apps/web/app/icon.tsx`, `apple-icon.tsx`, and `public/`.
-- Push UI/hooks: `push-notifications-manager.tsx` and `use-push-notifications.tsx`.
+- **Service Worker Script:** `apps/web/public/sw.js`.
+- **Web App Manifest:** `apps/web/app/manifest.ts`.
+- **SW Registration Component:** `apps/web/components/service-worker-registration.tsx`.
+- **PWA Install & Update Handler:** `apps/web/components/pwa-handler.tsx`.
+- **Push Notification Hook:** `apps/web/hooks/use-push-notifications.tsx`.
+- **Offline Fallback Page:** `apps/web/public/offline.html`.
 
-## Caching rules
+## Service Worker Lifecycle (`public/sw.js`)
 
-- Version cache names and remove obsolete caches during activation.
-- Precache only stable public shell assets that exist at build/runtime.
-- Do not cache authenticated API responses, tokens, user profiles, quiz attempts, answers, results, admin pages, SSE, or mutation responses.
-- Prefer network-first for navigations with offline fallback; use cache-first only for immutable/static assets.
-- Restrict handling to same-origin requests unless cross-origin caching is explicitly designed.
-- Never cache failed/non-OK responses unintentionally.
-- Preserve query parameters when they affect content.
+1. **Install & Cache Pre-fetching:**
+   - Pre-caches core assets (`/offline.html`, icons, fallback styles).
+   - Calls `self.skipWaiting()` on install.
+2. **Fetch Interception & Offline Fallback:**
+   - Dynamic API requests (`/api/*`, `/v1/*`) use **Network-First** strategy.
+   - Static assets use **Cache-First** strategy.
+   - When HTML navigation fails due to network outage, returns pre-cached `/offline.html`.
+3. **Push Event Handler (`push` event):**
+   - Parses push notification JSON payload: `{ title, body, icon, tag, url, priority }`.
+   - Notification options:
+     - `icon`: `/icons/icon-192x192.svg` (default).
+     - `badge`: `/icons/icon-192x192.svg`.
+     - `data`: `{ url: payload.url || "/dashboard" }`.
+     - `requireInteraction`: Set to `true` if `priority === "urgent"` or `"high"`.
+4. **Notification Click Handler (`notificationclick` event):**
+   - Closes notification banner.
+   - Calls `clients.matchAll({ type: "window" })`. Focuses existing tab if open to target URL; otherwise calls `clients.openWindow(url)`.
 
-## Update lifecycle
+## Push Subscription Registration (`use-push-notifications.tsx`)
 
-1. Decide whether updates activate immediately or wait; handle `skipWaiting` and `clients.claim` consistently.
-2. Avoid forcibly reloading repeatedly when a new worker takes control.
-3. Communicate actionable update state through existing UI patterns without blocking quiz submission.
-4. During an active quiz, prioritize preserving unsaved state before update/reload.
+1. **VAPID Key Conversion:** Reads `process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY` and converts URL-safe base64 string to `Uint8Array`.
+2. **Subscribe:**
+   ```ts
+   const registration = await navigator.serviceWorker.ready;
+   const subscription = await registration.pushManager.subscribe({
+     userVisibleOnly: true,
+     applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+   });
+   ```
+3. **Persist to Backend:** Sends subscription payload (`endpoint`, `keys: { p256dh, auth }`) to `POST /api/push-subscription` (proxied to gateway `/v1/push-subscriptions`).
+4. **Unsubscribe:** Calls `subscription.unsubscribe()` and sends `DELETE /api/push-subscription?endpoint=...`.
 
-## Push behavior
-
-Validate notification payload fields, use stable tags deliberately, focus an existing same-origin client before opening a new window, and constrain click URLs to safe same-origin paths.
-
-## Verification
+## Verification Checklist
 
 ```bash
 pnpm --filter web typecheck
 pnpm --filter web build
 ```
 
-Use a production build because service-worker behavior differs in development. In browser tooling verify installability, manifest/icon loading, offline navigation, cache contents, update activation, push click behavior, and that authenticated API responses are absent from Cache Storage.
+- Verify `sw.js` correctly serves `/offline.html` when offline.
+- Verify `push` event handles missing optional fields (`priority`, `url`) without throwing uncaught exceptions.
+- Verify `use-push-notifications.tsx` converts VAPID keys using `urlBase64ToUint8Array`.

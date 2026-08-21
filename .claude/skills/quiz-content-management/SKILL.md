@@ -1,50 +1,76 @@
 ---
 name: quiz-content-management
-description: Build or modify subjects, chapters, quizzes, question-bank entries, admin editors, imports, activation, and catalog change events. Use for quiz CRUD and content-authoring workflows.
+description: Master skill for subject, chapter, quiz, and question-bank CRUD operations, JSON-in-String database utility parsing, optimistic concurrency control, catalog change events, and admin editors in catalog-svc. Trigger whenever editing catalog-svc routes in apps/catalog/src/index.ts, modifying Quiz, Chapter, Subject, or QuestionBankItem models, working on admin quiz editors in apps/web/app/admin, or adjusting catalog JSON serialization logic.
 ---
 
-# Quiz Content Management
+# Quiz Content Management (Catalog Service)
 
-Keep catalog content valid, editable by admins, and safe for students.
+`apps/catalog` (port 4002) is the sole holder of authoring data and quiz answer keys. It owns the `catalog` database schema.
 
-## Entry points
+## Entry Points & Infrastructure
 
-- Catalog API and validation: `apps/catalog/src/index.ts`.
-- Catalog schema and seed: `apps/catalog/prisma/`.
-- Public DTOs: `packages/contracts/src/dto/catalog.ts`.
-- Admin UI: `apps/web/app/admin/manage-quizzes.tsx`, `QuizManagementSection.tsx`, `quiz/[id]/`, and `question-bank/`.
-- Next.js proxy routes: `apps/web/app/api/admin/`.
-- Admin E2E: `apps/web/tests-e2e/admin-edit-flow.spec.ts`.
+- **API Routes:** `apps/catalog/src/index.ts` (26 endpoints).
+- **AI Generation Worker:** `apps/catalog/src/ai-worker.ts`.
+- **Database Utilities:** `apps/catalog/src/lib/database-utils.ts` (`parseJsonField`, `stringifyForDatabase`).
+- **Prisma Schema:** `apps/catalog/prisma/schema.prisma` (`Subject`, `Chapter`, `Quiz`, `QuestionBankItem`, `AiGenerationJob`, `Outbox`).
+- **Admin UI Components:** `apps/web/app/admin/manage-quizzes.tsx`, `apps/web/app/admin/QuizManagementSection.tsx`, `apps/web/app/admin/question-bank/page.tsx`.
 
-## Data boundaries
+## JSON-in-String Columns Rule
 
-- Public quiz DTOs must contain metadata only and no answer keys.
-- Full quiz questions with correct answers belong only on catalog's internal endpoint used by assessment.
-- Admin endpoints require service-side admin enforcement; hiding controls in the UI is insufficient.
-- Catalog owns quiz-to-chapter-to-subject relationships. Other services consume change events or internal APIs rather than reading catalog tables.
+The catalog schema uses `String` columns to store structured JSON data:
+- `Quiz.sections` & `Quiz.questions`
+- `QuestionBankItem.options` & `QuestionBankItem.tags`
 
-## Workflow
+**CRITICAL INVARIANT:** Never use raw `JSON.parse()` or `JSON.stringify()` inline. Always go through `src/lib/database-utils.ts`:
+```ts
+import { parseJsonField, stringifyForDatabase } from "./lib/database-utils.js";
 
-1. Trace public, admin, and internal representations of the content being changed.
-2. Validate title length, duration, sections, question shape, exactly four options where required, correct-answer bounds, negative marking, and relationship IDs.
-3. Perform multi-record quiz/question updates transactionally so partial edits cannot leak.
-4. Increment/preserve quiz version semantics and emit `QUIZ_CHANGED`, `CHAPTER_CHANGED`, or `SUBJECT_CHANGED` after domain changes using the established outbox/event pattern.
-5. Decide what happens to active attempts: existing attempts must continue from their snapshots.
-6. Keep partially generated/imported content inactive until an admin reviews it.
-7. Add admin UI feedback for validation conflicts and unsaved operations.
+const questions = parseJsonField<FullQuizQuestionDTO[]>(quiz.questions, []);
+const dbString = stringifyForDatabase(questions);
+```
 
-## Deletion checklist
+## Optimistic Concurrency Control (Quiz Updates)
 
-Before deleting, inspect foreign keys, active attempts, historical analytics dimensions, and child records. Prefer explicit conflict/archive/deactivation semantics when deletion would damage history. Do not cascade across service-owned databases.
+`PATCH /v1/admin/quizzes/:id` enforces optimistic concurrency to prevent two admins from overwriting each other's edits:
 
-## Verification
+1. Request body MUST supply `version: number`.
+2. Update query requires matching `id` AND `version`:
+   ```ts
+   const updated = await prisma.quiz.updateMany({
+     where: { id, version: body.version },
+     data: {
+       ...updateData,
+       version: { increment: 1 }
+     }
+   });
+   if (updated.count === 0) {
+     throw new ConflictError("Quiz was modified by another user. Please reload.");
+   }
+   ```
+3. Outbox `QUIZ_CHANGED` event MUST be created in the SAME transaction.
+
+## Answer Key Isolation Rules
+
+- **Public Routes (`GET /v1/quizzes/:id`):** Returns quiz metadata ONLY. `correctAnswer` and `explanation` are structurally omitted from responses.
+- **Internal Endpoint (`GET /internal/quizzes/:id/full`):** Returns complete questions WITH `correctAnswer` and `explanation`. This route is called ONLY by `assessment-svc` at attempt start to generate immutable snapshots.
+
+## Deletion Safety & Parent Constraints
+
+- `DELETE /v1/admin/subjects/:id` & `DELETE /v1/admin/chapters/:id`: MUST return **`409 Conflict`** if children contain associated quizzes.
+- Mutations publish `SUBJECT_CHANGED` and `CHAPTER_CHANGED` events via direct produce.
+
+## Question Bank Validation Rules
+
+- `POST /v1/admin/question-bank`: Requires EXACTLY **4 options** in options array. `correctAnswer` MUST be an integer `0–3`. `difficulty` defaults to `"medium"`.
+- `GET /v1/admin/question-bank`: Cursor/page paginated (`limit` 1–20). Supports case-insensitive `search` over question & explanation text, plus filters for `section`, `difficulty`, and `tag`.
+
+## Verification Checklist
 
 ```bash
 pnpm --filter catalog-svc prisma:generate
 pnpm --filter catalog-svc typecheck
-pnpm --filter @quiz/contracts typecheck
-pnpm --filter web typecheck
-pnpm --filter web test:e2e -- admin-edit-flow.spec.ts
 ```
 
-Document public/internal DTO impact, version behavior, emitted events, and historical-data implications.
+- Verify PATCH `/v1/admin/quizzes/:id` returns 409 when `version` is outdated.
+- Verify `GET /v1/quizzes/:id` does not expose `correctAnswer`.
+- Verify JSON columns use `parseJsonField` and handle empty/null strings safely.
