@@ -1,0 +1,212 @@
+[
+  {
+    "section": "quantitative",
+    "question": "A shopkeeper marks an article 40% above its cost price and allows a discount of 15% on the marked price. What is his profit percentage?",
+    "options": ["15%", "17%", "19%", "21%"],
+    "correctAnswer": 2,
+    "explanation": "Let the cost price be 100. Marked price = 140. Selling price after 15% discount = 140 × 0.85 = 119. Profit = 119 - 100 = 19, so the profit percentage is 19%."
+  },
+  {
+    "section": "quantitative",
+    "question": "An article is sold at a 20% profit. If both its cost price and selling price were Rs. 100 less, the profit would have been 25%. What was the original cost price?",
+    "options": ["Rs. 400", "Rs. 500", "Rs. 600", "Rs. 800"],
+    "correctAnswer": 1,
+    "explanation": "Let the original cost price be x. Original selling price = 1.2x. Under the changed values, 1.2x - 100 = 1.25(x - 100). Solving gives 1.2x - 100 = 1.25x - 125, so 25 = 0.05x and x = 500."
+  },
+  {
+    "section": "quantitative",
+    "question": "A trader sold an item at a loss of 12%. Had he sold it for Rs. 180 more, he would have gained 8%. Find the cost price of the item.",
+    "options": ["Rs. 720", "Rs. 800", "Rs. 900", "Rs. 1,000"],
+    "correctAnswer": 2,
+    "explanation": "The difference between an 8% gain and a 12% loss is 20% of the cost price. Therefore, 20% of cost price = 180, giving cost price = 180 ÷ 0.20 = Rs. 900."
+  },
+  {
+    "section": "quantitative",
+    "question": "A dishonest dealer claims to sell rice at cost price but uses a weight of 900 g instead of 1 kg. What is his profit percentage?",
+    "options": ["10%", "11 1/9%", "12 1/2%", "9%"],
+    "correctAnswer": 1,
+    "explanation": "He charges the cost of 1,000 g but supplies only 900 g. Profit percentage = (100 ÷ 900) × 100 = 11 1/9%."
+  },
+  {
+    "section": "quantitative",
+    "question": "A shopkeeper allows two successive discounts of 20% and 10% on an article marked at Rs. 2,500. If the cost price is Rs. 1,700, what is his profit percentage?",
+    "options": ["4 12/17%", "5 15/17%", "6 8/17%", "8%"],
+    "correctAnswer": 1,
+    "explanation": "Selling price = 2,500 × 0.80 × 0.90 = Rs. 1,800. Profit = 1,800 - 1,700 = Rs. 100. Profit percentage = (100 ÷ 1,700) × 100 = 5 15/17%."
+  },
+  {
+    "section": "quantitative",
+    "question": "A man sells two articles for Rs. 9,900 each. On one he gains 10%, and on the other he loses 10%. What is his overall result?",
+    "options": ["No profit, no loss", "1% profit", "1% loss", "2% loss"],
+    "correctAnswer": 2,
+    "explanation": "For equal selling prices with equal gain and loss percentages, there is a net loss of p²/100 percent. Here p = 10, so the net loss is 10²/100 = 1%."
+  },
+  {
+    "section": "quantitative",
+    "question": "By selling 15 pens for Rs. 720, a trader loses an amount equal to the cost price of 3 pens. What is the cost price of one pen?",
+    "options": ["Rs. 50", "Rs. 55", "Rs. 60", "Rs. 65"],
+    "correctAnswer": 2,
+    "explanation": "Let the cost price of one pen be x. The cost of 15 pens is 15x and the loss is 3x. Thus the selling price is 15x - 3x = 12x = 720, giving x = Rs. 60."
+  },
+  {
+    "section": "quantitative",
+    "question": "A retailer marks his goods 25% above cost price. He sells 40% of the goods at the marked price, 35% at a discount of 10%, and the remaining goods at a discount of 20%. What is his overall profit percentage?",
+    "options": ["12 1/2%", "13 7/16%", "14 3/8%", "15%"],
+    "correctAnswer": 2,
+    "explanation": "Take total cost as 100. Marked value = 125. Total selling value = 0.40×125 + 0.35×125×0.90 + 0.25×125×0.80 = 50 + 39.375 + 25 = 114.375. Profit = 14.375%, which is 14 3/8%."
+  },
+  {
+    "section": "quantitative",
+    "question": "An article is marked 60% above cost price. What single discount percentage on the marked price will result in a profit of 20%?",
+    "options": ["20%", "22.5%", "25%", "30%"],
+    "correctAnswer": 2,
+    "explanation": "Let cost price be 100. Marked price = 160 and the required selling price for 20% profit = 120. Discount = 160 - 120 = 40. Discount percentage = (40 ÷ 160) × 100 = 25%."
+  },
+  {
+    "section": "quantitative",
+    "question": "A trader buys an article at a 20% discount on its listed price. He marks it 50% above his cost price and then gives a 20% discount on his marked price. What is his profit percentage?",
+    "options": ["15%", "18%", "20%", "25%"],
+    "correctAnswer": 2,
+    "explanation": "Let his cost price be 100. His marked price is 150. After a 20% discount, selling price = 150 × 0.80 = 120. Profit percentage = 20%. The original listed price does not affect profit once his actual cost is known."
+  },
+  {
+    "section": "quantitative",
+    "question": "A fruit seller buys 120 oranges for Rs. 720. Twelve oranges spoil. At what price per orange should he sell the remaining oranges to earn a profit of 20% on the total cost?",
+    "options": ["Rs. 7", "Rs. 8", "Rs. 9", "Rs. 10"],
+    "correctAnswer": 1,
+    "explanation": "Required revenue = 720 × 1.20 = Rs. 864. He can sell 120 - 12 = 108 oranges. Required price per orange = 864 ÷ 108 = Rs. 8."
+  },
+  {
+    "section": "quantitative",
+    "question": "A wholesaler sells an article to a retailer at a profit of 20%. The retailer sells it to a customer at a profit of 25%. If the customer pays Rs. 1,500, what was the wholesaler's cost price?",
+    "options": ["Rs. 900", "Rs. 1,000", "Rs. 1,100", "Rs. 1,200"],
+    "correctAnswer": 1,
+    "explanation": "Customer price = wholesaler cost × 1.20 × 1.25 = wholesaler cost × 1.50. Therefore, wholesaler cost = 1,500 ÷ 1.50 = Rs. 1,000."
+  },
+  {
+    "section": "quantitative",
+    "question": "A merchant mixes 30 kg of rice costing Rs. 48 per kg with 20 kg of rice costing Rs. 60 per kg. At what price per kg should he sell the mixture to gain 25%?",
+    "options": ["Rs. 62", "Rs. 64", "Rs. 66", "Rs. 68"],
+    "correctAnswer": 2,
+    "explanation": "Total cost = 30×48 + 20×60 = 1,440 + 1,200 = Rs. 2,640 for 50 kg. Cost per kg = 2,640 ÷ 50 = Rs. 52.80. For 25% profit, selling price = 52.80 × 1.25 = Rs. 66."
+  },
+  {
+    "section": "quantitative",
+    "question": "A dealer gives a 10% discount on the marked price and still earns a 26% profit. If the cost price is Rs. 1,500, what is the marked price?",
+    "options": ["Rs. 1,900", "Rs. 2,000", "Rs. 2,100", "Rs. 2,250"],
+    "correctAnswer": 2,
+    "explanation": "Selling price for 26% profit = 1,500 × 1.26 = Rs. 1,890. This equals 90% of marked price. Marked price = 1,890 ÷ 0.90 = Rs. 2,100."
+  },
+  {
+    "section": "quantitative",
+    "question": "A shopkeeper sells an article for Rs. 1,840 after allowing an 8% discount on its marked price. If he earns a 15% profit, find the cost price.",
+    "options": ["Rs. 1,500", "Rs. 1,600", "Rs. 1,700", "Rs. 1,750"],
+    "correctAnswer": 1,
+    "explanation": "The selling price is Rs. 1,840 and represents 115% of cost price. Cost price = 1,840 ÷ 1.15 = Rs. 1,600."
+  },
+  {
+    "section": "quantitative",
+    "question": "A man sells an article at a 15% loss. If he had purchased it for 20% less and sold it for Rs. 102 more, he would have gained 25% on the reduced cost. Find the original cost price.",
+    "options": ["Rs. 600", "Rs. 640", "Rs. 680", "Rs. 720"],
+    "correctAnswer": 2,
+    "explanation": "Let original cost be x. Original selling price = 0.85x. Reduced cost would be 0.80x, and a 25% gain on it gives a selling price of 1.25×0.80x = x. Thus x - 0.85x = 102, so 0.15x = 102 and x = Rs. 680."
+  },
+  {
+    "section": "quantitative",
+    "question": "A bookseller marks a book 30% above cost price. After giving a discount of Rs. 78, he gains 17%. What is the cost price of the book?",
+    "options": ["Rs. 500", "Rs. 600", "Rs. 650", "Rs. 700"],
+    "correctAnswer": 1,
+    "explanation": "Let cost price be x. Marked price = 1.30x and selling price = 1.17x. The discount is 1.30x - 1.17x = 0.13x = 78. Therefore x = 78 ÷ 0.13 = Rs. 600."
+  },
+  {
+    "section": "quantitative",
+    "question": "A shopkeeper gains 20% after giving a discount of 20% on the marked price. By what percentage is the marked price above the cost price?",
+    "options": ["40%", "45%", "50%", "60%"],
+    "correctAnswer": 2,
+    "explanation": "Let cost price be 100. Selling price at 20% gain = 120. Since selling price is 80% of marked price, marked price = 120 ÷ 0.80 = 150, which is 50% above cost price."
+  },
+  {
+    "section": "quantitative",
+    "question": "A trader sells 60% of his stock at a profit of 25% and the remaining stock at a loss of 10%. If every unit has the same cost price, what is his overall profit percentage?",
+    "options": ["10%", "11%", "12%", "15%"],
+    "correctAnswer": 1,
+    "explanation": "Overall profit percentage = 60% of 25% plus 40% of -10% = 15% - 4% = 11%."
+  },
+  {
+    "section": "quantitative",
+    "question": "An article is sold for Rs. 2,160 after two successive discounts of 10% and 20%. What was its marked price?",
+    "options": ["Rs. 2,700", "Rs. 2,800", "Rs. 3,000", "Rs. 3,200"],
+    "correctAnswer": 2,
+    "explanation": "After successive discounts, selling price = marked price × 0.90 × 0.80 = 0.72 × marked price. Marked price = 2,160 ÷ 0.72 = Rs. 3,000."
+  },
+  {
+    "section": "quantitative",
+    "question": "A manufacturer gains 20%, the wholesaler gains 15%, and the retailer gains 25%. If the retail selling price is Rs. 2,070, what was the manufacturer's cost price?",
+    "options": ["Rs. 1,000", "Rs. 1,100", "Rs. 1,200", "Rs. 1,250"],
+    "correctAnswer": 2,
+    "explanation": "Retail price = manufacturer's cost × 1.20 × 1.15 × 1.25 = cost × 1.725. Therefore cost = 2,070 ÷ 1.725 = Rs. 1,200."
+  },
+  {
+    "section": "quantitative",
+    "question": "A shopkeeper marks an article 50% above cost price. He offers a discount of 20% and uses an 800 g weight instead of 1 kg. What is his effective profit percentage?",
+    "options": ["40%", "45%", "50%", "55%"],
+    "correctAnswer": 2,
+    "explanation": "Let the cost of 1 kg be 100. Marked price = 150 and billed price after 20% discount = 120. The cost of 800 g supplied is 80. Profit = 120 - 80 = 40, so profit percentage on actual cost = 40 ÷ 80 × 100 = 50%."
+  },
+  {
+    "section": "quantitative",
+    "question": "The cost price of 24 articles is equal to the selling price of 20 articles. What is the profit percentage?",
+    "options": ["16 2/3%", "20%", "24%", "25%"],
+    "correctAnswer": 1,
+    "explanation": "Let the cost price per article be C and selling price per article be S. Then 24C = 20S, so S = 1.2C. Profit percentage = 20%."
+  },
+  {
+    "section": "quantitative",
+    "question": "A dealer sold an article for Rs. 3,240 and incurred a loss of 10%. At what price should he sell it to earn a profit of 12.5%?",
+    "options": ["Rs. 3,960", "Rs. 4,000", "Rs. 4,050", "Rs. 4,120"],
+    "correctAnswer": 2,
+    "explanation": "Rs. 3,240 is 90% of cost, so cost price = 3,240 ÷ 0.90 = Rs. 3,600. For a 12.5% profit, required selling price = 3,600 × 1.125 = Rs. 4,050."
+  },
+  {
+    "section": "quantitative",
+    "question": "A trader purchases an article for Rs. 800 and spends 10% of the purchase price on repairs. If he sells it for Rs. 1,056, what is his profit percentage on total cost?",
+    "options": ["15%", "18%", "20%", "22%"],
+    "correctAnswer": 2,
+    "explanation": "Repair cost = 10% of 800 = Rs. 80, so total cost = Rs. 880. Profit = 1,056 - 880 = Rs. 176. Profit percentage = 176 ÷ 880 × 100 = 20%."
+  },
+  {
+    "section": "quantitative",
+    "question": "An article is marked 80% above cost price. The seller gives successive discounts of 25% and 10%. What is the final profit percentage?",
+    "options": ["20%", "21.5%", "22%", "25%"],
+    "correctAnswer": 1,
+    "explanation": "Let cost price be 100. Marked price = 180. Selling price = 180 × 0.75 × 0.90 = 121.5. Therefore profit percentage = 21.5%."
+  },
+  {
+    "section": "quantitative",
+    "question": "A shopkeeper sells an item at 16% profit. If the cost price had been 10% less and the selling price remained unchanged, what would the profit percentage have been?",
+    "options": ["26 2/3%", "28 8/9%", "30%", "32%"],
+    "correctAnswer": 1,
+    "explanation": "Let the original cost be 100, so selling price = 116. New cost = 90. New profit = 26. Profit percentage = 26 ÷ 90 × 100 = 28 8/9%."
+  },
+  {
+    "section": "quantitative",
+    "question": "A seller increases the marked price of an article by 20% and then increases the discount from 10% to 25%. By what percentage does the final selling price change?",
+    "options": ["No change", "2% decrease", "4% increase", "5% decrease"],
+    "correctAnswer": 0,
+    "explanation": "Let the original marked price be 100. Original selling price = 100 × 0.90 = 90. New marked price = 120 and new selling price = 120 × 0.75 = 90. Therefore there is no change."
+  },
+  {
+    "section": "quantitative",
+    "question": "A trader wants to earn 32% profit after allowing a discount of 12% on the marked price. By what percentage above cost price should he mark the article?",
+    "options": ["40%", "45%", "50%", "55%"],
+    "correctAnswer": 2,
+    "explanation": "Let cost price be 100. Required selling price = 132. Since selling price is 88% of marked price, marked price = 132 ÷ 0.88 = 150. Thus the article should be marked 50% above cost."
+  },
+  {
+    "section": "quantitative",
+    "question": "A dealer sells an article at 25% profit. One-fifth of the selling price is equal to Rs. 300. What is the cost price?",
+    "options": ["Rs. 1,000", "Rs. 1,100", "Rs. 1,200", "Rs. 1,250"],
+    "correctAnswer": 2,
+    "explanation": "One-fifth of selling price is Rs. 300, so selling price = Rs. 1,500. Since this is 125% of cost, cost price = 1,500 ÷ 1.25 = Rs. 1,200."
+  }
+]

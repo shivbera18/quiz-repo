@@ -990,7 +990,7 @@ export default function AdminPage() {
             <div className="space-y-6">
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button onClick={() => setShowQuizForm(true)} variant="neobrutalist" className="flex-1 sm:flex-none">
+                <Button onClick={() => { setError(""); setSuccess(""); setShowQuizForm(true) }} variant="neobrutalist" className="flex-1 sm:flex-none">
                   <Plus className="h-4 w-4 mr-2" />
                   Create New Quiz
                 </Button>
@@ -1280,7 +1280,7 @@ export default function AdminPage() {
             <CardContent className="text-center py-12">
               <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground mb-4 font-medium">No quizzes created yet</p>
-              <Button onClick={() => setShowQuizForm(true)} variant="neobrutalist">
+              <Button onClick={() => { setError(""); setSuccess(""); setShowQuizForm(true) }} variant="neobrutalist">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Your First Quiz
               </Button>
