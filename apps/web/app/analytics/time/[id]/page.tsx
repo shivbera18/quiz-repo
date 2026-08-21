@@ -121,26 +121,26 @@ export default function TimeAnalysisPage() {
       let isSessionExpired = false
       try {
         setLoading(true)
-        const response = await fetch(`/api/results/${resultId}`, {
-          headers: {
-            Authorization: `Bearer ${user.token || ""}`,
-          },
-        })
+        const headers = {
+          Authorization: `Bearer ${user.token || ""}`,
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        }
+
+        // Try modern attempt result endpoint first
+        let response = await fetch(`/api/attempts/${resultId}/result`, { headers })
+        if (!response.ok && response.status !== 401) {
+          // Fallback to legacy result endpoint
+          response = await fetch(`/api/results/${resultId}`, { headers })
+        }
 
         if (response.ok) {
           const data = await response.json()
-          // API returns { result: {...} }, extract the result object
           const resultData = data.result || data
-          console.log("Fetched result data:", resultData) // Debug log
           setResult(resultData)
           return
         } else if (response.status === 401) {
-          console.log("Token invalid or expired, falling back to localStorage")
           isSessionExpired = true
-        } else {
-          console.error("API error:", response.status, response.statusText)
         }
-
         // Fallback to localStorage if API fails
         const localResults = localStorage.getItem("quizResults")
         if (localResults) {
@@ -226,37 +226,27 @@ export default function TimeAnalysisPage() {
     )
   }
 
-  // Process time data - ensure we have an array
-  const rawQuestions = result.questions || result.answers || []
-  const questions = Array.isArray(rawQuestions) ? rawQuestions : []
-  
-  // Debug log to see what we're getting
-  console.log("Result data:", { 
-    hasQuestions: !!result.questions, 
-    hasAnswers: !!result.answers,
-    questionsType: typeof result.questions,
-    answersType: typeof result.answers,
-    questionsLength: questions.length,
-    timeSpent: result.timeSpent 
-  })
-  
-  // Handle case where time might be in seconds or milliseconds
-  const normalizeTime = (time: number) => {
-    if (!time || time <= 0) return 0
-    // If time is less than 500, it's likely in seconds, convert to ms
-    return time < 500 ? time * 1000 : time
+  // Process questions data - handle array or JSON string in questions / answers
+  const parseQuestions = (field: any): any[] => {
+    if (Array.isArray(field)) return field
+    if (typeof field === "string") {
+      try {
+        const parsed = JSON.parse(field)
+        return Array.isArray(parsed) ? parsed : []
+      } catch {
+        return []
+      }
+    }
+    return []
   }
 
-  // Normalize total time - heuristic: if < 10000, assume seconds (unless it's a very short quiz in ms)
-  // But since we have question times in ms (e.g. 11556), total time is likely in ms too if it's large
-  const normalizeTotalTime = (time: number) => {
-    if (!time || time <= 0) return 0
-    // If time is > 10000 (10 seconds), assume ms. If < 10000, assume seconds.
-    // 10000 seconds is ~2.7 hours. 10000 ms is 10 seconds.
-    return time < 10000 ? time * 1000 : time
-  }
-  
-  const totalQuizTimeMs = normalizeTotalTime(result.timeSpent || 0)
+  const rawQuestions = parseQuestions(result.questions).length > 0
+    ? parseQuestions(result.questions)
+    : parseQuestions(result.answers)
+  const questions = rawQuestions
+
+  // Total quiz time: result.timeSpent is in seconds
+  const totalQuizTimeMs = Number(result.timeSpent || 0) * 1000
   
 interface NormalizedQuestionItem {
   id: string
@@ -273,7 +263,7 @@ interface NormalizedQuestionItem {
 }
 
   // Check if we have per-question time data
-  const hasPerQuestionTime = questions.length > 0 && questions.some((q: { timeSpent?: number }) => q.timeSpent && q.timeSpent > 0)
+  const hasPerQuestionTime = questions.length > 0 && questions.some((q: any) => Number(q.timeSpent || q.timeSpentMs || 0) > 0)
   
   // Calculate estimated time per question if no per-question time data
   const estimatedTimePerQuestion = questions.length > 0 ? totalQuizTimeMs / questions.length : 0
@@ -281,22 +271,23 @@ interface NormalizedQuestionItem {
   // Normalize all questions - use actual time if available, otherwise estimate
   const normalizedQuestions: NormalizedQuestionItem[] = questions.map((q: any, idx: number) => {
     const selectedAnswer = (q.selectedAnswer ?? q.userAnswer ?? null) as number | null
-    const isUnanswered = q.isUnanswered === true || selectedAnswer === null || selectedAnswer === undefined
-    
+    const isUnanswered = q.isUnanswered === true || selectedAnswer === null || selectedAnswer === undefined || selectedAnswer === -1
+    const qTimeRaw = Number(q.timeSpentMs ?? q.timeSpent ?? 0)
+
     return {
       ...q,
       id: String(q.id || q.questionId || `q-${idx}`),
       questionNumber: idx + 1,
       question: String(q.question || q.questionText || `Question ${idx + 1}`),
-      timeSpent: hasPerQuestionTime 
-        ? normalizeTime(Number(q.timeSpent || 0))
-        : estimatedTimePerQuestion, // Use estimated time when no per-question data
-      isCorrect: (q.isCorrect as boolean | null) ?? null,
+      timeSpent: hasPerQuestionTime
+        ? qTimeRaw
+        : estimatedTimePerQuestion,
+      isCorrect: isUnanswered ? false : ((q.isCorrect as boolean | null) ?? null),
       selectedAnswer: selectedAnswer,
-      userAnswer: selectedAnswer, // Keep both for compatibility
+      userAnswer: selectedAnswer,
       correctAnswer: Number(q.correctAnswer ?? 0),
       section: String(q.section || q.category || "General"),
-      isEstimated: !q.timeSpent || Number(q.timeSpent) <= 0, // Flag to show if time is estimated
+      isEstimated: !hasPerQuestionTime || qTimeRaw <= 0,
       isUnanswered: isUnanswered,
     }
   })
