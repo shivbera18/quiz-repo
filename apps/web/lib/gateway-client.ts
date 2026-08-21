@@ -12,7 +12,7 @@ export async function proxyToGateway(request: NextRequest, gatewayPath: string):
   const target = `${GATEWAY_URL}${gatewayPath}${incomingUrl.search}`
 
   const headers = new Headers()
-  const auth = request.headers.get("authorization") || request.headers.get("x-authorization")
+  const auth = request.headers.get("authorization") || request.headers.get("x-quiz-authorization")
   if (auth) headers.set("authorization", auth)
   const contentType = request.headers.get("content-type")
   if (contentType) headers.set("content-type", contentType)
