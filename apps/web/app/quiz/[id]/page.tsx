@@ -49,6 +49,7 @@ interface SavedAnswer {
   markedForReview: boolean
   visited: boolean
   timeSpentMs: number
+  clientSeq?: number
 }
 
 export default function QuizPage(props: { params: Promise<{ id: string }> }) {
@@ -62,6 +63,7 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
   const [timeLeft, setTimeLeft] = useState(0)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [showNavigator, setShowNavigator] = useState(false)
   // Time tracking per question
   const [questionTimes, setQuestionTimes] = useState<Record<string, number>>({})
@@ -106,16 +108,22 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
         })
 
         const restoredAnswers: Answer[] = []
+        let maxClientSeq = 0
         ;(data.savedAnswers || []).forEach((saved: SavedAnswer) => {
           statuses[saved.questionId] = {
             answered: saved.selectedAnswer !== null,
             markedForReview: saved.markedForReview,
           }
           times[saved.questionId] = saved.timeSpentMs || 0
+          maxClientSeq = Math.max(maxClientSeq, Number(saved.clientSeq || 0))
           if (saved.selectedAnswer !== null) {
             restoredAnswers.push({ questionId: saved.questionId, selectedAnswer: saved.selectedAnswer })
           }
         })
+
+        // Resume must continue above the highest clientSeq the server already
+        // stored, or every re-answer of a previously saved question is dropped.
+        clientSeqRef.current = maxClientSeq
 
         setQuestionStatuses(statuses)
         setQuestionTimes(times)
@@ -123,7 +131,6 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
       } catch (error) {
         console.error(error)
         router.push("/dashboard")
-      } finally {
         setLoading(false)
       }
     }
@@ -206,6 +213,13 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
           },
         ],
       }),
+    }).then((response) => {
+      // A post-expiry autosave returns 409 and flips the attempt to EXPIRED
+      // server-side. Surface it instead of silently discarding the answer.
+      if (!response.ok) {
+        console.warn("Autosave rejected:", response.status)
+        setSubmitError("Your time for this quiz has ended. Submit now to record your answers.")
+      }
     }).catch((error) => console.warn("Autosave failed:", error))
   }
 
@@ -338,6 +352,9 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
       console.error("Submit failed:", error)
       submittedRef.current = false
       setSubmitting(false)
+      setSubmitError(
+        "Could not submit your quiz. Check your connection and try submitting again — your answers are saved."
+      )
     }
   }
 
@@ -379,6 +396,22 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
   return (
     <div className="min-h-screen bg-background">
       {/* Top Bar */}
+      {submitError && (
+        <div className="mx-4 mt-2 rounded-lg border-4 border-red-500 bg-red-50 dark:bg-red-900/20 p-3 text-sm font-semibold text-red-700 dark:text-red-300 flex items-center justify-between gap-4">
+          <span>{submitError}</span>
+          <div className="flex gap-2 shrink-0">
+            <button type="button" className="underline" onClick={() => setSubmitError(null)}>Dismiss</button>
+            <button
+              type="button"
+              className="rounded bg-red-600 px-3 py-1 text-white disabled:opacity-50"
+              disabled={submitting}
+              onClick={() => handleSubmit("user")}
+            >
+              {submitting ? "Submitting..." : "Submit now"}
+            </button>
+          </div>
+        </div>
+      )}
       <div className="sticky top-0 z-40 w-full border-b-4 border-black bg-background/95 backdrop-blur dark:border-white/65">
         <div className="container flex h-16 sm:h-14 items-center justify-between px-4">
           <div className="flex items-center gap-2 sm:gap-4">
