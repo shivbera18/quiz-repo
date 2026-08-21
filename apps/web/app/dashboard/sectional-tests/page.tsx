@@ -16,10 +16,14 @@ interface Quiz {
   isActive: boolean
 }
 
+interface QuizAttemptSummary {
+  quizId: string
+}
+
 export default function SectionalTestsPage() {
   const { user, loading } = useAuth()
   const [availableQuizzes, setAvailableQuizzes] = useState<Quiz[]>([])
-  const [attemptedQuizzes, setAttemptedQuizzes] = useState<any[]>([])
+  const [attemptedQuizzes, setAttemptedQuizzes] = useState<QuizAttemptSummary[]>([])
   const [filteredQuizzes, setFilteredQuizzes] = useState<Quiz[]>([])
   const [activeFilters, setActiveFilters] = useState({ difficulty: "all", duration: [0, 180] })
   const [isLoadingData, setIsLoadingData] = useState(true)
@@ -28,12 +32,12 @@ export default function SectionalTestsPage() {
     if (!loading && user) {
       const fetchData = async () => {
         try {
-          const attemptsRes = await fetch("/api/results", {
+          const attemptsRes = await fetch("/api/attempts?status=SUBMITTED", {
             headers: { Authorization: `Bearer ${user.token || "student-token-placeholder"}` },
           })
+          if (!attemptsRes.ok) throw new Error("Failed to fetch attempts")
           const attemptsData = await attemptsRes.json()
-          const attempts = attemptsData.results || []
-          setAttemptedQuizzes(attempts)
+          setAttemptedQuizzes(attemptsData.attempts || [])
 
           const quizzesRes = await fetch("/api/quizzes", {
             headers: { Authorization: `Bearer ${user.token || "student-token-placeholder"}` },
@@ -55,7 +59,7 @@ export default function SectionalTestsPage() {
   }, [loading, user])
 
   useEffect(() => {
-    const attemptedQuizIds = attemptedQuizzes.map((attempt: any) => attempt.quizId).filter(Boolean)
+    const attemptedQuizIds = attemptedQuizzes.map((attempt) => attempt.quizId)
     const unattemptedQuizzes = availableQuizzes.filter((quiz: Quiz) => !attemptedQuizIds.includes(quiz.id))
     const sectionalTests = unattemptedQuizzes.filter((q: Quiz) => q.sectionNames.length === 1)
 

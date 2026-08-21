@@ -17,7 +17,7 @@ export function createOutboxStore(prisma: PrismaClient): OutboxStore {
           FOR UPDATE SKIP LOCKED
         `
         return fn(rows)
-      })
+      }, { timeout: 15_000 })
     },
     async markPublished(ids: Array<bigint | number>): Promise<void> {
       if (ids.length === 0) return

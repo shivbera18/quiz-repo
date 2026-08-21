@@ -31,6 +31,8 @@ interface Quiz {
   createdBy: string
   negativeMarking: boolean
   negativeMarkValue: number
+  version?: number
+  chapterId?: string | null
 }
 
 interface Question {
@@ -509,7 +511,7 @@ export default function AdminPage() {
   const handleEditQuiz = async (quiz: Quiz) => {
     setEditingQuiz(quiz)
 
-    const quizChapterId = (quiz as any).chapterId || ""
+    const quizChapterId = quiz.chapterId || ""
     let subjectId = ""
 
     // If quiz has a chapter, get the subject ID from it
@@ -555,6 +557,7 @@ export default function AdminPage() {
           "X-Quiz-Authorization": `Bearer ${user?.token || "admin-token-placeholder"}`,
         },
         body: JSON.stringify({
+          version: editingQuiz.version ?? 1,
           title: newQuiz.title,
           description: newQuiz.description,
           duration: newQuiz.duration,
@@ -631,15 +634,14 @@ export default function AdminPage() {
           "X-Quiz-Authorization": `Bearer ${user?.token || "admin-token-placeholder"}`,
         },
         body: JSON.stringify({
-          ...quiz,
+          version: quiz.version ?? 1,
           isActive: !quiz.isActive,
         }),
       })
       if (!res.ok) throw new Error("Failed to update quiz status")
 
-      // Update local state after successful update
-      const updatedQuizzes = quizzes.map((q) => (q.id === quizId ? { ...q, isActive: !q.isActive } : q))
-      setQuizzes(updatedQuizzes)
+      const data = await res.json()
+      setQuizzes(quizzes.map((q) => (q.id === quizId ? data.quiz : q)))
       setSuccess("Quiz status updated!")
     } catch (err) {
       setError("Failed to update quiz status in database")

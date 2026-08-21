@@ -7,10 +7,7 @@ import { QuizFilters } from "@/components/quiz/quiz-filters"
 import { MobilePageHeader } from "@/components/layout/mobile-page-header"
 
 interface QuizAttemptSummary {
-  id?: string
-  quizId?: string
-  totalScore?: number
-  date?: string
+  quizId: string
 }
 
 interface Quiz {
@@ -35,12 +32,12 @@ export default function FullMockTestsPage() {
     if (!loading && user) {
       const fetchData = async () => {
         try {
-          const attemptsRes = await fetch("/api/results", {
+          const attemptsRes = await fetch("/api/attempts?status=SUBMITTED", {
             headers: { Authorization: `Bearer ${user.token || "student-token-placeholder"}` },
           })
+          if (!attemptsRes.ok) throw new Error("Failed to fetch attempts")
           const attemptsData = await attemptsRes.json()
-          const attempts = attemptsData.results || []
-          setAttemptedQuizzes(attempts)
+          setAttemptedQuizzes(attemptsData.attempts || [])
 
           const quizzesRes = await fetch("/api/quizzes", {
             headers: { Authorization: `Bearer ${user.token || "student-token-placeholder"}` },
