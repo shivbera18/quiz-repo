@@ -98,11 +98,14 @@ async function main() {
   // previously got from the legacy pre-split QuizResult table.
   app.get("/v1/analytics/facts/results", async (request, reply) => {
     if (!requireAdmin(request, reply)) return
-    const [facts, users, quizzes, sectionFacts] = await Promise.all([
-      prisma.attemptFact.findMany({ orderBy: { submittedAt: "desc" }, take: 500 }),
+    const facts = await prisma.attemptFact.findMany({ orderBy: { submittedAt: "desc" }, take: 500 })
+    const attemptIds = facts.map((f) => f.attemptId)
+    const [users, quizzes, sectionFacts] = await Promise.all([
       prisma.dimUser.findMany({ where: { deletedAt: null } }),
       prisma.dimQuiz.findMany(),
-      prisma.attemptSectionFact.findMany(),
+      // Scoped to the fetched attempts so this query stays bounded as the
+      // fact tables grow; unbounded would load every section row in history.
+      prisma.attemptSectionFact.findMany({ where: { attemptId: { in: attemptIds } } }),
     ])
     const userById = new Map(users.map((u) => [u.userId, u]))
     const quizById = new Map(quizzes.map((q) => [q.quizId, q]))
