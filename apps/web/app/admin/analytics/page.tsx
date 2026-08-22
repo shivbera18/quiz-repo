@@ -48,7 +48,7 @@ interface QuizResult {
 interface Quiz {
   id: string
   title: string
-  questions: any[]
+  questionCount?: number
   isActive: boolean
   createdAt: string
 }
@@ -267,7 +267,7 @@ export default function AdminAnalyticsPage() {
           avgScore,
           attempts,
           passRate,
-          questions: quiz.questions ? quiz.questions.length : 0,
+          questions: quiz.questionCount ?? 0,
         }
       })
       .filter(Boolean)
