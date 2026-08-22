@@ -98,13 +98,20 @@ async function main() {
   // previously got from the legacy pre-split QuizResult table.
   app.get("/v1/analytics/facts/results", async (request, reply) => {
     if (!requireAdmin(request, reply)) return
-    const [facts, users, quizzes] = await Promise.all([
+    const [facts, users, quizzes, sectionFacts] = await Promise.all([
       prisma.attemptFact.findMany({ orderBy: { submittedAt: "desc" }, take: 500 }),
       prisma.dimUser.findMany({ where: { deletedAt: null } }),
       prisma.dimQuiz.findMany(),
+      prisma.attemptSectionFact.findMany(),
     ])
     const userById = new Map(users.map((u) => [u.userId, u]))
     const quizById = new Map(quizzes.map((q) => [q.quizId, q]))
+    const sectionsByAttempt = new Map<string, Record<string, number>>()
+    for (const s of sectionFacts) {
+      const m = sectionsByAttempt.get(s.attemptId) ?? {}
+      m[s.section] = s.scorePct
+      sectionsByAttempt.set(s.attemptId, m)
+    }
 
     const results = facts.map((f) => {
       const user = userById.get(f.userId)
@@ -127,6 +134,7 @@ async function main() {
         userEmail: user?.email ?? "",
         user: { id: f.userId, name: user?.name ?? "Unknown User", email: user?.email ?? "" },
         quiz: { id: f.quizId, title: quiz?.title ?? "Unknown Quiz" },
+        sections: sectionsByAttempt.get(f.attemptId) ?? {},
       }
     })
 

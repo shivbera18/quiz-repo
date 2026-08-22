@@ -311,6 +311,8 @@ export default function AdminAnalyticsPage() {
     const sectionCounts = { reasoning: 0, quantitative: 0, english: 0 }
 
     filteredResults.forEach((result) => {
+      // Sections may be absent on rows from data sources without them.
+      if (!result.sections || typeof result.sections !== "object") return
       Object.entries(result.sections).forEach(([section, score]) => {
         if (score > 0) {
           sectionTotals[section as keyof typeof sectionTotals] += score
