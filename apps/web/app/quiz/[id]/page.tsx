@@ -241,7 +241,15 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
 
     const question = questions.find((q) => q.id === questionId)
     if (question) {
-      postAnswerSync(questionId, question.section, selectedAnswer, questionStatuses[questionId]?.markedForReview || false)
+      // Include the time spent up to this answer in the same autosave, so
+      // every question's stored total is current -- not just the final one.
+      const liveTimeMs =
+        (questionTimesRef.current[questionId] || 0) +
+        Math.max(0, Date.now() - questionStartTimeRef.current)
+      questionTimesRef.current = { ...questionTimesRef.current, [questionId]: liveTimeMs }
+      setQuestionTimes(questionTimesRef.current)
+      questionStartTimeRef.current = Date.now()
+      postAnswerSync(questionId, question.section, selectedAnswer, questionStatuses[questionId]?.markedForReview || false, liveTimeMs)
     }
 
     // Auto-advance to next question if not on the last question
@@ -259,7 +267,8 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
       [currentQuestion.id]: { ...prev[currentQuestion.id], markedForReview: true }
     }))
     const currentSelected = answers.find((a) => a.questionId === currentQuestion.id)?.selectedAnswer ?? null
-    postAnswerSync(currentQuestion.id, currentQuestion.section, currentSelected, true)
+    recordTimeOnCurrentQuestion()
+    postAnswerSync(currentQuestion.id, currentQuestion.section, currentSelected, true, questionTimesRef.current[currentQuestion.id])
     // Auto-advance to next question with time tracking
     if (currentQuestionIndex < questions.length - 1) {
       navigateToQuestion(currentQuestionIndex + 1)
@@ -275,7 +284,8 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
         ...prev,
         [currentQuestion.id]: { ...prev[currentQuestion.id], markedForReview: true }
       }))
-      postAnswerSync(currentQuestion.id, currentQuestion.section, userAnswer.selectedAnswer, true)
+      recordTimeOnCurrentQuestion()
+      postAnswerSync(currentQuestion.id, currentQuestion.section, userAnswer.selectedAnswer, true, questionTimesRef.current[currentQuestion.id])
       // Auto-advance to next question with time tracking
       if (currentQuestionIndex < questions.length - 1) {
         navigateToQuestion(currentQuestionIndex + 1)
