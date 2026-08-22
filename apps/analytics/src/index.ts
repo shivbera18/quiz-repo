@@ -93,6 +93,77 @@ async function main() {
     return { quizzes: rows }
   })
 
+  // Admin analytics reads: joined AttemptFact + DimUser/DimQuiz rows for the
+  // admin dashboard, and per-user stat cards. Serves the shapes the admin UI
+  // previously got from the legacy pre-split QuizResult table.
+  app.get("/v1/analytics/facts/results", async (request, reply) => {
+    if (!requireAdmin(request, reply)) return
+    const [facts, users, quizzes] = await Promise.all([
+      prisma.attemptFact.findMany({ orderBy: { submittedAt: "desc" }, take: 500 }),
+      prisma.dimUser.findMany({ where: { deletedAt: null } }),
+      prisma.dimQuiz.findMany(),
+    ])
+    const userById = new Map(users.map((u) => [u.userId, u]))
+    const quizById = new Map(quizzes.map((q) => [q.quizId, q]))
+
+    const results = facts.map((f) => {
+      const user = userById.get(f.userId)
+      const quiz = quizById.get(f.quizId)
+      return {
+        id: f.attemptId,
+        _id: f.attemptId,
+        date: f.submittedAt.toISOString(),
+        quizId: f.quizId,
+        quizName: quiz?.title ?? "Unknown Quiz",
+        totalScore: f.totalScore,
+        rawScore: f.rawScore,
+        maxScore: f.maxScore,
+        correctAnswers: f.correctCount,
+        wrongAnswers: f.wrongCount,
+        unanswered: f.unansweredCount,
+        timeSpent: Math.round(f.timeSpentMs / 1000),
+        userId: f.userId,
+        userName: user?.name ?? "Unknown User",
+        userEmail: user?.email ?? "",
+        user: { id: f.userId, name: user?.name ?? "Unknown User", email: user?.email ?? "" },
+        quiz: { id: f.quizId, title: quiz?.title ?? "Unknown Quiz" },
+      }
+    })
+
+    return {
+      success: true,
+      results,
+      quizzes: quizzes.map((q) => ({ id: q.quizId, title: q.title, questionCount: q.questionCount, isActive: q.isActive })),
+    }
+  })
+
+  app.get("/v1/analytics/facts/users", async (request, reply) => {
+    if (!requireAdmin(request, reply)) return
+    const [users, stats] = await Promise.all([
+      prisma.dimUser.findMany({ where: { deletedAt: null } }),
+      prisma.userStats.findMany(),
+    ])
+    const statsByUser = new Map(stats.map((s) => [s.userId, s]))
+
+    return {
+      users: users.map((u) => {
+        const s = statsByUser.get(u.userId)
+        return {
+          id: u.userId,
+          name: u.name,
+          email: u.email,
+          userType: u.userType,
+          isAdmin: u.isAdmin,
+          joinDate: u.registeredAt?.toISOString() ?? u.updatedAt.toISOString(),
+          lastActive: s?.lastAttemptAt?.toISOString() ?? null,
+          totalAttempts: s?.attempts ?? 0,
+          averageScore: s?.avgScore != null ? Math.round(s.avgScore) : 0,
+          bestScore: s?.bestScore != null ? Math.round(s.bestScore) : 0,
+        }
+      }),
+    }
+  })
+
   app.get("/v1/analytics/quizzes/:id", async (request, reply) => {
     const { id } = request.params as { id: string }
     const [stats, sections, questions] = await Promise.all([
@@ -142,18 +213,54 @@ async function main() {
       reply.code(403)
       return { message: "Forbidden" }
     }
-    const [stats, activity] = await Promise.all([
+    const [stats, activity, user, facts] = await Promise.all([
       prisma.userStats.findUnique({ where: { userId: id } }),
       prisma.userDailyActivity.findMany({
         where: { userId: id, activityDate: { gte: new Date(Date.now() - 90 * 86_400_000) } },
         orderBy: { activityDate: "asc" },
       }),
+      prisma.dimUser.findUnique({ where: { userId: id } }),
+      prisma.attemptFact.findMany({ where: { userId: id }, orderBy: { submittedAt: "desc" } }),
     ])
     if (!stats) {
       reply.code(404)
       return { message: "No stats yet for this user" }
     }
-    return { stats, activity }
+
+    // quizPerformance matches the admin modal's per-quiz breakdown shape.
+    const byQuiz = new Map<string, { attempts: Array<Record<string, unknown>>; bestScore: number; sumScore: number; sumTimeMs: number }>()
+    for (const f of facts) {
+      const entry = byQuiz.get(f.quizId) ?? { attempts: [], bestScore: 0, sumScore: 0, sumTimeMs: 0 }
+      entry.attempts.push({ id: f.attemptId, date: f.submittedAt.toISOString(), totalScore: f.totalScore, timeSpent: Math.round(f.timeSpentMs / 1000) })
+      entry.bestScore = Math.max(entry.bestScore, f.totalScore)
+      entry.sumScore += f.totalScore
+      entry.sumTimeMs += f.timeSpentMs
+      byQuiz.set(f.quizId, entry)
+    }
+    const quizzes = await prisma.dimQuiz.findMany()
+    const titleByQuiz = new Map(quizzes.map((q) => [q.quizId, q.title]))
+    const quizPerformance = Array.from(byQuiz.entries()).map(([quizId, agg]) => ({
+      quizId,
+      quizTitle: titleByQuiz.get(quizId) ?? "Unknown Quiz",
+      totalAttempts: agg.attempts.length,
+      bestScore: agg.bestScore,
+      averageScore: agg.attempts.length > 0 ? Math.round(agg.sumScore / agg.attempts.length) : 0,
+      averageTime: agg.attempts.length > 0 ? Math.round(agg.sumTimeMs / agg.attempts.length / 60000) : 0,
+      attempts: agg.attempts,
+    }))
+
+    return {
+      stats,
+      activity,
+      user: {
+        id,
+        name: user?.name ?? "Unknown User",
+        email: user?.email ?? "",
+        totalQuizzes: stats.attempts,
+        averageScore: stats.avgScore != null ? Math.round(stats.avgScore) : 0,
+      },
+      quizPerformance,
+    }
   })
 
   // ---------------------------------------------------------- leaderboards
@@ -235,6 +342,38 @@ async function main() {
     }
 
     return { job, downloadUrl }
+  })
+
+  // Admin deletions over the derived facts. AttemptFact rows are rebuildable
+  // from Kafka, so a consumer-group reset would resurrect deleted history --
+  // accepted trade-off; the legacy table had the same property. DailyRollup
+  // aggregates are deliberately NOT rewritten (same as the legacy table never
+  // rewrote past aggregates).
+  app.delete("/v1/admin/attempts/:id", async (request, reply) => {
+    if (!requireAdmin(request, reply)) return
+    const { id } = request.params as { id: string }
+    const deleted = await prisma.attemptFact.deleteMany({ where: { attemptId: id } })
+    if (deleted.count === 0) {
+      reply.code(404)
+      return { message: "Result not found" }
+    }
+    await redis.del(keys.cacheAnalyticsOverview())
+    return { message: "Quiz result deleted successfully", deletedId: id }
+  })
+
+  app.delete("/v1/admin/users/:userId/attempts", async (request, reply) => {
+    if (!requireAdmin(request, reply)) return
+    const { userId } = request.params as { userId: string }
+    const quizId = (request.query as { quizId?: string }).quizId
+    const deleted = await prisma.attemptFact.deleteMany({
+      where: quizId ? { userId, quizId } : { userId },
+    })
+    if (deleted.count === 0) {
+      reply.code(404)
+      return { message: "No results found for this user" }
+    }
+    await redis.del(keys.cacheAnalyticsOverview())
+    return { message: "User results deleted successfully", deletedCount: deleted.count }
   })
 
   const close = async () => {
