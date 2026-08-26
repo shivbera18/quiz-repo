@@ -106,7 +106,11 @@ export function scoreQuiz(
     sectionPercentages[section] = total > 0 ? (correct / total) * 100 : 0
   })
 
-  const totalScore = Math.max(0, (rawScore / questions.length) * 100)
+  // An empty question set (e.g. a quiz saved with zero questions) must score
+  // 0, not NaN: (rawScore / 0) * 100 poisons totalScore, and Math.max does
+  // NOT rescue it (Math.max(0, NaN) === NaN), so the NaN would flow into the
+  // persisted result and every analytics aggregate that trusts it.
+  const totalScore = questions.length > 0 ? Math.max(0, (rawScore / questions.length) * 100) : 0
 
   return { correctAnswers, wrongAnswers, unanswered, rawScore, totalScore, sectionPercentages, questionResults }
 }
