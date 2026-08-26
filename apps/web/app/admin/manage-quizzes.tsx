@@ -4,7 +4,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Plus, Upload, Edit, Trash2, ListChecks, XCircle } from "lucide-react";
-import Link from "next/link";
 
 interface Quiz {
   id: string;
@@ -21,6 +20,14 @@ interface Subject {
   name: string;
   chapters: Chapter[];
 }
+interface QuizQuestion {
+  id?: string
+  question: string
+  options?: string[]
+  correctAnswer?: number
+  explanation?: string
+  [key: string]: unknown
+}
 
 function ManageQuizzesPage() {
   const [data, setData] = useState<Subject[]>([]);
@@ -30,7 +37,7 @@ function ManageQuizzesPage() {
   const [error, setError] = useState("");
   const [bulkQuizId, setBulkQuizId] = useState<string | null>(null);
   const [manageQuizId, setManageQuizId] = useState<string | null>(null);
-  const [quizQuestions, setQuizQuestions] = useState<any[]>([]);
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [quizTitle, setQuizTitle] = useState<string>("");
   const [questionsLoading, setQuestionsLoading] = useState(false);
 

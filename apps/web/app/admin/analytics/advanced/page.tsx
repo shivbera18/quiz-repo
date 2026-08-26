@@ -1,10 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { AdminBreadcrumb } from "@/components/ui/admin-breadcrumb"
-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Users } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
@@ -114,6 +111,8 @@ export default function AdvancedAnalyticsPage() {
     if (!loading && user) {
       fetchAnalytics()
     }
+    // fetchAnalytics is stable and intentionally excluded to avoid infinite loop; only loading/user should trigger refetch
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, user])
 
   const fetchAnalytics = async () => {

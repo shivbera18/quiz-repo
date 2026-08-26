@@ -13,7 +13,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { MobilePageHeader } from "@/components/layout/mobile-page-header"
 import { staggerContainer, staggerItem } from "@/components/page-transition"
 import { fetchAttemptHistory, type AttemptHistoryItem } from "@/lib/attempt-history"
-import { fmtNum, fmtPct } from "@/lib/format"
+import { fmtPct } from "@/lib/format"
 
 export default function HistoryPage() {
   const { user, loading: authLoading } = useAuth()

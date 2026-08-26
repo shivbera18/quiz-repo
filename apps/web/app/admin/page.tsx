@@ -9,13 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Trash2, Users, BarChart3, Edit, Eye, Clock, BookOpen, Shield, Sparkles, Trophy, FileText, Brain, Hash, Pencil, Palette, Music, Megaphone } from "lucide-react"
+import { Plus, Trash2, Users, BarChart3, Edit, Eye, Clock, BookOpen, Shield, Sparkles, Trophy, FileText, Megaphone } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/hooks/use-auth"
 import { fmtNum, fmtPct } from "@/lib/format"
 import { MobilePageHeader } from "@/components/layout/mobile-page-header"
 import AIQuizGenerator from "./ai-quiz-generator"
-import ManageQuizzesPage from "./manage-quizzes"
 import QuizManagementSection from "./QuizManagementSection"
 import { cn } from "@/lib/utils"
 
@@ -63,9 +62,31 @@ interface Chapter {
   subjectId: string
 }
 
+interface AnalyticsResult {
+  userId?: string
+  user?: { id?: string }
+  totalScore?: number
+  date?: string
+  createdAt?: string
+  [key: string]: unknown
+}
+
+interface QuizAnalytics {
+  isActive?: boolean
+  questionCount?: number
+  [key: string]: unknown
+}
+
+interface RecentActivity {
+  quizName?: string
+  totalScore?: number
+  date?: string
+  createdAt?: string
+  [key: string]: unknown
+}
+
 export default function AdminPage() {
-  const { user, loading, logout } = useAuth(true) // Require admin access
-  const [mounted, setMounted] = useState(false)
+  const { user, loading } = useAuth(true) // Require admin access
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
   const [adminLoading, setAdminLoading] = useState(true)
   const [error, setError] = useState("")
@@ -119,113 +140,6 @@ export default function AdminPage() {
   })
   const [selectedSubjectForChapter, setSelectedSubjectForChapter] = useState("")
 
-  // Mock initial quizzes
-  const mockQuizzes: Quiz[] = [
-    {
-      id: "1",
-      title: "Reasoning Mock Test 1",
-      description: "Comprehensive reasoning ability test covering logical reasoning, puzzles, and analytical thinking",
-      duration: 60,
-      sections: ["reasoning"],
-      questions: [
-        {
-          id: "q1",
-          quizId: "1",
-          section: "reasoning",
-          question: "If all roses are flowers and some flowers fade quickly, which of the following must be true?",
-          options: [
-            "All roses fade quickly",
-            "Some roses may fade quickly",
-            "No roses fade quickly",
-            "All flowers are roses",
-          ],
-          correctAnswer: 1,
-          explanation:
-            "Since some flowers fade quickly and roses are flowers, it's possible that some roses may fade quickly.",
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: "q2",
-          quizId: "1",
-          section: "reasoning",
-          question: "In a certain code, COMPUTER is written as RFUVQNPC. How is MEDICINE written in the same code?",
-          options: ["EOJDJEFM", "NFEJDJOF", "MFEJDJOF", "NFEDJJOF"],
-          correctAnswer: 2,
-          explanation: "Each letter is shifted by +3 positions in the alphabet.",
-          createdAt: new Date().toISOString(),
-        },
-      ],
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      createdBy: "admin",
-      negativeMarking: true,
-      negativeMarkValue: 0.25,
-    },
-    {
-      id: "2",
-      title: "Quantitative Aptitude Mock 1",
-      description: "Mathematical problems covering arithmetic, algebra, and data interpretation",
-      duration: 45,
-      sections: ["quantitative"],
-      questions: [
-        {
-          id: "q3",
-          quizId: "2",
-          section: "quantitative",
-          question: "What is 15% of 240?",
-          options: ["36", "35", "38", "40"],
-          correctAnswer: 0,
-          explanation: "15% of 240 = (15/100) × 240 = 0.15 × 240 = 36",
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: "q4",
-          quizId: "2",
-          section: "quantitative",
-          question: "If a train travels 60 km in 45 minutes, what is its speed in km/hr?",
-          options: ["75", "80", "85", "90"],
-          correctAnswer: 1,
-          explanation: "Speed = Distance/Time = 60 km / (45/60) hours = 60 / 0.75 = 80 km/hr",
-          createdAt: new Date().toISOString(),
-        },
-      ],
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      createdBy: "admin",
-      negativeMarking: true,
-      negativeMarkValue: 0.25,
-    },
-    {
-      id: "3",
-      title: "English Language Mock 1",
-      description: "Grammar, vocabulary, and comprehension test",
-      duration: 30,
-      sections: ["english"],
-      questions: [
-        {
-          id: "q5",
-          quizId: "3",
-          section: "english",
-          question: "Choose the correct synonym for 'Abundant':",
-          options: ["Scarce", "Plentiful", "Limited", "Rare"],
-          correctAnswer: 1,
-          explanation: "Abundant means existing in large quantities; plentiful is the closest synonym.",
-          createdAt: new Date().toISOString(),
-        },
-      ],
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      createdBy: "admin",
-      negativeMarking: true,
-      negativeMarkValue: 0.25,
-    },
-  ]
-
-  // Prevent hydration mismatch by only rendering after client mount
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
   useEffect(() => {
     if (!loading && user) {
       // Fetch quizzes and analytics from backend API
@@ -243,15 +157,16 @@ export default function AdminPage() {
           if (!res.ok) throw new Error("Failed to fetch quizzes")
           const data = await res.json()
           // Ensure all quizzes have questions array
-          const safeQuizzes = (data.quizzes || []).map((quiz: any) => ({
+          const safeQuizzes = (data.quizzes || []).map((quiz: Quiz & { sections?: unknown; questions?: unknown }) => ({
             ...quiz,
-            questions: quiz.questions || [],
+            questions: (quiz as { questions?: unknown }).questions || [],
             sections: (() => {
-              if (Array.isArray(quiz.sections)) {
-                return quiz.sections;
-              } else if (typeof quiz.sections === 'string') {
+              const rawSections = (quiz as { sections?: unknown }).sections
+              if (Array.isArray(rawSections)) {
+                return rawSections;
+              } else if (typeof rawSections === 'string') {
                 try {
-                  const parsed = JSON.parse(quiz.sections);
+                  const parsed = JSON.parse(rawSections);
                   return Array.isArray(parsed) ? parsed : [];
                 } catch {
                   return [];
@@ -265,7 +180,7 @@ export default function AdminPage() {
           // Fetch analytics after quizzes are loaded
           await fetchAnalytics()
 
-        } catch (err) {
+        } catch {
           setError("Failed to fetch data from database")
         } finally {
           setAdminLoading(false)
@@ -273,11 +188,15 @@ export default function AdminPage() {
       }
       fetchData()
     }
+    // fetchData includes fetchAnalytics which is stable; only loading/user should trigger
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, user])
 
   // Fetch subjects on component mount
   useEffect(() => {
     fetchSubjects()
+    // fetchSubjects is stable, run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchSubjects = async () => {
@@ -593,7 +512,7 @@ export default function AdminPage() {
         negativeMarking: true,
         negativeMarkValue: 0.25,
       })
-    } catch (err) {
+    } catch {
       setError("Failed to update quiz in database")
     }
   }
@@ -649,7 +568,7 @@ export default function AdminPage() {
       const data = await res.json()
       setQuizzes(quizzes.map((q) => (q.id === quizId ? data.quiz : q)))
       setSuccess("Quiz status updated!")
-    } catch (err) {
+    } catch {
       setError("Failed to update quiz status in database")
     }
   }
@@ -675,21 +594,21 @@ export default function AdminPage() {
       const response = await fetch(`/api/admin/analytics?_t=${Date.now()}`)
       if (response.ok) {
         const data = await response.json()
-        const results = data.results || []
-        const quizData = data.quizzes || []
+        const results: AnalyticsResult[] = data.results || []
+        const quizData: QuizAnalytics[] = data.quizzes || []
 
         // Calculate comprehensive stats
-        const totalUsers = new Set(results.map((r: any) => r.userId || r.user?.id || 'anonymous')).size || 1
+        const totalUsers = new Set(results.map((r: AnalyticsResult) => r.userId || r.user?.id || 'anonymous')).size || 1
         const totalAttempts = results.length
         const averageScore = results.length > 0 ?
-          parseFloat((results.reduce((sum: number, r: any) => sum + (r.totalScore || 0), 0) / results.length).toFixed(2)) : 0
+          parseFloat((results.reduce((sum: number, r: AnalyticsResult) => sum + ((r.totalScore as number) || 0), 0) / results.length).toFixed(2)) : 0
 
         const analyticsData = {
           totalUsers,
           totalAttempts,
           totalQuizzes: quizData.length,
-          activeQuizzes: quizData.filter((q: any) => q.isActive !== false).length,
-          totalQuestions: quizData.reduce((sum: number, quiz: { questionCount?: number }) => sum + (quiz.questionCount || 0), 0),
+          activeQuizzes: quizData.filter((q: QuizAnalytics) => q.isActive !== false).length,
+          totalQuestions: quizData.reduce((sum: number, quiz: QuizAnalytics) => sum + ((quiz.questionCount as number) || 0), 0),
           averageScore,
           recentActivity: results.slice(-5)
         }
@@ -701,26 +620,26 @@ export default function AdminPage() {
     } catch (error) {
       console.warn('API fetch failed, using localStorage fallback')
       // Fallback to localStorage
-      const localResults = getQuizResults()
+      const localResults: AnalyticsResult[] = getQuizResults()
       const fallbackAnalytics = {
-        totalUsers: localResults.length > 0 ? new Set(localResults.map((r: any) => r.userId || 'user')).size : 1,
+        totalUsers: localResults.length > 0 ? new Set(localResults.map((r: AnalyticsResult) => (r.userId as string) || 'user')).size : 1,
         totalAttempts: localResults.length,
         totalQuizzes: quizzes.length,
         activeQuizzes: quizzes.filter((q) => q.isActive).length,
         // Calculate total questions by parsing JSON strings properly
         totalQuestions: quizzes.reduce((sum, quiz) => {
-          let questions = quiz.questions || [];
+          let questions: unknown = quiz.questions || [];
           if (typeof questions === 'string') {
             try {
               questions = JSON.parse(questions);
-            } catch (e) {
+            } catch {
               questions = [];
             }
           }
           return sum + (Array.isArray(questions) ? questions.length : 0);
         }, 0),
         averageScore: localResults.length > 0 ?
-          parseFloat((localResults.reduce((sum: number, r: any) => sum + (r.totalScore || 0), 0) / localResults.length).toFixed(2)) : 0,
+          parseFloat((localResults.reduce((sum: number, r: AnalyticsResult) => sum + ((r.totalScore as number) || 0), 0) / localResults.length).toFixed(2)) : 0,
         recentActivity: localResults.slice(-5)
       }
       setAnalytics(fallbackAnalytics)
@@ -959,7 +878,7 @@ export default function AdminPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {analytics.recentActivity.map((activity: any, index: number) => (
+                    {analytics.recentActivity.map((activity: RecentActivity, index: number) => (
                       <div key={index} className="flex justify-between items-center p-3 border-2 border-black dark:border-white/65 rounded-lg bg-card shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.65)]">
                         <div className="min-w-0 flex-1 mr-3">
                           <div className="font-bold truncate">{activity.quizName || 'Unknown Quiz'}</div>
@@ -1534,7 +1453,7 @@ export default function AdminPage() {
                     })
                     if (!res.ok) throw new Error(`Failed to ${isEdit ? 'update' : 'create'} subject`)
 
-                    const data = await res.json()
+                    await res.json()
                     // Refresh subjects list
                     await fetchSubjects()
                     setSuccess(`Subject ${isEdit ? 'updated' : 'created'} successfully!`)
@@ -1546,7 +1465,7 @@ export default function AdminPage() {
                     })
                     setEditingSubject(null)
                     setShowSubjectForm(false)
-                  } catch (err) {
+                  } catch {
                     setError(`Failed to ${editingSubject ? 'update' : 'create'} subject`)
                   }
                 }} variant="neobrutalist">
@@ -1671,7 +1590,7 @@ export default function AdminPage() {
                         throw new Error(body?.message || `Failed to ${isEdit ? 'update' : 'create'} chapter`)
                       }
 
-                      const data = await res.json()
+                      await res.json()
                       // Refresh subjects list to get updated chapters
                       await fetchSubjects()
                       setSuccess(`Chapter ${isEdit ? 'updated' : 'created'} successfully!`)

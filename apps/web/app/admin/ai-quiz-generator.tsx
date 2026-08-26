@@ -109,7 +109,7 @@ export default function AIQuizGenerator({ onQuizCreated, onClose }: AIQuizGenera
       } else {
         setError('Failed to load subjects')
       }
-    } catch (error) {
+    } catch {
       setError('Error loading subjects')
     } finally {
       setLoadingSubjects(false)
@@ -129,7 +129,7 @@ export default function AIQuizGenerator({ onQuizCreated, onClose }: AIQuizGenera
         setError('Failed to load chapters')
         setChapters([])
       }
-    } catch (error) {
+    } catch {
       setError('Error loading chapters')
       setChapters([])
     } finally {

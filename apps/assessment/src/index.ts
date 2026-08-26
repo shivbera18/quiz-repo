@@ -1,3 +1,4 @@
+// CI/CD trigger: backend redeploy 2026-08-26 (no-op change to retrigger pipeline after EC2 network blip)
 import Fastify from "fastify"
 import cors from "@fastify/cors"
 import { PrismaClient } from "./generated/prisma/index.js"

@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { History, Eye, TrendingUp, BookOpen, Target, Clock, CheckCircle2, XCircle, MinusCircle, RotateCcw } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { fetchAttemptHistory, type AttemptHistoryItem } from "@/lib/attempt-history"
-import { fmtNum, fmtPct } from "@/lib/format"
+import { fmtPct } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { MobilePageHeader } from "@/components/layout/mobile-page-header"
 
