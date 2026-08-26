@@ -7,54 +7,13 @@ import { createKafka, getProducer, startOutboxPublisher, createEnvelope, TOPICS 
 import type { QuizChangedData, ChapterChangedData, SubjectChangedData, AiQuizGenerationRequestedData } from "@quiz/contracts"
 import { createOutboxStore } from "./outbox-store.js"
 import { parseJsonField, stringifyForDatabase } from "./lib/database-utils.js"
+import { quizChangedPayload } from "./lib/events.js"
+import type { StoredQuestion } from "./types.js"
 import { requireAdmin, getUserId } from "./auth.js"
 
 const logger = createLogger("catalog-svc")
 const prisma = new PrismaClient()
 const PORT = Number(process.env.PORT) || 4002
-
-interface StoredQuestion {
-  id: string
-  section: string
-  question: string
-  options: string[]
-  correctAnswer: number
-  explanation?: string
-  image?: string
-}
-
-function quizChangedPayload(quiz: {
-  id: string
-  title: string
-  chapterId: string | null
-  timeLimit: number
-  sections: string
-  questions: string
-  negativeMarking: boolean
-  negativeMarkValue: number
-  isActive: boolean
-  createdBy: string
-  createdAt: Date
-  version: number
-}): QuizChangedData {
-  const questions = parseJsonField(quiz.questions) as StoredQuestion[]
-  return {
-    quizId: quiz.id,
-    quizVersion: quiz.version,
-    title: quiz.title,
-    chapterId: quiz.chapterId,
-    subjectId: null, // resolved by consumers via chapterId -> DimChapter if they need it
-    sectionNames: parseJsonField(quiz.sections),
-    questionCount: questions.length,
-    timeLimitSec: quiz.timeLimit * 60,
-    negativeMarking: quiz.negativeMarking,
-    negativeMarkValue: quiz.negativeMarkValue,
-    isActive: quiz.isActive,
-    createdBy: quiz.createdBy,
-    createdAt: quiz.createdAt.toISOString(),
-    updatedAt: new Date().toISOString(),
-  }
-}
 
 async function main() {
   const app = Fastify({ loggerInstance: logger as any })
