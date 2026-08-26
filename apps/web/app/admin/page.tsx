@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Trash2, Users, BarChart3, Edit, Eye, Clock, BookOpen, Shield, Sparkles, Trophy, FileText, Brain, Hash, Pencil, Palette, Music, Megaphone } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/hooks/use-auth"
+import { fmtNum, fmtPct } from "@/lib/format"
 import { MobilePageHeader } from "@/components/layout/mobile-page-header"
 import AIQuizGenerator from "./ai-quiz-generator"
 import ManageQuizzesPage from "./manage-quizzes"
@@ -866,7 +867,7 @@ export default function AdminPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-black">{Number(stats.averageScore).toFixed(2)}%</div>
+                  <div className="text-2xl font-black">{fmtPct(stats.averageScore)}</div>
                   <p className="text-xs text-muted-foreground font-medium">across all attempts</p>
                 </CardContent>
               </Card>
@@ -958,7 +959,7 @@ export default function AdminPage() {
                         <div className="min-w-0 flex-1 mr-3">
                           <div className="font-bold truncate">{activity.quizName || 'Unknown Quiz'}</div>
                           <div className="text-sm text-muted-foreground font-medium">
-                            Score: {Number(activity.totalScore || 0).toFixed(2)}% • {new Date(activity.date || activity.createdAt).toLocaleDateString()}
+                            Score: {fmtPct(activity.totalScore || 0)} • {new Date(activity.date || activity.createdAt).toLocaleDateString()}
                           </div>
                         </div>
                         <Badge className={cn(
@@ -966,7 +967,7 @@ export default function AdminPage() {
                           (activity.totalScore || 0) >= 80 ? "bg-green-400 text-black" :
                             (activity.totalScore || 0) >= 60 ? "bg-yellow-400 text-black" : "bg-red-400 text-black"
                         )}>
-                          {Number(activity.totalScore || 0).toFixed(2)}%
+                          {fmtPct(activity.totalScore || 0)}
                         </Badge>
                       </div>
                     ))}
@@ -1329,7 +1330,7 @@ export default function AdminPage() {
                     <div>
                       <span className="text-muted-foreground">Negative:</span>
                       <p className="font-medium text-xs">
-                        {quiz.negativeMarking ? `Yes (-${quiz.negativeMarkValue})` : "No"}
+                        {quiz.negativeMarking ? `Yes (-${fmtNum(quiz.negativeMarkValue)})` : "No"}
                       </p>
                     </div>
                     <div>

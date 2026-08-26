@@ -51,6 +51,7 @@ import {
   Send,
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
+import { fmtNum } from "@/lib/format"
 import { format, setHours, setMinutes } from "date-fns"
 import { cn } from "@/lib/utils"
 import { MobilePageHeader } from "@/components/layout/mobile-page-header"
@@ -529,7 +530,7 @@ export default function AdminAnnouncementsPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-black">
-                    {announcements.length > 0 ? (announcements.reduce((acc, a) => acc + a.readPercentage, 0) / announcements.length).toFixed(2) : '0.00'}%
+                    {announcements.length > 0 ? fmtNum(announcements.reduce((acc, a) => acc + a.readPercentage, 0) / announcements.length) : '0'}%
                   </p>
                   <p className="text-xs text-muted-foreground font-bold">Avg Read Rate</p>
                 </div>
@@ -604,7 +605,7 @@ export default function AdminAnnouncementsPage() {
                                 </span>
                                 <span className="flex items-center gap-1">
                                   <Users className="h-3 w-3" />
-                                  {announcement.readCount}/{announcement.totalUsers} ({announcement.readPercentage}%)
+                                  {announcement.readCount}/{announcement.totalUsers} ({fmtNum(announcement.readPercentage)}%)
                                 </span>
                                 <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
                                   <Bell className="h-3 w-3" />

@@ -25,6 +25,7 @@ import MathRenderer from "@/components/math-renderer"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
 import { useAuth } from "@/hooks/use-auth"
+import { fmtNum, fmtPct } from "@/lib/format"
 
 interface QuestionResult {
   questionId?: string
@@ -480,7 +481,7 @@ export default function ResultsPage(props: { params: Promise<{ id: string }> }) 
           <Alert className="mb-6">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              This quiz had negative marking of -{result.negativeMarkValue} marks per wrong answer.
+              This quiz had negative marking of -{fmtNum(result.negativeMarkValue)} marks per wrong answer.
             </AlertDescription>
           </Alert>
         )}
@@ -488,13 +489,13 @@ export default function ResultsPage(props: { params: Promise<{ id: string }> }) 
         {/* Score Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card variant="neobrutalist" className="md:col-span-2 lg:col-span-1 p-6 text-center">
-            <h2 data-testid="final-score" className="text-3xl sm:text-4xl font-black text-blue-600 mb-2">{Number(result.totalScore).toFixed(2)}%</h2>
+            <h2 data-testid="final-score" className="text-3xl sm:text-4xl font-black text-blue-600 mb-2">{fmtPct(result.totalScore)}</h2>
             <p className="text-muted-foreground text-sm font-medium">Final Score</p>
             {result.rawScore !== undefined && (
               <div className="mt-4 space-y-1 text-sm font-medium">
-                <p>Raw Score: {result.rawScore.toFixed(2)}</p>
+                <p>Raw Score: {fmtNum(result.rawScore)}</p>
                 {result.negativeMarking && result.rawScore > result.totalScore && (
-                  <p className="text-red-600 font-bold">Penalty: -{(result.rawScore - result.totalScore).toFixed(2)}</p>
+                  <p className="text-red-600 font-bold">Penalty: -{fmtNum(result.rawScore - result.totalScore)}</p>
                 )}
               </div>
             )}
@@ -523,7 +524,7 @@ export default function ResultsPage(props: { params: Promise<{ id: string }> }) 
             </div>
             {result.negativeMarking && result.rawScore !== undefined && result.rawScore > result.totalScore && (
               <p className="text-sm text-muted-foreground font-medium">
-                -{(result.rawScore - result.totalScore).toFixed(2)} marks
+                -{fmtNum(result.rawScore - result.totalScore)} marks
               </p>
             )}
           </Card>
@@ -593,7 +594,7 @@ export default function ResultsPage(props: { params: Promise<{ id: string }> }) 
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      <Tooltip formatter={(value) => fmtNum(Number(value))} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -625,7 +626,7 @@ export default function ResultsPage(props: { params: Promise<{ id: string }> }) 
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-2xl font-black">{Number(score).toFixed(2)}%</span>
+                      <span className="text-2xl font-black">{fmtPct(score)}</span>
                       <Badge variant={score >= 70 ? "default" : "destructive"} className="border-2 border-black dark:border-white/65 font-bold">
                         {score >= 70 ? "Good" : "Needs Work"}
                       </Badge>
@@ -860,7 +861,7 @@ export default function ResultsPage(props: { params: Promise<{ id: string }> }) 
                               )}
                               {isWrong && result.negativeMarking && (
                                 <Badge variant="destructive" className="ml-2 whitespace-nowrap text-xs px-2 py-1 border-2 border-black font-bold">
-                                  -{result.negativeMarkValue} marks
+                                  -{fmtNum(result.negativeMarkValue)} marks
                                 </Badge>
                               )}
                             </CardTitle>

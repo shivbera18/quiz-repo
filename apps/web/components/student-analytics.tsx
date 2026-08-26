@@ -21,6 +21,7 @@ import {
   ArrowUp, ArrowDown, Minus, Timer, ChevronDown, ChevronRight, ExternalLink
 } from "lucide-react"
 import { format, subDays, differenceInDays, isValid } from "date-fns"
+import { fmtNum, fmtPct } from "@/lib/format"
 
 // Safe date parser helper
 const safeParseDate = (dateStr: string | undefined | null): Date | null => {
@@ -603,14 +604,14 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="name" tickLine={false} axisLine={false} fontSize={12} />
                     <YAxis tickLine={false} axisLine={false} fontSize={12} domain={[0, 100]} />
-                    <Tooltip 
+                    <Tooltip
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           return (
                             <div className="bg-white dark:bg-zinc-900 border-4 border-black dark:border-white/65 rounded-xl shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.65)] p-3">
                               <p className="font-black">{payload[0].payload.fullName}</p>
                               <p className="text-sm font-medium text-muted-foreground">{payload[0].payload.date}</p>
-                              <p className="text-sm font-bold">Score: <span className="font-black text-[#8B5CF6]">{payload[0].value}%</span></p>
+                              <p className="text-sm font-bold">Score: <span className="font-black text-[#8B5CF6]">{fmtNum(Number(payload[0].value))}%</span></p>
                             </div>
                           )
                         }
@@ -649,13 +650,13 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                       outerRadius={100}
                       paddingAngle={2}
                       dataKey="value"
-                      label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                      label={({ name, percent }) => `${name} ${fmtNum((percent || 0) * 100)}%`}
                     >
                       {answerDistribution.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip formatter={(value) => fmtNum(Number(value))} />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -678,7 +679,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                   <XAxis dataKey="displayDate" tickLine={false} axisLine={false} fontSize={12} />
                   <YAxis yAxisId="left" tickLine={false} axisLine={false} fontSize={12} />
                   <YAxis yAxisId="right" orientation="right" tickLine={false} axisLine={false} fontSize={12} domain={[0, 100]} />
-                  <Tooltip />
+                  <Tooltip formatter={(value) => fmtNum(Number(value))} />
                   <Legend />
                   <Bar yAxisId="left" dataKey="quizzes" fill="#8B5CF6" radius={[4, 4, 0, 0]} name="Quizzes" />
                   <Line yAxisId="right" type="monotone" dataKey="avgScore" stroke="#10B981" strokeWidth={2} name="Avg Score %" />
@@ -703,7 +704,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                     <XAxis type="number" tickLine={false} axisLine={false} domain={[0, 100]} />
                     <YAxis type="category" dataKey="section" tickLine={false} axisLine={false} width={100} />
-                    <Tooltip />
+                    <Tooltip formatter={(value) => fmtNum(Number(value))} />
                     <Bar dataKey="accuracy" radius={[0, 4, 4, 0]} name="Accuracy %">
                       {sectionAnalysis.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -728,7 +729,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                     <PolarRadiusAxis angle={90} domain={[0, 100]} fontSize={10} />
                     <Radar name="Accuracy" dataKey="accuracy" stroke="#8B5CF6" fill="#8B5CF6" fillOpacity={0.5} />
                     <Radar name="Avg Score" dataKey="avgScore" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.3} />
-                    <Tooltip />
+                    <Tooltip formatter={(value) => fmtNum(Number(value))} />
                   </RadarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -804,7 +805,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                             
                             <div className="flex items-center gap-4">
                               <div className="text-center">
-                                <div className="text-2xl font-bold">{quiz.score}%</div>
+                                <div className="text-2xl font-bold">{fmtPct(quiz.score)}</div>
                                 <div className="text-xs text-muted-foreground">Score</div>
                               </div>
                               
@@ -926,7 +927,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                     <XAxis dataKey="quiz" tickLine={false} axisLine={false} fontSize={12} />
                     <YAxis yAxisId="left" tickLine={false} axisLine={false} fontSize={12} />
                     <YAxis yAxisId="right" orientation="right" tickLine={false} axisLine={false} fontSize={12} />
-                    <Tooltip />
+                    <Tooltip formatter={(value) => fmtNum(Number(value))} />
                     <Legend />
                     <Line yAxisId="left" type="monotone" dataKey="time" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 4 }} name="Time (min)" />
                     <Line yAxisId="right" type="monotone" dataKey="accuracy" stroke="#10B981" strokeWidth={2} dot={{ r: 4 }} name="Accuracy %" />
@@ -1091,7 +1092,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="name" tickLine={false} axisLine={false} fontSize={12} />
                     <YAxis tickLine={false} axisLine={false} fontSize={12} domain={[0, 100]} />
-                    <Tooltip />
+                    <Tooltip formatter={(value) => fmtNum(Number(value))} />
                     <Line type="monotone" dataKey="score" stroke="#8B5CF6" strokeWidth={2} name="Score %" dot={{ r: 3 }} />
                     <Line type="monotone" dataKey="accuracy" stroke="#10B981" strokeWidth={2} name="Accuracy %" dot={{ r: 3 }} />
                   </LineChart>
@@ -1158,7 +1159,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="range" tickLine={false} axisLine={false} fontSize={12} />
                     <YAxis tickLine={false} axisLine={false} fontSize={12} />
-                    <Tooltip />
+                    <Tooltip formatter={(value) => fmtNum(Number(value))} />
                     <Bar dataKey="count" radius={[4, 4, 0, 0]} name="Quizzes">
                       {scoreDistribution.map((entry, index) => {
                         const colors = ['#EF4444', '#F97316', '#EAB308', '#22C55E', '#10B981']

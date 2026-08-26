@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { History, Eye, TrendingUp, BookOpen, Target, Clock, CheckCircle2, XCircle, MinusCircle, RotateCcw } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { fetchAttemptHistory, type AttemptHistoryItem } from "@/lib/attempt-history"
+import { fmtNum, fmtPct } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { MobilePageHeader } from "@/components/layout/mobile-page-header"
 
@@ -117,7 +118,7 @@ export default function AttemptedQuizzesPage() {
                   <div>
                     <p className="text-xs text-muted-foreground font-bold">Average Score</p>
                     <p className="text-xl font-black">
-                      {(allAttempts.reduce((sum, a) => sum + a.totalScore, 0) / allAttempts.length).toFixed(0)}%
+                      {fmtPct(allAttempts.reduce((sum, a) => sum + a.totalScore, 0) / allAttempts.length)}
                     </p>
                   </div>
                 </div>
@@ -131,7 +132,7 @@ export default function AttemptedQuizzesPage() {
                   <div>
                     <p className="text-xs text-muted-foreground font-bold">Best Score</p>
                     <p className="text-xl font-black">
-                      {Math.max(...allAttempts.map(a => a.totalScore)).toFixed(0)}%
+                      {fmtPct(Math.max(...allAttempts.map(a => a.totalScore)))}
                     </p>
                   </div>
                 </div>
