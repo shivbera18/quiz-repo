@@ -602,6 +602,41 @@ async function main() {
           logger.warn({ eventType: envelope.eventType }, "unhandled event type")
       }
     },
+    // Catalog emits tombstones (null payload keyed by entity id) when an
+    // admin deletes a subject/chapter/quiz. Without this the dimension rows
+    // survived forever, so deleted quizzes kept appearing in admin analytics
+    // dropdowns and result listings. Facts are deliberately NOT deleted here:
+    // historical attempts stay attributable (the same denormalization policy
+    // as user erasure), they just lose their dimension join and render as
+    // "Unknown Quiz".
+    async onTombstone({ topic, key }) {
+      if (!key) {
+        logger.warn({ topic }, "tombstone without key ignored")
+        return
+      }
+      switch (topic) {
+        case TOPICS.QUIZ_CHANGED: {
+          const deleted = await prisma.dimQuiz.deleteMany({ where: { quizId: key } })
+          await redis.del(keys.cacheAnalyticsQuiz(key), keys.cacheAnalyticsOverview())
+          logger.info({ quizId: key, deleted: deleted.count }, "quiz dimension removed via tombstone")
+          return
+        }
+        case TOPICS.CHAPTER_CHANGED: {
+          const deleted = await prisma.dimChapter.deleteMany({ where: { chapterId: key } })
+          await redis.del(keys.cacheAnalyticsOverview())
+          logger.info({ chapterId: key, deleted: deleted.count }, "chapter dimension removed via tombstone")
+          return
+        }
+        case TOPICS.SUBJECT_CHANGED: {
+          const deleted = await prisma.dimSubject.deleteMany({ where: { subjectId: key } })
+          await redis.del(keys.cacheAnalyticsOverview())
+          logger.info({ subjectId: key, deleted: deleted.count }, "subject dimension removed via tombstone")
+          return
+        }
+        default:
+          logger.warn({ topic }, "tombstone on unexpected topic ignored")
+      }
+    },
   })
 
   logger.info("analytics-rollup-consumer running")
