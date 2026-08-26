@@ -8,6 +8,7 @@ import { createOutboxStore } from "./outbox-store.js"
 import { requireUser, requireAdmin } from "./auth.js"
 import { startOrResumeAttempt, autosaveAnswers, submitAttempt, getResult, NotFoundError, ForbiddenError, ConflictError } from "./attempt-service.js"
 import { registerLegacyRoutes } from "./legacy.js"
+import { registerNotebookRoutes } from "./notebook.js"
 import { fetchQuizMeta, type LegacyQuizMeta } from "./legacy-client.js"
 
 const logger = createLogger("assessment-svc")
@@ -198,6 +199,7 @@ async function main() {
   })
 
   registerLegacyRoutes(app, prisma)
+  registerNotebookRoutes(app, prisma)
 
   const kafkaClient = createKafka("assessment-svc")
   const producer = await getProducer(kafkaClient)

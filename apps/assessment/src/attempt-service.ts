@@ -440,6 +440,47 @@ export async function submitAttempt(
           awarded: awardedFor(qr),
         },
       })
+
+      // Wrong-answer notebook maintenance, same transaction as the score:
+      // a wrong answer upserts/refreshes the entry (box resets to 1), a
+      // correct answer removes any prior entry (mastered), unanswered leaves
+      // history untouched. Content is frozen from the snapshot so later quiz
+      // edits cannot mutate or orphan notebook entries.
+      if (qr.isCorrect) {
+        await tx.notebookItem.deleteMany({
+          where: { userId: attempt.userId, questionId: qr.questionId, kind: "WRONG_ANSWER" },
+        })
+      } else if (!qr.isUnanswered) {
+        const snapshotQuestion = scoringQuestions.find((q) => q.id === qr.questionId)
+        const notebookContent = {
+          section: qr.section,
+          questionText: snapshotQuestion?.question ?? "",
+          options: (snapshotQuestion?.options ?? []) as any,
+          correctAnswer: qr.correctAnswer,
+          explanation: snapshotQuestion?.explanation ?? "",
+        }
+        await tx.notebookItem.upsert({
+          where: {
+            userId_questionId_kind: { userId: attempt.userId, questionId: qr.questionId, kind: "WRONG_ANSWER" },
+          },
+          update: {
+            ...notebookContent,
+            quizId: attempt.quizId,
+            selectedAnswer: qr.selectedAnswer,
+            boxLevel: 1,
+            nextPracticeAt: new Date(),
+            lastOutcome: null,
+          },
+          create: {
+            userId: attempt.userId,
+            quizId: attempt.quizId,
+            questionId: qr.questionId,
+            kind: "WRONG_ANSWER",
+            ...notebookContent,
+            selectedAnswer: qr.selectedAnswer,
+          },
+        })
+      }
     }
 
     await tx.outbox.create({
