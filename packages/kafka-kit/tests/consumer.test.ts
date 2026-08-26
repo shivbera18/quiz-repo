@@ -75,6 +75,37 @@ describe("processMessage failure policy", () => {
     expect(outcome).toBe("dropped-parse-error")
   })
 
+  it.each([
+    ["a bare number", Buffer.from("5")],
+    ["a bare string", JSON.stringify("hello")],
+    ["null", Buffer.from("null")],
+    ["an array", JSON.stringify([1, 2, 3])],
+  ])("dead-letters syntactically-valid JSON that is not an envelope (%s)", async (_label, raw) => {
+    const args = baseArgs()
+    const payloadBytes = Buffer.isBuffer(raw) ? raw : Buffer.from(raw)
+    const outcome = await processMessage(makePayload(payloadBytes), args)
+
+    expect(outcome).toBe("dead-lettered-parse-error")
+    expect(args.onMessage).not.toHaveBeenCalled() // would otherwise throw on property access and crash-loop the group
+    const record = args.produceToDlq.mock.calls[0][0]
+    expect(record.value).toBe(payloadBytes)
+    expect(record.headers["dlq-error"]).toContain("not an event envelope")
+  })
+
+  it("dead-letters an object missing eventId/eventType/data fields", async () => {
+    const args = baseArgs()
+    const outcome = await processMessage(makePayload(Buffer.from(JSON.stringify({ foo: "bar" }))), args)
+    expect(outcome).toBe("dead-lettered-parse-error")
+    expect(args.onMessage).not.toHaveBeenCalled()
+  })
+
+  it("records attempt count in the dlq-attempts header after exhausted retries", async () => {
+    const args = baseArgs({ onMessage: vi.fn().mockRejectedValue(new Error("boom")) }) // maxRetries=2 -> 3 attempts
+    await processMessage(makePayload(OK_VALUE), args)
+    const record = args.produceToDlq.mock.calls[0][0]
+    expect(record.headers["dlq-attempts"]).toBe("3")
+  })
+
   it("skips duplicates per ProcessedEventStore before invoking the handler", async () => {
     const args = baseArgs({ store: { hasProcessed: vi.fn().mockResolvedValue(true) } })
     const outcome = await processMessage(makePayload(OK_VALUE), args)

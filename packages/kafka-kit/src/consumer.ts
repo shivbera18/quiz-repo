@@ -46,6 +46,42 @@ function backoffDelay(retryBackoffMs: number, failedAttempts: number): number {
 }
 
 /**
+ * Parks an unusable value (syntactically-invalid JSON, or JSON that is not an
+ * event envelope). Retrying can never succeed, so this is the one path that
+ * drops rather than rethrows when the DLQ itself is unavailable -- a loud log
+ * beats crash-looping the consumer group over a single record.
+ */
+async function deadLetterParseError<T>(
+  args: {
+    groupId: string
+    dlq: Required<DlqOptions>
+    produceToDlq: ((record: { topic: string; key: unknown; value: unknown; headers: Record<string, string> }) => Promise<void>) | null
+  },
+  payload: EachMessagePayload,
+  dlqHeaders: (errorMessage: string, attempts: number) => Record<string, string>,
+  errorMessage: string
+): Promise<MessageOutcome> {
+  const { message, topic, partition } = payload
+  if (args.dlq.enabled && args.produceToDlq) {
+    try {
+      await args.produceToDlq({
+        topic: `${topic}.dlq`,
+        key: message.key ?? null,
+        value: message.value,
+        headers: dlqHeaders(errorMessage, 1),
+      })
+      console.error(`[${args.groupId}] unusable message on ${topic}[${partition}]@${message.offset} dead-lettered to ${topic}.dlq:`, errorMessage)
+      return "dead-lettered-parse-error"
+    } catch (dlqErr) {
+      console.error(`[${args.groupId}] DLQ publish FAILED for unusable message on ${topic}[${partition}]@${message.offset}; DROPPING. dlq-error:`, dlqErr, "reason:", errorMessage)
+      return "dropped-parse-error"
+    }
+  }
+  console.error(`[${args.groupId}] unusable message on ${topic}[${partition}]@${message.offset} and DLQ disabled; dropping:`, errorMessage)
+  return "dropped-parse-error"
+}
+
+/**
  * Processes one Kafka message with the full failure policy:
  *
  *  - tombstones / empty values are skipped (compacted-topic deletes),
@@ -83,33 +119,37 @@ export async function processMessage<T>(
     "dlq-original-partition": String(partition),
     "dlq-original-offset": String(message.offset),
     "dlq-error": errorMessage.slice(0, 800),
+    "dlq-attempts": String(attempts),
     "dlq-failed-at": new Date().toISOString(),
   })
 
-  let envelope: EventEnvelope<T>
+  let value: unknown
   try {
-    envelope = JSON.parse(message.value.toString())
+    value = JSON.parse(message.value.toString())
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : String(err)
-    if (args.dlq.enabled && args.produceToDlq) {
-      try {
-        await args.produceToDlq({
-          topic: `${topic}.dlq`,
-          key: message.key ?? null,
-          value: message.value,
-          headers: dlqHeaders(errorMessage, 1),
-        })
-        console.error(`[${args.groupId}] unparsable message on ${topic}[${partition}]@${message.offset} dead-lettered to ${topic}.dlq:`, errorMessage)
-        return "dead-lettered-parse-error"
-      } catch (dlqErr) {
-        // A garbage value we cannot park anywhere: dropping it (with a loud
-        // log) beats crash-looping the whole consumer group over one record.
-        console.error(`[${args.groupId}] DLQ publish FAILED for unparsable message on ${topic}[${partition}]@${message.offset}; DROPPING. dlq-error:`, dlqErr, "parse-error:", err)
-        return "dropped-parse-error"
-      }
-    }
-    console.error(`[${args.groupId}] failed to parse message on ${topic}[${partition}]@${message.offset} and DLQ disabled; dropping:`, err)
-    return "dropped-parse-error"
+    return await deadLetterParseError(args, payload, dlqHeaders, err instanceof Error ? err.message : String(err))
+  }
+
+  // Syntactically-valid JSON is not enough -- a scalar ("5"), array, or an
+  // object without the envelope fields would throw later on property access,
+  // which escapes eachMessage and crash-loops the group exactly like the
+  // malformed-JSON case this policy exists to prevent. Shape-validate here so
+  // semantically-garbage values take the same dead-letter path.
+  const envelope = value as EventEnvelope<T>
+  const isEnvelopeShape =
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    typeof (value as { eventId?: unknown }).eventId === "string" &&
+    typeof (value as { eventType?: unknown }).eventType === "string" &&
+    (value as { data?: unknown }).data !== undefined
+  if (!isEnvelopeShape) {
+    return await deadLetterParseError(
+      args,
+      payload,
+      dlqHeaders,
+      `parsed JSON is not an event envelope (eventId/eventType/data missing): ${JSON.stringify(value).slice(0, 200)}`
+    )
   }
 
   const alreadyProcessed = await args.store.hasProcessed(envelope.eventId)
