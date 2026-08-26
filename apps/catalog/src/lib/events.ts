@@ -15,6 +15,8 @@ export function quizChangedPayload(quiz: {
   negativeMarking: boolean
   negativeMarkValue: number
   isActive: boolean
+  startTime: Date | null
+  endTime: Date | null
   createdBy: string
   createdAt: Date
   version: number
@@ -32,6 +34,8 @@ export function quizChangedPayload(quiz: {
     negativeMarking: quiz.negativeMarking,
     negativeMarkValue: quiz.negativeMarkValue,
     isActive: quiz.isActive,
+    startTime: quiz.startTime ? quiz.startTime.toISOString() : null,
+    endTime: quiz.endTime ? quiz.endTime.toISOString() : null,
     createdBy: quiz.createdBy,
     createdAt: quiz.createdAt.toISOString(),
     updatedAt: new Date().toISOString(),

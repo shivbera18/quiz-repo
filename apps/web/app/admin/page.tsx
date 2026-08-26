@@ -926,14 +926,14 @@ export default function AdminPage() {
                 </Link>
               </Card>
 
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer" variant="neobrutalist">
+              <Card className="hover:shadow-lg transition-shadow" variant="neobrutalist">
                 <CardHeader className="text-center pb-2">
                   <Clock className="h-8 w-8 md:h-12 md:w-12 mx-auto text-orange-600 mb-2" />
                   <CardTitle className="text-sm md:text-base font-bold">Scheduled Exams</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <CardDescription className="text-center text-xs font-medium">
-                    Schedule and manage timed exams (Coming Soon)
+                    Set open/close windows on any quiz from its editor
                   </CardDescription>
                 </CardContent>
               </Card>

@@ -37,6 +37,10 @@ export interface FullQuizDTO {
   negativeMarkValue: number
   sections: string[]
   questions: FullQuizQuestionDTO[]
+  /** ISO-8601 instant, or null when the quiz has no scheduled open time. */
+  startTime: string | null
+  /** ISO-8601 instant, or null when the quiz never closes on a schedule. */
+  endTime: string | null
 }
 
 export interface SubjectDTO {
@@ -107,6 +111,17 @@ export type StoredQuestionInput = z.infer<typeof storedQuestionSchema>
 const sectionsSchema = z.array(z.string().trim().min(1)).min(1, "At least one section is required").max(10)
 const negativeMarkValueSchema = z.number().min(0.1).max(1)
 
+// Accepts anything Date can parse (admin UI sends datetime-local strings or
+// ISO); stored as an instant. Null clears a previously-set schedule.
+const scheduledAtSchema = z
+  .union([z.null(), z.string().refine((v) => !Number.isNaN(Date.parse(v)), "Must be a valid date/time")])
+  .optional()
+
+function refineScheduleWindow<T extends { startTime?: string | null; endTime?: string | null }>(value: T): boolean {
+  if (value.startTime && value.endTime) return Date.parse(value.startTime) < Date.parse(value.endTime)
+  return true
+}
+
 export const quizCreateSchema = z.object({
   title: z.string().trim().min(3, "Quiz title must be 3-200 characters").max(200),
   description: z.string().max(5000).optional(),
@@ -117,7 +132,10 @@ export const quizCreateSchema = z.object({
   questions: z.array(storedQuestionSchema).max(500).optional(),
   negativeMarking: z.boolean().optional(),
   negativeMarkValue: negativeMarkValueSchema.optional(),
+  startTime: scheduledAtSchema,
+  endTime: scheduledAtSchema,
 })
+  .refine(refineScheduleWindow, { message: "Start time must be before end time", path: ["endTime"] })
 export type QuizCreateInput = z.infer<typeof quizCreateSchema>
 
 export const quizPatchSchema = z.object({
@@ -133,7 +151,10 @@ export const quizPatchSchema = z.object({
   // "none"/"" keep their historical PATCH semantics (leave chapter unchanged);
   // a real id re-points the quiz.
   chapterId: z.union([z.literal("none"), z.literal(""), z.null(), z.string().min(1)]).optional(),
+  startTime: scheduledAtSchema,
+  endTime: scheduledAtSchema,
 })
+  .refine(refineScheduleWindow, { message: "Start time must be before end time", path: ["endTime"] })
 export type QuizPatchInput = z.infer<typeof quizPatchSchema>
 
 // Accepts legacy capitalized values but normalizes to the lowercase set the
@@ -181,3 +202,35 @@ export const questionBankListQuerySchema = z.object({
   tag: z.union([z.string(), z.array(z.string())]).optional(),
 })
 export type QuestionBankListQuery = z.infer<typeof questionBankListQuerySchema>
+
+// ---------------------------------------------------------------------------
+// Quiz scheduling
+// ---------------------------------------------------------------------------
+
+export type SchedulingStatus = "available" | "upcoming" | "closed"
+
+/**
+ * Single source of truth for whether a quiz's schedule window allows starting
+ * right now, shared by catalog's public reads and any consumer that renders
+ * the same three states. A quiz with no schedule is always "available";
+ * `isActive` gating remains separate.
+ */
+export function computeSchedulingStatus(
+  startTime: string | Date | null | undefined,
+  endTime: string | Date | null | undefined,
+  now: Date = new Date()
+): SchedulingStatus {
+  // Closed wins over upcoming: if admin reschedules the start PAST an
+  // already-set end time (inverted window), the honest answer is that the
+  // exam is over -- advertising it as "upcoming" would invite attempts at
+  // start-time that immediately fail.
+  if (endTime) {
+    const end = typeof endTime === "string" ? Date.parse(endTime) : endTime.getTime()
+    if (!Number.isNaN(end) && now.getTime() > end) return "closed"
+  }
+  if (startTime) {
+    const start = typeof startTime === "string" ? Date.parse(startTime) : startTime.getTime()
+    if (!Number.isNaN(start) && now.getTime() < start) return "upcoming"
+  }
+  return "available"
+}

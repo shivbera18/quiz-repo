@@ -19,6 +19,7 @@ import {
   TrendingUp,
   Clock,
   Timer,
+  BookMarked,
 } from "lucide-react"
 import MathRenderer from "@/components/math-renderer"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -26,6 +27,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
 import { useAuth } from "@/hooks/use-auth"
 
 interface QuestionResult {
+  questionId?: string
   question: string
   options: string[]
   selectedAnswer: number
@@ -120,11 +122,50 @@ interface Result {
 export default function ResultsPage(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
   const { user, loading: authLoading } = useAuth()
+
+  // Persist a bookmark straight from the scored result view -- the client
+  // holds the full snapshot content here, so the notebook entry is complete
+  // even if the quiz is edited or deleted later.
+  const bookmarkQuestion = async (question: QuestionResult) => {
+    if (!user || !question.questionId) return
+    setBookmarkPending((prev) => new Set(prev).add(question.questionId!))
+    try {
+      const res = await fetch("/api/notebook/bookmarks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token || "student-token-placeholder"}`,
+        },
+        body: JSON.stringify({
+          questionId: question.questionId,
+          quizId: result?.quizId,
+          section: question.section,
+          question: question.question,
+          options: question.options,
+          correctAnswer: question.correctAnswer,
+          explanation: question.explanation,
+        }),
+      })
+      if (res.ok) {
+        setBookmarked((prev) => new Set(prev).add(question.questionId!))
+      }
+    } catch (err) {
+      console.warn("Bookmark failed:", err)
+    } finally {
+      setBookmarkPending((prev) => {
+        const next = new Set(prev)
+        next.delete(question.questionId!)
+        return next
+      })
+    }
+  }
   const [result, setResult] = useState<Result | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedSection, setSelectedSection] = useState("all")
   const [openQuestions, setOpenQuestions] = useState<Set<number>>(new Set())
   const [error, setError] = useState<string | null>(null)
+  const [bookmarked, setBookmarked] = useState<Set<string>>(new Set())
+  const [bookmarkPending, setBookmarkPending] = useState<Set<string>>(new Set())
 
   // Helper function to safely parse questions data
   const parseResultData = (resultData: any): Result => {
@@ -848,6 +889,25 @@ export default function ResultsPage(props: { params: Promise<{ id: string }> }) 
                               alt="Question illustration"
                               className="max-w-sm rounded border-2 border-black dark:border-white/65"
                             />
+                          </div>
+                        )}
+
+                        {question.questionId && result.quizId && (
+                          <div className="mb-4">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="font-bold"
+                              disabled={bookmarked.has(question.questionId) || bookmarkPending.has(question.questionId)}
+                              onClick={() => void bookmarkQuestion(question)}
+                            >
+                              <BookMarked className="h-4 w-4 mr-2" />
+                              {bookmarked.has(question.questionId)
+                                ? "Saved to Notebook"
+                                : bookmarkPending.has(question.questionId)
+                                  ? "Saving..."
+                                  : "Bookmark"}
+                            </Button>
                           </div>
                         )}
 

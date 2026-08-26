@@ -35,6 +35,11 @@ interface Quiz {
   // last read back so a stale edit gets a 409 instead of silently clobbering
   // a concurrent one. See catalog-svc's admin quizzes PATCH route.
   version: number
+  // Schedule window (ISO instants or null). Optional here because sibling
+  // admin components declare their own narrower Quiz type; the server always
+  // supplies both keys on read.
+  startTime?: string | null
+  endTime?: string | null
 }
 
 interface Question {
@@ -45,8 +50,40 @@ interface Question {
   options: string[]
   correctAnswer: number
   explanation?: string
+
   image?: string
   createdAt: string
+}
+
+// datetime-local inputs need "YYYY-MM-DDTHH:mm" in the viewer's timezone;
+// the server stores ISO instants.
+function toLocalInputValue(iso: string | null): string {
+  if (!iso) return ""
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ""
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60_000)
+  return local.toISOString().slice(0, 16)
+}
+
+function fromLocalInputValue(value: string): string | null {
+  if (!value) return null
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString()
+}
+
+type ScheduleStatus = "available" | "upcoming" | "closed"
+
+function computeScheduleStatus(startTime: string | null, endTime: string | null, now = Date.now()): ScheduleStatus {
+  // Closed outranks upcoming so inverted windows read honestly.
+  if (endTime) {
+    const end = Date.parse(endTime)
+    if (!Number.isNaN(end) && now > end) return "closed"
+  }
+  if (startTime) {
+    const start = Date.parse(startTime)
+    if (!Number.isNaN(start) && now < start) return "upcoming"
+  }
+  return "available"
 }
 
 export default function QuizManagementPage(props: { params: Promise<{ id: string }> }) {
@@ -66,6 +103,9 @@ export default function QuizManagementPage(props: { params: Promise<{ id: string
   const [uploadError, setUploadError] = useState("")
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>("")
+  const [scheduleStartInput, setScheduleStartInput] = useState("")
+  const [scheduleEndInput, setScheduleEndInput] = useState("")
+  const [scheduleError, setScheduleError] = useState("")
 
   const [newQuestion, setNewQuestion] = useState({
     section: "",
@@ -101,6 +141,14 @@ export default function QuizManagementPage(props: { params: Promise<{ id: string
     }
   }, [params.id, loading, user])
 
+  // Keep the schedule inputs in sync with server truth (initial load AND
+  // every successful save, since setQuiz receives the updated row).
+  useEffect(() => {
+    if (!quiz) return
+    setScheduleStartInput(toLocalInputValue(quiz.startTime ?? null))
+    setScheduleEndInput(toLocalInputValue(quiz.endTime ?? null))
+  }, [quiz])
+
   // Save quiz to backend
   const saveQuiz = async (updatedQuiz: Quiz) => {
     try {
@@ -121,6 +169,9 @@ export default function QuizManagementPage(props: { params: Promise<{ id: string
           sections: updatedQuiz.sections,
           questions: updatedQuiz.questions,
           isActive: updatedQuiz.isActive,
+          // Always sent: setting reschedules, explicit null clears a bound.
+          startTime: updatedQuiz.startTime,
+          endTime: updatedQuiz.endTime,
         }),
       })
       if (res.status === 409) {
@@ -138,6 +189,20 @@ export default function QuizManagementPage(props: { params: Promise<{ id: string
   // Adapter for BulkManager: expects sync function
   const saveQuizSync = (updatedQuiz: Quiz) => {
     saveQuiz(updatedQuiz)
+  }
+
+  const scheduleStatus = quiz ? computeScheduleStatus(quiz.startTime ?? null, quiz.endTime ?? null) : "available"
+
+  const handleSaveSchedule = async () => {
+    if (!quiz) return
+    setScheduleError("")
+    const startIso = fromLocalInputValue(scheduleStartInput)
+    const endIso = fromLocalInputValue(scheduleEndInput)
+    if (startIso && endIso && Date.parse(startIso) >= Date.parse(endIso)) {
+      setScheduleError("Start time must be before end time.")
+      return
+    }
+    await saveQuiz({ ...quiz, startTime: startIso, endTime: endIso })
   }
 
   const handleOptionChange = (index: number, value: string) => {
@@ -548,6 +613,59 @@ export default function QuizManagementPage(props: { params: Promise<{ id: string
                 <p className="text-sm mt-1 font-medium">{quiz.description}</p>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        <Card variant="neobrutalist" className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between font-bold">
+              <span className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-orange-400 border-2 border-black">
+                  <Clock className="h-4 w-4 text-black" />
+                </div>
+                Schedule
+              </span>
+              <Badge
+                className={`border-2 border-black font-bold ${
+                  scheduleStatus === "available"
+                    ? "bg-green-400 text-black"
+                    : scheduleStatus === "upcoming"
+                      ? "bg-blue-300 text-black"
+                      : "bg-red-300 text-black"
+                }`}
+              >
+                {scheduleStatus === "available" ? "Available now" : scheduleStatus === "upcoming" ? "Upcoming" : "Closed"}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-muted-foreground text-sm font-bold block mb-1">Opens at (empty = open now)</label>
+                <input
+                  type="datetime-local"
+                  value={scheduleStartInput}
+                  onChange={(e) => setScheduleStartInput(e.target.value)}
+                  className="w-full border-2 border-black rounded-lg px-3 py-2 bg-card font-medium"
+                />
+              </div>
+              <div>
+                <label className="text-muted-foreground text-sm font-bold block mb-1">Closes at (empty = never closes)</label>
+                <input
+                  type="datetime-local"
+                  value={scheduleEndInput}
+                  onChange={(e) => setScheduleEndInput(e.target.value)}
+                  className="w-full border-2 border-black rounded-lg px-3 py-2 bg-card font-medium"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground font-medium">
+              Students cannot start this exam outside the window; an attempt that began inside it always finishes.
+            </p>
+            {scheduleError && <p className="text-sm font-bold text-red-600">{scheduleError}</p>}
+            <Button onClick={handleSaveSchedule} disabled={!!quizLoading} className="font-bold">
+              Save Schedule
+            </Button>
           </CardContent>
         </Card>
 

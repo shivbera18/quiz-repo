@@ -8,6 +8,8 @@ import { createOutboxStore } from "./outbox-store.js"
 import { requireUser, requireAdmin } from "./auth.js"
 import { startOrResumeAttempt, autosaveAnswers, submitAttempt, getResult, NotFoundError, ForbiddenError, ConflictError } from "./attempt-service.js"
 import { registerLegacyRoutes } from "./legacy.js"
+import { registerNotebookRoutes } from "./notebook.js"
+import { fetchQuizMeta, type LegacyQuizMeta } from "./legacy-client.js"
 
 const logger = createLogger("assessment-svc")
 const prisma = new PrismaClient()
@@ -113,7 +115,10 @@ async function main() {
 
   // Cursor-paginated history -- collapses the monolith's three near-duplicate
   // /api/results, /results/history, /results/recent routes (they differed
-  // only by `take` and an implicit status filter) into one endpoint.
+  // only by `take` and an implicit status filter) into one endpoint. Rows are
+  // self-sufficient (scores + section breakdown persisted at scoring time)
+  // and enriched with quiz metadata from catalog-svc's internal bulk-meta
+  // read, so clients render titles without one lookup per row.
   app.get("/v1/attempts", async (request, reply) => {
     const user = requireUser(request, reply)
     if (!user) return
@@ -131,19 +136,31 @@ async function main() {
     const hasMore = rows.length > limit
     const page = hasMore ? rows.slice(0, limit) : rows
 
+    const quizMeta = await fetchQuizMeta().catch(() => new Map<string, LegacyQuizMeta>())
+
     return {
-      attempts: page.map((a) => ({
-        attemptId: a.id,
-        quizId: a.quizId,
-        status: a.status,
-        startedAt: a.startedAt,
-        submittedAt: a.submittedAt,
-        totalScore: a.totalScore,
-        correctCount: a.correctCount,
-        wrongCount: a.wrongCount,
-        unansweredCount: a.unansweredCount,
-        timeSpentMs: a.timeSpentMs,
-      })),
+      attempts: page.map((a) => {
+        const meta = quizMeta.get(a.quizId)
+        return {
+          attemptId: a.id,
+          quizId: a.quizId,
+          status: a.status,
+          startedAt: a.startedAt,
+          submittedAt: a.submittedAt,
+          totalScore: a.totalScore,
+          correctCount: a.correctCount,
+          wrongCount: a.wrongCount,
+          unansweredCount: a.unansweredCount,
+          maxScore: a.maxScore,
+          rawScore: a.rawScore,
+          timeSpentMs: a.timeSpentMs,
+          sectionScores: a.sectionScores ?? null,
+          quizTitle: meta?.title ?? null,
+          chapterName: meta?.chapterName ?? null,
+          subjectName: meta?.subjectName ?? null,
+          subjectColor: meta?.subjectColor ?? null,
+        }
+      }),
       nextCursor: hasMore ? page[page.length - 1].id : null,
     }
   })
@@ -182,6 +199,7 @@ async function main() {
   })
 
   registerLegacyRoutes(app, prisma)
+  registerNotebookRoutes(app, prisma)
 
   const kafkaClient = createKafka("assessment-svc")
   const producer = await getProducer(kafkaClient)

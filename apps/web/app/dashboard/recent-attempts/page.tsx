@@ -8,103 +8,25 @@ import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { ArrowLeft, Clock, Eye, TrendingUp } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
-
-interface RecentAttempt {
-  _id: string
-  date: string
-  totalScore: number
-  quizName: string
-  quizId: string
-  rawScore?: number
-  correctAnswers: number
-  wrongAnswers: number
-  unanswered: number
-  timeSpent: number
-  sections: {
-    reasoning: number
-    quantitative: number
-    english: number
-  }
-}
+import { fetchAttemptHistory, type AttemptHistoryItem } from "@/lib/attempt-history"
 
 export default function RecentAttemptsPage() {
   const { user, loading } = useAuth()
-  const [recentAttempts, setRecentAttempts] = useState<RecentAttempt[]>([])
+  const [recentAttempts, setRecentAttempts] = useState<AttemptHistoryItem[]>([])
   const [loadingAttempts, setLoadingAttempts] = useState(true)
 
   useEffect(() => {
     if (!loading && user) {
       const fetchAttempts = async () => {
         try {
-          const response = await fetch("/api/attempts?status=SUBMITTED&limit=10", {
-            headers: {
-              Authorization: `Bearer ${user.token || "student-token-placeholder"}`,
-              "Cache-Control": "no-cache, no-store, must-revalidate",
-            },
+          const enriched = await fetchAttemptHistory(user.token || "student-token-placeholder", {
+            status: "SUBMITTED",
+            limit: 10,
           })
-          
-          if (response.ok) {
-            const data = await response.json()
-            const attemptSummaries = (data.attempts || []) as Array<{
-              attemptId: string
-              quizId: string
-              status: string
-              submittedAt: string
-              totalScore: number
-              correctCount: number
-              wrongCount: number
-              unansweredCount: number
-              timeSpentMs: number
-            }>
-
-            const enriched = await Promise.all(
-              attemptSummaries.map(async (att) => {
-                try {
-                  const res = await fetch(`/api/attempts/${att.attemptId}/result`, {
-                    headers: { Authorization: `Bearer ${user.token || "student-token-placeholder"}` },
-                  })
-                  if (res.ok) {
-                    const resJson = await res.json()
-                    const r = resJson.result
-                    return {
-                      _id: r._id,
-                      id: r._id,
-                      quizId: r.quizId,
-                      quizName: r.quizName,
-                      date: r.date,
-                      timeSpent: r.timeSpent,
-                      totalScore: r.totalScore,
-                      correctAnswers: r.correctAnswers,
-                      wrongAnswers: r.wrongAnswers,
-                      unanswered: r.unanswered,
-                      sections: r.sections || { reasoning: 0, quantitative: 0, english: 0 },
-                    } as RecentAttempt
-                  }
-                } catch {}
-                return {
-                  _id: att.attemptId,
-                  id: att.attemptId,
-                  quizId: att.quizId,
-                  quizName: "Quiz Attempt",
-                  date: att.submittedAt,
-                  timeSpent: Math.round((att.timeSpentMs || 0) / 1000),
-                  totalScore: att.totalScore || 0,
-                  correctAnswers: att.correctCount || 0,
-                  wrongAnswers: att.wrongCount || 0,
-                  unanswered: att.unansweredCount || 0,
-                  sections: { reasoning: 0, quantitative: 0, english: 0 },
-                } as RecentAttempt
-              })
-            )
-            setRecentAttempts(enriched.slice(0, 10))
-          } else {
-            const results: RecentAttempt[] = JSON.parse(localStorage.getItem("quizResults") || "[]")
-            setRecentAttempts(results.slice(0, 10))
-          }
+          setRecentAttempts(enriched.slice(0, 10))
         } catch (error) {
           console.error("Failed to fetch attempts:", error)
-          const results: RecentAttempt[] = JSON.parse(localStorage.getItem("quizResults") || "[]")
-          setRecentAttempts(results.slice(0, 10))
+          setRecentAttempts([])
         } finally {
           setLoadingAttempts(false)
         }

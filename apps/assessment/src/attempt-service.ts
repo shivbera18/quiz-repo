@@ -16,6 +16,7 @@ import { createHash } from "node:crypto"
 import type { PrismaClient, Attempt } from "./generated/prisma/index.js"
 import { createEnvelope, TOPICS } from "@quiz/kafka-kit"
 import type { AttemptStartedData, AttemptSubmittedData, AutosaveAnswer } from "@quiz/contracts"
+import { computeSchedulingStatus } from "@quiz/contracts"
 import { fetchFullQuiz } from "./catalog-client.js"
 import { scoreQuiz, type ScoringQuestion } from "./lib/scoring.js"
 import { formatAttemptResult, type SnapshotQuestionWithKey } from "./attempt-result.js"
@@ -129,6 +130,18 @@ export async function startOrResumeAttempt(
   if (!quiz) throw new NotFoundError("Quiz not found")
 
   if (!quiz.isActive) throw new ForbiddenError("This quiz is not active")
+
+  // Schedule window gates STARTING a new attempt only -- an attempt that
+  // began inside the window always finishes (its own expiresAt governs it),
+  // and the resume branch above never reaches this code, so a student whose
+  // exam closed mid-attempt can still resume and submit.
+  const schedulingStatus = computeSchedulingStatus(quiz.startTime, quiz.endTime)
+  if (schedulingStatus === "upcoming") {
+    throw new ForbiddenError(`This exam opens at ${quiz.startTime} -- it has not started yet`)
+  }
+  if (schedulingStatus === "closed") {
+    throw new ForbiddenError("This exam has closed")
+  }
 
   const contentHash = createHash("sha256").update(canonicalQuestionsJson(quiz.questions)).digest("hex")
 
@@ -410,6 +423,7 @@ export async function submitAttempt(
         wrongCount: scored.wrongAnswers,
         unansweredCount: scored.unanswered,
         timeSpentMs,
+        sectionScores: sectionScores as any,
       },
     })
 
@@ -426,6 +440,47 @@ export async function submitAttempt(
           awarded: awardedFor(qr),
         },
       })
+
+      // Wrong-answer notebook maintenance, same transaction as the score:
+      // a wrong answer upserts/refreshes the entry (box resets to 1), a
+      // correct answer removes any prior entry (mastered), unanswered leaves
+      // history untouched. Content is frozen from the snapshot so later quiz
+      // edits cannot mutate or orphan notebook entries.
+      if (qr.isCorrect) {
+        await tx.notebookItem.deleteMany({
+          where: { userId: attempt.userId, questionId: qr.questionId, kind: "WRONG_ANSWER" },
+        })
+      } else if (!qr.isUnanswered) {
+        const snapshotQuestion = scoringQuestions.find((q) => q.id === qr.questionId)
+        const notebookContent = {
+          section: qr.section,
+          questionText: snapshotQuestion?.question ?? "",
+          options: (snapshotQuestion?.options ?? []) as any,
+          correctAnswer: qr.correctAnswer,
+          explanation: snapshotQuestion?.explanation ?? "",
+        }
+        await tx.notebookItem.upsert({
+          where: {
+            userId_questionId_kind: { userId: attempt.userId, questionId: qr.questionId, kind: "WRONG_ANSWER" },
+          },
+          update: {
+            ...notebookContent,
+            quizId: attempt.quizId,
+            selectedAnswer: qr.selectedAnswer,
+            boxLevel: 1,
+            nextPracticeAt: new Date(),
+            lastOutcome: null,
+          },
+          create: {
+            userId: attempt.userId,
+            quizId: attempt.quizId,
+            questionId: qr.questionId,
+            kind: "WRONG_ANSWER",
+            ...notebookContent,
+            selectedAnswer: qr.selectedAnswer,
+          },
+        })
+      }
     }
 
     await tx.outbox.create({

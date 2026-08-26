@@ -90,7 +90,9 @@ interface QuizResult {
     english?: number
     [key: string]: number | undefined
   }
-  answers: QuizAnswer[]
+  // Optional since the enriched attempt-list feed carries aggregates only;
+  // per-question panels degrade to their empty states when absent.
+  answers?: QuizAnswer[]
   subject?: string
   chapter?: string
 }
@@ -883,11 +885,11 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                   </div>
                   <div className="p-4 bg-muted rounded-lg text-center">
                     <div className="text-2xl font-bold">
-                      {filteredResults.length > 0 && filteredResults[0].answers.length > 0
+                      {filteredResults.length > 0 && (filteredResults[0].answers ?? []).length > 0
                         ? formatTime(filteredResults.reduce((acc, r) => {
-                            const avgQTime = r.answers.filter(a => a.timeSpent).length > 0
-                              ? r.answers.filter(a => a.timeSpent).reduce((sum, a) => sum + (a.timeSpent || 0), 0) / r.answers.filter(a => a.timeSpent).length
-                              : r.timeSpent / r.answers.length
+                            const avgQTime = (r.answers ?? []).filter(a => a.timeSpent).length > 0
+                              ? (r.answers ?? []).filter(a => a.timeSpent).reduce((sum, a) => sum + (a.timeSpent || 0), 0) / (r.answers ?? []).filter(a => a.timeSpent).length
+                              : r.timeSpent / (r.answers ?? []).length
                             return acc + avgQTime
                           }, 0) / filteredResults.length)
                         : '0:00'}
@@ -897,7 +899,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                   <div className="p-4 bg-muted rounded-lg text-center">
                     <div className="text-2xl font-bold">
                       {formatTime(filteredResults.reduce((max, r) => {
-                        const maxTime = r.answers.reduce((m, a) => Math.max(m, a.timeSpent || 0), 0)
+                        const maxTime = (r.answers ?? []).reduce((m, a) => Math.max(m, a.timeSpent || 0), 0)
                         return Math.max(max, maxTime)
                       }, 0))}
                     </div>
@@ -918,7 +920,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                   <LineChart data={filteredResults.map((r, idx) => ({
                     quiz: `Q${idx + 1}`,
                     time: Math.round(r.timeSpent / 60),
-                    accuracy: r.answers.length > 0 ? Math.round((r.correctAnswers / r.answers.length) * 100) : 0
+                    accuracy: (r.answers ?? []).length > 0 ? Math.round((r.correctAnswers / (r.answers ?? []).length) * 100) : 0
                   }))}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="quiz" tickLine={false} axisLine={false} fontSize={12} />
@@ -947,12 +949,12 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
               <ScrollArea className="h-[400px]">
                 <div className="space-y-3">
                   {filteredResults.slice(0, 10).map((result, quizIdx) => {
-                    const answersWithTime = result.answers.filter(a => a.timeSpent !== undefined && a.timeSpent > 0)
+                    const answersWithTime = (result.answers ?? []).filter(a => a.timeSpent !== undefined && a.timeSpent > 0)
                     const avgTimePerQ = answersWithTime.length > 0 
                       ? answersWithTime.reduce((sum, a) => sum + (a.timeSpent || 0), 0) / answersWithTime.length 
-                      : (result.timeSpent * 1000) / result.answers.length
-                    const maxTime = result.answers.reduce((max, a) => Math.max(max, a.timeSpent || 0), 0)
-                    const minTime = result.answers.filter(a => a.timeSpent && a.timeSpent > 0).reduce((min, a) => Math.min(min, a.timeSpent || Infinity), Infinity)
+                      : (result.timeSpent * 1000) / (result.answers ?? []).length
+                    const maxTime = (result.answers ?? []).reduce((max, a) => Math.max(max, a.timeSpent || 0), 0)
+                    const minTime = (result.answers ?? []).filter(a => a.timeSpent && a.timeSpent > 0).reduce((min, a) => Math.min(min, a.timeSpent || Infinity), Infinity)
                     
                     return (
                       <Link 
@@ -968,7 +970,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                                 <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                               </div>
                               <p className="text-xs text-muted-foreground mt-1">
-                                {formatDateSafe(result.date, 'MMM dd, yyyy')} • {result.answers.length} questions
+                                {formatDateSafe(result.date, 'MMM dd, yyyy')} • {(result.answers ?? []).length} questions
                               </p>
                             </div>
                             
@@ -992,8 +994,8 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                               </div>
                               
                               {/* Accuracy Badge */}
-                              <Badge variant={result.correctAnswers / result.answers.length >= 0.7 ? "default" : result.correctAnswers / result.answers.length >= 0.5 ? "secondary" : "destructive"}>
-                                {Math.round((result.correctAnswers / result.answers.length) * 100)}%
+                              <Badge variant={result.correctAnswers / (result.answers ?? []).length >= 0.7 ? "default" : result.correctAnswers / (result.answers ?? []).length >= 0.5 ? "secondary" : "destructive"}>
+                                {Math.round((result.correctAnswers / (result.answers ?? []).length) * 100)}%
                               </Badge>
                               
                               <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -1046,7 +1048,7 @@ export default function StudentAnalytics({ results = [] }: StudentAnalyticsProps
                   const sectionTimes: { [key: string]: { total: number; count: number } } = {}
                   
                   filteredResults.forEach(result => {
-                    result.answers.forEach(answer => {
+                    (result.answers ?? []).forEach(answer => {
                       const section = answer.section || 'unknown'
                       if (!sectionTimes[section]) {
                         sectionTimes[section] = { total: 0, count: 0 }

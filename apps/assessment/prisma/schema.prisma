@@ -44,6 +44,10 @@ model Attempt {
   negativeMarkValue Float
   timeSpentMs       Int?
   scoringVersion    Int           @default(1)
+  // Per-section breakdown frozen at scoring time ({section, correct, wrong,
+  // unanswered, total, scorePct, timeSpentMs}[]) so history/analytics lists
+  // are self-sufficient -- no per-attempt result round trips.
+  sectionScores     Json?
 
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
@@ -100,6 +104,41 @@ model AttemptAnswer {
   attempt         Attempt   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
 
   @@id([attemptId, questionId])
+}
+
+// The student's notebook: incorrectly-answered questions captured
+// automatically at scoring time, plus manually bookmarked questions. Question
+// content is frozen at capture (same philosophy as AttemptSnapshot -- a quiz
+// edit or delete must not mutate or orphan notebook entries).
+//
+// Spaced repetition (Leitner): boxLevel 1-5; a correct practice answer
+// promotes and pushes nextPracticeAt out, a wrong one resets to box 1.
+model NotebookItem {
+  id             String       @id @default(uuid())
+  userId         String // soft refs -- no cross-schema FKs
+  quizId         String
+  questionId     String
+  kind           NotebookKind
+  section        String
+  questionText   String
+  options        Json         @default("[]")
+  correctAnswer  Int
+  explanation    String       @default("")
+  // WRONG_ANSWER rows record what was picked when it went wrong; bookmarks leave it null.
+  selectedAnswer Int?
+  boxLevel       Int          @default(1)
+  nextPracticeAt DateTime     @default(now())
+  lastOutcome    String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([userId, questionId, kind])
+  @@index([userId, kind, nextPracticeAt])
+}
+
+enum NotebookKind {
+  WRONG_ANSWER
+  BOOKMARK
 }
 
 // Legacy table from the pre-Attempt scoring design. Kept for the historical
