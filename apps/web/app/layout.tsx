@@ -6,6 +6,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { PageTransition } from "@/components/page-transition"
 import ServiceWorkerRegistration from "@/components/service-worker-registration"
+import PWAHandler from "@/components/pwa-handler"
 import { AppShell } from "@/components/layout/app-shell"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -13,14 +14,21 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Banking Exam Preparation",
   description: "Comprehensive banking exam preparation platform",
-  generator: 'v0.dev',
+  applicationName: "Quizzy",
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Quiz App',
+    title: 'Quizzy',
   },
   formatDetection: {
     telephone: false,
+  },
+  icons: {
+    icon: [
+      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: '/icons/apple-touch-icon.png',
   },
   openGraph: {
     type: 'website',
@@ -53,6 +61,8 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.webmanifest" />
         <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
         <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png" />
+        {/* iOS home-screen icon: without this, Add to Home Screen snapshots the page. */}
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <meta name="theme-color" content="#7c3aed" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -72,6 +82,7 @@ export default function RootLayout({
             </AppShell>
           </PageTransition>
           <ServiceWorkerRegistration />
+          <PWAHandler />
         </ThemeProvider>
         
         {/* Umami Analytics */}
