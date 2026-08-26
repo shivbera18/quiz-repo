@@ -1,7 +1,7 @@
 import Fastify from "fastify"
 import cors from "@fastify/cors"
 import { randomUUID } from "node:crypto"
-import { PrismaClient } from "./generated/prisma/index.js"
+import { PrismaClient, Prisma } from "./generated/prisma/index.js"
 import { createLogger, TRACE_HEADER, getOrCreateTraceId } from "@quiz/observability"
 import { createKafka, getProducer, startOutboxPublisher, createEnvelope, TOPICS } from "@quiz/kafka-kit"
 import type { QuizChangedData, ChapterChangedData, SubjectChangedData, AiQuizGenerationRequestedData } from "@quiz/contracts"
@@ -14,6 +14,23 @@ import { requireAdmin, getUserId } from "./auth.js"
 const logger = createLogger("catalog-svc")
 const prisma = new PrismaClient()
 const PORT = Number(process.env.PORT) || 4002
+
+// A tombstone row: Kafka null-value record keyed by the deleted entity's id,
+// emitted on the entity's compacted change topic in the SAME transaction as
+// the delete itself. Compaction eventually removes the key entirely; until
+// then, consumers skip null payloads and rebuilds no longer resurrect
+// deleted entities from their original create event.
+function tombstoneOutboxRow(entity: "Subject" | "Chapter" | "Quiz", id: string) {
+  const topic = entity === "Subject" ? TOPICS.SUBJECT_CHANGED : entity === "Chapter" ? TOPICS.CHAPTER_CHANGED : TOPICS.QUIZ_CHANGED
+  return {
+    aggregateType: entity,
+    aggregateId: id,
+    topic,
+    key: id,
+    payload: Prisma.DbNull,
+    headers: { "content-type": "application/json", "event-type": topic },
+  }
+}
 
 async function main() {
   const app = Fastify({ loggerInstance: logger as any })
@@ -240,8 +257,17 @@ async function main() {
       reply.code(409)
       return { message: "Cannot delete subject that has chapters with quizzes. Please move or delete quizzes first." }
     }
-    await prisma.chapter.deleteMany({ where: { subjectId: id } })
-    await prisma.subject.delete({ where: { id } })
+    // Delete + tombstones commit atomically: one outbox row per deleted
+    // chapter plus the subject's own, so replay-from-zero cannot resurrect
+    // any of them on the compacted topics.
+    await prisma.$transaction(async (tx) => {
+      await tx.chapter.deleteMany({ where: { subjectId: id } })
+      for (const chapter of subject.chapters) {
+        await tx.outbox.create({ data: tombstoneOutboxRow("Chapter", chapter.id) })
+      }
+      await tx.subject.delete({ where: { id } })
+      await tx.outbox.create({ data: tombstoneOutboxRow("Subject", id) })
+    })
     return { message: "Subject deleted successfully" }
   })
 
@@ -289,7 +315,10 @@ async function main() {
       reply.code(409)
       return { message: "Cannot delete chapter that has quizzes. Please move or delete quizzes first." }
     }
-    await prisma.chapter.delete({ where: { id } })
+    await prisma.$transaction(async (tx) => {
+      await tx.chapter.delete({ where: { id } })
+      await tx.outbox.create({ data: tombstoneOutboxRow("Chapter", id) })
+    })
     return { message: "Chapter deleted successfully" }
   })
 
@@ -458,7 +487,10 @@ async function main() {
   app.delete("/v1/admin/quizzes/:id", async (request, reply) => {
     if (!requireAdmin(request, reply)) return
     const { id } = request.params as { id: string }
-    await prisma.quiz.delete({ where: { id } })
+    await prisma.$transaction(async (tx) => {
+      await tx.quiz.delete({ where: { id } })
+      await tx.outbox.create({ data: tombstoneOutboxRow("Quiz", id) })
+    })
     return { message: "Quiz deleted" }
   })
 

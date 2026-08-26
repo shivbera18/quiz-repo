@@ -102,13 +102,15 @@ model AiGenerationJob {
 // Transactional outbox for quiz/chapter/subject-changed events (compacted
 // topics -- see ARCHITECTURE.md for why: analytics/notification bootstrap
 // their dim_* projections from these by replaying from offset 0).
+// payload is nullable because deletes are represented as tombstones
+// (Kafka null-value records keyed by entity id) on those compacted topics.
 model Outbox {
   id            BigInt    @id @default(autoincrement())
   aggregateType String
   aggregateId   String
   topic         String
   key           String
-  payload       Json
+  payload       Json?
   headers       Json
   createdAt     DateTime  @default(now())
   publishedAt   DateTime?
