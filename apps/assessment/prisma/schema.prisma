@@ -44,6 +44,10 @@ model Attempt {
   negativeMarkValue Float
   timeSpentMs       Int?
   scoringVersion    Int           @default(1)
+  // Per-section breakdown frozen at scoring time ({section, correct, wrong,
+  // unanswered, total, scorePct, timeSpentMs}[]) so history/analytics lists
+  // are self-sufficient -- no per-attempt result round trips.
+  sectionScores     Json?
 
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt

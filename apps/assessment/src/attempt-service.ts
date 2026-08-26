@@ -423,6 +423,7 @@ export async function submitAttempt(
         wrongCount: scored.wrongAnswers,
         unansweredCount: scored.unanswered,
         timeSpentMs,
+        sectionScores: sectionScores as any,
       },
     })
 
