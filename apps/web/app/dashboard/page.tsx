@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/hooks/use-auth"
+import { fmtNum, fmtPct } from "@/lib/format"
 import { fetchAttemptHistory, type AttemptHistoryItem } from "@/lib/attempt-history"
 import { FlashQuestions } from "@/components/flash-questions"
 import { staggerContainer, staggerItem } from "@/components/page-transition"
@@ -221,7 +222,7 @@ export default function DashboardPage() {
             <div className="min-w-0 flex-1">
               <p className="text-xs text-muted-foreground font-bold">Avg Score</p>
               <p className="text-xl sm:text-2xl font-black truncate">
-                {(allAttempts.reduce((sum, a) => sum + (a.totalScore || 0), 0) / allAttempts.length).toFixed(0)}%
+                {fmtPct(allAttempts.reduce((sum, a) => sum + (a.totalScore || 0), 0) / allAttempts.length)}
               </p>
             </div>
           </div>
@@ -231,7 +232,7 @@ export default function DashboardPage() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs text-muted-foreground font-bold">Best Score</p>
-              <p className="text-xl sm:text-2xl font-black truncate">{Math.max(...allAttempts.map(a => a.totalScore || 0)).toFixed(0)}%</p>
+              <p className="text-xl sm:text-2xl font-black truncate">{fmtPct(Math.max(...allAttempts.map(a => a.totalScore || 0)))}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white dark:bg-zinc-900 rounded-lg border-4 border-black dark:border-white/65 shadow-[6px_6px_0px_0px_#000] sm:shadow-[8px_8px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.65)] sm:dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.65)] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:hover:shadow-[12px_12px_0px_0px_rgba(255,255,255,0.75)] transition-all">

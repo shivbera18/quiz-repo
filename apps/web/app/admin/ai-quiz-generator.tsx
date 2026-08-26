@@ -565,7 +565,7 @@ export default function AIQuizGenerator({ onQuizCreated, onClose }: AIQuizGenera
               <p>• Sections: {formData.sections.length}</p>
               <p>• Duration: {formData.duration} minutes</p>
               <p>• Difficulty: {formData.difficulty}</p>
-              <p>• Negative Marking: {formData.negativeMarking ? `Yes (-${formData.negativeMarkValue})` : "No"}</p>
+              <p>• Negative Marking: {formData.negativeMarking ? `Yes (-${Number(formData.negativeMarkValue).toFixed(2)})` : "No"}</p>
             </div>
           </div>
         )}

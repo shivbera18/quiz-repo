@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from "recharts"
 import { useAuth } from "@/hooks/use-auth"
+import { fmtNum, fmtPct } from "@/lib/format"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface QuizResult {
@@ -763,7 +764,7 @@ export default function AdminAnalyticsPage() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="week" />
                     <YAxis domain={[0, 100]} />
-                    <Tooltip />
+                    <Tooltip formatter={(value) => fmtNum(Number(value))} />
                     <Line type="monotone" dataKey="avgScore" stroke="#8B5CF6" strokeWidth={2} name="Average Score" />
                   </LineChart>
                 </ResponsiveContainer>
@@ -784,7 +785,7 @@ export default function AdminAnalyticsPage() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis domain={[0, 100]} />
-                    <Tooltip />
+                    <Tooltip formatter={(value) => fmtNum(Number(value))} />
                     <Bar dataKey="avgScore" fill="#3B82F6" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -806,7 +807,7 @@ export default function AdminAnalyticsPage() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="section" />
                   <YAxis domain={[0, 100]} />
-                  <Tooltip />
+                  <Tooltip formatter={(value) => fmtNum(Number(value))} />
                   <Bar dataKey="average" radius={[4, 4, 0, 0]}>
                     {sectionPerformanceData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -849,7 +850,7 @@ export default function AdminAnalyticsPage() {
                       <td className="p-2">{getQuizTitle(result, quizzes)}</td>
                       <td className="p-2">
                         <Badge variant={result.totalScore >= 70 ? "default" : "destructive"}>
-                          {Number(result.totalScore).toFixed(0)}%
+                          {fmtPct(result.totalScore)}
                         </Badge>
                       </td>
                       <td className="p-2 text-green-600">{result.correctAnswers}</td>
@@ -967,7 +968,7 @@ export default function AdminAnalyticsPage() {
                         <td className="p-2 font-medium">{quiz.name}</td>
                         <td className="p-2">{quiz.attempts}</td>
                         <td className="p-2">
-                          <Badge variant={quiz.avgScore >= 70 ? "default" : "destructive"}>{quiz.avgScore}%</Badge>
+                          <Badge variant={quiz.avgScore >= 70 ? "default" : "destructive"}>{fmtNum(quiz.avgScore)}%</Badge>
                         </td>
                         <td className="p-2">{quiz.passRate}%</td>
                         <td className="p-2">{quiz.questions}</td>
@@ -1052,13 +1053,13 @@ export default function AdminAnalyticsPage() {
                           <div>
                             <p className="text-sm text-muted-foreground">Best Score</p>
                             <Badge variant={quiz.bestScore >= 70 ? "default" : "destructive"}>
-                              {quiz.bestScore}%
+                              {fmtNum(quiz.bestScore)}%
                             </Badge>
                           </div>
                           <div>
                             <p className="text-sm text-muted-foreground">Average Score</p>
                             <Badge variant={quiz.averageScore >= 70 ? "default" : "destructive"}>
-                              {quiz.averageScore}%
+                              {fmtNum(quiz.averageScore)}%
                             </Badge>
                           </div>
                           <div>
@@ -1076,7 +1077,7 @@ export default function AdminAnalyticsPage() {
                                 <span>{new Date(attempt.date).toLocaleDateString()}</span>
                                 <div className="flex items-center gap-2">
                                   <Badge variant={attempt.totalScore >= 70 ? "default" : "secondary"} className="text-xs">
-                                    {Number(attempt.totalScore).toFixed(0)}%
+                                    {fmtPct(attempt.totalScore)}
                                   </Badge>
                                   <span className="text-muted-foreground">{attempt.timeSpent ? Math.round(attempt.timeSpent / 60) + "m" : "N/A"}</span>
                                   <Button

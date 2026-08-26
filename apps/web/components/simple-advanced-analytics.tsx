@@ -2,6 +2,7 @@
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { fmtNum, fmtPct } from "@/lib/format"
 
 interface QuizResult {
   _id: string
@@ -178,7 +179,7 @@ export default function SimpleAdvancedAnalytics({ results = [] }: SimpleAdvanced
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-lg font-bold">{Number(result.totalScore).toFixed(0)}%</div>
+                      <div className="text-lg font-bold">{fmtPct(result.totalScore)}</div>
                       <div className="text-sm text-muted-foreground">
                         {result.correctAnswers}✓ {result.wrongAnswers}✗ {result.unanswered}—
                       </div>

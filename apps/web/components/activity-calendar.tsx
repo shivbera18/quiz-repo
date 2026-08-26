@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Badge } from "@/components/ui/badge"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
 import { Calendar, Flame, Clock, Target, TrendingUp } from "lucide-react"
+import { fmtNum, fmtPct } from "@/lib/format"
 
 interface ActivityDay {
   date: string
@@ -329,7 +330,7 @@ export function ActivityCalendar({ attempts }: ActivityCalendarProps) {
                                     attempt.totalScore >= 80 ? 'text-green-600' :
                                     attempt.totalScore >= 60 ? 'text-yellow-600' : 'text-red-600'
                                   }`}>
-                                    {Number(attempt.totalScore).toFixed(0)}%
+                                    {fmtPct(attempt.totalScore)}
                                   </span>
                                 </div>
                               </div>
