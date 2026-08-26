@@ -435,13 +435,12 @@ Only **one** layout (`app/layout.tsx`); 13 `loading.tsx`; **no `error.tsx`, `not
 | Path | Contents |
 |---|---|
 | `lib/` | `gateway-client.ts` (§6.1) · `json-upload-processor.ts` · `math-symbol-processor.ts` · `utils.ts` (`cn`) |
-|`hooks/`|`use-auth.tsx` (display-only session hint) · `use-mobile.tsx` · `use-push-notifications.tsx` (requires `NEXT_PUBLIC_VAPID_PUBLIC_KEY`) · `use-toast.ts`|
+|`hooks/`|`use-auth.tsx` (display-only session hint) · `use-mobile.tsx` · `use-push-notifications.tsx` (requires `NEXT_PUBLIC_VAPID_PUBLIC_KEY`)|
 | `components/` (92 files) | 13 top-level (`activity-calendar`, `advanced-analytics`, `flash-questions`, `math-renderer`, `page-transition`, `protected-route`, `push-notifications-manager`, `pwa-handler`, `service-worker-registration`, `simple-advanced-analytics`, `student-analytics`, `theme-provider`, `theme-toggle`) · `analytics/` (2 v2 files) · `landing/` (7) · `layout/` (6: `app-shell`, `footer`, `mobile-page-header`, `sidebar-context`, `sidebar`, `top-header`) · `quiz/` (2) · `svgs/` (7) · `ui/` (53 shadcn primitives) |
 | `public/` | `sw.js` (service worker) · `offline.html` · `manifest` via `app/manifest.ts` · `icons/` (192/512 png+svg) · `doodles/` · `logo-light.svg` |
 | config | `next.config.mjs` (`images.unoptimized`, `output: standalone`, `outputFileTracingRoot` = repo root) · `tailwind.config.ts` · `postcss.config.mjs` · `components.json` · `.eslintrc.json` · `tsconfig.json` (`paths: {"@/*": ["./*"]}`) · `Dockerfile` (2-stage, `CMD ["node","apps/web/server.js"]`) |
 
-**Duplicate files that exist and will bite you:** `components/ui/use-toast.ts` vs `hooks/use-toast.ts`;
-`components/ui/use-mobile.tsx` vs `hooks/use-mobile.tsx`; `app/globals.css` vs `styles/globals.css`.
+**Duplicate files that exist and will bite you:** `components/ui/use-mobile.tsx` vs `hooks/use-mobile.tsx`; `app/globals.css` vs `styles/globals.css`.
 Also `app/analytics/page.tsx.backup` is checked in, and three abandoned rewrites of the same view
 coexist (`components/advanced-analytics.tsx`, `simple-advanced-analytics.tsx`,
 `student-analytics.tsx`, plus `components/analytics/*-v2.tsx`). Confirm which one a page actually

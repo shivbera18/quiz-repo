@@ -7,7 +7,6 @@ import { Switch } from '@/components/ui/switch'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Bell, BellOff, AlertCircle, CheckCircle } from 'lucide-react'
 import { usePushNotifications } from '@/hooks/use-push-notifications'
-import { useToast } from '@/hooks/use-toast'
 
 interface PushNotificationsManagerProps {
   compact?: boolean
@@ -25,16 +24,14 @@ export default function PushNotificationsManager({ compact = false }: PushNotifi
     requestPermission
   } = usePushNotifications()
 
-  const { toast } = useToast()
   const [isEnabling, setIsEnabling] = useState(false)
+  // Inline feedback for toggle outcomes. Success needs no message here: the
+  // status line and Switch reflect subscription state immediately.
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const handleToggleNotifications = async () => {
     if (!isSupported) {
-      toast({
-        title: "Not Supported",
-        description: "Push notifications are not supported in this browser.",
-        variant: "destructive"
-      })
+      setActionError("Push notifications are not supported in this browser.")
       return
     }
 
@@ -47,52 +44,28 @@ export default function PushNotificationsManager({ compact = false }: PushNotifi
 
     try {
       if (permission === 'default') {
-        // Request permission first
         const newPermission = await requestPermission()
 
         if (newPermission === 'granted') {
           await subscribe()
-          toast({
-            title: "Notifications Enabled",
-            description: "You'll now receive push notifications for announcements.",
-          })
+          setActionError(null)
         } else {
-          toast({
-            title: "Permission Denied",
-            description: "Push notifications permission was denied.",
-            variant: "destructive"
-          })
+          setActionError("Push notifications permission was denied.")
         }
       } else if (permission === 'granted') {
+        setActionError(null)
         if (isSubscribed) {
           await unsubscribe()
-          toast({
-            title: "Notifications Disabled",
-            description: "Push notifications have been disabled.",
-          })
         } else {
           await subscribe()
-          toast({
-            title: "Notifications Enabled",
-            description: "You'll now receive push notifications for announcements.",
-          })
         }
       } else {
-        // Permission is denied, show instructions
-        toast({
-          title: "Permission Required",
-          description: "Please enable notifications in your browser settings.",
-          variant: "destructive"
-        })
+        // Permission is denied at the browser level.
+        setActionError("Please enable notifications in your browser settings.")
       }
     } catch (err) {
       console.error('Error toggling notifications:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update notification settings'
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive"
-      })
+      setActionError(err instanceof Error ? err.message : 'Failed to update notification settings')
     } finally {
       setIsEnabling(false)
     }
@@ -185,6 +158,13 @@ export default function PushNotificationsManager({ compact = false }: PushNotifi
              isSubscribed ? 'Disable' : 'Enable'}
           </Button>
         </div>
+
+        {actionError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{actionError}</AlertDescription>
+          </Alert>
+        )}
 
         {error && (
           <Alert variant="destructive">

@@ -301,4 +301,28 @@ describe("scoreQuiz - per-question result fidelity", () => {
     const result = scoreQuiz(questions, [], { negativeMarking: false, negativeMarkValue: 0 })
     expect(result.questionResults.map((r) => r.questionId)).toEqual(["qA", "qB", "qC"])
   })
+
+  // A quiz saved with zero questions (PATCH questions:[] is a legal admin
+  // write) previously produced totalScore: NaN via (raw / 0) * 100 --
+  // Math.max(0, NaN) does not rescue it -- and the NaN flowed into the
+  // persisted result and downstream analytics.
+  it("scores an empty question set as all-zeros instead of NaN", () => {
+    const result = scoreQuiz([], [a("ghost", 1)], { negativeMarking: true, negativeMarkValue: 0.25 })
+    expect(result.totalScore).toBe(0)
+    expect(result.rawScore).toBe(0)
+    expect(result.correctAnswers).toBe(0)
+    expect(result.wrongAnswers).toBe(0)
+    expect(result.unanswered).toBe(0)
+    expect(result.sectionPercentages).toEqual({})
+    expect(result.questionResults).toEqual([])
+  })
+
+  it("yields finite totals for every section even when some have zero questions", () => {
+    // Defensive companion: sections map only gains keys for questions that
+    // exist, so no zero-total section can appear today -- but the percentage
+    // guard must hold if that ever changes.
+    const result = scoreQuiz([q("q1", "s", 1)], [a("q1", 1)], { negativeMarking: false, negativeMarkValue: 0 })
+    expect(result.sectionPercentages["s"]).toBe(100)
+    expect(Number.isFinite(result.totalScore)).toBe(true)
+  })
 })

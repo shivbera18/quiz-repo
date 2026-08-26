@@ -706,7 +706,7 @@ Defaults for generated quizzes are currently 30 minutes, negative marking enable
 
 ### Important limitation
 
-`runConsumer` receives `maxPollIntervalMs: 15 minutes`, but the shared consumer helper currently does not pass that option to `kafka.consumer()`. A long job can therefore still be rebalanced. Consumer deduplication is also a stub returning false.
+FIXED: `runConsumer` passes `maxPollIntervalMs: 15 minutes` through to `kafka.consumer()`. Consumer deduplication for the AI worker is real (ProcessedEvent-backed).
 
 ## 7.6 Assessment service
 
@@ -1853,7 +1853,7 @@ Do not create one local copy of a shared request type per application.
 13. verify consumer lag returns to zero;
 14. verify the local projection row.
 
-For long handlers, also fix the shared `maxPollIntervalMs` wiring rather than assuming the current option works.
+For long handlers, the shared `maxPollIntervalMs` wiring is verified working (passed through to KafkaJS in `packages/kafka-kit/src/consumer.ts`).
 
 ## 18.4 Change a Prisma model
 
@@ -2133,10 +2133,9 @@ Authentication hardening requires a deliberate migration: password hashes, dual-
 
 ### Event infrastructure
 
-- no dead-letter queue exists;
-- malformed consumer messages are logged and dropped;
-- `runConsumer.maxPollIntervalMs` is documented but not passed to KafkaJS;
-- AI consumer deduplication is a stub;
+- per-topic DLQs (`<topic>.dlq`) now exist: handler failures retry in-process (3x backoff) then park with origin metadata; non-envelope JSON dead-letters too;
+- `runConsumer.maxPollIntervalMs` is passed through to KafkaJS;
+- AI consumer deduplication is real (ProcessedEvent-backed);
 - notification consumer idempotency is weaker than analytics;
 - completion events for AI and exports have no consumers because clients poll persisted jobs.
 

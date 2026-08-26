@@ -41,7 +41,7 @@ Browser  ──▶  Next.js Page / app/api/** Forwarder  ──▶  lib/gateway-
 - `app/`: 35 page routes, single `app/layout.tsx`.
 - `app/api/**`: 37 forwarder route files (52 HTTP handlers) proxying to gateway paths `/v1/*`.
 - `lib/`: `gateway-client.ts`, `json-upload-processor.ts`, `math-symbol-processor.ts`, `utils.ts` (`cn`).
-- `hooks/`: `use-auth.tsx` (display-only session hint), `use-mobile.tsx`, `use-push-notifications.tsx`, `use-toast.ts`.
+- `hooks/`: `use-auth.tsx` (display-only session hint), `use-mobile.tsx`, `use-push-notifications.tsx`.
 - `components/`:
   - `layout/`: `app-shell.tsx`, `sidebar.tsx`, `top-header.tsx`, `footer.tsx`.
   - `ui/`: 53 shadcn/ui primitives.

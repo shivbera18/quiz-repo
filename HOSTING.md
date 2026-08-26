@@ -255,7 +255,7 @@ New to the split architecture:
 ## Part 8 — Troubleshooting
 
 **A service's healthcheck never goes healthy / `depends_on` hangs forever**
-- `docker compose -f infra/docker-compose.yml logs <service-name>` — almost always a missing migration (the service can't reach its schema yet) or a wrong `DATABASE_URL`/role password. Compare against `infra/postgres/init/01-schemas-roles.sql`.
+- `docker compose -f infra/docker-compose.yml logs <service-name>` — almost always a missing migration (the service can't reach its schema yet) or a wrong `DATABASE_URL`/role password. Compare against `infra/postgres/init/01-schemas-roles.sh`.
 
 **Port already in use (5433, 6380, 19092, etc.)**
 - Another `docker compose up` from a previous run may still be up (`docker compose -f infra/docker-compose.yml ps` across all your projects), or you have a local Postgres/Redis running on a port that happens to collide despite the offset. `docker ps` to find the real culprit.
@@ -267,7 +267,7 @@ New to the split architecture:
 - Check `max.poll.interval.ms` if you've changed a handler to do more work per message — `catalog-ai-worker` and `analytics-export-worker` both raise this explicitly (15 min) because their handlers are long-running; a consumer that pauses longer than its poll interval gets evicted from its group and rebalanced, which can double-process the in-flight message. See each worker's own comment for the specific tuning.
 
 **`docker compose exec <service> pnpm db:migrate` fails with "role does not exist"**
-- `infra/postgres/init/*.sql` only runs on a **fresh** `postgres-data` volume (Postgres only executes `docker-entrypoint-initdb.d` scripts the very first time a volume is initialized). If you've already brought Postgres up once without it, `docker compose -f infra/docker-compose.yml down -v` to wipe the volume and let it re-run, or apply the SQL manually with `docker compose exec postgres psql -U quiz_admin -d quiz -f /docker-entrypoint-initdb.d/01-schemas-roles.sql`.
+- The `infra/postgres/init/*` scripts (notably `01-schemas-roles.sh`) only run on a **fresh** `postgres-data` volume (Postgres only executes `docker-entrypoint-initdb.d` scripts the very first time a volume is initialized). If you've already brought Postgres up once without it, `docker compose -f infra/docker-compose.yml down -v` to wipe the volume and let it re-run, or re-run it manually with `docker compose exec postgres bash /docker-entrypoint-initdb.d/01-schemas-roles.sh`.
 
 **`pnpm install --frozen-lockfile` fails / lockfile out of date**
 - Someone edited a `package.json` without regenerating `pnpm-lock.yaml`. Run `pnpm install` (without `--frozen-lockfile`), commit the updated lockfile.
