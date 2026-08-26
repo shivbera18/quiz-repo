@@ -68,6 +68,9 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
   const [questionTimes, setQuestionTimes] = useState<Record<string, number>>({})
   const questionTimesRef = useRef<Record<string, number>>({})
   const questionStartTimeRef = useRef<number>(Date.now())
+  // Server-authoritative expiry anchor: set once from the start/resume
+  // response's remainingMs, then used as wall-clock truth for the countdown.
+  const attemptExpiresAtRef = useRef<number | null>(null)
   const clientSeqRef = useRef(0)
   const submittedRef = useRef(false)
   const router = useRouter()
@@ -100,6 +103,7 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
         setQuizTitle(data.quizTitle || "")
         setQuestions(data.questions || [])
         setTimeLeft(Math.max(0, Math.round((data.remainingMs || 0) / 1000)))
+        attemptExpiresAtRef.current = Date.now() + (data.remainingMs || 0)
 
         const statuses: Record<string, QuestionStatus> = {}
         const times: Record<string, number> = {}
@@ -140,15 +144,21 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id, user, authLoading, router])
 
-  // Pure countdown. Deliberately does NOT depend on timeLeft, so the interval is
-  // created once per attempt instead of being torn down and recreated every
-  // second (the previous version's bug -- see the separate effect below for
-  // what happens when it reaches zero).
+  // Wall-clock countdown anchored to the SERVER-provided remaining time rather
+  // than a decrementing counter: setInterval drifts, and background tabs
+  // throttle timers to once-per-minute, so a pure decrement let the displayed
+  // clock diverge from the server's actual expiry (auto-submit firing late or
+  // early). Recomputing from expiresAt on every tick self-corrects -- a late
+  // or throttled tick jumps straight to the true remaining time.
   useEffect(() => {
     if (!attemptId) return
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => (prev <= 1 ? 0 : prev - 1))
-    }, 1000)
+    const tick = () => {
+      const expiresAt = attemptExpiresAtRef.current
+      if (expiresAt === null) return
+      setTimeLeft(Math.max(0, Math.round((expiresAt - Date.now()) / 1000)))
+    }
+    tick()
+    const timer = setInterval(tick, 1000)
     return () => clearInterval(timer)
   }, [attemptId])
 
@@ -174,6 +184,34 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
 
     questionStartTimeRef.current = Date.now()
   }
+
+  // Latest-closure indirection: the visibility listener is registered once but
+  // must always invoke the current question/index, not the ones captured at
+  // mount time.
+  const recordTimeRef = useRef<() => void>(() => {})
+  useEffect(() => {
+    recordTimeRef.current = recordTimeOnCurrentQuestion
+  })
+
+  // Background-tab fairness: wall-clock keeps running while the tab is hidden,
+  // and without this the hidden minutes were silently billed to whichever
+  // question was open. Banking on hide (which also resets its start clock) and
+  // restarting the clock on return means hidden time is billed to no question.
+  // The quiz itself still expires in real time -- the countdown runs off
+  // expiresAt regardless of visibility.
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (!attemptId || submittedRef.current) return
+      if (document.visibilityState === "hidden") {
+        recordTimeRef.current()
+      } else {
+        questionStartTimeRef.current = Date.now()
+      }
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange)
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attemptId])
 
   // Navigate to a specific question index with time tracking
   const navigateToQuestion = (newIndex: number) => {
