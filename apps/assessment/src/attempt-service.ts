@@ -243,7 +243,11 @@ export async function autosaveAnswers(prisma: PrismaClient, attemptId: string, u
       SELECT id FROM "Attempt" WHERE id = ${attempt.id} AND status = 'IN_PROGRESS' FOR UPDATE
     `
     if (guard.length === 0) {
-      throw new ConflictError(`Attempt is ${attempt.status.toLowerCase()}, cannot autosave`)
+      // attempt was read before the lock -- its status may be stale here.
+      // Re-read under the lock so the 409 names the ACTUAL current state
+      // (e.g. SUBMITTED after losing a submit race), not the pre-race one.
+      const current = await tx.attempt.findUnique({ where: { id: attempt.id }, select: { status: true } })
+      throw new ConflictError(`Attempt is ${(current?.status ?? attempt.status).toLowerCase()}, cannot autosave`)
     }
 
     for (const answer of answers) {
@@ -280,7 +284,7 @@ export async function autosaveAnswers(prisma: PrismaClient, attemptId: string, u
       })
       saved++
     }
-  })
+  }, { timeout: 15_000 })
 
   return saved
 }
