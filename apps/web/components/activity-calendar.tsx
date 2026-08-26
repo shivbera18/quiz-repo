@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Badge } from "@/components/ui/badge"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
 import { Calendar, Flame, Clock, Target, TrendingUp } from "lucide-react"
-import { fmtNum, fmtPct } from "@/lib/format"
+import { fmtPct } from "@/lib/format"
 
 interface ActivityDay {
   date: string

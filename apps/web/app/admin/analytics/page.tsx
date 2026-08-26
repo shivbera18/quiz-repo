@@ -54,6 +54,30 @@ interface Quiz {
   createdAt: string
 }
 
+interface UserPerformanceData {
+  user: {
+    id: string
+    name: string
+    email: string
+    totalQuizzes: number
+    averageScore: number
+  }
+  quizPerformance: Array<{
+    quizId: string
+    quizTitle: string
+    totalAttempts: number
+    bestScore: number
+    averageScore: number
+    averageTime: number
+    attempts: Array<{
+      id: string
+      date: string
+      totalScore: number
+      timeSpent?: number
+    }>
+  }>
+}
+
 // Utility function to get quiz title with fallbacks
 const getQuizTitle = (result: QuizResult, quizzes: Quiz[]): string => {
   // First priority: quiz relationship from API
@@ -98,7 +122,7 @@ export default function AdminAnalyticsPage() {
   const [users, setUsers] = useState<{id: string, name: string, email: string}[]>([])
   const [showUserDetails, setShowUserDetails] = useState(false)
   const [selectedUserForDetails, setSelectedUserForDetails] = useState<string | null>(null)
-  const [userPerformanceData, setUserPerformanceData] = useState<any>(null)
+  const [userPerformanceData, setUserPerformanceData] = useState<UserPerformanceData | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
@@ -1053,7 +1077,7 @@ export default function AdminAnalyticsPage() {
                     {(userPerformanceData.quizPerformance ?? []).length === 0 && (
                       <p className="text-sm text-muted-foreground">This user has no quiz attempts yet.</p>
                     )}
-                    {(userPerformanceData.quizPerformance ?? []).map((quiz: any) => (
+                    {(userPerformanceData.quizPerformance ?? []).map((quiz) => (
                       <div key={quiz.quizId} className="border rounded-lg p-4">
                         <div className="flex justify-between items-center mb-3">
                           <h4 className="font-medium">{quiz.quizTitle}</h4>
@@ -1095,7 +1119,7 @@ export default function AdminAnalyticsPage() {
                         <div className="space-y-2">
                           <p className="text-sm font-medium">Recent Attempts:</p>
                           <div className="max-h-32 overflow-y-auto">
-                            {(quiz.attempts ?? []).slice(0, 5).map((attempt: any, index: number) => (
+                            {(quiz.attempts ?? []).slice(0, 5).map((attempt) => (
                               <div key={attempt.id} className="flex justify-between items-center text-sm py-1 px-2 rounded hover:bg-muted">
                                 <span>{new Date(attempt.date).toLocaleDateString()}</span>
                                 <div className="flex items-center gap-2">

@@ -9,7 +9,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -124,6 +123,8 @@ export default function AdminAnnouncementsPage() {
     if (user?.isAdmin) {
       fetchAnnouncements()
     }
+    // fetchAnnouncements is stable and intentionally excluded to avoid loop; effect should only react to auth state
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading, router])
 
   const fetchAnnouncements = async () => {

@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -33,7 +33,17 @@ interface QuestionBankItem {
 const sections = ["Verbal Reasoning", "Quantitative Aptitude", "Logical Reasoning", "General Knowledge", "English"]
 const difficulties = ["easy", "medium", "hard"]
 
-export default function QuestionBankPage() {  const { user, loading, logout } = useAuth(true) // Require admin access
+interface AIGeneratedQuestionInput {
+  section: string
+  question: string
+  options: string[]
+  correctAnswer: number
+  explanation: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  tags: string[]
+}
+
+export default function QuestionBankPage() {  const { user, loading } = useAuth(true) // Require admin access
   const [questions, setQuestions] = useState<QuestionBankItem[]>([])
   const [filteredQuestions, setFilteredQuestions] = useState<QuestionBankItem[]>([])
   const [adminLoading, setAdminLoading] = useState(true)
@@ -74,10 +84,14 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
     if (user) {
       fetchQuestions()
     }
+    // fetchQuestions uses filter state but should only refetch when user changes; manual refresh handles filter updates
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
   useEffect(() => {
     applyFilters()
+    // applyFilters is stable and intentionally excluded to avoid recreation loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questions, selectedSection, selectedDifficulty, searchQuery, selectedTags])
   const fetchQuestions = async () => {
     try {
@@ -167,7 +181,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
       setQuestions(prev => [data.question, ...prev])
       setSuccess("Question created successfully!")
       resetForm()
-    } catch (err) {
+    } catch {
       setError("Failed to create question")
     }
   }
@@ -196,7 +210,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
       setQuestions(prev => prev.map(q => q.id === editingQuestion.id ? data.question : q))
       setSuccess("Question updated successfully!")
       resetForm()
-    } catch (err) {
+    } catch {
       setError("Failed to update question")
     }
   }
@@ -221,7 +235,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
       
       setQuestions(prev => prev.filter(q => q.id !== questionId))
       setSuccess("Question deleted successfully!")
-    } catch (err) {
+    } catch {
       setError("Failed to delete question")
     }
   }
@@ -268,7 +282,7 @@ export default function QuestionBankPage() {  const { user, loading, logout } = 
     }))
   }
 
-  const handleAIGenerate = async (generatedQuestions: any[]) => {
+  const handleAIGenerate = async (generatedQuestions: AIGeneratedQuestionInput[]) => {
     try {
       setError("")
       setSuccess("")

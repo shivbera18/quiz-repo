@@ -11,7 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Upload, Download, Trash2, Edit, X, Check } from "lucide-react"
 import { processJsonUpload } from "@/lib/json-upload-processor"
-import MathRenderer from "@/components/math-renderer"
 
 interface Question {
   id: string
@@ -64,7 +63,7 @@ export default function BulkManager({ quiz, onQuizUpdate, onClose }: BulkManager
       let questionsData
       try {
         questionsData = JSON.parse(text)
-      } catch (parseError) {
+      } catch {
         setUploadError("Invalid JSON file. Please check the syntax and try again.")
         return
       }
@@ -332,7 +331,7 @@ export default function BulkManager({ quiz, onQuizUpdate, onClose }: BulkManager
       setSuccess("Bulk edit completed successfully!")
       setEditingBulk(false)
       setBulkEditData("")
-    } catch (error) {
+    } catch {
       setUploadError("Invalid JSON format for bulk edit.")
     }
   }
