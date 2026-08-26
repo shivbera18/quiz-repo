@@ -77,6 +77,17 @@ const priorityOptions = [
   { value: "urgent", label: "Urgent", icon: AlertCircle, color: "text-red-500", bg: "bg-red-500" },
 ]
 
+// Reads the service's message from a failed response, falling back to a
+// generic label. Keeps the reason visible instead of dropping it on the floor.
+async function readErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const body = await response.json()
+    return body?.message || `${fallback} (${response.status})`
+  } catch {
+    return `${fallback} (${response.status})`
+  }
+}
+
 export default function AdminAnnouncementsPage() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
@@ -96,6 +107,10 @@ export default function AdminAnnouncementsPage() {
   const [expiresDate, setExpiresDate] = useState<Date | undefined>(undefined)
   const [expiresTime, setExpiresTime] = useState({ hours: "12", minutes: "00" })
   const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false)
+  // Every mutation on this page used to check `if (response.ok)` and do
+  // NOTHING on failure -- a rejected delete/save/toggle looked like a dead
+  // button. All failures now land here and render in a banner.
+  const [actionError, setActionError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -176,9 +191,12 @@ export default function AdminAnnouncementsPage() {
         setExpiresDate(undefined)
         setExpiresTime({ hours: "12", minutes: "00" })
         fetchAnnouncements()
+      } else {
+        setActionError(await readErrorMessage(response, "Failed to save announcement"))
       }
     } catch (error) {
       console.error("Failed to save announcement:", error)
+      setActionError(error instanceof Error ? error.message : "Failed to save announcement")
     } finally {
       setSubmitting(false)
     }
@@ -197,9 +215,12 @@ export default function AdminAnnouncementsPage() {
 
       if (response.ok) {
         fetchAnnouncements()
+      } else {
+        setActionError(await readErrorMessage(response, "Failed to delete announcement"))
       }
     } catch (error) {
       console.error("Failed to delete announcement:", error)
+      setActionError(error instanceof Error ? error.message : "Failed to delete announcement")
     }
   }
 
@@ -220,9 +241,12 @@ export default function AdminAnnouncementsPage() {
 
       if (response.ok) {
         fetchAnnouncements()
+      } else {
+        setActionError(await readErrorMessage(response, "Failed to update announcement"))
       }
     } catch (error) {
       console.error("Failed to toggle announcement:", error)
+      setActionError(error instanceof Error ? error.message : "Failed to update announcement")
     }
   }
 
@@ -330,6 +354,9 @@ export default function AdminAnnouncementsPage() {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-2 sm:py-4">
+                  {actionError && (
+                    <p className="text-sm font-semibold text-red-600 border-2 border-red-500 rounded-lg p-2">{actionError}</p>
+                  )}
                   <div className="space-y-2">
                     <Label htmlFor="title">Title</Label>
                     <Input
@@ -546,6 +573,9 @@ export default function AdminAnnouncementsPage() {
             <CardDescription className="font-medium">Manage your announcements</CardDescription>
           </CardHeader>
           <CardContent>
+            {actionError && (
+              <p className="mb-4 text-sm font-semibold text-red-600 border-2 border-red-500 rounded-lg p-3">{actionError}</p>
+            )}
             {announcements.length === 0 ? (
               <div className="text-center py-12">
                 <Megaphone className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />

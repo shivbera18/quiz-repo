@@ -218,6 +218,7 @@ export default function QuizManagementSection({ onEditQuiz }: { onEditQuiz?: (qu
                 <Button variant="secondary" onClick={() => setEditQuizId(null)}>Cancel</Button>
                 <Button variant="secondary" onClick={async () => {
                   if (!editQuizId || !user?.token) return;
+                  setError("");
                   const res = await fetch(`/api/admin/quizzes/${editQuizId}`, {
                     method: "PATCH",
                     headers: {
@@ -230,22 +231,32 @@ export default function QuizManagementSection({ onEditQuiz }: { onEditQuiz?: (qu
                       chapterId: editQuizChapterId,
                     }),
                   });
-                  if (res.ok) {
-                    setEditQuizId(null);
-                    setLoading(true);
-                    fetch("/api/admin/subjects-chapters-quizzes", {
-                      headers: { Authorization: `Bearer ${user.token}` },
-                    })
-                      .then((res) => res.json())
-                      .then((json) => {
-                        setData(json.subjects || []);
-                        setLoading(false);
-                      })
-                      .catch(() => {
-                        setError("Failed to load data");
-                        setLoading(false);
-                      });
+                  if (!res.ok) {
+                    // A failed save (most often a 409 because someone else
+                    // edited the quiz) used to do nothing at all: the modal
+                    // stayed open with no explanation.
+                    const body = await res.json().catch(() => null);
+                    setError(
+                      res.status === 409
+                        ? "This quiz was modified by someone else. Close and reopen it, then retry."
+                        : body?.message || `Failed to save quiz (${res.status})`
+                    );
+                    return;
                   }
+                  setEditQuizId(null);
+                  setLoading(true);
+                  fetch("/api/admin/subjects-chapters-quizzes", {
+                    headers: { Authorization: `Bearer ${user.token}` },
+                  })
+                    .then((res) => res.json())
+                    .then((json) => {
+                      setData(json.subjects || []);
+                      setLoading(false);
+                    })
+                    .catch(() => {
+                      setError("Failed to load data");
+                      setLoading(false);
+                    });
                 }}>
                   Save
                 </Button>

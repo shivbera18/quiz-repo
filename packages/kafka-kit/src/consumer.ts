@@ -16,6 +16,17 @@ export interface ConsumerHandlerContext<T> {
   raw: EachMessagePayload
 }
 
+// Compacted-topic deletes arrive as null-value records keyed by the deleted
+// entity's id. Consumers that project those topics into local tables MUST act
+// on them or their projections keep deleted entities forever (a deleted quiz
+// still appearing in analytics is exactly that bug). There is no envelope and
+// no eventId here, so no dedup applies -- deletes must be idempotent.
+export interface TombstoneContext {
+  topic: string
+  key: string | null
+  raw: EachMessagePayload
+}
+
 export interface DlqOptions {
   // Dead-lettering can be disabled entirely (messages then fall back to the
   // pre-DLQ behavior: log-and-drop for parse failures, rethrow-for-redelivery
@@ -33,6 +44,7 @@ const DEFAULT_DLQ: Required<DlqOptions> = { enabled: true, maxRetries: 3, retryB
 
 export type MessageOutcome =
   | "skipped-tombstone"
+  | "processed-tombstone"
   | "skipped-duplicate"
   | "processed"
   | "dead-lettered-parse-error"
@@ -102,6 +114,7 @@ export async function processMessage<T>(
     groupId: string
     store: ProcessedEventStore
     onMessage: (ctx: ConsumerHandlerContext<T>) => Promise<void>
+    onTombstone?: (ctx: TombstoneContext) => Promise<void>
     dlq: Required<DlqOptions>
     // key/value are deliberately `unknown`: kafkajs bundles its own
     // @types/node, so this package's Buffer/Uint8Array and kafkajs' are
@@ -111,7 +124,6 @@ export async function processMessage<T>(
   }
 ): Promise<MessageOutcome> {
   const { message, topic, partition } = payload
-  if (!message.value) return "skipped-tombstone"
 
   const dlqHeaders = (errorMessage: string, attempts: number): Record<string, string> => ({
     ...Object.fromEntries(Object.entries(message.headers ?? {}).map(([k, v]) => [k, v == null ? "" : v.toString()])),
@@ -122,6 +134,23 @@ export async function processMessage<T>(
     "dlq-attempts": String(attempts),
     "dlq-failed-at": new Date().toISOString(),
   })
+
+  if (!message.value) {
+    if (!args.onTombstone) return "skipped-tombstone"
+    const tombstone: TombstoneContext = {
+      topic,
+      key: message.key ? message.key.toString() : null,
+      raw: payload,
+    }
+    return await runWithRetries(
+      args,
+      payload,
+      dlqHeaders,
+      () => args.onTombstone!(tombstone),
+      `tombstone key=${tombstone.key ?? "<null>"}`,
+      "processed-tombstone"
+    )
+  }
 
   let value: unknown
   try {
@@ -155,11 +184,40 @@ export async function processMessage<T>(
   const alreadyProcessed = await args.store.hasProcessed(envelope.eventId)
   if (alreadyProcessed) return "skipped-duplicate"
 
+  return await runWithRetries(
+    args,
+    payload,
+    dlqHeaders,
+    () => args.onMessage({ envelope, raw: payload }),
+    `eventId=${envelope.eventId} eventType=${envelope.eventType}`,
+    "processed"
+  )
+}
+
+/**
+ * Shared failure policy for both envelope handlers and tombstone handlers:
+ * retry in-process with backoff, then dead-letter, and if the DLQ publish
+ * itself fails rethrow the ORIGINAL error so Kafka's redelivery still applies.
+ */
+async function runWithRetries(
+  args: {
+    groupId: string
+    dlq: Required<DlqOptions>
+    produceToDlq: ((record: { topic: string; key: unknown; value: unknown; headers: Record<string, string> }) => Promise<void>) | null
+  },
+  payload: EachMessagePayload,
+  dlqHeaders: (errorMessage: string, attempts: number) => Record<string, string>,
+  run: () => Promise<void>,
+  describe: string,
+  successOutcome: MessageOutcome
+): Promise<MessageOutcome> {
+  const { message, topic, partition } = payload
+
   let lastHandlerError: unknown
   for (let attempt = 1; attempt <= 1 + args.dlq.maxRetries; attempt++) {
     try {
-      await args.onMessage({ envelope, raw: payload })
-      return "processed"
+      await run()
+      return successOutcome
     } catch (err) {
       lastHandlerError = err
       if (attempt <= args.dlq.maxRetries) {
@@ -170,7 +228,7 @@ export async function processMessage<T>(
 
   const errorMessage = lastHandlerError instanceof Error ? lastHandlerError.message : String(lastHandlerError)
   console.error(
-    `[${args.groupId}] handler failed ${1 + args.dlq.maxRetries}x for eventId=${envelope.eventId} eventType=${envelope.eventType} on ${topic}[${partition}]@${message.offset}:`,
+    `[${args.groupId}] handler failed ${1 + args.dlq.maxRetries}x for ${describe} on ${topic}[${partition}]@${message.offset}:`,
     errorMessage
   )
 
@@ -179,12 +237,14 @@ export async function processMessage<T>(
       await args.produceToDlq({
         topic: `${topic}.dlq`,
         key: message.key ?? null,
-        value: message.value,
+        // Tombstones have no value; park an explanatory marker so the DLQ
+        // record is inspectable instead of an empty blob.
+        value: message.value ?? Buffer.from(JSON.stringify({ tombstone: true, key: message.key?.toString() ?? null })),
         headers: dlqHeaders(errorMessage, 1 + args.dlq.maxRetries),
       })
       return "dead-lettered-handler-error"
     } catch (dlqErr) {
-      console.error(`[${args.groupId}] DLQ publish FAILED for eventId=${envelope.eventId}; rethrowing so Kafka redelivers:`, dlqErr)
+      console.error(`[${args.groupId}] DLQ publish FAILED for ${describe}; rethrowing so Kafka redelivers:`, dlqErr)
     }
   }
 
@@ -198,6 +258,9 @@ export async function runConsumer<T>(
     topics: string[]
     store: ProcessedEventStore
     onMessage: (ctx: ConsumerHandlerContext<T>) => Promise<void>
+    // Optional: act on compacted-topic deletes. Without this, projections keep
+    // deleted entities forever (see TombstoneContext).
+    onTombstone?: (ctx: TombstoneContext) => Promise<void>
     // See ARCHITECTURE.md's ai-generation-requested note: a consumer that pauses
     // work for longer than the default 300s poll interval gets evicted from its
     // group mid-job, triggering a rebalance and a duplicate. Callers with
@@ -229,6 +292,7 @@ export async function runConsumer<T>(
         groupId: opts.groupId,
         store: opts.store,
         onMessage: opts.onMessage,
+        onTombstone: opts.onTombstone,
         dlq,
         produceToDlq: dlqProducer
           ? async (record) => {
