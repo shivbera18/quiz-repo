@@ -21,6 +21,7 @@ import {
   questionBankCreateSchema,
   questionBankUpdateSchema,
   questionBankListQuerySchema,
+  computeSchedulingStatus,
 } from "@quiz/contracts"
 import type { z } from "zod"
 
@@ -139,6 +140,9 @@ async function main() {
       description: quiz.description,
       questionCount: parseJsonField(quiz.questions).length,
       timeLimit: quiz.timeLimit,
+      startTime: quiz.startTime?.toISOString() ?? null,
+      endTime: quiz.endTime?.toISOString() ?? null,
+      schedulingStatus: computeSchedulingStatus(quiz.startTime, quiz.endTime),
     }))
   })
 
@@ -156,6 +160,9 @@ async function main() {
       negativeMarking: q.negativeMarking,
       negativeMarkValue: q.negativeMarkValue,
       chapterId: q.chapterId,
+      startTime: q.startTime?.toISOString() ?? null,
+      endTime: q.endTime?.toISOString() ?? null,
+      schedulingStatus: computeSchedulingStatus(q.startTime, q.endTime),
     }))
   })
 
@@ -178,6 +185,9 @@ async function main() {
       negativeMarking: quiz.negativeMarking,
       negativeMarkValue: quiz.negativeMarkValue,
       chapterId: quiz.chapterId,
+      startTime: quiz.startTime?.toISOString() ?? null,
+      endTime: quiz.endTime?.toISOString() ?? null,
+      schedulingStatus: computeSchedulingStatus(quiz.startTime, quiz.endTime),
     }
   })
 
@@ -201,6 +211,10 @@ async function main() {
       negativeMarkValue: quiz.negativeMarkValue,
       sections: parseJsonField(quiz.sections),
       questions: parseJsonField(quiz.questions),
+      // Assessment-svc enforces the schedule window at attempt-START only;
+      // an attempt that began inside the window always finishes.
+      startTime: quiz.startTime?.toISOString() ?? null,
+      endTime: quiz.endTime?.toISOString() ?? null,
     }
   })
 
@@ -444,6 +458,8 @@ async function main() {
             createdBy: getUserId(request) || "admin",
             negativeMarking: negativeMarking ?? true,
             negativeMarkValue: negativeMarkValue ?? 0.25,
+            startTime: parsed.data.startTime ? new Date(parsed.data.startTime) : null,
+            endTime: parsed.data.endTime ? new Date(parsed.data.endTime) : null,
           },
         })
         await tx.outbox.create({
@@ -503,6 +519,10 @@ async function main() {
     // "none"/""/null keep their historical PATCH semantics (chapter unchanged);
     // only a real id re-points the quiz.
     if (updates.chapterId && updates.chapterId !== "none" && String(updates.chapterId).trim() !== "") data.chapterId = updates.chapterId
+    // Schedule fields: a datetime string sets/reschedules, explicit null
+    // clears the bound, absence leaves it untouched.
+    if (updates.startTime !== undefined) data.startTime = updates.startTime ? new Date(updates.startTime) : null
+    if (updates.endTime !== undefined) data.endTime = updates.endTime ? new Date(updates.endTime) : null
 
     let result: Quiz | null
     try {
