@@ -55,6 +55,127 @@ async function markProcessed(tx: Prisma.TransactionClient, eventId: string) {
   await tx.processedEvent.create({ data: { eventId, consumerGroup: CONSUMER_GROUP } })
 }
 
+// ---- Late-dimension repair -------------------------------------------------
+//
+// Attempt facts are written the moment an attempt lands, resolving
+// chapter/subject from whatever DimQuiz knew AT THAT MOMENT. When the
+// quiz-changed/chapter-changed event arrives later (or the quiz was created
+// through a path that used to skip the event entirely -- see catalog AI
+// worker), every fact for it froze with chapterId/subjectId = null and was
+// silently excluded from subject rollups, subject leaderboards, and
+// subject-filtered exports. The helpers below repair exactly those frozen
+// rows once the missing dimension resolves.
+//
+// Scope guard: only NULL-subject facts are ever touched -- facts that
+// recorded a (now-stale) subject because their quiz later moved chapters are
+// historical denormalization like everything else here, not repair targets.
+
+interface RepairedFact {
+  attemptId: string
+  userId: string
+  quizId: string
+  submittedDate: Date
+  totalScore: number
+  timeSpentMs: number
+}
+
+const MAX_LEADERBOARD_REPAIRS_PER_EVENT = 1000
+
+/**
+ * Must run INSIDE the projection transaction, after the dimension row(s)
+ * have been upserted. Repairs by primary-key list (not by re-matching the
+ * where-clause) so facts inserted concurrently between the SELECT and the
+ * UPDATE stay untouched and simply wait for the next dimension event --
+ * otherwise they would be updated without being counted into the daily
+ * bucket deltas below.
+ *
+ * Bucket scope: a submission whose subject was unknown only ever wrote the
+ * {quiz,__all__} and {__all__,__all__} DailyRollup buckets; the
+ * {__all__,subject} bucket was skipped. Repairs therefore apply that one
+ * missing bucket per affected day. uniqueUsers stays at 0 for these
+ * retroactive deltas (the exact first-seen tracker cannot be reconstructed
+ * retroactively without risking inflation); attempts/score/time are exact.
+ */
+async function repairMissingSubjectForQuizzes(
+  tx: Prisma.TransactionClient,
+  quizIds: string[],
+  subjectId: string,
+  chapterId: string | null
+): Promise<RepairedFact[]> {
+  if (!subjectId || quizIds.length === 0) return []
+
+  const facts = await tx.attemptFact.findMany({
+    where: { quizId: { in: quizIds }, subjectId: null },
+    select: { attemptId: true, userId: true, quizId: true, submittedDate: true, totalScore: true, timeSpentMs: true },
+  })
+  if (facts.length === 0) return []
+
+  await tx.attemptFact.updateMany({
+    where: { attemptId: { in: facts.map((f) => f.attemptId) } },
+    data: { chapterId, subjectId },
+  })
+  await tx.attemptSectionFact.updateMany({
+    where: { attemptId: { in: facts.map((f) => f.attemptId) } },
+    data: { subjectId },
+  })
+
+  const byDate = new Map<string, { date: Date; attempts: number; sumScore: number; sumTimeMs: bigint }>()
+  for (const fact of facts) {
+    const key = fact.submittedDate.toISOString()
+    const agg = byDate.get(key) ?? { date: fact.submittedDate, attempts: 0, sumScore: 0, sumTimeMs: BigInt(0) }
+    agg.attempts += 1
+    agg.sumScore += fact.totalScore
+    agg.sumTimeMs += BigInt(fact.timeSpentMs)
+    byDate.set(key, agg)
+  }
+  for (const agg of byDate.values()) {
+    await upsertDailyRollupDeltas(tx, agg.date, [{ quizId: "__all__", subjectId }], {
+      attempts: agg.attempts,
+      uniqueUsers: 0,
+      sumScore: agg.sumScore,
+      sumTimeMs: agg.sumTimeMs,
+    })
+  }
+
+  return facts
+}
+
+/**
+ * Best-effort, POST-commit (like the normal submission path): re-record
+ * leaderboard entries for repaired facts now that their subject is known.
+ * ZADD GT semantics make this idempotent under redelivery. Failures are
+ * swallowed -- the projection transaction has already committed and must not
+ * be rolled back or crashed over a Redis hiccup.
+ */
+async function recordLeaderboardRepairs(repairedFacts: RepairedFact[], subjectId: string, quizIdsForCache: string[]) {
+  if (repairedFacts.length === 0) return
+  try {
+    if (repairedFacts.length > MAX_LEADERBOARD_REPAIRS_PER_EVENT) {
+      logger.warn(
+        { repaired: repairedFacts.length, cappedAt: MAX_LEADERBOARD_REPAIRS_PER_EVENT },
+        "leaderboard repair capped for this event"
+      )
+    }
+    const userIds = [...new Set(repairedFacts.map((f) => f.userId))]
+    const users = await prisma.dimUser.findMany({ where: { userId: { in: userIds } }, select: { userId: true, name: true } })
+    const nameById = new Map(users.map((u) => [u.userId, u.name]))
+
+    for (const fact of repairedFacts.slice(0, MAX_LEADERBOARD_REPAIRS_PER_EVENT)) {
+      await recordLeaderboardEntry(redis, {
+        userId: fact.userId,
+        userName: nameById.get(fact.userId) ?? "[unknown]",
+        quizId: fact.quizId,
+        subjectId,
+        totalScorePct: fact.totalScore,
+        timeSpentSec: Math.round(fact.timeSpentMs / 1000),
+      })
+    }
+    await redis.del(keys.cacheAnalyticsOverview(), ...quizIdsForCache.map((q) => keys.cacheAnalyticsQuiz(q)))
+  } catch (err) {
+    logger.warn({ err, repaired: repairedFacts.length }, "post-commit leaderboard repair failed (non-fatal)")
+  }
+}
+
 async function upsertDailyRollupDeltas(
   tx: Prisma.TransactionClient,
   bucketDate: Date,
@@ -308,6 +429,7 @@ async function handleQuizChanged(data: QuizChangedData, eventId: string) {
     const chapter = await prisma.dimChapter.findUnique({ where: { chapterId: data.chapterId } })
     subjectId = chapter?.subjectId ?? null
   }
+  let repairedFacts: RepairedFact[] = []
   await prisma.$transaction(async (tx) => {
     await markProcessed(tx, eventId)
     await tx.dimQuiz.upsert({
@@ -335,11 +457,16 @@ async function handleQuizChanged(data: QuizChangedData, eventId: string) {
         updatedAt: new Date(data.updatedAt),
       },
     })
+    // The dimension just resolved (or moved) -- repair any attempt facts that
+    // froze with a null subject while this quiz was unknown to us.
+    repairedFacts = subjectId ? await repairMissingSubjectForQuizzes(tx, [data.quizId], subjectId, data.chapterId) : []
   })
+  await recordLeaderboardRepairs(repairedFacts, subjectId ?? "", [data.quizId])
   await redis.del(keys.cacheAnalyticsQuiz(data.quizId), keys.cacheAnalyticsOverview())
 }
 
 async function handleChapterChanged(data: ChapterChangedData, eventId: string) {
+  let repairedFacts: RepairedFact[] = []
   await prisma.$transaction(async (tx) => {
     await markProcessed(tx, eventId)
     await tx.dimChapter.upsert({
@@ -351,7 +478,17 @@ async function handleChapterChanged(data: ChapterChangedData, eventId: string) {
     // ordering guarantee) -- re-resolve any DimQuiz rows left with a stale
     // or missing subjectId for this chapter.
     await tx.dimQuiz.updateMany({ where: { chapterId: data.chapterId }, data: { subjectId: data.subjectId } })
+    // Same story one level down: attempt facts recorded while the chapter
+    // (or its quizzes' subject chain) was unknown are repaired here.
+    const chapterQuizzes = await tx.dimQuiz.findMany({ where: { chapterId: data.chapterId }, select: { quizId: true } })
+    repairedFacts = await repairMissingSubjectForQuizzes(
+      tx,
+      chapterQuizzes.map((q) => q.quizId),
+      data.subjectId,
+      data.chapterId
+    )
   })
+  await recordLeaderboardRepairs(repairedFacts, data.subjectId, [])
 }
 
 async function handleSubjectChanged(data: SubjectChangedData, eventId: string) {
