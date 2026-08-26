@@ -401,15 +401,15 @@ export default function AdminAnalyticsPage() {
       if (response.ok) {
         const result = await response.json()
         console.log('[SUCCESS] Deletion confirmed:', result.deletedId)
-        
-        // Wait a moment for database to process
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
+
         // Force refresh from server to get accurate data
         await forceServerRefresh()
-        
+        // ...and the open modal, which lists the same attempts.
+        if (showUserDetails && selectedUserForDetails) {
+          await refreshUserPerformance(selectedUserForDetails)
+        }
+
         console.log('[SUCCESS] Admin analytics refreshed after deletion')
-        alert("Quiz result deleted successfully")
       } else {
         const errorText = await response.text()
         console.error('[ERROR] Deletion failed:', response.status, errorText)
@@ -448,17 +448,16 @@ export default function AdminAnalyticsPage() {
       if (response.ok) {
         const result = await response.json()
         console.log('[SUCCESS] Bulk deletion confirmed:', result)
-        
-        // Wait a moment for database to process
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
-        // Only refresh from server - no local filtering to avoid race conditions
+
         await forceServerRefresh()
-        
+        if (showUserDetails && selectedUserForDetails) {
+          await refreshUserPerformance(selectedUserForDetails)
+        }
+
         console.log('[SUCCESS] Admin analytics refreshed after bulk deletion')
-        alert("Results deleted successfully")
       } else {
-        throw new Error("Failed to delete results")
+        const errorText = await response.text()
+        throw new Error(`Delete failed: ${response.status} - ${errorText}`)
       }
     } catch (error) {
       console.error("Error deleting results:", error)
@@ -468,23 +467,44 @@ export default function AdminAnalyticsPage() {
     }
   }
 
-  const viewUserDetails = async (userId: string) => {
+  // Re-reads the open user-details modal from the server. Deletions performed
+  // INSIDE the modal previously refreshed only the page-level list, leaving the
+  // modal showing results that no longer exist.
+  const refreshUserPerformance = async (userId: string) => {
     try {
-      const response = await fetch(`/api/admin/user-performance?userId=${userId}`, {
+      const response = await fetch(`/api/admin/user-performance?userId=${encodeURIComponent(userId)}`, {
         headers: { Authorization: `Bearer ${user?.token}` },
       })
+      if (!response.ok) return
       const data = await response.json()
-      
-      if (response.ok) {
-        setUserPerformanceData(data)
-        setSelectedUserForDetails(userId)
-        setShowUserDetails(true)
-      } else {
-        throw new Error(data.error || "Failed to fetch user details")
+      setUserPerformanceData({ ...data, quizPerformance: data?.quizPerformance ?? [] })
+    } catch (error) {
+      console.warn("Could not refresh user performance:", error)
+    }
+  }
+
+  const viewUserDetails = async (userId: string) => {
+    if (!userId) {
+      alert("This result has no user attached, so there is nothing to show.")
+      return
+    }
+    try {
+      const response = await fetch(`/api/admin/user-performance?userId=${encodeURIComponent(userId)}`, {
+        headers: { Authorization: `Bearer ${user?.token}` },
+      })
+      const data = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        // Surface the server's reason (e.g. unknown user) instead of a generic
+        // failure -- this button used to throw on any non-200.
+        throw new Error(data?.message || `Failed to fetch user details (${response.status})`)
       }
+      setUserPerformanceData({ ...data, quizPerformance: data?.quizPerformance ?? [] })
+      setSelectedUserForDetails(userId)
+      setShowUserDetails(true)
     } catch (error) {
       console.error("Error fetching user details:", error)
-      alert("Failed to fetch user details")
+      alert(error instanceof Error ? error.message : "Failed to fetch user details")
     }
   }
 
@@ -1030,7 +1050,10 @@ export default function AdminAnalyticsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {userPerformanceData.quizPerformance.map((quiz: any) => (
+                    {(userPerformanceData.quizPerformance ?? []).length === 0 && (
+                      <p className="text-sm text-muted-foreground">This user has no quiz attempts yet.</p>
+                    )}
+                    {(userPerformanceData.quizPerformance ?? []).map((quiz: any) => (
                       <div key={quiz.quizId} className="border rounded-lg p-4">
                         <div className="flex justify-between items-center mb-3">
                           <h4 className="font-medium">{quiz.quizTitle}</h4>
@@ -1072,7 +1095,7 @@ export default function AdminAnalyticsPage() {
                         <div className="space-y-2">
                           <p className="text-sm font-medium">Recent Attempts:</p>
                           <div className="max-h-32 overflow-y-auto">
-                            {quiz.attempts.slice(0, 5).map((attempt: any, index: number) => (
+                            {(quiz.attempts ?? []).slice(0, 5).map((attempt: any, index: number) => (
                               <div key={attempt.id} className="flex justify-between items-center text-sm py-1 px-2 rounded hover:bg-muted">
                                 <span>{new Date(attempt.date).toLocaleDateString()}</span>
                                 <div className="flex items-center gap-2">
