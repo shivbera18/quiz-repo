@@ -75,6 +75,7 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [timeLeft, setTimeLeft] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [showNavigator, setShowNavigator] = useState(false)
@@ -109,7 +110,10 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
           },
           body: JSON.stringify({ quizId: params.id }),
         })
-        if (!response.ok) throw new Error("Failed to start quiz attempt")
+        if (!response.ok) {
+          const body = await response.json().catch(() => null as { message?: string } | null)
+          throw new Error(body?.message || "Failed to start this quiz")
+        }
         const data = await response.json()
 
         setAttemptId(data.attemptId)
@@ -147,7 +151,10 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
         setAnswers(restoredAnswers)
       } catch (error) {
         console.error(error)
-        router.push("/dashboard")
+        // Surface WHY the attempt could not start (scheduled window, inactive
+        // quiz, deleted quiz) instead of bouncing the student back to the
+        // dashboard with no explanation.
+        setLoadError(error instanceof Error ? error.message : "Could not start this quiz")
       } finally {
         setLoading(false)
       }
@@ -499,6 +506,23 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
     } else {
       return "bg-red-500/20 text-red-700 dark:text-red-400 border-red-500" // Red: not visited
     }
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center border-4 border-red-500 rounded-2xl bg-red-50 dark:bg-red-900/20 p-8">
+          <h1 className="text-xl font-black mb-2">Cannot start this quiz</h1>
+          <p className="text-sm font-semibold text-muted-foreground mb-6">{loadError}</p>
+          <button
+            onClick={() => router.push(getBackUrl())}
+            className="px-5 py-2 rounded-lg border-2 border-black dark:border-white bg-primary text-primary-foreground font-bold"
+          >
+            Go back
+          </button>
+        </div>
+      </div>
+    )
   }
 
   if (loading || authLoading || questions.length === 0) {
