@@ -220,13 +220,17 @@ export function computeSchedulingStatus(
   endTime: string | Date | null | undefined,
   now: Date = new Date()
 ): SchedulingStatus {
-  if (startTime) {
-    const start = typeof startTime === "string" ? Date.parse(startTime) : startTime.getTime()
-    if (!Number.isNaN(start) && now.getTime() < start) return "upcoming"
-  }
+  // Closed wins over upcoming: if admin reschedules the start PAST an
+  // already-set end time (inverted window), the honest answer is that the
+  // exam is over -- advertising it as "upcoming" would invite attempts at
+  // start-time that immediately fail.
   if (endTime) {
     const end = typeof endTime === "string" ? Date.parse(endTime) : endTime.getTime()
     if (!Number.isNaN(end) && now.getTime() > end) return "closed"
+  }
+  if (startTime) {
+    const start = typeof startTime === "string" ? Date.parse(startTime) : startTime.getTime()
+    if (!Number.isNaN(start) && now.getTime() < start) return "upcoming"
   }
   return "available"
 }

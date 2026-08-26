@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { History, Eye, TrendingUp, BookOpen, Target, Clock, CheckCircle2, XCircle, MinusCircle } from "lucide-react"
+import { History, Eye, TrendingUp, BookOpen, Target, Clock, CheckCircle2, XCircle, MinusCircle, RotateCcw } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { fetchAttemptHistory, type AttemptHistoryItem } from "@/lib/attempt-history"
 import { cn } from "@/lib/utils"
@@ -211,7 +211,7 @@ export default function AttemptedQuizzesPage() {
                         </div>
                         
                         {/* Right: Action */}
-                        <div className="shrink-0">
+                        <div className="shrink-0 flex flex-col gap-2">
                           {attempt.quizId && (
                             <Link href={`/results/${attempt._id}`}>
                               <Button 
@@ -221,6 +221,14 @@ export default function AttemptedQuizzesPage() {
                               >
                                 <Eye className="h-4 w-4" />
                                 <span className="hidden sm:inline">View</span>
+                              </Button>
+                            </Link>
+                          )}
+                          {attempt.quizId && attempt.quizNameKnown && (
+                            <Link href={`/quiz/${attempt.quizId}`}>
+                              <Button variant="outline" size="sm" className="gap-2 font-bold">
+                                <RotateCcw className="h-4 w-4" />
+                                <span className="hidden sm:inline">Retake</span>
                               </Button>
                             </Link>
                           )}

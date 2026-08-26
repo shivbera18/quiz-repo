@@ -74,13 +74,14 @@ function fromLocalInputValue(value: string): string | null {
 type ScheduleStatus = "available" | "upcoming" | "closed"
 
 function computeScheduleStatus(startTime: string | null, endTime: string | null, now = Date.now()): ScheduleStatus {
-  if (startTime) {
-    const start = Date.parse(startTime)
-    if (!Number.isNaN(start) && now < start) return "upcoming"
-  }
+  // Closed outranks upcoming so inverted windows read honestly.
   if (endTime) {
     const end = Date.parse(endTime)
     if (!Number.isNaN(end) && now > end) return "closed"
+  }
+  if (startTime) {
+    const start = Date.parse(startTime)
+    if (!Number.isNaN(start) && now < start) return "upcoming"
   }
   return "available"
 }

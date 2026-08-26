@@ -26,6 +26,9 @@ CREATE TABLE "NotebookItem" (
 );
 
 -- CREATE INDEX
+CREATE UNIQUE INDEX "NotebookItem_userId_questionId_kind_key" ON "NotebookItem"("userId", "questionId", "kind");
+
+-- CREATE INDEX
 CREATE INDEX "NotebookItem_userId_questionId_kind_idx" ON "NotebookItem"("userId", "questionId", "kind");
 
 -- CREATE INDEX
