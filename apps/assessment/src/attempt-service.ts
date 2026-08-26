@@ -109,8 +109,15 @@ export async function startOrResumeAttempt(
       }
     }
 
-    // Expired but never swept -- transition it out of the way before starting a new one.
-    await prisma.attempt.update({ where: { id: existing.id }, data: { status: "EXPIRED" } })
+    // Expired but never swept -- transition it out of the way before starting a
+    // new one. Conditional on status so a submit that won the CAS between our
+    // findFirst and this write cannot be clobbered from SUBMITTED back to
+    // EXPIRED (which would make its computed score permanently inaccessible,
+    // since getResult serves SUBMITTED attempts only).
+    await prisma.attempt.updateMany({
+      where: { id: existing.id, status: "IN_PROGRESS" },
+      data: { status: "EXPIRED" },
+    })
   }
 
   if (!quiz.isActive) throw new ForbiddenError("This quiz is not active")
@@ -204,7 +211,14 @@ export async function autosaveAnswers(prisma: PrismaClient, attemptId: string, u
   }
 
   if (attempt.expiresAt <= new Date()) {
-    await prisma.attempt.update({ where: { id: attempt.id }, data: { status: "EXPIRED" } })
+    // Conditional on status: if the sweeper or the user's own submit won the
+    // CAS between our findUnique above and this write, the attempt is already
+    // SUBMITTED with a computed score -- blindly overwriting to EXPIRED would
+    // strand that score behind getResult's SUBMITTED gate forever.
+    await prisma.attempt.updateMany({
+      where: { id: attempt.id, status: "IN_PROGRESS" },
+      data: { status: "EXPIRED" },
+    })
     throw new ConflictError("Attempt has expired")
   }
 
