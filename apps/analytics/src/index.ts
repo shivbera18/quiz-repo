@@ -90,7 +90,12 @@ async function main() {
     const { ids } = request.query as { ids?: string }
     const quizIds = ids ? ids.split(",").filter(Boolean) : undefined
     const rows = await prisma.quizStats.findMany({ where: quizIds ? { quizId: { in: quizIds } } : undefined })
-    return { quizzes: rows }
+    return {
+      quizzes: rows.map((r) => ({
+        ...r,
+        sumTimeMs: Number(r.sumTimeMs),
+      })),
+    }
   })
 
   // Admin analytics reads: joined AttemptFact + DimUser/DimQuiz rows for the
@@ -192,7 +197,10 @@ async function main() {
       return { message: "No stats yet for this quiz" }
     }
     return {
-      stats,
+      stats: {
+        ...stats,
+        sumTimeMs: Number(stats.sumTimeMs),
+      },
       sections: sections.map((s) => ({
         section: s.section,
         attempts: s._count._all,
@@ -283,7 +291,10 @@ async function main() {
         lastActiveDate: stats?.lastActiveDate ?? null,
         updatedAt: stats?.updatedAt ?? new Date(),
       },
-      activity,
+      activity: activity.map((a) => ({
+        ...a,
+        sumTimeMs: Number(a.sumTimeMs),
+      })),
       user: {
         id,
         name: user?.name ?? "Unknown User",
