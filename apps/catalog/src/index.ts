@@ -11,10 +11,32 @@ import { quizChangedPayload } from "./lib/events.js"
 import { handleCatalogError } from "./lib/errors.js"
 import type { StoredQuestion } from "./types.js"
 import { requireAdmin, getUserId } from "./auth.js"
+import {
+  subjectCreateSchema,
+  subjectUpdateSchema,
+  chapterCreateSchema,
+  chapterUpdateSchema,
+  quizCreateSchema,
+  quizPatchSchema,
+  questionBankCreateSchema,
+  questionBankUpdateSchema,
+  questionBankListQuerySchema,
+} from "@quiz/contracts"
+import type { z } from "zod"
 
 const logger = createLogger("catalog-svc")
 const prisma = new PrismaClient()
 const PORT = Number(process.env.PORT) || 4002
+
+// Same response shape the hand-rolled validation returned, so existing admin
+// clients (which branch on status code) keep working while gaining
+// field-level detail.
+function validationFailed(error: z.ZodError) {
+  return {
+    message: "Validation failed" as const,
+    errors: error.issues.map((issue) => ({ field: issue.path.join("."), message: issue.message })),
+  }
+}
 
 // A tombstone row: Kafka null-value record keyed by the deleted entity's id,
 // emitted on the entity's compacted change topic in the SAME transaction as
@@ -217,11 +239,12 @@ async function main() {
   // ------------------------------------------------------------------- admin: subjects
   app.post("/v1/admin/subjects", async (request, reply) => {
     if (!requireAdmin(request, reply)) return
-    const { name, description, icon, color } = (request.body as any) ?? {}
-    if (!name) {
+    const parsed = subjectCreateSchema.safeParse((request.body as any) ?? {})
+    if (!parsed.success) {
       reply.code(400)
-      return { message: "Subject name is required" }
+      return validationFailed(parsed.error)
     }
+    const { name, description, icon, color } = parsed.data
     const existing = await prisma.subject.findFirst({ where: { name } })
     if (existing) {
       reply.code(409)
@@ -241,8 +264,13 @@ async function main() {
   app.put("/v1/admin/subjects/:id", async (request, reply) => {
     if (!requireAdmin(request, reply)) return
     const { id } = request.params as { id: string }
+    const parsed = subjectUpdateSchema.safeParse((request.body as any) ?? {})
+    if (!parsed.success) {
+      reply.code(400)
+      return validationFailed(parsed.error)
+    }
+    const { name, description, icon, color } = parsed.data
     try {
-      const { name, description, icon, color } = (request.body as any) ?? {}
       const subject = await prisma.subject.update({
         where: { id },
         data: { ...(name && { name }), ...(description !== undefined && { description }), ...(icon !== undefined && { icon }), ...(color !== undefined && { color }) },
@@ -287,11 +315,12 @@ async function main() {
   // ------------------------------------------------------------------- admin: chapters
   app.post("/v1/admin/chapters", async (request, reply) => {
     if (!requireAdmin(request, reply)) return
-    const { name, description, subjectId } = (request.body as any) ?? {}
-    if (!name || !subjectId) {
+    const parsed = chapterCreateSchema.safeParse((request.body as any) ?? {})
+    if (!parsed.success) {
       reply.code(400)
-      return { message: "Chapter name and subject ID are required" }
+      return validationFailed(parsed.error)
     }
+    const { name, description, subjectId } = parsed.data
     const subject = await prisma.subject.findUnique({ where: { id: subjectId } })
     if (!subject) {
       reply.code(404)
@@ -314,7 +343,12 @@ async function main() {
   app.put("/v1/admin/chapters/:id", async (request, reply) => {
     if (!requireAdmin(request, reply)) return
     const { id } = request.params as { id: string }
-    const { name, description } = (request.body as any) ?? {}
+    const parsed = chapterUpdateSchema.safeParse((request.body as any) ?? {})
+    if (!parsed.success) {
+      reply.code(400)
+      return validationFailed(parsed.error)
+    }
+    const { name, description } = parsed.data
     try {
       const chapter = await prisma.chapter.update({ where: { id }, data: { ...(name && { name }), ...(description !== undefined && { description }) } })
       await publishChange(TOPICS.CHAPTER_CHANGED, chapter.id, { chapterId: chapter.id, subjectId: chapter.subjectId, name: chapter.name } satisfies ChapterChangedData)
@@ -376,76 +410,59 @@ async function main() {
 
   app.post("/v1/admin/quizzes", async (request, reply) => {
     if (!requireAdmin(request, reply)) return
-    const body = (request.body as any) ?? {}
-    const { title, description, duration, subjectId, chapterId, sections, questions, negativeMarking, negativeMarkValue } = body
-
-    const errors: Array<{ field: string; message: string }> = []
-    if (!title || typeof title !== "string" || title.trim().length < 3 || title.trim().length > 200) {
-      errors.push({ field: "title", message: "Quiz title must be 3-200 characters" })
-    }
-    if (typeof duration !== "number" || isNaN(duration) || duration < 5 || duration > 300) {
-      errors.push({ field: "duration", message: "Quiz duration must be a number between 5 and 300 minutes" })
-    }
-    if (!chapterId || (typeof chapterId === "string" && chapterId.trim() === "")) {
-      errors.push({ field: "chapterId", message: "Chapter selection is required" })
-    }
-    if (!sections || !Array.isArray(sections) || sections.length === 0) {
-      errors.push({ field: "sections", message: "At least one section is required" })
-    }
-    if (negativeMarking === true) {
-      if (typeof negativeMarkValue !== "number" || isNaN(negativeMarkValue) || negativeMarkValue < 0.1 || negativeMarkValue > 1.0) {
-        errors.push({ field: "negativeMarkValue", message: "Negative marking value must be between 0.1 and 1.0" })
-      }
-    }
-    if (questions && !Array.isArray(questions)) {
-      errors.push({ field: "questions", message: "Questions must be an array" })
-    }
-    if (errors.length > 0) {
+    const parsed = quizCreateSchema.safeParse((request.body as any) ?? {})
+    if (!parsed.success) {
       reply.code(400)
-      return { message: "Validation failed", errors }
+      return validationFailed(parsed.error)
+    }
+    const { title, description, duration, subjectId, chapterId, sections, questions, negativeMarking, negativeMarkValue } = parsed.data
+
+    // Chapter existence is checked UNCONDITIONALLY -- the previous code only
+    // verified it when a subjectId was also present, so a bogus chapterId
+    // sailed through validation and died as an unhandled FK error.
+    const chapter = await prisma.chapter.findUnique({ where: { id: chapterId } })
+    if (!chapter) {
+      reply.code(404)
+      return { message: `Chapter with ID "${chapterId}" does not exist` }
+    }
+    if (subjectId && chapter.subjectId !== subjectId) {
+      reply.code(400)
+      return { message: "Chapter does not belong to selected subject" }
     }
 
-    if (chapterId && subjectId) {
-      const chapter = await prisma.chapter.findUnique({ where: { id: chapterId } })
-      if (!chapter) {
-        reply.code(404)
-        return { message: `Chapter with ID "${chapterId}" does not exist` }
-      }
-      if (chapter.subjectId !== subjectId) {
-        reply.code(400)
-        return { message: "Chapter does not belong to selected subject" }
-      }
+    try {
+      const created = await prisma.$transaction(async (tx) => {
+        const quiz = await tx.quiz.create({
+          data: {
+            title,
+            description: description || "",
+            timeLimit: duration,
+            chapterId,
+            sections: stringifyForDatabase(sections),
+            questions: stringifyForDatabase(questions || []),
+            isActive: true,
+            createdBy: getUserId(request) || "admin",
+            negativeMarking: negativeMarking ?? true,
+            negativeMarkValue: negativeMarkValue ?? 0.25,
+          },
+        })
+        await tx.outbox.create({
+          data: {
+            aggregateType: "Quiz",
+            aggregateId: quiz.id,
+            topic: TOPICS.QUIZ_CHANGED,
+            key: quiz.id,
+            payload: createEnvelope(TOPICS.QUIZ_CHANGED, quizChangedPayload(quiz), { producer: "catalog-svc" }) as any,
+            headers: { "content-type": "application/json", "event-type": TOPICS.QUIZ_CHANGED },
+          },
+        })
+        return quiz
+      })
+
+      return { quiz: { ...created, questions: parseJsonField(created.questions), sections: parseJsonField(created.sections) } }
+    } catch (err) {
+      return handleCatalogError(err, reply)
     }
-
-    const created = await prisma.$transaction(async (tx) => {
-      const quiz = await tx.quiz.create({
-        data: {
-          title,
-          description: description || "",
-          timeLimit: duration,
-          chapterId,
-          sections: stringifyForDatabase(sections),
-          questions: stringifyForDatabase(questions || []),
-          isActive: true,
-          createdBy: getUserId(request) || "admin",
-          negativeMarking: negativeMarking ?? true,
-          negativeMarkValue: negativeMarkValue ?? 0.25,
-        },
-      })
-      await tx.outbox.create({
-        data: {
-          aggregateType: "Quiz",
-          aggregateId: quiz.id,
-          topic: TOPICS.QUIZ_CHANGED,
-          key: quiz.id,
-          payload: createEnvelope(TOPICS.QUIZ_CHANGED, quizChangedPayload(quiz), { producer: "catalog-svc" }) as any,
-          headers: { "content-type": "application/json", "event-type": TOPICS.QUIZ_CHANGED },
-        },
-      })
-      return quiz
-    })
-
-    return { quiz: { ...created, questions: parseJsonField(created.questions), sections: parseJsonField(created.sections) } }
   })
 
   app.get("/v1/admin/quizzes/:id", async (request, reply) => {
@@ -467,12 +484,12 @@ async function main() {
   app.patch("/v1/admin/quizzes/:id", async (request, reply) => {
     if (!requireAdmin(request, reply)) return
     const { id } = request.params as { id: string }
-    const body = (request.body as any) ?? {}
-    const { version: expectedVersion, ...updates } = body
-    if (typeof expectedVersion !== "number") {
+    const parsed = quizPatchSchema.safeParse((request.body as any) ?? {})
+    if (!parsed.success) {
       reply.code(400)
-      return { message: "version is required (send back the version you last read)" }
+      return validationFailed(parsed.error)
     }
+    const updates = parsed.data
 
     const data: Record<string, unknown> = { version: { increment: 1 } }
     if (updates.title !== undefined) data.title = updates.title
@@ -483,12 +500,14 @@ async function main() {
     if (updates.isActive !== undefined) data.isActive = updates.isActive
     if (updates.negativeMarking !== undefined) data.negativeMarking = updates.negativeMarking
     if (updates.negativeMarkValue !== undefined) data.negativeMarkValue = updates.negativeMarkValue
+    // "none"/""/null keep their historical PATCH semantics (chapter unchanged);
+    // only a real id re-points the quiz.
     if (updates.chapterId && updates.chapterId !== "none" && String(updates.chapterId).trim() !== "") data.chapterId = updates.chapterId
 
     let result: Quiz | null
     try {
       result = await prisma.$transaction(async (tx) => {
-        const updateResult = await tx.quiz.updateMany({ where: { id, version: expectedVersion }, data })
+        const updateResult = await tx.quiz.updateMany({ where: { id, version: updates.version }, data })
         if (updateResult.count === 0) return null
         const quiz = await tx.quiz.findUniqueOrThrow({ where: { id } })
         await tx.outbox.create({
@@ -547,14 +566,32 @@ async function main() {
   // -------------------------------------------------------------- admin: question bank
   app.get("/v1/admin/question-bank", async (request, reply) => {
     if (!requireAdmin(request, reply)) return
-    const q = request.query as Record<string, string | undefined>
-    const page = parseInt(q.page || "1")
-    const limit = parseInt(q.limit || "20")
-    const where: Record<string, unknown> = {}
-    if (q.section) where.section = q.section
-    if (q.difficulty) where.difficulty = q.difficulty
-    if (q.tag) where.tags = { contains: q.tag }
-    if (q.search) where.OR = [{ question: { contains: q.search, mode: "insensitive" } }, { explanation: { contains: q.search, mode: "insensitive" } }]
+    const parsed = questionBankListQuerySchema.safeParse(request.query ?? {})
+    if (!parsed.success) {
+      reply.code(400)
+      return validationFailed(parsed.error)
+    }
+    const q = parsed.data
+    const { page, limit } = q
+
+    // AND-composed conditions: search's field-OR and multi-tag's tag-OR must
+    // not clobber each other the way a single `where.OR` would. Repeated
+    // ?tag= params (what the admin UI sends) arrive as arrays and are treated
+    // as ANY-of matches, matching the UI's multi-select semantics.
+    const conditions: Array<Record<string, unknown>> = []
+    if (q.section) conditions.push({ section: q.section })
+    if (q.difficulty) conditions.push({ difficulty: q.difficulty })
+    if (q.search) {
+      conditions.push({
+        OR: [
+          { question: { contains: q.search, mode: "insensitive" } },
+          { explanation: { contains: q.search, mode: "insensitive" } },
+        ],
+      })
+    }
+    const tags = Array.isArray(q.tag) ? q.tag : q.tag ? [q.tag] : []
+    if (tags.length > 0) conditions.push({ OR: tags.map((tag) => ({ tags: { contains: tag } })) })
+    const where = conditions.length > 0 ? { AND: conditions } : {}
 
     const total = await prisma.questionBankItem.count({ where })
     const questions = await prisma.questionBankItem.findMany({ where, orderBy: { createdAt: "desc" }, skip: (page - 1) * limit, take: limit })
@@ -566,20 +603,21 @@ async function main() {
 
   app.post("/v1/admin/question-bank", async (request, reply) => {
     if (!requireAdmin(request, reply)) return
-    const { section, question, options, correctAnswer, explanation, difficulty, tags, image, source } = (request.body as any) ?? {}
-    if (!section || !question || !options || options.length !== 4 || typeof correctAnswer !== "number" || correctAnswer < 0 || correctAnswer > 3) {
+    const parsed = questionBankCreateSchema.safeParse((request.body as any) ?? {})
+    if (!parsed.success) {
       reply.code(400)
-      return { message: "Missing or invalid required fields" }
+      return validationFailed(parsed.error)
     }
+    const { section, question, options, correctAnswer, explanation, difficulty, tags, image, source } = parsed.data
     try {
       const item = await prisma.questionBankItem.create({
         data: {
           section,
-          question: question.trim(),
+          question,
           options: stringifyForDatabase(options),
           correctAnswer,
           explanation: explanation?.trim() || "",
-          difficulty: difficulty || "medium",
+          difficulty,
           tags: stringifyForDatabase(tags || []),
           image: image || "",
           source: source || "",
@@ -605,13 +643,19 @@ async function main() {
   app.put("/v1/admin/question-bank/:id", async (request, reply) => {
     if (!requireAdmin(request, reply)) return
     const { id } = request.params as { id: string }
-    const body = (request.body as any) ?? {}
-    const data: Record<string, unknown> = {}
-    for (const field of ["section", "question", "correctAnswer", "explanation", "difficulty", "image", "source", "isVerified"]) {
-      if (body[field] !== undefined) data[field] = body[field]
+    const parsed = questionBankUpdateSchema.safeParse((request.body as any) ?? {})
+    if (!parsed.success) {
+      reply.code(400)
+      return validationFailed(parsed.error)
     }
-    if (body.options !== undefined) data.options = stringifyForDatabase(body.options)
-    if (body.tags !== undefined) data.tags = stringifyForDatabase(body.tags)
+    const data: Record<string, unknown> = {}
+    for (const [field, value] of Object.entries(parsed.data)) {
+      if (value !== undefined) data[field] = value
+    }
+    if (parsed.data.options !== undefined) data.options = stringifyForDatabase(parsed.data.options)
+    else delete data.options
+    if (parsed.data.tags !== undefined) data.tags = stringifyForDatabase(parsed.data.tags)
+    else delete data.tags
     try {
       const item = await prisma.questionBankItem.update({ where: { id }, data })
       return { question: { ...item, options: parseJsonField(item.options), tags: parseJsonField(item.tags) } }
