@@ -562,6 +562,14 @@ async function main() {
         await tx.outbox.create({ data: tombstoneOutboxRow("Quiz", id) })
       })
     } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
+        // Idempotent delete: already gone, but ensure dimension is still cleaned via tombstone.
+        // Publish tombstone directly if the transactional one was lost to the rollback.
+        try {
+          await prisma.outbox.create({ data: tombstoneOutboxRow("Quiz", id) })
+        } catch {}
+        return { message: "Quiz deleted" }
+      }
       return handleCatalogError(err, reply)
     }
     return { message: "Quiz deleted" }
