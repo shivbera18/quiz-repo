@@ -1,13 +1,14 @@
 import Fastify from "fastify"
 import cors from "@fastify/cors"
 import { randomUUID } from "node:crypto"
-import { PrismaClient, Prisma } from "./generated/prisma/index.js"
+import { PrismaClient, Prisma, type Quiz } from "./generated/prisma/index.js"
 import { createLogger, TRACE_HEADER, getOrCreateTraceId } from "@quiz/observability"
 import { createKafka, getProducer, startOutboxPublisher, createEnvelope, TOPICS } from "@quiz/kafka-kit"
 import type { QuizChangedData, ChapterChangedData, SubjectChangedData, AiQuizGenerationRequestedData } from "@quiz/contracts"
 import { createOutboxStore } from "./outbox-store.js"
 import { parseJsonField, stringifyForDatabase } from "./lib/database-utils.js"
 import { quizChangedPayload } from "./lib/events.js"
+import { handleCatalogError } from "./lib/errors.js"
 import type { StoredQuestion } from "./types.js"
 import { requireAdmin, getUserId } from "./auth.js"
 
@@ -226,23 +227,31 @@ async function main() {
       reply.code(409)
       return { message: "Subject already exists" }
     }
-    const subject = await prisma.subject.create({
-      data: { name, description: description || "", icon: icon || "📚", color: color || "#3B82F6" },
-    })
-    await publishChange(TOPICS.SUBJECT_CHANGED, subject.id, { subjectId: subject.id, name: subject.name } satisfies SubjectChangedData)
-    return { subject }
+    try {
+      const subject = await prisma.subject.create({
+        data: { name, description: description || "", icon: icon || "📚", color: color || "#3B82F6" },
+      })
+      await publishChange(TOPICS.SUBJECT_CHANGED, subject.id, { subjectId: subject.id, name: subject.name } satisfies SubjectChangedData)
+      return { subject }
+    } catch (err) {
+      return handleCatalogError(err, reply)
+    }
   })
 
   app.put("/v1/admin/subjects/:id", async (request, reply) => {
     if (!requireAdmin(request, reply)) return
     const { id } = request.params as { id: string }
-    const { name, description, icon, color } = (request.body as any) ?? {}
-    const subject = await prisma.subject.update({
-      where: { id },
-      data: { ...(name && { name }), ...(description !== undefined && { description }), ...(icon !== undefined && { icon }), ...(color !== undefined && { color }) },
-    })
-    await publishChange(TOPICS.SUBJECT_CHANGED, subject.id, { subjectId: subject.id, name: subject.name } satisfies SubjectChangedData)
-    return { subject }
+    try {
+      const { name, description, icon, color } = (request.body as any) ?? {}
+      const subject = await prisma.subject.update({
+        where: { id },
+        data: { ...(name && { name }), ...(description !== undefined && { description }), ...(icon !== undefined && { icon }), ...(color !== undefined && { color }) },
+      })
+      await publishChange(TOPICS.SUBJECT_CHANGED, subject.id, { subjectId: subject.id, name: subject.name } satisfies SubjectChangedData)
+      return { subject }
+    } catch (err) {
+      return handleCatalogError(err, reply)
+    }
   })
 
   app.delete("/v1/admin/subjects/:id", async (request, reply) => {
@@ -260,14 +269,18 @@ async function main() {
     // Delete + tombstones commit atomically: one outbox row per deleted
     // chapter plus the subject's own, so replay-from-zero cannot resurrect
     // any of them on the compacted topics.
-    await prisma.$transaction(async (tx) => {
-      await tx.chapter.deleteMany({ where: { subjectId: id } })
-      for (const chapter of subject.chapters) {
-        await tx.outbox.create({ data: tombstoneOutboxRow("Chapter", chapter.id) })
-      }
-      await tx.subject.delete({ where: { id } })
-      await tx.outbox.create({ data: tombstoneOutboxRow("Subject", id) })
-    })
+    try {
+      await prisma.$transaction(async (tx) => {
+        await tx.chapter.deleteMany({ where: { subjectId: id } })
+        for (const chapter of subject.chapters) {
+          await tx.outbox.create({ data: tombstoneOutboxRow("Chapter", chapter.id) })
+        }
+        await tx.subject.delete({ where: { id } })
+        await tx.outbox.create({ data: tombstoneOutboxRow("Subject", id) })
+      })
+    } catch (err) {
+      return handleCatalogError(err, reply)
+    }
     return { message: "Subject deleted successfully" }
   })
 
@@ -289,18 +302,26 @@ async function main() {
       reply.code(409)
       return { message: "Chapter already exists in this subject" }
     }
-    const chapter = await prisma.chapter.create({ data: { name, description: description || "", subjectId } })
-    await publishChange(TOPICS.CHAPTER_CHANGED, chapter.id, { chapterId: chapter.id, subjectId: chapter.subjectId, name: chapter.name } satisfies ChapterChangedData)
-    return { chapter }
+    try {
+      const chapter = await prisma.chapter.create({ data: { name, description: description || "", subjectId } })
+      await publishChange(TOPICS.CHAPTER_CHANGED, chapter.id, { chapterId: chapter.id, subjectId: chapter.subjectId, name: chapter.name } satisfies ChapterChangedData)
+      return { chapter }
+    } catch (err) {
+      return handleCatalogError(err, reply)
+    }
   })
 
   app.put("/v1/admin/chapters/:id", async (request, reply) => {
     if (!requireAdmin(request, reply)) return
     const { id } = request.params as { id: string }
     const { name, description } = (request.body as any) ?? {}
-    const chapter = await prisma.chapter.update({ where: { id }, data: { ...(name && { name }), ...(description !== undefined && { description }) } })
-    await publishChange(TOPICS.CHAPTER_CHANGED, chapter.id, { chapterId: chapter.id, subjectId: chapter.subjectId, name: chapter.name } satisfies ChapterChangedData)
-    return { chapter }
+    try {
+      const chapter = await prisma.chapter.update({ where: { id }, data: { ...(name && { name }), ...(description !== undefined && { description }) } })
+      await publishChange(TOPICS.CHAPTER_CHANGED, chapter.id, { chapterId: chapter.id, subjectId: chapter.subjectId, name: chapter.name } satisfies ChapterChangedData)
+      return { chapter }
+    } catch (err) {
+      return handleCatalogError(err, reply)
+    }
   })
 
   app.delete("/v1/admin/chapters/:id", async (request, reply) => {
@@ -315,10 +336,14 @@ async function main() {
       reply.code(409)
       return { message: "Cannot delete chapter that has quizzes. Please move or delete quizzes first." }
     }
-    await prisma.$transaction(async (tx) => {
-      await tx.chapter.delete({ where: { id } })
-      await tx.outbox.create({ data: tombstoneOutboxRow("Chapter", id) })
-    })
+    try {
+      await prisma.$transaction(async (tx) => {
+        await tx.chapter.delete({ where: { id } })
+        await tx.outbox.create({ data: tombstoneOutboxRow("Chapter", id) })
+      })
+    } catch (err) {
+      return handleCatalogError(err, reply)
+    }
     return { message: "Chapter deleted successfully" }
   })
 
@@ -460,22 +485,27 @@ async function main() {
     if (updates.negativeMarkValue !== undefined) data.negativeMarkValue = updates.negativeMarkValue
     if (updates.chapterId && updates.chapterId !== "none" && String(updates.chapterId).trim() !== "") data.chapterId = updates.chapterId
 
-    const result = await prisma.$transaction(async (tx) => {
-      const updateResult = await tx.quiz.updateMany({ where: { id, version: expectedVersion }, data })
-      if (updateResult.count === 0) return null
-      const quiz = await tx.quiz.findUniqueOrThrow({ where: { id } })
-      await tx.outbox.create({
-        data: {
-          aggregateType: "Quiz",
-          aggregateId: quiz.id,
-          topic: TOPICS.QUIZ_CHANGED,
-          key: quiz.id,
-          payload: createEnvelope(TOPICS.QUIZ_CHANGED, quizChangedPayload(quiz), { producer: "catalog-svc" }) as any,
-          headers: { "content-type": "application/json", "event-type": TOPICS.QUIZ_CHANGED },
-        },
+    let result: Quiz | null
+    try {
+      result = await prisma.$transaction(async (tx) => {
+        const updateResult = await tx.quiz.updateMany({ where: { id, version: expectedVersion }, data })
+        if (updateResult.count === 0) return null
+        const quiz = await tx.quiz.findUniqueOrThrow({ where: { id } })
+        await tx.outbox.create({
+          data: {
+            aggregateType: "Quiz",
+            aggregateId: quiz.id,
+            topic: TOPICS.QUIZ_CHANGED,
+            key: quiz.id,
+            payload: createEnvelope(TOPICS.QUIZ_CHANGED, quizChangedPayload(quiz), { producer: "catalog-svc" }) as any,
+            headers: { "content-type": "application/json", "event-type": TOPICS.QUIZ_CHANGED },
+          },
+        })
+        return quiz
       })
-      return quiz
-    })
+    } catch (err) {
+      return handleCatalogError(err, reply)
+    }
 
     if (!result) {
       reply.code(409)
@@ -487,10 +517,14 @@ async function main() {
   app.delete("/v1/admin/quizzes/:id", async (request, reply) => {
     if (!requireAdmin(request, reply)) return
     const { id } = request.params as { id: string }
-    await prisma.$transaction(async (tx) => {
-      await tx.quiz.delete({ where: { id } })
-      await tx.outbox.create({ data: tombstoneOutboxRow("Quiz", id) })
-    })
+    try {
+      await prisma.$transaction(async (tx) => {
+        await tx.quiz.delete({ where: { id } })
+        await tx.outbox.create({ data: tombstoneOutboxRow("Quiz", id) })
+      })
+    } catch (err) {
+      return handleCatalogError(err, reply)
+    }
     return { message: "Quiz deleted" }
   })
 
@@ -537,20 +571,24 @@ async function main() {
       reply.code(400)
       return { message: "Missing or invalid required fields" }
     }
-    const item = await prisma.questionBankItem.create({
-      data: {
-        section,
-        question: question.trim(),
-        options: stringifyForDatabase(options),
-        correctAnswer,
-        explanation: explanation?.trim() || "",
-        difficulty: difficulty || "medium",
-        tags: stringifyForDatabase(tags || []),
-        image: image || "",
-        source: source || "",
-      },
-    })
-    return { question: { ...item, options: parseJsonField(item.options), tags: parseJsonField(item.tags) } }
+    try {
+      const item = await prisma.questionBankItem.create({
+        data: {
+          section,
+          question: question.trim(),
+          options: stringifyForDatabase(options),
+          correctAnswer,
+          explanation: explanation?.trim() || "",
+          difficulty: difficulty || "medium",
+          tags: stringifyForDatabase(tags || []),
+          image: image || "",
+          source: source || "",
+        },
+      })
+      return { question: { ...item, options: parseJsonField(item.options), tags: parseJsonField(item.tags) } }
+    } catch (err) {
+      return handleCatalogError(err, reply)
+    }
   })
 
   app.get("/v1/admin/question-bank/:id", async (request, reply) => {
@@ -574,14 +612,22 @@ async function main() {
     }
     if (body.options !== undefined) data.options = stringifyForDatabase(body.options)
     if (body.tags !== undefined) data.tags = stringifyForDatabase(body.tags)
-    const item = await prisma.questionBankItem.update({ where: { id }, data })
-    return { question: { ...item, options: parseJsonField(item.options), tags: parseJsonField(item.tags) } }
+    try {
+      const item = await prisma.questionBankItem.update({ where: { id }, data })
+      return { question: { ...item, options: parseJsonField(item.options), tags: parseJsonField(item.tags) } }
+    } catch (err) {
+      return handleCatalogError(err, reply)
+    }
   })
 
   app.delete("/v1/admin/question-bank/:id", async (request, reply) => {
     if (!requireAdmin(request, reply)) return
     const { id } = request.params as { id: string }
-    await prisma.questionBankItem.delete({ where: { id } })
+    try {
+      await prisma.questionBankItem.delete({ where: { id } })
+    } catch (err) {
+      return handleCatalogError(err, reply)
+    }
     return { message: "Question deleted" }
   })
 
