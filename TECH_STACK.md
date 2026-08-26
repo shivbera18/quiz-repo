@@ -22,7 +22,7 @@ The Quiz Platform is a modern, event-driven microservices architecture managed a
 
 ## 4. Messaging & Event-Driven Architecture
 * **Kafka (via Redpanda)**: Handles asynchronous communication between services (Event-Carried State Transfer). E.g., when a quiz is completed in the `assessment-svc`, it fires an event to Kafka, which the `analytics-svc` consumes to update leaderboards and the `notification-svc` consumes to alert the user.
-* **Transactional Outbox Pattern**: Implemented in `packages/kafka-kit` to guarantee exactly-once event delivery even if a service crashes right after writing to the database.
+* **Transactional Outbox Pattern**: Implemented in `packages/kafka-kit` for at-least-once event delivery -- the outbox row commits atomically with the domain write, and a publisher claims batches with `FOR UPDATE SKIP LOCKED`, sends to Kafka, and marks them published inside one transaction. Consumers deduplicate on `eventId`, so redelivery after a crash is safe.
 
 ## 5. Tooling & Infrastructure
 * **Turborepo**: Manages the monorepo, providing intelligent caching and parallel execution for builds, linting, and testing.
@@ -34,4 +34,4 @@ The Quiz Platform is a modern, event-driven microservices architecture managed a
 * **Vitest**: Fast unit testing framework.
 * **Playwright**: End-to-end (E2E) testing for critical user flows.
 * **Pino**: High-performance structured logging.
-* **OpenTelemetry**: Trace-id propagation across the API Gateway and downstream services to track requests as they move through the system (implemented in `packages/observability`).
+* **Trace-ID propagation** (no OpenTelemetry yet): request-scoped `x-trace-id` is generated/propagated across the API Gateway and downstream services and injected into pino logs (`packages/observability`). Full OTel spans/exporters are not implemented.

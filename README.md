@@ -15,7 +15,7 @@ A comprehensive, AI-powered quiz management system built for educational institu
 - **Flexible Timing**: Configurable quiz durations with negative marking
 - **Multi-section Support**: Organize quizzes into multiple subject areas
 - **Advanced Filtering**: Search and filter questions by difficulty, subject, and tags
-- **Import/Export**: Bulk operations for question management
+- **Question Bank**: Reusable question pool with sections, difficulty levels, and tags
 - **Responsive Design**: Mobile-friendly interface with dark/light themes
 
 ## Technology Stack
@@ -128,7 +128,7 @@ Then run `/reload`, `/subagents-doctor`, and `/mcp status` inside Pi.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is proprietary. All rights reserved. (A LICENSE file has not been added yet.)
 
 ## Author
 
