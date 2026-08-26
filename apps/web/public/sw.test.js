@@ -5,6 +5,11 @@ import vm from "node:vm"
 
 const source = fs.readFileSync(new URL("./sw.js", import.meta.url), "utf8")
 
+// Read the worker's own cache names instead of hardcoding them: the activation
+// test asserts "stale caches are removed, current ones survive", which must
+// keep holding across cache-version bumps.
+const CURRENT_CACHES = [...source.matchAll(/const (?:STATIC|DYNAMIC)_CACHE = '([^']+)'/g)].map((m) => m[1])
+
 function loadWorker(overrides = {}) {
   const handlers = {}
   const shown = []
@@ -21,7 +26,15 @@ function loadWorker(overrides = {}) {
         cachedAssets.push(...assets)
         return Promise.resolve()
       },
+      // The worker precaches entry-by-entry (cache.add) so a single missing
+      // asset cannot fail the whole install and leave the app uninstallable.
+      add(request) {
+        cachedAssets.push(typeof request === "string" ? request : request.url)
+        return Promise.resolve()
+      },
       put: () => Promise.resolve(),
+      keys: () => Promise.resolve([]),
+      delete: () => Promise.resolve(true),
     }),
     keys: () => Promise.resolve([]),
     delete(name) {
@@ -53,6 +66,22 @@ function loadWorker(overrides = {}) {
     console,
     URL,
     JSON,
+    // Minimal stand-in for the SW global; the worker only uses it to tag
+    // precache fetches with { cache: 'reload' }.
+    Request: class Request {
+      constructor(url, options = {}) {
+        this.url = url
+        this.cache = options.cache
+        this.method = options.method || "GET"
+      }
+    },
+    Response: class Response {
+      static error() {
+        return { ok: false, type: "error" }
+      }
+    },
+    Buffer,
+    setTimeout,
   })
 
   return { handlers, shown, deletedCaches, cachedAssets }
@@ -71,7 +100,7 @@ function waitableEvent(properties = {}) {
   }
 }
 
-test("install precaches the generated Next manifest", async () => {
+test("install precaches the generated Next manifest and PWA icons", async () => {
   const { handlers, cachedAssets } = loadWorker()
   const { event, wait } = waitableEvent()
 
@@ -80,12 +109,40 @@ test("install precaches the generated Next manifest", async () => {
 
   assert.ok(cachedAssets.includes("/manifest.webmanifest"))
   assert.ok(!cachedAssets.includes("/manifest.json"))
+  // Installability depends on these actually being cached, and on the offline
+  // shell existing for the navigation fallback.
+  assert.ok(cachedAssets.includes("/offline.html"))
+  assert.ok(cachedAssets.includes("/icons/icon-192x192.png"))
+  assert.ok(cachedAssets.includes("/icons/icon-512x512.png"))
 })
 
-test("activation removes old caches", async () => {
+test("install survives a precache entry that 404s", async () => {
+  // cache.addAll would reject the whole install (and leave the app
+  // uninstallable) if ANY entry failed; per-entry adds must tolerate it.
   const caches = {
-    open: () => Promise.resolve({ addAll: () => Promise.resolve() }),
-    keys: () => Promise.resolve(["quiz-app-dynamic-v1", "quiz-app-static-v2"]),
+    open: () => Promise.resolve({
+      add: (request) => {
+        const url = typeof request === "string" ? request : request.url
+        return url === "/offline.html" ? Promise.reject(new Error("404")) : Promise.resolve()
+      },
+      put: () => Promise.resolve(),
+    }),
+    keys: () => Promise.resolve([]),
+    delete: () => Promise.resolve(true),
+    match: () => Promise.resolve(undefined),
+  }
+  const { handlers } = loadWorker({ caches })
+  const { event, wait } = waitableEvent()
+
+  handlers.install(event)
+  await assert.doesNotReject(wait())
+})
+
+test("activation removes stale caches and keeps the current ones", async () => {
+  const staleCache = "quiz-app-static-v1"
+  const caches = {
+    open: () => Promise.resolve({ addAll: () => Promise.resolve(), add: () => Promise.resolve() }),
+    keys: () => Promise.resolve([...CURRENT_CACHES, staleCache]),
     delete: () => Promise.resolve(true),
     match: () => Promise.resolve(undefined),
   }
@@ -100,7 +157,7 @@ test("activation removes old caches", async () => {
   handlers.activate(event)
   await wait()
 
-  assert.deepEqual(deleted, ["quiz-app-dynamic-v1"])
+  assert.deepEqual(deleted, [staleCache])
 })
 
 test("fetch handler only handles public static assets", () => {
@@ -167,6 +224,29 @@ test("fetch handler awaits static cache writes without failing the response", as
     }
     assert.equal(await responsePromise, response)
   }
+})
+
+test("navigation falls back to the offline shell when the network fails", async () => {
+  const offlineShell = { body: "offline", status: 200 }
+  const caches = {
+    open: () => Promise.resolve({ put: () => Promise.resolve(), add: () => Promise.resolve() }),
+    keys: () => Promise.resolve([]),
+    delete: () => Promise.resolve(true),
+    // No cached copy of the page itself; only the pre-cached shell.
+    match: (request) => Promise.resolve(request === "/offline.html" ? offlineShell : undefined),
+  }
+  const { handlers } = loadWorker({ caches, fetch: () => Promise.reject(new Error("offline")) })
+  const request = {
+    method: "GET",
+    mode: "navigate",
+    url: "https://quiz.test/dashboard",
+    headers: { has: () => false },
+  }
+  let responsePromise
+
+  handlers.fetch({ request, respondWith: (promise) => { responsePromise = promise } })
+
+  assert.equal(await responsePromise, offlineShell)
 })
 
 test("push handler supports notification service payloads", async () => {
