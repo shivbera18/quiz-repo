@@ -3,6 +3,7 @@ import { PrismaClient } from "./generated/prisma/index.js"
 import { createLogger } from "@quiz/observability"
 import { createKafka, createEnvelope, TOPICS, runConsumer, getProducer } from "@quiz/kafka-kit"
 import type { AiQuizGenerationRequestedData, AiQuizGenerationCompletedData } from "@quiz/contracts"
+import { quizChangedPayload } from "./lib/events.js"
 
 const logger = createLogger("catalog-ai-worker")
 const prisma = new PrismaClient()
@@ -110,18 +111,36 @@ async function main() {
 
       let resultQuizId: string | null = null
       if (allQuestions.length > 0) {
-        const quiz = await prisma.quiz.create({
-          data: {
-            title,
-            description: `AI-generated quiz: ${title}`,
-            timeLimit: 30,
-            sections: JSON.stringify(sections),
-            questions: JSON.stringify(allQuestions),
-            isActive: status === "succeeded", // partial results land as an isActive:false draft for admin review
-            createdBy: requestedBy,
-            negativeMarking: true,
-            negativeMarkValue: 0.25,
-          },
+        // Quiz creation + its QUIZ_CHANGED outbox row commit atomically, same
+        // as the admin POST /v1/admin/quizzes route -- without the event,
+        // analytics-svc never learns this quiz exists (no DimQuiz row), so
+        // attempt facts for it resolve chapter/subject to null and it is
+        // invisible to every subject-scoped rollup until manually edited.
+        const quiz = await prisma.$transaction(async (tx) => {
+          const created = await tx.quiz.create({
+            data: {
+              title,
+              description: `AI-generated quiz: ${title}`,
+              timeLimit: 30,
+              sections: JSON.stringify(sections),
+              questions: JSON.stringify(allQuestions),
+              isActive: status === "succeeded", // partial results land as an isActive:false draft for admin review
+              createdBy: requestedBy,
+              negativeMarking: true,
+              negativeMarkValue: 0.25,
+            },
+          })
+          await tx.outbox.create({
+            data: {
+              aggregateType: "Quiz",
+              aggregateId: created.id,
+              topic: TOPICS.QUIZ_CHANGED,
+              key: created.id,
+              payload: createEnvelope(TOPICS.QUIZ_CHANGED, quizChangedPayload(created), { producer: "catalog-svc" }) as any,
+              headers: { "content-type": "application/json", "event-type": TOPICS.QUIZ_CHANGED },
+            },
+          })
+          return created
         })
         resultQuizId = quiz.id
       }
