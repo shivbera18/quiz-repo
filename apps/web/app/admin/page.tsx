@@ -610,14 +610,19 @@ export default function AdminPage() {
           "X-Quiz-Authorization": `Bearer ${user?.token || "admin-token-placeholder"}`,
         },
       })
-      if (!res.ok) throw new Error("Failed to delete quiz")
+      if (!res.ok) {
+        // Surface catalog's reason (404 already-deleted, 409 conflict) instead
+        // of a generic failure the admin cannot act on.
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.message || `Failed to delete quiz (${res.status})`)
+      }
 
       // Remove from local state after successful deletion
       const updatedQuizzes = quizzes.filter((q) => q.id !== quizId)
       setQuizzes(updatedQuizzes)
       setSuccess("Quiz deleted successfully!")
     } catch (err) {
-      setError("Failed to delete quiz from database")
+      setError(err instanceof Error ? err.message : "Failed to delete quiz from database")
     }
   }
 
