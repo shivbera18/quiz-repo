@@ -47,6 +47,33 @@ describe("processMessage failure policy", () => {
     expect(args.produceToDlq).not.toHaveBeenCalled()
   })
 
+  it("delivers tombstones to onTombstone when provided (compacted-topic deletes)", async () => {
+    const onTombstone = vi.fn().mockResolvedValue(undefined)
+    const args = baseArgs({ onTombstone })
+
+    const outcome = await processMessage(makePayload(null), args)
+
+    expect(outcome).toBe("processed-tombstone")
+    expect(onTombstone).toHaveBeenCalledTimes(1)
+    const ctx = onTombstone.mock.calls[0][0]
+    expect(ctx.topic).toBe("quiz.test.v1")
+    expect(ctx.key).toBe("key-1")
+    expect(args.onMessage).not.toHaveBeenCalled()
+  })
+
+  it("retries then dead-letters a failing tombstone handler", async () => {
+    const onTombstone = vi.fn<() => Promise<void>>().mockRejectedValue(new Error("delete failed"))
+    const args = baseArgs({ onTombstone }) // maxRetries=2 -> 3 attempts
+
+    const outcome = await processMessage(makePayload(null), args)
+
+    expect(outcome).toBe("dead-lettered-handler-error")
+    expect(onTombstone).toHaveBeenCalledTimes(3)
+    const record = args.produceToDlq.mock.calls[0][0]
+    expect(record.headers["dlq-error"]).toContain("delete failed")
+    expect(record.headers["dlq-attempts"]).toBe("3")
+  })
+
   it("dead-letters an unparsable value with the RAW bytes and dlq metadata headers", async () => {
     const raw = Buffer.from("{not json")
     const args = baseArgs()
