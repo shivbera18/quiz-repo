@@ -67,51 +67,66 @@ export async function startOrResumeAttempt(
   clientIdemKey: string | undefined
 ) {
   const now = new Date()
-  const quiz = await fetchFullQuiz(quizId)
-  if (!quiz) throw new NotFoundError("Quiz not found")
 
   // Resume an existing, still-valid in-progress attempt rather than starting a
   // second one -- this is also what the attempt_one_inflight partial unique
   // index enforces at the database level.
+  //
+  // The resume lookup deliberately happens BEFORE the catalog fetch: a live
+  // attempt must be resumable even when catalog-svc is down or the quiz was
+  // deleted, because the frozen snapshot already contains everything needed
+  // to serve it -- which is the entire point of the snapshot design. The
+  // catalog round trip below runs only when a NEW attempt (and possibly a new
+  // snapshot) is actually required.
   const existing = await prisma.attempt.findFirst({
     where: { userId: user.userId, quizId, status: "IN_PROGRESS" },
   })
 
-  if (existing) {
-    if (existing.expiresAt > now) {
-      const [snapshot, savedAnswers] = await Promise.all([
-        prisma.attemptSnapshot.findUniqueOrThrow({ where: { id: existing.snapshotId } }),
-        prisma.attemptAnswer.findMany({ where: { attemptId: existing.id } }),
-      ])
-      const questions = stripAnswerKey(snapshot.questions as unknown as SnapshotQuestion[])
-      return {
-        attemptId: existing.id,
-        quizId: existing.quizId,
-        quizTitle: snapshot.quizTitle,
-        resumed: true,
-        startedAt: existing.startedAt,
-        expiresAt: existing.expiresAt,
-        serverTime: now,
-        remainingMs: Math.max(0, existing.expiresAt.getTime() - now.getTime()),
-        timeLimitSec: snapshot.timeLimitSec,
-        negativeMarking: existing.negativeMarking,
-        negativeMarkValue: existing.negativeMarkValue,
-        sections: snapshot.sections as unknown as string[],
-        questions,
-        savedAnswers: savedAnswers.map((a) => ({
-          questionId: a.questionId,
-          selectedAnswer: a.selectedOption,
-          markedForReview: a.markedForReview,
-          visited: a.visited,
-          timeSpentMs: a.timeSpentMs,
-          clientSeq: Number(a.clientSeq),
-        })),
-      }
+  if (existing && existing.expiresAt > now) {
+    const [snapshot, savedAnswers] = await Promise.all([
+      prisma.attemptSnapshot.findUniqueOrThrow({ where: { id: existing.snapshotId } }),
+      prisma.attemptAnswer.findMany({ where: { attemptId: existing.id } }),
+    ])
+    const questions = stripAnswerKey(snapshot.questions as unknown as SnapshotQuestion[])
+    return {
+      attemptId: existing.id,
+      quizId: existing.quizId,
+      quizTitle: snapshot.quizTitle,
+      resumed: true,
+      startedAt: existing.startedAt,
+      expiresAt: existing.expiresAt,
+      serverTime: now,
+      remainingMs: Math.max(0, existing.expiresAt.getTime() - now.getTime()),
+      timeLimitSec: snapshot.timeLimitSec,
+      negativeMarking: existing.negativeMarking,
+      negativeMarkValue: existing.negativeMarkValue,
+      sections: snapshot.sections as unknown as string[],
+      questions,
+      savedAnswers: savedAnswers.map((a) => ({
+        questionId: a.questionId,
+        selectedAnswer: a.selectedOption,
+        markedForReview: a.markedForReview,
+        visited: a.visited,
+        timeSpentMs: a.timeSpentMs,
+        clientSeq: Number(a.clientSeq),
+      })),
     }
-
-    // Expired but never swept -- transition it out of the way before starting a new one.
-    await prisma.attempt.update({ where: { id: existing.id }, data: { status: "EXPIRED" } })
   }
+
+  if (existing) {
+    // Expired but never swept -- transition it out of the way before starting a
+    // new one. Conditional on status so a submit that won the CAS between our
+    // findFirst and this write cannot be clobbered from SUBMITTED back to
+    // EXPIRED (which would make its computed score permanently inaccessible,
+    // since getResult serves SUBMITTED attempts only).
+    await prisma.attempt.updateMany({
+      where: { id: existing.id, status: "IN_PROGRESS" },
+      data: { status: "EXPIRED" },
+    })
+  }
+
+  const quiz = await fetchFullQuiz(quizId)
+  if (!quiz) throw new NotFoundError("Quiz not found")
 
   if (!quiz.isActive) throw new ForbiddenError("This quiz is not active")
 
@@ -204,45 +219,74 @@ export async function autosaveAnswers(prisma: PrismaClient, attemptId: string, u
   }
 
   if (attempt.expiresAt <= new Date()) {
-    await prisma.attempt.update({ where: { id: attempt.id }, data: { status: "EXPIRED" } })
+    // Conditional on status: if the sweeper or the user's own submit won the
+    // CAS between our findUnique above and this write, the attempt is already
+    // SUBMITTED with a computed score -- blindly overwriting to EXPIRED would
+    // strand that score behind getResult's SUBMITTED gate forever.
+    await prisma.attempt.updateMany({
+      where: { id: attempt.id, status: "IN_PROGRESS" },
+      data: { status: "EXPIRED" },
+    })
     throw new ConflictError("Attempt has expired")
   }
 
-  for (const answer of answers) {
-    const clientSeq = BigInt(answer.clientSeq ?? 0)
-    const existing = await prisma.attemptAnswer.findUnique({
-      where: { attemptId_questionId: { attemptId: attempt.id, questionId: answer.questionId } },
-    })
-
-    if (existing && existing.clientSeq > clientSeq) {
-      continue // stale write from an older tab/request; last-write-wins keeps the newer one
+  let saved = 0
+  await prisma.$transaction(async (tx) => {
+    // Serialize against submit (and other autosaves) by taking the attempt
+    // row's lock for the duration of the writes. A concurrent CAS-submit now
+    // either fully precedes this transaction -- in which case the guard
+    // matches zero rows and we abort without touching any answer -- or waits
+    // until our writes have committed and then scores them. This closes the
+    // race where an autosave that passed its entry checks landed answer
+    // mutations on top of an already-scored SUBMITTED attempt.
+    const guard = await tx.$queryRaw<Array<{ id: string }>>`
+      SELECT id FROM "Attempt" WHERE id = ${attempt.id} AND status = 'IN_PROGRESS' FOR UPDATE
+    `
+    if (guard.length === 0) {
+      // attempt was read before the lock -- its status may be stale here.
+      // Re-read under the lock so the 409 names the ACTUAL current state
+      // (e.g. SUBMITTED after losing a submit race), not the pre-race one.
+      const current = await tx.attempt.findUnique({ where: { id: attempt.id }, select: { status: true } })
+      throw new ConflictError(`Attempt is ${(current?.status ?? attempt.status).toLowerCase()}, cannot autosave`)
     }
 
-    await prisma.attemptAnswer.upsert({
-      where: { attemptId_questionId: { attemptId: attempt.id, questionId: answer.questionId } },
-      update: {
-        selectedOption: answer.selectedAnswer,
-        markedForReview: answer.markedForReview ?? existing?.markedForReview ?? false,
-        visited: answer.visited ?? existing?.visited ?? true,
-        timeSpentMs: answer.timeSpentMs ?? existing?.timeSpentMs ?? 0,
-        answeredAt: answer.selectedAnswer !== null ? new Date() : existing?.answeredAt ?? null,
-        clientSeq,
-      },
-      create: {
-        attemptId: attempt.id,
-        questionId: answer.questionId,
-        section: answer.section,
-        selectedOption: answer.selectedAnswer,
-        markedForReview: answer.markedForReview ?? false,
-        visited: answer.visited ?? true,
-        timeSpentMs: answer.timeSpentMs ?? 0,
-        answeredAt: answer.selectedAnswer !== null ? new Date() : null,
-        clientSeq,
-      },
-    })
-  }
+    for (const answer of answers) {
+      const clientSeq = BigInt(answer.clientSeq ?? 0)
+      const existing = await tx.attemptAnswer.findUnique({
+        where: { attemptId_questionId: { attemptId: attempt.id, questionId: answer.questionId } },
+      })
 
-  return answers.length
+      if (existing && existing.clientSeq > clientSeq) {
+        continue // stale write from an older tab/request; last-write-wins keeps the newer one
+      }
+
+      await tx.attemptAnswer.upsert({
+        where: { attemptId_questionId: { attemptId: attempt.id, questionId: answer.questionId } },
+        update: {
+          selectedOption: answer.selectedAnswer,
+          markedForReview: answer.markedForReview ?? existing?.markedForReview ?? false,
+          visited: answer.visited ?? existing?.visited ?? true,
+          timeSpentMs: answer.timeSpentMs ?? existing?.timeSpentMs ?? 0,
+          answeredAt: answer.selectedAnswer !== null ? new Date() : existing?.answeredAt ?? null,
+          clientSeq,
+        },
+        create: {
+          attemptId: attempt.id,
+          questionId: answer.questionId,
+          section: answer.section,
+          selectedOption: answer.selectedAnswer,
+          markedForReview: answer.markedForReview ?? false,
+          visited: answer.visited ?? true,
+          timeSpentMs: answer.timeSpentMs ?? 0,
+          answeredAt: answer.selectedAnswer !== null ? new Date() : null,
+          clientSeq,
+        },
+      })
+      saved++
+    }
+  }, { timeout: 15_000 })
+
+  return saved
 }
 
 // userId === null is the sweeper's path (worker.ts) -- no owning caller to check against.

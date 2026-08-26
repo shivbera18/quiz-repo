@@ -21,19 +21,32 @@ export interface OutboxRow {
 // would release the lock right after the SELECT, so a second concurrent
 // publisher instance could claim the same "unpublished" rows before the first
 // one finishes sending them to Kafka -- the exact race this pattern exists to
-// prevent. The Kafka send happens between the two halves of the callback,
-// inside the open transaction; that holds the transaction open for the
-// duration of one small batch's publish (bounded by Kafka ack latency), which
-// is an accepted trade for correctness at this scale (one publisher instance
-// per service in this build; the pattern still holds if scaled out later).
+// prevent.
+//
+// markPublished is handed TO the callback rather than being a sibling store
+// method for a subtle but critical reason: the callback body runs INSIDE the
+// store's open interactive transaction, and a store-implemented
+// `markPublished(ids)` method would have no way to receive that transaction's
+// client -- it would execute on the connection pool OUTSIDE the transaction,
+// block on the claim's own FOR UPDATE row locks, and deadlock every batch
+// until Prisma kills the interactive transaction on its timeout. Passing a
+// closure bound to the transaction client makes the "hold the lock until
+// marked" invariant structurally unbreakable by an implementation mistake.
+// The Kafka send happens between the two halves of the callback, inside the
+// open transaction; that holds the transaction open for the duration of one
+// small batch's publish (bounded by Kafka ack latency), which is an accepted
+// trade for correctness at this scale (one publisher instance per service in
+// this build; the pattern still holds if scaled out later).
 export interface OutboxStore {
-  withClaimedBatch: <T>(limit: number, fn: (rows: OutboxRow[]) => Promise<T>) => Promise<T>
-  markPublished: (ids: Array<bigint | number>) => Promise<void>
+  withClaimedBatch: <T>(
+    limit: number,
+    fn: (rows: OutboxRow[], markPublished: (ids: Array<bigint | number>) => Promise<void>) => Promise<T>
+  ) => Promise<T>
 }
 
 export async function publishOutboxBatch(producer: Producer, store: OutboxStore, batchSize = 100): Promise<number> {
   try {
-    return await store.withClaimedBatch(batchSize, async (rows) => {
+    return await store.withClaimedBatch(batchSize, async (rows, markPublished) => {
       if (rows.length === 0) return 0
 
       await producer.sendBatch({
@@ -49,7 +62,7 @@ export async function publishOutboxBatch(producer: Producer, store: OutboxStore,
         })),
       })
 
-      await store.markPublished(rows.map((r) => r.id))
+      await markPublished(rows.map((r) => r.id))
       return rows.length
     })
   } catch (err: any) {

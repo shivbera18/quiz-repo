@@ -18,7 +18,11 @@ export const autosaveAnswerSchema = z.object({
 export type AutosaveAnswer = z.infer<typeof autosaveAnswerSchema>
 
 export const autosaveRequestSchema = z.object({
-  answers: z.array(autosaveAnswerSchema).min(1),
+  // Upper bound keeps one PATCH from doing an unbounded number of sequential
+  // row writes (and from exceeding the interactive transaction's timeout in
+  // assessment's autosave). Real clients save per-question or small dirty
+  // sets; 200 is far above any legitimate quiz size.
+  answers: z.array(autosaveAnswerSchema).min(1).max(200),
 })
 export type AutosaveRequest = z.infer<typeof autosaveRequestSchema>
 
