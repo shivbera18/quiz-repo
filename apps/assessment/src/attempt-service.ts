@@ -222,41 +222,59 @@ export async function autosaveAnswers(prisma: PrismaClient, attemptId: string, u
     throw new ConflictError("Attempt has expired")
   }
 
-  for (const answer of answers) {
-    const clientSeq = BigInt(answer.clientSeq ?? 0)
-    const existing = await prisma.attemptAnswer.findUnique({
-      where: { attemptId_questionId: { attemptId: attempt.id, questionId: answer.questionId } },
-    })
-
-    if (existing && existing.clientSeq > clientSeq) {
-      continue // stale write from an older tab/request; last-write-wins keeps the newer one
+  let saved = 0
+  await prisma.$transaction(async (tx) => {
+    // Serialize against submit (and other autosaves) by taking the attempt
+    // row's lock for the duration of the writes. A concurrent CAS-submit now
+    // either fully precedes this transaction -- in which case the guard
+    // matches zero rows and we abort without touching any answer -- or waits
+    // until our writes have committed and then scores them. This closes the
+    // race where an autosave that passed its entry checks landed answer
+    // mutations on top of an already-scored SUBMITTED attempt.
+    const guard = await tx.$queryRaw<Array<{ id: string }>>`
+      SELECT id FROM "Attempt" WHERE id = ${attempt.id} AND status = 'IN_PROGRESS' FOR UPDATE
+    `
+    if (guard.length === 0) {
+      throw new ConflictError(`Attempt is ${attempt.status.toLowerCase()}, cannot autosave`)
     }
 
-    await prisma.attemptAnswer.upsert({
-      where: { attemptId_questionId: { attemptId: attempt.id, questionId: answer.questionId } },
-      update: {
-        selectedOption: answer.selectedAnswer,
-        markedForReview: answer.markedForReview ?? existing?.markedForReview ?? false,
-        visited: answer.visited ?? existing?.visited ?? true,
-        timeSpentMs: answer.timeSpentMs ?? existing?.timeSpentMs ?? 0,
-        answeredAt: answer.selectedAnswer !== null ? new Date() : existing?.answeredAt ?? null,
-        clientSeq,
-      },
-      create: {
-        attemptId: attempt.id,
-        questionId: answer.questionId,
-        section: answer.section,
-        selectedOption: answer.selectedAnswer,
-        markedForReview: answer.markedForReview ?? false,
-        visited: answer.visited ?? true,
-        timeSpentMs: answer.timeSpentMs ?? 0,
-        answeredAt: answer.selectedAnswer !== null ? new Date() : null,
-        clientSeq,
-      },
-    })
-  }
+    for (const answer of answers) {
+      const clientSeq = BigInt(answer.clientSeq ?? 0)
+      const existing = await tx.attemptAnswer.findUnique({
+        where: { attemptId_questionId: { attemptId: attempt.id, questionId: answer.questionId } },
+      })
 
-  return answers.length
+      if (existing && existing.clientSeq > clientSeq) {
+        continue // stale write from an older tab/request; last-write-wins keeps the newer one
+      }
+
+      await tx.attemptAnswer.upsert({
+        where: { attemptId_questionId: { attemptId: attempt.id, questionId: answer.questionId } },
+        update: {
+          selectedOption: answer.selectedAnswer,
+          markedForReview: answer.markedForReview ?? existing?.markedForReview ?? false,
+          visited: answer.visited ?? existing?.visited ?? true,
+          timeSpentMs: answer.timeSpentMs ?? existing?.timeSpentMs ?? 0,
+          answeredAt: answer.selectedAnswer !== null ? new Date() : existing?.answeredAt ?? null,
+          clientSeq,
+        },
+        create: {
+          attemptId: attempt.id,
+          questionId: answer.questionId,
+          section: answer.section,
+          selectedOption: answer.selectedAnswer,
+          markedForReview: answer.markedForReview ?? false,
+          visited: answer.visited ?? true,
+          timeSpentMs: answer.timeSpentMs ?? 0,
+          answeredAt: answer.selectedAnswer !== null ? new Date() : null,
+          clientSeq,
+        },
+      })
+      saved++
+    }
+  })
+
+  return saved
 }
 
 // userId === null is the sweeper's path (worker.ts) -- no owning caller to check against.
