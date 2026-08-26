@@ -45,9 +45,11 @@ export default function ServiceWorkerRegistration() {
 
   const applyUpdate = () => {
     if (!waitingWorker) return
+    // Reload exactly when the new worker TAKES control -- serviceWorker.ready
+    // can still resolve against the old controller if the swap hasn't
+    // finished yet.
+    navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload(), { once: true })
     waitingWorker.postMessage({ type: 'SKIP_WAITING' })
-    // Reload once the new worker has claimed the page.
-    navigator.serviceWorker.ready.then(() => window.location.reload())
   }
 
   if (!waitingWorker) return null
