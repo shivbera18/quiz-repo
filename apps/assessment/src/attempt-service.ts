@@ -16,6 +16,7 @@ import { createHash } from "node:crypto"
 import type { PrismaClient, Attempt } from "./generated/prisma/index.js"
 import { createEnvelope, TOPICS } from "@quiz/kafka-kit"
 import type { AttemptStartedData, AttemptSubmittedData, AutosaveAnswer } from "@quiz/contracts"
+import { computeSchedulingStatus } from "@quiz/contracts"
 import { fetchFullQuiz } from "./catalog-client.js"
 import { scoreQuiz, type ScoringQuestion } from "./lib/scoring.js"
 import { formatAttemptResult, type SnapshotQuestionWithKey } from "./attempt-result.js"
@@ -129,6 +130,18 @@ export async function startOrResumeAttempt(
   if (!quiz) throw new NotFoundError("Quiz not found")
 
   if (!quiz.isActive) throw new ForbiddenError("This quiz is not active")
+
+  // Schedule window gates STARTING a new attempt only -- an attempt that
+  // began inside the window always finishes (its own expiresAt governs it),
+  // and the resume branch above never reaches this code, so a student whose
+  // exam closed mid-attempt can still resume and submit.
+  const schedulingStatus = computeSchedulingStatus(quiz.startTime, quiz.endTime)
+  if (schedulingStatus === "upcoming") {
+    throw new ForbiddenError(`This exam opens at ${quiz.startTime} -- it has not started yet`)
+  }
+  if (schedulingStatus === "closed") {
+    throw new ForbiddenError("This exam has closed")
+  }
 
   const contentHash = createHash("sha256").update(canonicalQuestionsJson(quiz.questions)).digest("hex")
 
