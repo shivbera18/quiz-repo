@@ -83,6 +83,10 @@ export interface QuizChangedData {
   negativeMarking: boolean
   negativeMarkValue: number
   isActive: boolean
+  /** ISO-8601 instant, or null when the quiz has no scheduled open time. */
+  startTime: string | null
+  /** ISO-8601 instant, or null when the quiz never closes on a schedule. */
+  endTime: string | null
   createdBy: string
   createdAt: string
   updatedAt: string
