@@ -52,6 +52,19 @@ interface SavedAnswer {
   clientSeq?: number
 }
 
+// One autosave PATCH payload, exactly matching the server's autosaveRequestSchema.
+interface PendingSave {
+  questionId: string
+  section: string
+  selectedAnswer: number | null
+  markedForReview: boolean
+  visited: true
+  timeSpentMs: number
+  clientSeq: number
+}
+
+const PENDING_SAVE_FLUSH_MS = 10_000
+
 export default function QuizPage(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
   const [attemptId, setAttemptId] = useState<string | null>(null)
@@ -220,10 +233,60 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
     setCurrentQuestionIndex(newIndex)
   }
 
-  // Autosaves one answer's current state to the server. Fire-and-forget for
-  // ordinary interaction (eventual consistency is fine while the attempt is
-  // still in progress); handleSubmit awaits the final call explicitly so the
-  // last thing the user touched is guaranteed to be scored.
+  // Failed autosaves queue here (latest state per question wins) and are
+  // retried by the periodic flush below and once more before submit -- a
+  // blipped save used to be lost until the user happened to touch that
+  // question again.
+  const pendingSavesRef = useRef<Map<string, PendingSave>>(new Map())
+
+  const sendAnswerSave = async (save: PendingSave): Promise<boolean> => {
+    try {
+      const response = await fetch(`/api/attempts/${attemptId}/answers`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.token || "student-token-placeholder"}`,
+        },
+        body: JSON.stringify({ answers: [save] }),
+      })
+      if (response.ok) return true
+      // A post-expiry autosave returns 409 and flips the attempt to EXPIRED
+      // server-side. Surface it instead of silently discarding the answer,
+      // and do NOT queue for retry -- no save can succeed after expiry.
+      console.warn("Autosave rejected:", response.status)
+      setSubmitError("Your time for this quiz has ended. Submit now to record your answers.")
+      return true // treated as settled so it leaves the retry queue
+    } catch (error) {
+      console.warn("Autosave failed:", error)
+      return false
+    }
+  }
+
+  const flushPendingSaves = async (): Promise<void> => {
+    if (!attemptId) return
+    const saves = [...pendingSavesRef.current.values()]
+    pendingSavesRef.current.clear()
+    for (const save of saves) {
+      // Sequential to preserve per-question ordering; each is re-queued with
+      // its ORIGINAL clientSeq on failure, so server-side stale-write
+      // guarding still sees correct ordering across retries.
+      const ok = await sendAnswerSave(save)
+      if (!ok) pendingSavesRef.current.set(save.questionId, save)
+    }
+  }
+  const flushPendingSavesRef = useRef(flushPendingSaves)
+  useEffect(() => {
+    flushPendingSavesRef.current = flushPendingSaves
+  })
+
+  useEffect(() => {
+    if (!attemptId) return
+    const timer = setInterval(() => {
+      void flushPendingSavesRef.current()
+    }, PENDING_SAVE_FLUSH_MS)
+    return () => clearInterval(timer)
+  }, [attemptId])
+
   const postAnswerSync = (
     questionId: string,
     section: string,
@@ -234,33 +297,19 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
     if (!attemptId) return Promise.resolve()
     const clientSeq = ++clientSeqRef.current
     const timeSpentMs = explicitTimeSpentMs !== undefined ? explicitTimeSpentMs : (questionTimesRef.current[questionId] || 0)
-    return fetch(`/api/attempts/${attemptId}/answers`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${user?.token || "student-token-placeholder"}`,
-      },
-      body: JSON.stringify({
-        answers: [
-          {
-            questionId,
-            section,
-            selectedAnswer,
-            markedForReview,
-            visited: true,
-            timeSpentMs,
-            clientSeq,
-          },
-        ],
-      }),
-    }).then((response) => {
-      // A post-expiry autosave returns 409 and flips the attempt to EXPIRED
-      // server-side. Surface it instead of silently discarding the answer.
-      if (!response.ok) {
-        console.warn("Autosave rejected:", response.status)
-        setSubmitError("Your time for this quiz has ended. Submit now to record your answers.")
-      }
-    }).catch((error) => console.warn("Autosave failed:", error))
+    const save: PendingSave = {
+      questionId,
+      section,
+      selectedAnswer,
+      markedForReview,
+      visited: true,
+      timeSpentMs,
+      clientSeq,
+    }
+    void sendAnswerSave(save).then((ok) => {
+      if (!ok) pendingSavesRef.current.set(questionId, save)
+    })
+    return Promise.resolve()
   }
 
   const handleAnswerChange = (questionId: string, selectedAnswer: number) => {
@@ -363,13 +412,38 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
       setQuestionTimes(questionTimesRef.current)
     }
 
-    // Guarantee the last thing the user touched is persisted before the server
-    // scores the attempt -- every other autosave call is fire-and-forget, but
-    // this one must land first.
+    // Guarantee everything the user touched is persisted before the server
+    // scores: drain queued failed saves first, then explicitly await the final
+    // current-question sync. Ordinary autosaves stay fire-and-forget; these
+    // two must land before submit.
+    await flushPendingSaves()
     if (currentQuestion) {
       const currentAnswer = answers.find((a) => a.questionId === currentQuestion.id)?.selectedAnswer ?? null
       const currentMarked = questionStatuses[currentQuestion.id]?.markedForReview || false
-      await postAnswerSync(currentQuestion.id, currentQuestion.section, currentAnswer, currentMarked, currentQuestionTotalTimeMs)
+      const ok = await sendAnswerSave({
+        questionId: currentQuestion.id,
+        section: currentQuestion.section,
+        selectedAnswer: currentAnswer,
+        markedForReview: currentMarked,
+        visited: true,
+        timeSpentMs: currentQuestionTotalTimeMs,
+        clientSeq: ++clientSeqRef.current,
+      })
+      // If even the final sync could not land (offline), keep it queued: the
+      // user is told to retry submission below, and the retry resends it.
+      if (!ok) {
+        pendingSavesRef.current.set(currentQuestion.id, {
+          questionId: currentQuestion.id,
+          section: currentQuestion.section,
+          selectedAnswer: currentAnswer,
+          markedForReview: currentMarked,
+          visited: true,
+          timeSpentMs: currentQuestionTotalTimeMs,
+          clientSeq: clientSeqRef.current,
+        })
+      } else {
+        pendingSavesRef.current.delete(currentQuestion.id)
+      }
     }
     try {
       const response = await fetch(`/api/attempts/${attemptId}/submit`, {
