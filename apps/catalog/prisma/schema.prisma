@@ -77,6 +77,13 @@ model QuestionBankItem {
   chapter       Chapter? @relation(fields: [chapterId], references: [id])
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  // Hot admin-list filters: section+difficulty equality, newest-first sort,
+  // and per-chapter lookups. Substring search (ILIKE '%..%') cannot use a
+  // btree and remains a scan by design -- see the list route's comment.
+  @@index([section, difficulty])
+  @@index([createdAt])
+  @@index([chapterId])
 }
 
 // Backs POST /v1/ai/quiz-generations (202 Accepted + jobId). The worker writes
