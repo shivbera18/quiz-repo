@@ -357,18 +357,98 @@ async function main() {
 
   // Admin deletions over the derived facts. AttemptFact rows are rebuildable
   // from Kafka, so a consumer-group reset would resurrect deleted history --
-  // accepted trade-off; the legacy table had the same property. DailyRollup
-  // aggregates are deliberately NOT rewritten (same as the legacy table never
-  // rewrote past aggregates).
+  // accepted trade-off; the legacy table had the same property.
+  //
+  // Deleting the fact alone is NOT enough: the section facts, per-user and
+  // per-quiz aggregates, and the unique-user tracker all keep counting the
+  // removed attempt, which is why deleted results kept showing up in admin
+  // stats. recomputeAfterFactDeletion rebuilds those from the SURVIVING facts.
+  // DailyRollup buckets remain historical (never rewritten), as before.
+  async function recomputeAfterFactDeletion(attemptIds: string[], userIds: string[], quizIds: string[]) {
+    if (attemptIds.length > 0) {
+      await prisma.attemptSectionFact.deleteMany({ where: { attemptId: { in: attemptIds } } })
+    }
+
+    for (const userId of userIds) {
+      const facts = await prisma.attemptFact.findMany({
+        where: { userId },
+        orderBy: { submittedAt: "asc" },
+        select: { totalScore: true, timeSpentMs: true, submittedAt: true },
+      })
+      if (facts.length === 0) {
+        await prisma.userStats.deleteMany({ where: { userId } })
+        continue
+      }
+      const scores = facts.map((f) => f.totalScore)
+      const last20 = scores.slice(-20)
+      await prisma.userStats.update({
+        where: { userId },
+        data: {
+          attempts: facts.length,
+          firstAttemptAt: facts[0].submittedAt,
+          lastAttemptAt: facts[facts.length - 1].submittedAt,
+          sumScore: scores.reduce((a, b) => a + b, 0),
+          sumTimeMs: facts.reduce((acc, f) => acc + BigInt(f.timeSpentMs), BigInt(0)),
+          bestScore: Math.max(...scores),
+          avgScore: scores.reduce((a, b) => a + b, 0) / facts.length,
+          last20Scores: last20,
+          last20Avg: last20.reduce((a, b) => a + b, 0) / last20.length,
+        },
+      })
+    }
+
+    for (const quizId of quizIds) {
+      const facts = await prisma.attemptFact.findMany({
+        where: { quizId },
+        select: { userId: true, totalScore: true, timeSpentMs: true },
+      })
+      if (facts.length === 0) {
+        await prisma.quizStats.deleteMany({ where: { quizId } })
+        await prisma.quizUserSeen.deleteMany({ where: { quizId } })
+        continue
+      }
+      const scores = facts.map((f) => f.totalScore)
+      const sumTimeMs = facts.reduce((acc, f) => acc + BigInt(f.timeSpentMs), BigInt(0))
+      const survivingUsers = new Set(facts.map((f) => f.userId))
+      await prisma.quizStats.update({
+        where: { quizId },
+        data: {
+          attempts: facts.length,
+          uniqueUsers: survivingUsers.size,
+          sumScore: scores.reduce((a, b) => a + b, 0),
+          sumTimeMs,
+          avgScore: scores.reduce((a, b) => a + b, 0) / facts.length,
+          avgTimeMs: Math.round(Number(sumTimeMs) / facts.length),
+          bestScore: Math.max(...scores),
+          passCount: scores.filter((s) => s >= 40).length,
+        },
+      })
+      // Drop unique-user markers for users who no longer have any attempt on
+      // this quiz, otherwise uniqueUsers re-inflates on their next attempt.
+      const seen = await prisma.quizUserSeen.findMany({ where: { quizId } })
+      const stale = seen.filter((s) => !survivingUsers.has(s.userId)).map((s) => s.userId)
+      if (stale.length > 0) {
+        await prisma.quizUserSeen.deleteMany({ where: { quizId, userId: { in: stale } } })
+      }
+    }
+
+    await redis.del(
+      keys.cacheAnalyticsOverview(),
+      ...quizIds.map((q) => keys.cacheAnalyticsQuiz(q)),
+      ...userIds.map((u) => keys.cacheAnalyticsUser(u))
+    )
+  }
+
   app.delete("/v1/admin/attempts/:id", async (request, reply) => {
     if (!requireAdmin(request, reply)) return
     const { id } = request.params as { id: string }
+    const fact = await prisma.attemptFact.findFirst({ where: { attemptId: id }, select: { userId: true, quizId: true } })
     const deleted = await prisma.attemptFact.deleteMany({ where: { attemptId: id } })
     if (deleted.count === 0) {
       reply.code(404)
       return { message: "Result not found" }
     }
-    await redis.del(keys.cacheAnalyticsOverview())
+    if (fact) await recomputeAfterFactDeletion([id], [fact.userId], [fact.quizId])
     return { message: "Quiz result deleted successfully", deletedId: id }
   })
 
@@ -376,14 +456,18 @@ async function main() {
     if (!requireAdmin(request, reply)) return
     const { userId } = request.params as { userId: string }
     const quizId = (request.query as { quizId?: string }).quizId
-    const deleted = await prisma.attemptFact.deleteMany({
-      where: quizId ? { userId, quizId } : { userId },
-    })
+    const where = quizId ? { userId, quizId } : { userId }
+    const doomed = await prisma.attemptFact.findMany({ where, select: { attemptId: true, quizId: true } })
+    const deleted = await prisma.attemptFact.deleteMany({ where })
     if (deleted.count === 0) {
       reply.code(404)
       return { message: "No results found for this user" }
     }
-    await redis.del(keys.cacheAnalyticsOverview())
+    await recomputeAfterFactDeletion(
+      doomed.map((d) => d.attemptId),
+      [userId],
+      [...new Set(doomed.map((d) => d.quizId))]
+    )
     return { message: "User results deleted successfully", deletedCount: deleted.count }
   })
 
