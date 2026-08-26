@@ -233,9 +233,10 @@ async function main() {
       prisma.dimUser.findUnique({ where: { userId: id } }),
       prisma.attemptFact.findMany({ where: { userId: id }, orderBy: { submittedAt: "desc" } }),
     ])
-    if (!stats) {
+    if (!stats && facts.length === 0 && !user) {
+      // Genuinely unknown user (no dimension, no stats, no facts).
       reply.code(404)
-      return { message: "No stats yet for this user" }
+      return { message: "User not found" }
     }
 
     // quizPerformance matches the admin modal's per-quiz breakdown shape.
@@ -261,14 +262,34 @@ async function main() {
     }))
 
     return {
-      stats,
+      // UserStats.sumTimeMs is a BigInt column and BigInt is NOT
+      // JSON-serializable -- returning the raw Prisma row made Fastify throw
+      // "Do not know how to serialize a BigInt", so this endpoint 500'd for
+      // every user who HAD stats (and 404'd for those who didn't). Serialize
+      // explicitly, and treat a missing row as a zeroed empty state.
+      stats: {
+        userId: id,
+        attempts: stats?.attempts ?? 0,
+        firstAttemptAt: stats?.firstAttemptAt ?? null,
+        lastAttemptAt: stats?.lastAttemptAt ?? null,
+        sumScore: stats?.sumScore ?? 0,
+        sumTimeMs: Number(stats?.sumTimeMs ?? 0),
+        bestScore: stats?.bestScore ?? null,
+        avgScore: stats?.avgScore ?? null,
+        last20Scores: stats?.last20Scores ?? [],
+        last20Avg: stats?.last20Avg ?? null,
+        currentStreakDays: stats?.currentStreakDays ?? 0,
+        longestStreakDays: stats?.longestStreakDays ?? 0,
+        lastActiveDate: stats?.lastActiveDate ?? null,
+        updatedAt: stats?.updatedAt ?? new Date(),
+      },
       activity,
       user: {
         id,
         name: user?.name ?? "Unknown User",
         email: user?.email ?? "",
-        totalQuizzes: stats.attempts,
-        averageScore: stats.avgScore != null ? Math.round(stats.avgScore) : 0,
+        totalQuizzes: stats?.attempts ?? 0,
+        averageScore: stats?.avgScore != null ? Math.round(stats.avgScore) : 0,
       },
       quizPerformance,
     }
@@ -368,6 +389,10 @@ async function main() {
     if (attemptIds.length > 0) {
       await prisma.attemptSectionFact.deleteMany({ where: { attemptId: { in: attemptIds } } })
     }
+    // reduce instead of Math.max(...scores): a popular quiz can have tens of
+    // thousands of facts and spreading them blows the call stack.
+    const maxOf = (values: number[]) => values.reduce((max, v) => (v > max ? v : max), Number.NEGATIVE_INFINITY)
+    const sumOf = (values: number[]) => values.reduce((a, b) => a + b, 0)
 
     for (const userId of userIds) {
       const facts = await prisma.attemptFact.findMany({
@@ -381,19 +406,23 @@ async function main() {
       }
       const scores = facts.map((f) => f.totalScore)
       const last20 = scores.slice(-20)
-      await prisma.userStats.update({
+      const recomputed = {
+        attempts: facts.length,
+        firstAttemptAt: facts[0].submittedAt,
+        lastAttemptAt: facts[facts.length - 1].submittedAt,
+        sumScore: sumOf(scores),
+        sumTimeMs: facts.reduce((acc, f) => acc + BigInt(f.timeSpentMs), BigInt(0)),
+        bestScore: maxOf(scores),
+        avgScore: sumOf(scores) / facts.length,
+        last20Scores: last20,
+        last20Avg: sumOf(last20) / last20.length,
+      }
+      // upsert, not update: the stats row can legitimately be absent (erased
+      // user, earlier cascade) and update would throw P2025 mid-cleanup.
+      await prisma.userStats.upsert({
         where: { userId },
-        data: {
-          attempts: facts.length,
-          firstAttemptAt: facts[0].submittedAt,
-          lastAttemptAt: facts[facts.length - 1].submittedAt,
-          sumScore: scores.reduce((a, b) => a + b, 0),
-          sumTimeMs: facts.reduce((acc, f) => acc + BigInt(f.timeSpentMs), BigInt(0)),
-          bestScore: Math.max(...scores),
-          avgScore: scores.reduce((a, b) => a + b, 0) / facts.length,
-          last20Scores: last20,
-          last20Avg: last20.reduce((a, b) => a + b, 0) / last20.length,
-        },
+        update: recomputed,
+        create: { userId, ...recomputed },
       })
     }
 
@@ -410,18 +439,21 @@ async function main() {
       const scores = facts.map((f) => f.totalScore)
       const sumTimeMs = facts.reduce((acc, f) => acc + BigInt(f.timeSpentMs), BigInt(0))
       const survivingUsers = new Set(facts.map((f) => f.userId))
-      await prisma.quizStats.update({
+      const recomputed = {
+        attempts: facts.length,
+        uniqueUsers: survivingUsers.size,
+        sumScore: sumOf(scores),
+        sumTimeMs,
+        avgScore: sumOf(scores) / facts.length,
+        avgTimeMs: Math.round(Number(sumTimeMs) / facts.length),
+        bestScore: maxOf(scores),
+        // Same pass threshold the rollup consumer applies on ingest.
+        passCount: scores.filter((s) => s >= 40).length,
+      }
+      await prisma.quizStats.upsert({
         where: { quizId },
-        data: {
-          attempts: facts.length,
-          uniqueUsers: survivingUsers.size,
-          sumScore: scores.reduce((a, b) => a + b, 0),
-          sumTimeMs,
-          avgScore: scores.reduce((a, b) => a + b, 0) / facts.length,
-          avgTimeMs: Math.round(Number(sumTimeMs) / facts.length),
-          bestScore: Math.max(...scores),
-          passCount: scores.filter((s) => s >= 40).length,
-        },
+        update: recomputed,
+        create: { quizId, ...recomputed },
       })
       // Drop unique-user markers for users who no longer have any attempt on
       // this quiz, otherwise uniqueUsers re-inflates on their next attempt.
