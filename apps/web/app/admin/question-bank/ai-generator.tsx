@@ -17,6 +17,8 @@ interface AIGeneratedQuestion {
   correctAnswer: number
   explanation: string
   tags: string[]
+  section: string
+  difficulty: 'easy' | 'medium' | 'hard'
 }
 
 interface AIQuestionGeneratorProps {

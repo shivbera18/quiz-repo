@@ -94,7 +94,15 @@ export default function AdminPage() {
   const [showQuizForm, setShowQuizForm] = useState(false)
   const [showAIQuizGenerator, setShowAIQuizGenerator] = useState(false)
   const [selectedAdminTab, setSelectedAdminTab] = useState("overview")
-  const [analytics, setAnalytics] = useState({
+  const [analytics, setAnalytics] = useState<{
+    totalUsers: number
+    totalAttempts: number
+    totalQuizzes: number
+    activeQuizzes: number
+    totalQuestions: number
+    averageScore: number
+    recentActivity: AnalyticsResult[]
+  }>({
     totalUsers: 0,
     totalAttempts: 0,
     totalQuizzes: 0,
@@ -883,7 +891,7 @@ export default function AdminPage() {
                         <div className="min-w-0 flex-1 mr-3">
                           <div className="font-bold truncate">{activity.quizName || 'Unknown Quiz'}</div>
                           <div className="text-sm text-muted-foreground font-medium">
-                            Score: {fmtPct(activity.totalScore || 0)} • {new Date(activity.date || activity.createdAt).toLocaleDateString()}
+                            Score: {fmtPct(activity.totalScore || 0)} • {new Date(activity.date || activity.createdAt || Date.now()).toLocaleDateString()}
                           </div>
                         </div>
                         <Badge className={cn(
