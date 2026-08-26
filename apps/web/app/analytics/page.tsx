@@ -6,38 +6,11 @@ import { RefreshCw } from "lucide-react"
 import StudentAnalytics from "@/components/student-analytics"
 import { useAuth } from "@/hooks/use-auth"
 import { MobilePageHeader } from "@/components/layout/mobile-page-header"
-
-interface AttemptSummary {
-  attemptId: string
-}
-
-interface AnalyticsResult {
-  _id: string
-  date: string
-  quizName: string
-  quizId: string
-  totalScore: number
-  correctAnswers: number
-  wrongAnswers: number
-  unanswered: number
-  timeSpent: number
-  sections: Record<string, number>
-  answers: Array<{
-    questionId: string
-    selectedAnswer: number | null
-    isCorrect: boolean
-    section?: string
-    question?: string
-    options?: string[]
-    correctAnswer?: number
-    timeSpent?: number
-    isUnanswered?: boolean
-  }>
-}
+import { fetchAttemptHistory, type AttemptHistoryItem } from "@/lib/attempt-history"
 
 export default function AnalyticsPage() {
   const { user } = useAuth()
-  const [results, setResults] = useState<AnalyticsResult[]>([])
+  const [results, setResults] = useState<AttemptHistoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -45,22 +18,14 @@ export default function AnalyticsPage() {
     if (!user) return
     setRefreshing(true)
     try {
-      const attemptsResponse = await fetch(`/api/attempts?status=SUBMITTED&_t=${Date.now()}`, {
-        headers: { Authorization: `Bearer ${user.token || "student-token-placeholder"}` }
+      // One enriched-list call: scores and the per-section breakdown are
+      // persisted on each attempt at scoring time, so no per-attempt result
+      // fetches are needed here.
+      const items = await fetchAttemptHistory(user.token || "student-token-placeholder", {
+        status: "SUBMITTED",
+        limit: 100,
       })
-      if (!attemptsResponse.ok) throw new Error("Failed to fetch submitted attempts")
-      const attemptsData = await attemptsResponse.json()
-      const attempts = (attemptsData.attempts || []) as AttemptSummary[]
-      const results = await Promise.all(attempts.map(async ({ attemptId }) => {
-        const response = await fetch(`/api/attempts/${attemptId}/result`, {
-          headers: { Authorization: `Bearer ${user.token || "student-token-placeholder"}` }
-        })
-        if (!response.ok) throw new Error(`Failed to fetch result ${attemptId}`)
-        const data = await response.json()
-        const result = data.result
-        return { ...result, answers: result.questions || [] } as AnalyticsResult
-      }))
-      setResults(results)
+      setResults(items)
     } catch (error) {
       console.error("Failed to fetch analytics:", error)
     } finally {

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/hooks/use-auth"
+import { fetchAttemptHistory, type AttemptHistoryItem } from "@/lib/attempt-history"
 import { FlashQuestions } from "@/components/flash-questions"
 import { staggerContainer, staggerItem } from "@/components/page-transition"
 
@@ -21,19 +22,6 @@ import {
   Zap,
   ArrowRight
 } from "lucide-react"
-
-interface RecentAttempt {
-  attemptId: string
-  quizId: string
-  status: string
-  startedAt: string
-  submittedAt: string | null
-  totalScore: number | null
-  correctCount: number | null
-  wrongCount: number | null
-  unansweredCount: number | null
-  timeSpentMs: number | null
-}
 
 interface DashboardQuestionItem {
   id?: string
@@ -56,8 +44,8 @@ interface Quiz {
 export default function DashboardPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const [recentAttempts, setRecentAttempts] = useState<RecentAttempt[]>([])
-  const [allAttempts, setAllAttempts] = useState<RecentAttempt[]>([])
+  const [recentAttempts, setRecentAttempts] = useState<AttemptHistoryItem[]>([])
+  const [allAttempts, setAllAttempts] = useState<AttemptHistoryItem[]>([])
   const [availableQuizzes, setAvailableQuizzes] = useState<Quiz[]>([])
   const [loadingAttempts, setLoadingAttempts] = useState(true)
   const [showFlashQuestions, setShowFlashQuestions] = useState(false)
@@ -145,17 +133,12 @@ export default function DashboardPage() {
     if (!loading && user) {
       const fetchAttempts = async () => {
         try {
-          const response = await fetch("/api/attempts?status=SUBMITTED&limit=100", {
-            headers: {
-              Authorization: `Bearer ${user.token || "student-token-placeholder"}`,
-              "Cache-Control": "no-cache, no-store, must-revalidate",
-            },
+          const enriched = await fetchAttemptHistory(user.token || "student-token-placeholder", {
+            status: "SUBMITTED",
+            limit: 100,
           })
-          if (!response.ok) throw new Error("Failed to fetch attempts")
-          const data = await response.json()
-          const attempts = data.attempts || []
-          setAllAttempts(attempts)
-          setRecentAttempts(attempts.slice(0, 5))
+          setAllAttempts(enriched)
+          setRecentAttempts(enriched.slice(0, 5))
         } catch (error) {
           console.error("Failed to fetch attempts:", error)
           setAllAttempts([])

@@ -12,29 +12,12 @@ import { Calendar, TrendingUp, Eye, Search, Filter, ArrowLeft, Clock, Target, Bo
 import { useAuth } from "@/hooks/use-auth"
 import { MobilePageHeader } from "@/components/layout/mobile-page-header"
 import { staggerContainer, staggerItem } from "@/components/page-transition"
-
-interface HistoryAttempt {
-  _id: string
-  date: string
-  quizName: string
-  quizId: string
-  totalScore: number
-  rawScore?: number
-  correctAnswers: number
-  wrongAnswers: number
-  unanswered: number
-  timeSpent: number
-  sections: {
-    reasoning: number
-    quantitative: number
-    english: number
-  }
-}
+import { fetchAttemptHistory, type AttemptHistoryItem } from "@/lib/attempt-history"
 
 export default function HistoryPage() {
   const { user, loading: authLoading } = useAuth()
-  const [attempts, setAttempts] = useState<HistoryAttempt[]>([])
-  const [filteredAttempts, setFilteredAttempts] = useState<HistoryAttempt[]>([])
+  const [attempts, setAttempts] = useState<AttemptHistoryItem[]>([])
+  const [filteredAttempts, setFilteredAttempts] = useState<AttemptHistoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [scoreFilter, setScoreFilter] = useState("all")
@@ -45,83 +28,18 @@ export default function HistoryPage() {
       // Fetch attempts from API
       const fetchAttempts = async () => {
         try {
-          const response = await fetch("/api/attempts?status=SUBMITTED&limit=100", {
-            headers: {
-              Authorization: `Bearer ${user.token || "student-token-placeholder"}`,
-              "Cache-Control": "no-cache, no-store, must-revalidate",
-            },
+          const enriched = await fetchAttemptHistory(user.token || "student-token-placeholder", {
+            status: "SUBMITTED",
+            limit: 100,
           })
-          
-          if (response.ok) {
-            const data = await response.json()
-            const attemptSummaries = (data.attempts || []) as Array<{
-              attemptId: string
-              quizId: string
-              status: string
-              submittedAt: string
-              totalScore: number
-              correctCount: number
-              wrongCount: number
-              unansweredCount: number
-              timeSpentMs: number
-            }>
-
-            const enriched = await Promise.all(
-              attemptSummaries.map(async (att) => {
-                try {
-                  const res = await fetch(`/api/attempts/${att.attemptId}/result`, {
-                    headers: { Authorization: `Bearer ${user.token || "student-token-placeholder"}` },
-                  })
-                  if (res.ok) {
-                    const resJson = await res.json()
-                    const r = resJson.result
-                    return {
-                      _id: r._id,
-                      quizId: r.quizId,
-                      quizName: r.quizName,
-                      date: r.date,
-                      timeSpent: r.timeSpent,
-                      totalScore: r.totalScore,
-                      correctAnswers: r.correctAnswers,
-                      wrongAnswers: r.wrongAnswers,
-                      unanswered: r.unanswered,
-                      sections: r.sections || { reasoning: 0, quantitative: 0, english: 0 },
-                    } as HistoryAttempt
-                  }
-                } catch {}
-                return {
-                  _id: att.attemptId,
-                  quizId: att.quizId,
-                  quizName: "Quiz Attempt",
-                  date: att.submittedAt,
-                  timeSpent: Math.round((att.timeSpentMs || 0) / 1000),
-                  totalScore: att.totalScore || 0,
-                  correctAnswers: att.correctCount || 0,
-                  wrongAnswers: att.wrongCount || 0,
-                  unanswered: att.unansweredCount || 0,
-                  sections: { reasoning: 0, quantitative: 0, english: 0 },
-                } as HistoryAttempt
-              })
-            )
-            setAttempts(enriched)
-            setFilteredAttempts(enriched)
-          } else {
-            // Fallback to localStorage
-            const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
-            setAttempts(results)
-            setFilteredAttempts(results)
-          }
+          setAttempts(enriched)
         } catch (error) {
           console.error("Failed to fetch attempts:", error)
-          // Fallback to localStorage
-          const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
-          setAttempts(results)
-          setFilteredAttempts(results)
+          setAttempts([])
         } finally {
           setLoading(false)
         }
       }
-
       fetchAttempts()
     }
   }, [authLoading, user])
@@ -444,6 +362,14 @@ export default function HistoryPage() {
                           <Button variant="neobrutalist" size="sm" className="font-bold">
                             <Eye className="h-4 w-4 mr-2" />
                             Details
+                          </Button>
+                        </Link>
+                      )}
+                      {attempt.quizId && attempt.quizNameKnown && (
+                        <Link href={`/quiz/${attempt.quizId}`}>
+                          <Button variant="neobrutalist" size="sm" className="font-bold bg-yellow-300 text-black hover:bg-yellow-400">
+                            <TrendingUp className="h-4 w-4 mr-2" />
+                            Retake
                           </Button>
                         </Link>
                       )}
