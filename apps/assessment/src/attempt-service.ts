@@ -67,48 +67,53 @@ export async function startOrResumeAttempt(
   clientIdemKey: string | undefined
 ) {
   const now = new Date()
-  const quiz = await fetchFullQuiz(quizId)
-  if (!quiz) throw new NotFoundError("Quiz not found")
 
   // Resume an existing, still-valid in-progress attempt rather than starting a
   // second one -- this is also what the attempt_one_inflight partial unique
   // index enforces at the database level.
+  //
+  // The resume lookup deliberately happens BEFORE the catalog fetch: a live
+  // attempt must be resumable even when catalog-svc is down or the quiz was
+  // deleted, because the frozen snapshot already contains everything needed
+  // to serve it -- which is the entire point of the snapshot design. The
+  // catalog round trip below runs only when a NEW attempt (and possibly a new
+  // snapshot) is actually required.
   const existing = await prisma.attempt.findFirst({
     where: { userId: user.userId, quizId, status: "IN_PROGRESS" },
   })
 
-  if (existing) {
-    if (existing.expiresAt > now) {
-      const [snapshot, savedAnswers] = await Promise.all([
-        prisma.attemptSnapshot.findUniqueOrThrow({ where: { id: existing.snapshotId } }),
-        prisma.attemptAnswer.findMany({ where: { attemptId: existing.id } }),
-      ])
-      const questions = stripAnswerKey(snapshot.questions as unknown as SnapshotQuestion[])
-      return {
-        attemptId: existing.id,
-        quizId: existing.quizId,
-        quizTitle: snapshot.quizTitle,
-        resumed: true,
-        startedAt: existing.startedAt,
-        expiresAt: existing.expiresAt,
-        serverTime: now,
-        remainingMs: Math.max(0, existing.expiresAt.getTime() - now.getTime()),
-        timeLimitSec: snapshot.timeLimitSec,
-        negativeMarking: existing.negativeMarking,
-        negativeMarkValue: existing.negativeMarkValue,
-        sections: snapshot.sections as unknown as string[],
-        questions,
-        savedAnswers: savedAnswers.map((a) => ({
-          questionId: a.questionId,
-          selectedAnswer: a.selectedOption,
-          markedForReview: a.markedForReview,
-          visited: a.visited,
-          timeSpentMs: a.timeSpentMs,
-          clientSeq: Number(a.clientSeq),
-        })),
-      }
+  if (existing && existing.expiresAt > now) {
+    const [snapshot, savedAnswers] = await Promise.all([
+      prisma.attemptSnapshot.findUniqueOrThrow({ where: { id: existing.snapshotId } }),
+      prisma.attemptAnswer.findMany({ where: { attemptId: existing.id } }),
+    ])
+    const questions = stripAnswerKey(snapshot.questions as unknown as SnapshotQuestion[])
+    return {
+      attemptId: existing.id,
+      quizId: existing.quizId,
+      quizTitle: snapshot.quizTitle,
+      resumed: true,
+      startedAt: existing.startedAt,
+      expiresAt: existing.expiresAt,
+      serverTime: now,
+      remainingMs: Math.max(0, existing.expiresAt.getTime() - now.getTime()),
+      timeLimitSec: snapshot.timeLimitSec,
+      negativeMarking: existing.negativeMarking,
+      negativeMarkValue: existing.negativeMarkValue,
+      sections: snapshot.sections as unknown as string[],
+      questions,
+      savedAnswers: savedAnswers.map((a) => ({
+        questionId: a.questionId,
+        selectedAnswer: a.selectedOption,
+        markedForReview: a.markedForReview,
+        visited: a.visited,
+        timeSpentMs: a.timeSpentMs,
+        clientSeq: Number(a.clientSeq),
+      })),
     }
+  }
 
+  if (existing) {
     // Expired but never swept -- transition it out of the way before starting a
     // new one. Conditional on status so a submit that won the CAS between our
     // findFirst and this write cannot be clobbered from SUBMITTED back to
@@ -119,6 +124,9 @@ export async function startOrResumeAttempt(
       data: { status: "EXPIRED" },
     })
   }
+
+  const quiz = await fetchFullQuiz(quizId)
+  if (!quiz) throw new NotFoundError("Quiz not found")
 
   if (!quiz.isActive) throw new ForbiddenError("This quiz is not active")
 
