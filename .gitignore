@@ -48,6 +48,7 @@ yarn-error.log*
 # impossible instead of one exception line away from happening again.
 .env*
 !.env.example
+!.env.local.example
 !.env.production.example
 !infra/.env.example
 
