@@ -712,9 +712,9 @@ async function main() {
       return { message: "Unauthorized" }
     }
     const { title, sections, difficulty, questionsPerSection } = (request.body as any) ?? {}
-    if (!title || typeof title !== "string" || title.trim().length < 3 || title.trim().length > 200) {
+    if (!title || typeof title !== "string" || title.trim().length < 1 || title.trim().length > 200) {
       reply.code(400)
-      return { message: "title is required (3-200 chars)" }
+      return { message: "title is required (1-200 chars)" }
     }
     if (!Array.isArray(sections) || sections.length === 0 || sections.length > 5) {
       reply.code(400)
