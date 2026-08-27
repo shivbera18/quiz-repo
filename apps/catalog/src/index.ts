@@ -705,24 +705,46 @@ async function main() {
 
   // --------------------------------------------------------------------------- AI
   app.post("/v1/ai/quiz-generations", async (request, reply) => {
+    if (!requireAdmin(request, reply)) return
     const userId = getUserId(request)
     if (!userId) {
       reply.code(401)
       return { message: "Unauthorized" }
     }
     const { title, sections, difficulty, questionsPerSection } = (request.body as any) ?? {}
-    if (!title || !Array.isArray(sections) || sections.length === 0) {
+    if (!title || typeof title !== "string" || title.trim().length < 1 || title.trim().length > 200) {
       reply.code(400)
-      return { message: "title and a non-empty sections array are required" }
+      return { message: "title is required (1-200 chars)" }
+    }
+    if (!Array.isArray(sections) || sections.length === 0 || sections.length > 5) {
+      reply.code(400)
+      return { message: "sections must be a non-empty array (max 5)" }
+    }
+    for (const s of sections) {
+      if (typeof s !== "string" || s.trim().length === 0 || s.trim().length > 100) {
+        reply.code(400)
+        return { message: "each section must be a non-empty string (max 100 chars)" }
+      }
+    }
+    const allowedDifficulties = ["easy", "medium", "hard"]
+    const normalizedDifficulty = difficulty || "medium"
+    if (!allowedDifficulties.includes(normalizedDifficulty)) {
+      reply.code(400)
+      return { message: "difficulty must be one of easy, medium, hard" }
+    }
+    const normalizedCount = questionsPerSection ?? 10
+    if (typeof normalizedCount !== "number" || !Number.isInteger(normalizedCount) || normalizedCount < 1 || normalizedCount > 20) {
+      reply.code(400)
+      return { message: "questionsPerSection must be an integer 1-20" }
     }
 
     const job = await prisma.aiGenerationJob.create({
       data: {
         requestedBy: userId,
-        title,
-        sections: JSON.stringify(sections),
-        difficulty: difficulty || "medium",
-        questionsPerSection: questionsPerSection || 10,
+        title: title.trim(),
+        sections: JSON.stringify(sections.map((s: string) => s.trim())),
+        difficulty: normalizedDifficulty,
+        questionsPerSection: normalizedCount,
         status: "pending",
       },
     })
@@ -731,10 +753,10 @@ async function main() {
       const payload: AiQuizGenerationRequestedData = {
         jobId: job.id,
         requestedBy: userId,
-        title,
-        sections,
-        difficulty: difficulty || "medium",
-        questionsPerSection: questionsPerSection || 10,
+        title: title.trim(),
+        sections: sections.map((s: string) => s.trim()),
+        difficulty: normalizedDifficulty,
+        questionsPerSection: normalizedCount,
       }
       const envelope = createEnvelope(TOPICS.AI_QUIZ_GENERATION_REQUESTED, payload, {
         producer: "catalog-svc",
@@ -752,13 +774,41 @@ async function main() {
   })
 
   app.get("/v1/ai/quiz-generations/:jobId", async (request, reply) => {
+    const callerId = getUserId(request)
+    if (!callerId) {
+      reply.code(401)
+      return { message: "Unauthorized" }
+    }
     const { jobId } = request.params as { jobId: string }
     const job = await prisma.aiGenerationJob.findUnique({ where: { id: jobId } })
     if (!job) {
       reply.code(404)
       return { message: "Job not found" }
     }
-    return job
+    const isAdmin = request.headers["x-user-is-admin"] === "true"
+    if (job.requestedBy !== callerId && !isAdmin) {
+      reply.code(403)
+      return { message: "Forbidden" }
+    }
+    // Strip answer keys from polling response -- partialQuestions contains
+    // correctAnswer/explanation which must never leak to non-owners and
+    // should not be the API's default shape.
+    const raw = (job.partialQuestions as Record<string, Array<Record<string, unknown>>>) ?? {}
+    const sanitized: Record<string, unknown[]> = {}
+    for (const [section, qs] of Object.entries(raw)) {
+      if (!Array.isArray(qs)) continue
+      sanitized[section] = qs.map((q) => ({
+        id: q.id,
+        section: q.section,
+        question: q.question,
+        options: q.options,
+        tags: q.tags,
+      }))
+    }
+    return {
+      ...job,
+      partialQuestions: sanitized,
+    }
   })
 
   const kafkaClient = createKafka("catalog-svc")

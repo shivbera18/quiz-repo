@@ -109,7 +109,8 @@ async function main() {
   // Bulk per-quiz stats for the admin quiz list -- catalog-svc's
   // /v1/admin/quizzes intentionally dropped attempts/avgScore/avgTime (see
   // its own route comment); this is where the admin UI fetches them back in.
-  app.get("/v1/analytics/quizzes", async (request) => {
+  app.get("/v1/analytics/quizzes", async (request, reply) => {
+    if (!requireAdmin(request, reply)) return
     const { ids } = request.query as { ids?: string }
     const quizIds = ids ? ids.split(",").filter(Boolean) : undefined
     const rows = await prisma.quizStats.findMany({ where: quizIds ? { quizId: { in: quizIds } } : undefined })
@@ -231,6 +232,7 @@ async function main() {
   })
 
   app.get("/v1/analytics/quizzes/:id", async (request, reply) => {
+    if (!requireAdmin(request, reply)) return
     const { id } = request.params as { id: string }
     const [stats, sections, questions] = await Promise.all([
       prisma.quizStats.findUnique({ where: { quizId: id } }),

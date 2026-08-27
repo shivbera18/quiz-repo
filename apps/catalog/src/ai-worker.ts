@@ -124,7 +124,7 @@ async function main() {
               timeLimit: 30,
               sections: JSON.stringify(sections),
               questions: JSON.stringify(allQuestions),
-              isActive: status === "succeeded", // partial results land as an isActive:false draft for admin review
+              isActive: false, // all AI quizzes land as inactive drafts for admin review (never auto-publish)
               createdBy: requestedBy,
               negativeMarking: true,
               negativeMarkValue: 0.25,

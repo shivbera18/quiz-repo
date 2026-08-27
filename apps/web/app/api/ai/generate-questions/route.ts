@@ -6,6 +6,20 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = request.headers.get("authorization")
+    if (!auth?.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    // Token shape check: opaque token must be `${userId}-${timestamp}-${random}` with 30d max age.
+    // Full validation still requires identity-svc introspection (gateway does it); this is a
+    // defense-in-depth format check so obviously forged `Bearer x` doesn't hit Gemini.
+    const token = auth.slice("Bearer ".length).trim()
+    if (token.length < 10 || (token.match(/-/g) || []).length < 2) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    // Known gap: direct Gemini routes still bypass gateway rate-limiting (aiGenByUser 5/h).
+    // Full fix is to proxy through gateway/catalog-svc job queue; tracked as follow-up.
+    // This route is now auth-gated and capped (1-20) as interim mitigation.
     const { topic, difficulty, count, section } = await request.json()
 
     if (!topic || !difficulty || !count || !section) {
@@ -13,6 +27,19 @@ export async function POST(request: NextRequest) {
         { error: 'Missing required fields: topic, difficulty, count, section' },
         { status: 400 }
       )
+    }
+    if (typeof count !== "number" || !Number.isInteger(count) || count < 1 || count > 20) {
+      return NextResponse.json({ error: "count must be an integer 1-20" }, { status: 400 })
+    }
+    if (typeof topic !== "string" || topic.trim().length < 2 || topic.trim().length > 200) {
+      return NextResponse.json({ error: "topic must be 2-200 chars" }, { status: 400 })
+    }
+    if (typeof section !== "string" || section.trim().length < 1 || section.trim().length > 100) {
+      return NextResponse.json({ error: "section must be 1-100 chars" }, { status: 400 })
+    }
+    const allowed = ["easy", "medium", "hard"]
+    if (!allowed.includes(difficulty)) {
+      return NextResponse.json({ error: "difficulty must be one of easy, medium, hard" }, { status: 400 })
     }
 
     if (!process.env.GEMINI_API_KEY) {

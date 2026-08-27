@@ -2,12 +2,28 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = request.headers.get("authorization")
+    if (!auth?.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    const token = auth.slice("Bearer ".length).trim()
+    if (token.length < 10 || (token.match(/-/g) || []).length < 2) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    // Known gap: still bypasses gateway aiGenByUser rate limit; see generate-questions route.
     const { prompt, operation, difficulty, count } = await request.json()
+    const normalizedCount = count ?? 10
+    if (typeof normalizedCount !== "number" || !Number.isInteger(normalizedCount) || normalizedCount < 1 || normalizedCount > 20) {
+      return NextResponse.json({ error: "count must be an integer 1-20" }, { status: 400 })
+    }
+    if (operation && !["Addition", "Subtraction", "Multiplication", "Division"].includes(operation)) {
+      return NextResponse.json({ error: "invalid operation" }, { status: 400 })
+    }
 
     // Try Gemini API first if API key is available
     if (process.env.GEMINI_API_KEY) {
       try {
-        const questions = await generateWithGemini(prompt, operation, difficulty, count)
+        const questions = await generateWithGemini(prompt, operation, difficulty, normalizedCount)
         return NextResponse.json({ questions })
       } catch (geminiError) {
         console.error('Gemini API failed, falling back to local generation:', geminiError)
@@ -15,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Fallback to local generation
-    const questions = generateLocalQuestions(operation, difficulty, count)
+    const questions = generateLocalQuestions(operation, difficulty, normalizedCount)
     
     return NextResponse.json({ questions })
   } catch (error) {
@@ -33,6 +49,7 @@ async function generateWithGemini(prompt: string, operation: string, difficulty:
   if (!apiKey) {
     throw new Error('Gemini API key not found')
   }
+  if (count < 1 || count > 20) throw new Error("count must be 1-20")
 
   const enhancedPrompt = `Generate ${count} ${operation.toLowerCase()} problems for ${difficulty} numbers. 
 For each problem, provide 4 multiple choice options where exactly one is correct.
@@ -50,10 +67,11 @@ Return ONLY a JSON array in this exact format:
 Make sure the correct answer appears in the options array and correctOptionIndex points to it.
 Keep numbers reasonable for mental math practice.`
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey,
     },
     body: JSON.stringify({
       contents: [{
