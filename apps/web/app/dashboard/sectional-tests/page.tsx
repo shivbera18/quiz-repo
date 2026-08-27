@@ -6,6 +6,7 @@ import { QuizList } from "@/components/quiz/quiz-list"
 import { QuizFilters } from "@/components/quiz/quiz-filters"
 import { MobilePageHeader } from "@/components/layout/mobile-page-header"
 
+type SchedulingStatus = "available" | "upcoming" | "closed"
 interface Quiz {
   id: string
   title: string
@@ -14,6 +15,9 @@ interface Quiz {
   sectionNames: string[]
   questionCount: number
   isActive: boolean
+  startTime?: string | null
+  endTime?: string | null
+  schedulingStatus?: SchedulingStatus
 }
 
 interface QuizAttemptSummary {
