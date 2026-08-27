@@ -5,28 +5,13 @@ import { useRouter } from "next/navigation";
 import { ArrowRight as ArrowRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import Trophy from "../svgs/Trophy";
 import Image from "next/image";
-
-interface Testimonial {
-    name: string;
-    image: string;
-}
-
-const testimonials: Testimonial[] = [
-    { name: "Priya S.", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=faces" },
-    { name: "Rajesh K.", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=faces" },
-    { name: "Anjali G.", image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=faces" },
-    { name: "Vikram S.", image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=faces" },
-    { name: "Sneha P.", image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=faces" },
-    { name: "Arun M.", image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&crop=faces" },
-    { name: "Meera R.", image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=faces" },
-];
 
 export default function HeroSection() {
     const router = useRouter();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+
     useEffect(() => {
         const token = localStorage.getItem("token");
         const user = localStorage.getItem("user");
@@ -54,7 +39,7 @@ export default function HeroSection() {
     };
 
     return (
-        <section aria-label="Hero" className="w-full pt-28 pb-12 md:pt-36 md:pb-20 overflow-hidden">
+        <section id="about" aria-label="Hero" className="w-full pt-28 pb-12 md:pt-36 md:pb-20 overflow-hidden scroll-mt-28">
             <div className="container mx-auto px-4 md:px-12">
                 {/* 2-Column Hero */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
@@ -109,51 +94,63 @@ export default function HeroSection() {
                     </div>
                 </div>
 
-                {/* Exact Positivus Client Logos Bar */}
+                {/* Exact Positivus Client Logos Bar with Responsive Grid */}
                 <div className="mt-16 md:mt-24 pt-4">
-                    <div className="flex flex-wrap items-center justify-between gap-6 md:gap-10 grayscale dark:invert opacity-85 hover:opacity-100 transition-opacity">
-                        <Image
-                            src="/figma/logo-amazon.svg"
-                            alt="Amazon"
-                            width={125}
-                            height={48}
-                            className="h-7 md:h-9 w-auto object-contain"
-                        />
-                        <Image
-                            src="/figma/logo-dribbble.svg"
-                            alt="Dribbble"
-                            width={127}
-                            height={48}
-                            className="h-7 md:h-9 w-auto object-contain"
-                        />
-                        <Image
-                            src="/figma/logo-hubspot.svg"
-                            alt="HubSpot"
-                            width={129}
-                            height={48}
-                            className="h-7 md:h-9 w-auto object-contain"
-                        />
-                        <Image
-                            src="/figma/logo-notion.svg"
-                            alt="Notion"
-                            width={146}
-                            height={48}
-                            className="h-7 md:h-9 w-auto object-contain"
-                        />
-                        <Image
-                            src="/figma/logo-netflix.svg"
-                            alt="Netflix"
-                            width={126}
-                            height={48}
-                            className="h-7 md:h-9 w-auto object-contain"
-                        />
-                        <Image
-                            src="/figma/logo-zoom.svg"
-                            alt="Zoom"
-                            width={111}
-                            height={48}
-                            className="h-7 md:h-9 w-auto object-contain"
-                        />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap md:items-center md:justify-between gap-8 md:gap-10 grayscale dark:invert opacity-85 hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-center">
+                            <Image
+                                src="/figma/logo-amazon.svg"
+                                alt="Amazon"
+                                width={125}
+                                height={48}
+                                className="h-7 md:h-9 w-auto object-contain"
+                            />
+                        </div>
+                        <div className="flex items-center justify-center">
+                            <Image
+                                src="/figma/logo-dribbble.svg"
+                                alt="Dribbble"
+                                width={127}
+                                height={48}
+                                className="h-7 md:h-9 w-auto object-contain"
+                            />
+                        </div>
+                        <div className="flex items-center justify-center">
+                            <Image
+                                src="/figma/logo-hubspot.svg"
+                                alt="HubSpot"
+                                width={129}
+                                height={48}
+                                className="h-7 md:h-9 w-auto object-contain"
+                            />
+                        </div>
+                        <div className="flex items-center justify-center">
+                            <Image
+                                src="/figma/logo-notion.svg"
+                                alt="Notion"
+                                width={146}
+                                height={48}
+                                className="h-7 md:h-9 w-auto object-contain"
+                            />
+                        </div>
+                        <div className="flex items-center justify-center">
+                            <Image
+                                src="/figma/logo-netflix.svg"
+                                alt="Netflix"
+                                width={126}
+                                height={48}
+                                className="h-7 md:h-9 w-auto object-contain"
+                            />
+                        </div>
+                        <div className="flex items-center justify-center">
+                            <Image
+                                src="/figma/logo-zoom.svg"
+                                alt="Zoom"
+                                width={111}
+                                height={48}
+                                className="h-7 md:h-9 w-auto object-contain"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

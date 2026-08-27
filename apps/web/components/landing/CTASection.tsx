@@ -1,15 +1,45 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import { ArrowRight } from "lucide-react"
 
 export default function CTASection() {
+  const router = useRouter()
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    const user = localStorage.getItem("user")
+    if (token && user) {
+      setIsLoggedIn(true)
+    }
+  }, [])
+
+  const handleDashboardClick = () => {
+    const user = localStorage.getItem("user")
+    if (user) {
+      try {
+        const userData = JSON.parse(user)
+        if (userData.isAdmin) {
+          router.push("/admin")
+        } else {
+          router.push("/dashboard")
+        }
+      } catch {
+        router.push("/auth/login")
+      }
+    } else {
+      router.push("/auth/login")
+    }
+  }
   return (
-    <section className="py-16 md:py-24 bg-background">
-      <div className="container mx-auto px-4 md:px-8">
+    <section className="py-16 md:py-24 bg-background scroll-mt-28">
+      <div className="container mx-auto px-4 md:px-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -27,15 +57,26 @@ export default function CTASection() {
                 Take your banking exam preparation to the next level. Experience structured mock tests, instant scoring, and actionable AI analytics today.
               </p>
               <div className="pt-2">
-                <Link href="/auth/signup">
+                {isLoggedIn ? (
                   <Button
                     size="lg"
+                    onClick={handleDashboardClick}
                     variant="positivusDark"
                     className="text-base font-bold gap-3"
                   >
-                    Get your free trial <ArrowRight className="h-5 w-5" />
+                    Go to Dashboard <ArrowRight className="h-5 w-5" />
                   </Button>
-                </Link>
+                ) : (
+                  <Link href="/auth/signup">
+                    <Button
+                      size="lg"
+                      variant="positivusDark"
+                      className="text-base font-bold gap-3"
+                    >
+                      Get your free trial <ArrowRight className="h-5 w-5" />
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
 
