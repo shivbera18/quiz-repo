@@ -192,8 +192,8 @@ async function main() {
     try {
       await prisma.attempt.delete({ where: { id } }) // AttemptAnswer cascades
     } catch {
-      reply.code(404)
-      return { message: "Attempt not found" }
+      // Idempotent: already deleted or not in assessment DB
+      return { deleted: true, message: "Attempt deleted or not found" }
     }
     return { deleted: true }
   })

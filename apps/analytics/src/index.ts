@@ -1,4 +1,4 @@
-import Fastify from "fastify"
+import Fastify, { type FastifyRequest, type FastifyReply } from "fastify"
 import cors from "@fastify/cors"
 import { randomUUID } from "node:crypto"
 import { GetObjectCommand } from "@aws-sdk/client-s3"
@@ -482,9 +482,9 @@ async function main() {
     )
   }
 
-  app.delete("/v1/admin/attempts/:id", async (request, reply) => {
+  const deleteAttemptFactHandler = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
     if (!requireAdmin(request, reply)) return
-    const { id } = request.params as { id: string }
+    const { id } = request.params
     const fact = await prisma.attemptFact.findFirst({ where: { attemptId: id }, select: { userId: true, quizId: true } })
     const deleted = await prisma.attemptFact.deleteMany({ where: { attemptId: id } })
     if (deleted.count === 0) {
@@ -493,12 +493,17 @@ async function main() {
     }
     if (fact) await recomputeAfterFactDeletion([id], [fact.userId], [fact.quizId])
     return { message: "Quiz result deleted successfully", deletedId: id }
-  })
+  }
+  app.delete("/v1/admin/attempts/:id", deleteAttemptFactHandler)
+  app.delete("/v1/analytics/attempts/:id", deleteAttemptFactHandler)
 
-  app.delete("/v1/admin/users/:userId/attempts", async (request, reply) => {
+  const deleteUserAttemptsHandler = async (
+    request: FastifyRequest<{ Params: { userId: string }; Querystring: { quizId?: string } }>,
+    reply: FastifyReply
+  ) => {
     if (!requireAdmin(request, reply)) return
-    const { userId } = request.params as { userId: string }
-    const quizId = (request.query as { quizId?: string }).quizId
+    const { userId } = request.params
+    const { quizId } = request.query
     const where = quizId ? { userId, quizId } : { userId }
     const doomed = await prisma.attemptFact.findMany({ where, select: { attemptId: true, quizId: true } })
     const deleted = await prisma.attemptFact.deleteMany({ where })
@@ -512,7 +517,9 @@ async function main() {
       [...new Set(doomed.map((d) => d.quizId))]
     )
     return { message: "User results deleted successfully", deletedCount: deleted.count }
-  })
+  }
+  app.delete("/v1/admin/users/:userId/attempts", deleteUserAttemptsHandler)
+  app.delete("/v1/analytics/users/:userId/attempts", deleteUserAttemptsHandler)
 
   const close = async () => {
     await prisma.$disconnect()

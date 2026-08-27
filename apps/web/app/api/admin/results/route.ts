@@ -11,11 +11,21 @@ export async function DELETE(request: NextRequest) {
   const userId = params.get("userId")
 
   if (id) {
-    return proxyToGateway(request, `/v1/admin/attempts/${encodeURIComponent(id)}`)
+    // Delete from both analytics-svc (facts & stats) and assessment-svc (attempt).
+    // Both endpoints are idempotent.
+    const [analyticsRes] = await Promise.all([
+      proxyToGateway(request, `/v1/analytics/attempts/${encodeURIComponent(id)}`),
+      proxyToGateway(request, `/v1/admin/attempts/${encodeURIComponent(id)}`),
+    ])
+    return analyticsRes
   }
   if (userId) {
     const query = params.toString()
-    return proxyToGateway(request, `/v1/admin/users/${encodeURIComponent(userId)}/attempts${query ? `?${query}` : ""}`)
+    const [analyticsRes] = await Promise.all([
+      proxyToGateway(request, `/v1/analytics/users/${encodeURIComponent(userId)}/attempts${query ? `?${query}` : ""}`),
+      proxyToGateway(request, `/v1/admin/legacy-results?${query}`),
+    ])
+    return analyticsRes
   }
   return Response.json({ message: "id or userId required" }, { status: 400 })
 }
