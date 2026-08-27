@@ -4,14 +4,15 @@ import { randomUUID } from "node:crypto"
 import { GetObjectCommand } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 import { PrismaClient } from "./generated/prisma/index.js"
-import { createLogger, TRACE_HEADER, getOrCreateTraceId } from "@quiz/observability"
-import { createKafka, getProducer, createEnvelope, TOPICS } from "@quiz/kafka-kit"
+import { createLogger, TRACE_HEADER, getOrCreateTraceId, ensureDatabaseUrl } from "@quiz/observability"
+import { createKafka, getProducer, createEnvelope, TOPICS, isKafkaDisabled } from "@quiz/kafka-kit"
 import { getRedisClient, getLeaderboard, isoWeek, keys } from "@quiz/redis-kit"
 import type { ExportRequestedData } from "@quiz/contracts"
 import { requireAdmin, getUserId } from "./auth.js"
 import { getObjectStoreClient, EXPORT_BUCKET } from "./object-store.js"
 
 const logger = createLogger("analytics-svc")
+ensureDatabaseUrl("analytics")
 const prisma = new PrismaClient()
 const redis = getRedisClient()
 const PORT = Number(process.env.PORT) || 4004
@@ -69,8 +70,10 @@ async function main() {
   // 30-row-scan query that's cheap to duplicate occasionally.
   app.get("/v1/analytics/overview", async () => {
     const cacheKey = keys.cacheAnalyticsOverview()
-    const cached = await redis.get(cacheKey)
-    if (cached) return JSON.parse(cached)
+    try {
+      const cached = await redis.get(cacheKey)
+      if (cached) return JSON.parse(cached)
+    } catch {}
 
     const since = new Date(Date.now() - 30 * 86_400_000)
     const [daily, totalUsers, totalQuizzesAttempted] = await Promise.all([
@@ -102,7 +105,9 @@ async function main() {
       },
     }
 
-    await redis.set(cacheKey, JSON.stringify(body), "EX", OVERVIEW_CACHE_TTL_SEC)
+    try {
+      await redis.set(cacheKey, JSON.stringify(body), "EX", OVERVIEW_CACHE_TTL_SEC)
+    } catch {}
     return body
   })
 
@@ -376,8 +381,13 @@ async function main() {
       return { message: "Unknown leaderboard scope" }
     }
 
-    const entries = await getLeaderboard(redis, key, take)
-    return { scope, entries }
+    try {
+      const entries = await getLeaderboard(redis, key, take)
+      return { scope, entries }
+    } catch (err) {
+      logger.warn(err, "leaderboard fetch failed - returning empty (Redis may be disabled)")
+      return { scope, entries: [] }
+    }
   })
 
   // -------------------------------------------------------------- exports
@@ -401,18 +411,23 @@ async function main() {
     // authoritative data (see schema.prisma's header comment), so there's no
     // local write that publishing atomically-with would even protect. Same
     // pattern as catalog-svc's AI-generation-requested POST.
-    try {
-      const kafka = createKafka("analytics-svc")
-      const producer = await getProducer(kafka)
-      const payload: ExportRequestedData = { jobId: job.id, requestedBy, kind, format: "csv", filters }
-      await producer.send({
-        topic: TOPICS.EXPORT_REQUESTED,
-        messages: [{ key: job.id, value: JSON.stringify(createEnvelope(TOPICS.EXPORT_REQUESTED, payload, { producer: "analytics-svc" })) }],
-      })
-    } catch (err) {
-      logger.error(err, "failed to publish export-requested")
-      reply.code(503)
-      return { message: "Failed to queue export job" }
+    if (isKafkaDisabled()) {
+      logger.warn({ jobId: job.id }, "Kafka disabled - export job created but will not be processed without worker")
+      // still return 202 so local dev without Kafka sees the job as pending
+    } else {
+      try {
+        const kafka = createKafka("analytics-svc")
+        const producer = await getProducer(kafka)
+        const payload: ExportRequestedData = { jobId: job.id, requestedBy, kind, format: "csv", filters }
+        await producer.send({
+          topic: TOPICS.EXPORT_REQUESTED,
+          messages: [{ key: job.id, value: JSON.stringify(createEnvelope(TOPICS.EXPORT_REQUESTED, payload, { producer: "analytics-svc" })) }],
+        })
+      } catch (err) {
+        logger.error(err, "failed to publish export-requested")
+        reply.code(503)
+        return { message: "Failed to queue export job" }
+      }
     }
 
     reply.code(202)
@@ -430,11 +445,15 @@ async function main() {
 
     let downloadUrl: string | null = null
     if (job.status === "done" && job.objectKey) {
-      downloadUrl = await getSignedUrl(
-        getObjectStoreClient(),
-        new GetObjectCommand({ Bucket: EXPORT_BUCKET, Key: job.objectKey }),
-        { expiresIn: 24 * 60 * 60 }
-      )
+      try {
+        downloadUrl = await getSignedUrl(
+          getObjectStoreClient(),
+          new GetObjectCommand({ Bucket: EXPORT_BUCKET, Key: job.objectKey }),
+          { expiresIn: 24 * 60 * 60 }
+        )
+      } catch (err) {
+        logger.warn(err, "failed to generate presigned URL - S3 may be disabled for local dev")
+      }
     }
 
     return { job, downloadUrl }
@@ -528,11 +547,13 @@ async function main() {
       }
     }
 
-    await redis.del(
-      keys.cacheAnalyticsOverview(),
-      ...quizIds.map((q) => keys.cacheAnalyticsQuiz(q)),
-      ...userIds.map((u) => keys.cacheAnalyticsUser(u))
-    )
+    try {
+      await redis.del(
+        keys.cacheAnalyticsOverview(),
+        ...quizIds.map((q) => keys.cacheAnalyticsQuiz(q)),
+        ...userIds.map((u) => keys.cacheAnalyticsUser(u))
+      )
+    } catch {}
   }
 
   const deleteAttemptFactHandler = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {

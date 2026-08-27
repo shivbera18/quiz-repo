@@ -1,12 +1,13 @@
 import Fastify from "fastify"
 import cors from "@fastify/cors"
 import { PrismaClient } from "./generated/prisma/index.js"
-import { createLogger, TRACE_HEADER, getOrCreateTraceId } from "@quiz/observability"
-import { createKafka, getProducer, startOutboxPublisher, createEnvelope, TOPICS } from "@quiz/kafka-kit"
+import { createLogger, TRACE_HEADER, getOrCreateTraceId, ensureDatabaseUrl } from "@quiz/observability"
+import { createKafka, getProducer, startOutboxPublisher, createEnvelope, TOPICS, isKafkaDisabled } from "@quiz/kafka-kit"
 import { loginRequestSchema, signupRequestSchema, type UserChangedData } from "@quiz/contracts"
 import { createOutboxStore } from "./outbox-store.js"
 
 const logger = createLogger("identity-svc")
+ensureDatabaseUrl("identity")
 const prisma = new PrismaClient()
 const PORT = Number(process.env.PORT) || 4001
 
@@ -210,13 +211,24 @@ async function main() {
     return { id: user.id, name: user.name, email: user.email, isAdmin: user.isAdmin, userType: user.userType }
   })
 
-  const kafka = createKafka("identity-svc")
-  const producer = await getProducer(kafka)
-  const stopOutbox = startOutboxPublisher(producer, createOutboxStore(prisma))
+  // Kafka is optional for local dev without Docker: degrade to no-op publishing
+  let stopOutbox: () => void = () => {}
+  let producer: Awaited<ReturnType<typeof getProducer>> | null = null
+  try {
+    if (isKafkaDisabled()) {
+      logger.warn("Kafka disabled (DISABLE_KAFKA=true) - outbox publishing disabled, events will not be emitted")
+    } else {
+      const kafka = createKafka("identity-svc")
+      producer = await getProducer(kafka)
+      stopOutbox = startOutboxPublisher(producer, createOutboxStore(prisma))
+    }
+  } catch (err) {
+    logger.warn(err, "Failed to init Kafka - continuing without event publishing (set DISABLE_KAFKA=true to silence)")
+  }
 
   const close = async () => {
     stopOutbox()
-    await producer.disconnect()
+    if (producer) await producer.disconnect().catch(() => {})
     await prisma.$disconnect()
     await app.close()
     process.exit(0)

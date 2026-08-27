@@ -8,13 +8,14 @@
 import { Readable } from "node:stream"
 import { Upload } from "@aws-sdk/lib-storage"
 import { PrismaClient } from "./generated/prisma/index.js"
-import { createLogger } from "@quiz/observability"
-import { createKafka, createEnvelope, runConsumer, getProducer, TOPICS } from "@quiz/kafka-kit"
+import { createLogger, ensureDatabaseUrl } from "@quiz/observability"
+import { createKafka, createEnvelope, runConsumer, getProducer, TOPICS, isKafkaDisabled } from "@quiz/kafka-kit"
 import type { ExportRequestedData, ExportCompletedData } from "@quiz/contracts"
 import { getObjectStoreClient, EXPORT_BUCKET } from "./object-store.js"
 import { csvRow } from "./csv.js"
 
 const logger = createLogger("analytics-export-worker")
+ensureDatabaseUrl("analytics")
 const prisma = new PrismaClient()
 const PAGE_SIZE = 500
 const PRESIGNED_TTL_SEC = 24 * 60 * 60
@@ -124,6 +125,15 @@ async function runExport(jobId: string, data: ExportRequestedData): Promise<Expo
 }
 
 async function main() {
+  if (isKafkaDisabled()) {
+    logger.warn("Kafka disabled - analytics-export-worker idle (exports require Kafka)")
+    await new Promise(() => {})
+    return
+  }
+  // S3 is optional for local dev: check if export storage is configured
+  if (process.env.DISABLE_S3 === "true" || (!process.env.S3_ENDPOINT && !process.env.S3_ACCESS_KEY_ID && !process.env.AWS_ACCESS_KEY_ID)) {
+    logger.warn("S3/MinIO not configured or DISABLE_S3=true - exports will fail until S3 is configured (set S3_ENDPOINT etc or run without export features)")
+  }
   const kafka = createKafka("analytics-export-worker")
   const producer = await getProducer(kafka)
 
