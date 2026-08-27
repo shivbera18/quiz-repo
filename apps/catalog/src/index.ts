@@ -2,7 +2,7 @@ import Fastify from "fastify"
 import cors from "@fastify/cors"
 import { randomUUID } from "node:crypto"
 import { PrismaClient, Prisma, type Quiz } from "./generated/prisma/index.js"
-import { createLogger, TRACE_HEADER, getOrCreateTraceId } from "@quiz/observability"
+import { createLogger, TRACE_HEADER, getOrCreateTraceId, ensureDatabaseUrl } from "@quiz/observability"
 import { createKafka, getProducer, startOutboxPublisher, createEnvelope, TOPICS, isKafkaDisabled } from "@quiz/kafka-kit"
 import type { QuizChangedData, ChapterChangedData, SubjectChangedData, AiQuizGenerationRequestedData } from "@quiz/contracts"
 import { createOutboxStore } from "./outbox-store.js"
@@ -26,6 +26,7 @@ import {
 import type { z } from "zod"
 
 const logger = createLogger("catalog-svc")
+ensureDatabaseUrl("catalog")
 const prisma = new PrismaClient()
 const PORT = Number(process.env.PORT) || 4002
 

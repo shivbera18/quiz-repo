@@ -1,11 +1,12 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { PrismaClient } from "./generated/prisma/index.js"
-import { createLogger } from "@quiz/observability"
+import { createLogger, ensureDatabaseUrl } from "@quiz/observability"
 import { createKafka, createEnvelope, TOPICS, runConsumer, getProducer, isKafkaDisabled } from "@quiz/kafka-kit"
 import type { AiQuizGenerationRequestedData, AiQuizGenerationCompletedData } from "@quiz/contracts"
 import { quizChangedPayload } from "./lib/events.js"
 
 const logger = createLogger("catalog-ai-worker")
+ensureDatabaseUrl("catalog")
 const prisma = new PrismaClient()
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
 

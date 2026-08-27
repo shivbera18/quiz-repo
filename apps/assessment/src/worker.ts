@@ -13,12 +13,13 @@
 // "if you need a correctness-critical distributed lock, your transaction
 // boundary is in the wrong place").
 import { PrismaClient } from "./generated/prisma/index.js"
-import { createLogger } from "@quiz/observability"
+import { createLogger, ensureDatabaseUrl } from "@quiz/observability"
 import { createKafka, getProducer, startOutboxPublisher, isKafkaDisabled } from "@quiz/kafka-kit"
 import { createOutboxStore } from "./outbox-store.js"
 import { submitAttempt } from "./attempt-service.js"
 
 const logger = createLogger("assessment-worker")
+ensureDatabaseUrl("assessment")
 const prisma = new PrismaClient()
 const SWEEP_INTERVAL_MS = Number(process.env.SWEEP_INTERVAL_MS) || 15_000
 const SWEEP_BATCH_SIZE = Number(process.env.SWEEP_BATCH_SIZE) || 100

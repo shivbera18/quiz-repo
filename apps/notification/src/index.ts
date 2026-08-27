@@ -2,7 +2,7 @@ import Fastify from "fastify"
 import cors from "@fastify/cors"
 import { randomUUID } from "node:crypto"
 import { PrismaClient } from "./generated/prisma/index.js"
-import { createLogger, TRACE_HEADER, getOrCreateTraceId } from "@quiz/observability"
+import { createLogger, TRACE_HEADER, getOrCreateTraceId, ensureDatabaseUrl } from "@quiz/observability"
 import { createKafka, getProducer, startOutboxPublisher, createEnvelope, TOPICS, isKafkaDisabled } from "@quiz/kafka-kit"
 import { getRedisClient, keys } from "@quiz/redis-kit"
 import type { AnnouncementPublishedData } from "@quiz/contracts"
@@ -11,6 +11,7 @@ import { requireUser, requireAdmin, getUser } from "./auth.js"
 import { getBacklogSince, type SseEvent } from "./sse.js"
 
 const logger = createLogger("notification-svc")
+ensureDatabaseUrl("notification")
 const prisma = new PrismaClient()
 const redis = getRedisClient()
 const PORT = Number(process.env.PORT) || 4005

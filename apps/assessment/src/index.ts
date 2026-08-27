@@ -1,7 +1,7 @@
 import Fastify from "fastify"
 import cors from "@fastify/cors"
 import { PrismaClient } from "./generated/prisma/index.js"
-import { createLogger, TRACE_HEADER, getOrCreateTraceId } from "@quiz/observability"
+import { createLogger, TRACE_HEADER, getOrCreateTraceId, ensureDatabaseUrl } from "@quiz/observability"
 import { createKafka, getProducer, startOutboxPublisher, isKafkaDisabled } from "@quiz/kafka-kit"
 import { autosaveRequestSchema, startAttemptRequestSchema, submitAttemptRequestSchema } from "@quiz/contracts"
 import { createOutboxStore } from "./outbox-store.js"
@@ -12,6 +12,7 @@ import { registerNotebookRoutes } from "./notebook.js"
 import { fetchQuizMeta, type LegacyQuizMeta } from "./legacy-client.js"
 
 const logger = createLogger("assessment-svc")
+ensureDatabaseUrl("assessment")
 const prisma = new PrismaClient()
 const PORT = Number(process.env.PORT) || 4003
 
