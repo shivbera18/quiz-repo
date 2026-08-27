@@ -4,78 +4,55 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import { ArrowRight } from "lucide-react"
-import Science from "../svgs/Science"
-import Cap from "../svgs/Cap"
-import Atom from "../svgs/Atom"
-import Trophy from "../svgs/Trophy"
-import Calculator from "../svgs/Calculator"
-import Book from "../svgs/Book"
 
 export default function CTASection() {
   return (
-    <section className="py-20 md:py-32 bg-background relative overflow-hidden">
-      {/* Decorative SVG Elements */}
-      <Science className="absolute top-4 left-4 size-24 md:size-48 text-foreground opacity-10" />
-      <Cap className="absolute right-10 bottom-10 size-24 md:size-48 text-foreground opacity-10" />
-      <Trophy className="absolute bottom-32 left-16 size-20 md:size-40 text-foreground opacity-10 hidden lg:block" />
-      <Calculator className="absolute top-40 right-1/4 size-16 md:size-28 text-foreground opacity-10 hidden lg:block" />
-      
-      {/* Floating shapes */}
-      <motion.div
-        className="absolute top-10 left-10 h-20 w-20 rounded-full border-4 border-foreground/20"
-        animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
-        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-      />
-      <motion.div
-        className="absolute bottom-10 right-10 h-32 w-32 rounded-2xl border-4 border-foreground/15 rotate-45"
-        animate={{ rotate: [45, 135, 45] }}
-        transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-      />
-      <motion.div
-        className="absolute top-1/2 right-1/4 h-16 w-16 rounded-lg border-4 border-foreground/15"
-        animate={{ y: [0, -20, 0] }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
+    <section className="py-16 md:py-24 bg-background">
+      <div className="container mx-auto px-4 md:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="max-w-3xl mx-auto text-center"
+          className="relative rounded-[35px] md:rounded-[45px] bg-[#F3F3F3] dark:bg-[#1E1F2A] border-2 border-[#191A23] dark:border-white/30 shadow-[0px_6px_0px_0px_#191A23] dark:shadow-[0px_6px_0px_0px_#000] p-8 md:p-14 overflow-hidden"
         >
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight mb-6 text-foreground">
-            Ready to Start Your Journey to{" "}
-            <span className="relative inline-block">
-              <span className="relative z-10">Success?</span>
-              <span className="absolute bottom-1 left-0 right-0 h-3 bg-yellow-400 -z-10 -rotate-1" />
-            </span>
-          </h2>
-          <p className="text-lg sm:text-xl text-muted-foreground mb-10">
-            Join thousands of successful candidates who cleared their banking exams with Quizzy. 
-            Start your free trial today - no credit card required!
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/auth/login">
-              <Button 
-                size="lg" 
-                variant="neobrutalist"
-                className="text-lg px-8 py-6 font-bold"
-              >
-                Get Started Free
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <Link href="/auth/login">
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="text-lg px-8 py-6 font-bold border-4 border-foreground bg-background text-foreground shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all"
-              >
-                I Have an Account
-              </Button>
-            </Link>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            {/* Left: Headline, Subtitle, CTA */}
+            <div className="lg:col-span-7 space-y-6 text-left">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground font-heading leading-tight">
+                Let&apos;s make things happen
+              </h2>
+              <p className="text-base sm:text-lg text-muted-foreground font-medium leading-relaxed max-w-xl">
+                Take your banking exam preparation to the next level. Experience structured mock tests, instant scoring, and actionable AI analytics today.
+              </p>
+              <div className="pt-2">
+                <Link href="/auth/signup">
+                  <Button
+                    size="lg"
+                    variant="positivusDark"
+                    className="text-base font-bold gap-3"
+                  >
+                    Get your free trial <ArrowRight className="h-5 w-5" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Right: Positivus Graphic Illustration */}
+            <div className="lg:col-span-5 flex justify-center items-center relative">
+              <div className="relative w-48 h-48 md:w-64 md:h-64 rounded-full bg-[#B9FF66] border-2 border-[#191A23] flex items-center justify-center shadow-[6px_6px_0px_0px_#191A23] rotate-6">
+                <div className="text-center p-4">
+                  <div className="text-4xl md:text-5xl font-black text-[#191A23]">100%</div>
+                  <div className="text-xs md:text-sm font-bold text-[#191A23] uppercase tracking-wider mt-1">
+                    Free Practice
+                  </div>
+                </div>
+                {/* Floating star */}
+                <div className="absolute -top-3 -right-3 h-10 w-10 rounded-full bg-[#191A23] text-[#B9FF66] flex items-center justify-center font-black text-lg border border-[#191A23]">
+                  ✦
+                </div>
+              </div>
+            </div>
           </div>
         </motion.div>
       </div>
