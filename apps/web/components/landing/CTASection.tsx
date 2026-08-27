@@ -1,14 +1,45 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
+import Image from "next/image"
 import { ArrowRight } from "lucide-react"
 
 export default function CTASection() {
+  const router = useRouter()
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    const user = localStorage.getItem("user")
+    if (token && user) {
+      setIsLoggedIn(true)
+    }
+  }, [])
+
+  const handleDashboardClick = () => {
+    const user = localStorage.getItem("user")
+    if (user) {
+      try {
+        const userData = JSON.parse(user)
+        if (userData.isAdmin) {
+          router.push("/admin")
+        } else {
+          router.push("/dashboard")
+        }
+      } catch {
+        router.push("/auth/login")
+      }
+    } else {
+      router.push("/auth/login")
+    }
+  }
   return (
-    <section className="py-16 md:py-24 bg-background">
-      <div className="container mx-auto px-4 md:px-8">
+    <section className="py-16 md:py-24 bg-background scroll-mt-28">
+      <div className="container mx-auto px-4 md:px-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -26,31 +57,39 @@ export default function CTASection() {
                 Take your banking exam preparation to the next level. Experience structured mock tests, instant scoring, and actionable AI analytics today.
               </p>
               <div className="pt-2">
-                <Link href="/auth/signup">
+                {isLoggedIn ? (
                   <Button
                     size="lg"
+                    onClick={handleDashboardClick}
                     variant="positivusDark"
                     className="text-base font-bold gap-3"
                   >
-                    Get your free trial <ArrowRight className="h-5 w-5" />
+                    Go to Dashboard <ArrowRight className="h-5 w-5" />
                   </Button>
-                </Link>
+                ) : (
+                  <Link href="/auth/signup">
+                    <Button
+                      size="lg"
+                      variant="positivusDark"
+                      className="text-base font-bold gap-3"
+                    >
+                      Get your free trial <ArrowRight className="h-5 w-5" />
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
 
-            {/* Right: Positivus Graphic Illustration */}
+            {/* Right: Exact Figma CTA Illustration */}
             <div className="lg:col-span-5 flex justify-center items-center relative">
-              <div className="relative w-48 h-48 md:w-64 md:h-64 rounded-full bg-[#B9FF66] border-2 border-[#191A23] flex items-center justify-center shadow-[6px_6px_0px_0px_#191A23] rotate-6">
-                <div className="text-center p-4">
-                  <div className="text-4xl md:text-5xl font-black text-[#191A23]">100%</div>
-                  <div className="text-xs md:text-sm font-bold text-[#191A23] uppercase tracking-wider mt-1">
-                    Free Practice
-                  </div>
-                </div>
-                {/* Floating star */}
-                <div className="absolute -top-3 -right-3 h-10 w-10 rounded-full bg-[#191A23] text-[#B9FF66] flex items-center justify-center font-black text-lg border border-[#191A23]">
-                  ✦
-                </div>
+              <div className="relative w-full max-w-[380px]">
+                <Image
+                  src="/figma/cta-illustration.svg"
+                  alt="Positivus CTA Graphic"
+                  width={494}
+                  height={395}
+                  className="w-full h-auto object-contain select-none pointer-events-none"
+                />
               </div>
             </div>
           </div>
