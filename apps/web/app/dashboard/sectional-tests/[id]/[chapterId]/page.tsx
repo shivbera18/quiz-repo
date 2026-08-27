@@ -5,16 +5,20 @@ import { useParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Clock, Target, CheckCircle, Play } from 'lucide-react';
+import { ArrowLeft, Clock, Target, CheckCircle, Play, CalendarClock } from 'lucide-react';
 import Link from 'next/link';
 import { ThemeToggle } from "@/components/theme-toggle";
 
+type SchedulingStatus = "available" | "upcoming" | "closed"
 interface Quiz {
   id: string
   title: string
   description: string
   questionCount: number
   timeLimit: number
+  startTime?: string | null
+  endTime?: string | null
+  schedulingStatus?: SchedulingStatus
 }
 
 interface ChapterInfo {
@@ -116,7 +120,16 @@ export default function ChapterQuizzesPage() {
 
       {/* Quizzes List */}
       <div className="space-y-4">
-        {quizzes.map((quiz, index) => (
+        {quizzes.map((quiz, index) => {
+          const now = Date.now()
+          let status: SchedulingStatus = quiz.schedulingStatus ?? "available"
+          if (!quiz.schedulingStatus) {
+            if (quiz.endTime && !Number.isNaN(Date.parse(quiz.endTime)) && now > Date.parse(quiz.endTime)) status = "closed"
+            else if (quiz.startTime && !Number.isNaN(Date.parse(quiz.startTime)) && now < Date.parse(quiz.startTime)) status = "upcoming"
+          }
+          const isLocked = status !== "available"
+          const scheduleLabel = status === "upcoming" && quiz.startTime ? `Opens ${new Date(quiz.startTime).toLocaleString()}` : status === "closed" ? "Closed" : quiz.endTime ? `Closes ${new Date(quiz.endTime).toLocaleString()}` : null
+          return (
           <Card key={quiz.id} className="hover:shadow-md transition-shadow border-2 hover:border-blue-200">
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -126,6 +139,9 @@ export default function ChapterQuizzesPage() {
                       {index + 1}
                     </div>
                     <h3 className="text-lg font-semibold break-words">{quiz.title}</h3>
+                    {status !== "available" && (
+                      <Badge className={`text-xs font-bold border-2 border-black ${status === "upcoming" ? "bg-blue-300 text-black" : "bg-red-300 text-black"}`}>{status === "upcoming" ? "Upcoming" : "Closed"}</Badge>
+                    )}
                   </div>
                   <p className="text-gray-600 mb-3 break-words">{quiz.description}</p>
                   <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500">
@@ -137,20 +153,32 @@ export default function ChapterQuizzesPage() {
                       <Clock className="h-4 w-4" />
                       <span>{quiz.timeLimit} minutes</span>
                     </div>
+                    {scheduleLabel && (
+                      <div className="flex items-center space-x-1">
+                        <CalendarClock className="h-4 w-4" />
+                        <span>{scheduleLabel}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="sm:ml-6 w-full sm:w-auto">
-                  <Link href={`/quiz/${quiz.id}?fromSubject=${subjectId}&fromChapter=${chapterId}`} className="block w-full">
-                    <Button className="flex items-center justify-center w-full sm:w-auto space-x-2 mt-4 sm:mt-0">
-                      <Play className="h-4 w-4" />
-                      <span>Start Quiz</span>
+                  {isLocked ? (
+                    <Button className="flex items-center justify-center w-full sm:w-auto space-x-2 mt-4 sm:mt-0 opacity-60 cursor-not-allowed" disabled>
+                      <span>{status === "upcoming" ? "Not yet open" : "Closed"}</span>
                     </Button>
-                  </Link>
+                  ) : (
+                    <Link href={`/quiz/${quiz.id}?fromSubject=${subjectId}&fromChapter=${chapterId}`} className="block w-full">
+                      <Button className="flex items-center justify-center w-full sm:w-auto space-x-2 mt-4 sm:mt-0">
+                        <Play className="h-4 w-4" />
+                        <span>Start Quiz</span>
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
-        ))}
+        )})}
       </div>
 
       {quizzes.length === 0 && !loading && (
