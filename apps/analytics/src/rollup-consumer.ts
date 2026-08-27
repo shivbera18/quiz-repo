@@ -413,15 +413,21 @@ async function handleAttemptSubmitted(data: AttemptSubmittedData, eventId: strin
 
   // Best-effort, outside the transaction: Redis is a projection of a
   // projection here, not the system of record for any of this.
-  await recordLeaderboardEntry(redis, {
-    userId: data.userId,
-    userName: data.userName,
-    quizId: data.quizId,
-    subjectId: subjectId ?? undefined,
-    totalScorePct: data.totalScore,
-    timeSpentSec: Math.round(data.timeSpentMs / 1000),
-  })
-  await redis.del(keys.cacheAnalyticsQuiz(data.quizId), keys.cacheAnalyticsUser(data.userId), keys.cacheAnalyticsOverview())
+  try {
+    await recordLeaderboardEntry(redis, {
+      userId: data.userId,
+      userName: data.userName,
+      quizId: data.quizId,
+      subjectId: subjectId ?? undefined,
+      totalScorePct: data.totalScore,
+      timeSpentSec: Math.round(data.timeSpentMs / 1000),
+    })
+  } catch (err) {
+    logger.warn({ err, attemptId: data.attemptId }, "leaderboard write failed (non-fatal)")
+  }
+  try {
+    await redis.del(keys.cacheAnalyticsQuiz(data.quizId), keys.cacheAnalyticsUser(data.userId), keys.cacheAnalyticsOverview())
+  } catch {}
 }
 
 async function handleQuizChanged(data: QuizChangedData, eventId: string) {
@@ -623,19 +629,19 @@ async function main() {
       switch (topic) {
         case TOPICS.QUIZ_CHANGED: {
           const deleted = await prisma.dimQuiz.deleteMany({ where: { quizId: key } })
-          await redis.del(keys.cacheAnalyticsQuiz(key), keys.cacheAnalyticsOverview())
+          try { await redis.del(keys.cacheAnalyticsQuiz(key), keys.cacheAnalyticsOverview()) } catch {}
           logger.info({ quizId: key, deleted: deleted.count }, "quiz dimension removed via tombstone")
           return
         }
         case TOPICS.CHAPTER_CHANGED: {
           const deleted = await prisma.dimChapter.deleteMany({ where: { chapterId: key } })
-          await redis.del(keys.cacheAnalyticsOverview())
+          try { await redis.del(keys.cacheAnalyticsOverview()) } catch {}
           logger.info({ chapterId: key, deleted: deleted.count }, "chapter dimension removed via tombstone")
           return
         }
         case TOPICS.SUBJECT_CHANGED: {
           const deleted = await prisma.dimSubject.deleteMany({ where: { subjectId: key } })
-          await redis.del(keys.cacheAnalyticsOverview())
+          try { await redis.del(keys.cacheAnalyticsOverview()) } catch {}
           logger.info({ subjectId: key, deleted: deleted.count }, "subject dimension removed via tombstone")
           return
         }

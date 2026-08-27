@@ -11,11 +11,7 @@ let loaded = false
 export function loadEnv(): void {
   if (loaded) return
   loaded = true
-  // Try dotenv first if installed
   try {
-    // dynamic import would be async, so try sync require-style via createRequire
-    // but for ESM we can just try to use dotenv/config side-effect if available
-    // Instead, attempt to load via process.loadEnvFile which is built-in
     if (typeof (process as any).loadEnvFile === "function") {
       const candidates = [
         path.resolve(process.cwd(), ".env"),
@@ -32,17 +28,6 @@ export function loadEnv(): void {
         }
       }
     }
-  } catch {}
-
-  // Also try dotenv package if present (covers older Node)
-  try {
-    // Use dynamic import with top-level await not available here, so use createRequire
-    // We do a best-effort sync load via import.meta.resolve if dotenv exists
-    // If not installed, this will throw and be ignored
-    // We attempt to synchronously load dotenv/config via eval to avoid bundling issues
-    const dotenvPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../node_modules/dotenv/lib/main.js")
-    // We can't easily check existence synchronously without fs, so try to import
-    // Fallback: do nothing if dotenv not available
   } catch {}
 }
 

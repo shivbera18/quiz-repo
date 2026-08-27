@@ -6,7 +6,14 @@ let warned = false
 
 function isRedisDisabled(url: string): boolean {
   if (process.env.DISABLE_REDIS === "true") return true
+  if (process.env.DISABLE_REDIS === "false") return false
   if (!url || url === "disabled" || url === "memory://") return true
+  // For local dev without Docker, no REDIS_URL is set and NODE_ENV is not production -> use in-memory
+  // This makes `pnpm dev` work out of the box without requiring a local Redis
+  if (!process.env.REDIS_URL && process.env.NODE_ENV !== "production") {
+    // url will be the default "redis://localhost:6380" when REDIS_URL not set
+    if (url === "redis://localhost:6380" || url === "redis://localhost:6379") return true
+  }
   return false
 }
 
