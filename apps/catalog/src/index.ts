@@ -3,7 +3,7 @@ import cors from "@fastify/cors"
 import { randomUUID } from "node:crypto"
 import { PrismaClient, Prisma, type Quiz } from "./generated/prisma/index.js"
 import { createLogger, TRACE_HEADER, getOrCreateTraceId } from "@quiz/observability"
-import { createKafka, getProducer, startOutboxPublisher, createEnvelope, TOPICS } from "@quiz/kafka-kit"
+import { createKafka, getProducer, startOutboxPublisher, createEnvelope, TOPICS, isKafkaDisabled } from "@quiz/kafka-kit"
 import type { QuizChangedData, ChapterChangedData, SubjectChangedData, AiQuizGenerationRequestedData } from "@quiz/contracts"
 import { createOutboxStore } from "./outbox-store.js"
 import { parseJsonField, stringifyForDatabase } from "./lib/database-utils.js"
@@ -749,24 +749,30 @@ async function main() {
       },
     })
 
-    try {
-      const payload: AiQuizGenerationRequestedData = {
-        jobId: job.id,
-        requestedBy: userId,
-        title: title.trim(),
-        sections: sections.map((s: string) => s.trim()),
-        difficulty: normalizedDifficulty,
-        questionsPerSection: normalizedCount,
+    if (!producer || isKafkaDisabled()) {
+      logger.warn("AI generation requested but Kafka disabled - job will stay pending without worker")
+      // Don't fail the request: job is created and will be visible as pending
+      // In real dev with Kafka disabled, UI can show appropriate message
+    } else {
+      try {
+        const payload: AiQuizGenerationRequestedData = {
+          jobId: job.id,
+          requestedBy: userId,
+          title: title.trim(),
+          sections: sections.map((s: string) => s.trim()),
+          difficulty: normalizedDifficulty,
+          questionsPerSection: normalizedCount,
+        }
+        const envelope = createEnvelope(TOPICS.AI_QUIZ_GENERATION_REQUESTED, payload, {
+          producer: "catalog-svc",
+          traceId: (request as any).traceId,
+        })
+        await producer.send({ topic: TOPICS.AI_QUIZ_GENERATION_REQUESTED, messages: [{ key: job.id, value: JSON.stringify(envelope) }] })
+      } catch (err) {
+        logger.error(err, "failed to publish quiz-generation-requested")
+        reply.code(503)
+        return { message: "Failed to queue generation job" }
       }
-      const envelope = createEnvelope(TOPICS.AI_QUIZ_GENERATION_REQUESTED, payload, {
-        producer: "catalog-svc",
-        traceId: (request as any).traceId,
-      })
-      await producer.send({ topic: TOPICS.AI_QUIZ_GENERATION_REQUESTED, messages: [{ key: job.id, value: JSON.stringify(envelope) }] })
-    } catch (err) {
-      logger.error(err, "failed to publish quiz-generation-requested")
-      reply.code(503)
-      return { message: "Failed to queue generation job" }
     }
 
     reply.code(202)
@@ -811,20 +817,40 @@ async function main() {
     }
   })
 
-  const kafkaClient = createKafka("catalog-svc")
-  const producer = await getProducer(kafkaClient)
-  const stopOutbox = startOutboxPublisher(producer, createOutboxStore(prisma))
+  // Kafka optional for local dev without Docker
+  let stopOutbox: () => void = () => {}
+  let producer: Awaited<ReturnType<typeof getProducer>> | null = null
+  try {
+    if (isKafkaDisabled()) {
+      logger.warn("Kafka disabled - outbox and catalog change events disabled")
+    } else {
+      const kafkaClient = createKafka("catalog-svc")
+      producer = await getProducer(kafkaClient)
+      stopOutbox = startOutboxPublisher(producer, createOutboxStore(prisma))
+    }
+  } catch (err) {
+    logger.warn(err, "Failed to init Kafka - continuing without publishing")
+  }
 
   async function publishChange(topic: string, key: string, data: unknown) {
-    await producer.send({
-      topic,
-      messages: [{ key, value: JSON.stringify(createEnvelope(topic, data, { producer: "catalog-svc" })) }],
-    })
+    if (!producer) {
+      logger.warn({ topic, key }, "publishChange skipped - Kafka disabled")
+      return
+    }
+    try {
+      await producer.send({
+        topic,
+        messages: [{ key, value: JSON.stringify(createEnvelope(topic, data, { producer: "catalog-svc" })) }],
+      })
+    } catch (err) {
+      logger.warn(err, `failed to publish ${topic}`)
+      throw err
+    }
   }
 
   const close = async () => {
     stopOutbox()
-    await producer.disconnect()
+    if (producer) await producer.disconnect().catch(() => {})
     await prisma.$disconnect()
     await app.close()
     process.exit(0)
