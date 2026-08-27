@@ -6,6 +6,11 @@ export async function POST(request: NextRequest) {
     if (!auth?.startsWith("Bearer ")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+    const token = auth.slice("Bearer ".length).trim()
+    if (token.length < 10 || (token.match(/-/g) || []).length < 2) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    // Known gap: still bypasses gateway aiGenByUser rate limit; see generate-questions route.
     const { prompt, operation, difficulty, count } = await request.json()
     const normalizedCount = count ?? 10
     if (typeof normalizedCount !== "number" || !Number.isInteger(normalizedCount) || normalizedCount < 1 || normalizedCount > 20) {

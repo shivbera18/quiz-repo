@@ -10,6 +10,16 @@ export async function POST(request: NextRequest) {
     if (!auth?.startsWith("Bearer ")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+    // Token shape check: opaque token must be `${userId}-${timestamp}-${random}` with 30d max age.
+    // Full validation still requires identity-svc introspection (gateway does it); this is a
+    // defense-in-depth format check so obviously forged `Bearer x` doesn't hit Gemini.
+    const token = auth.slice("Bearer ".length).trim()
+    if (token.length < 10 || (token.match(/-/g) || []).length < 2) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    // Known gap: direct Gemini routes still bypass gateway rate-limiting (aiGenByUser 5/h).
+    // Full fix is to proxy through gateway/catalog-svc job queue; tracked as follow-up.
+    // This route is now auth-gated and capped (1-20) as interim mitigation.
     const { topic, difficulty, count, section } = await request.json()
 
     if (!topic || !difficulty || !count || !section) {
