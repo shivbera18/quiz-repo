@@ -55,7 +55,13 @@ try {
 
 const schemas = ["identity", "catalog", "assessment", "analytics", "notification"]
 
-console.log(`Connecting to ${cleanUrl.replace(/:[^:@/]+@/, ":****@")} ...`)
+let displayUrl = cleanUrl
+try {
+  const masked = new URL(cleanUrl)
+  if (masked.password) masked.password = "****"
+  displayUrl = masked.toString()
+} catch {}
+console.log(`Connecting to ${displayUrl} ...`)
 const client = new Client({ connectionString: cleanUrl, ssl: cleanUrl.includes("sslmode=require") ? { rejectUnauthorized: false } : undefined })
 
 try {

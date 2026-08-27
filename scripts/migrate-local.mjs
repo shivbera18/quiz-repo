@@ -23,9 +23,17 @@ if (!baseUrl) {
 }
 
 function withSchema(url, schema) {
-  if (url.includes("schema=")) return url
-  const sep = url.includes("?") ? "&" : "?"
-  return `${url}${sep}schema=${schema}`
+  try {
+    const parsed = new URL(url)
+    if (!parsed.searchParams.has("schema")) {
+      parsed.searchParams.set("schema", schema)
+    }
+    return parsed.toString()
+  } catch {
+    if (url.includes("schema=")) return url
+    const sep = url.includes("?") ? "&" : "?"
+    return `${url}${sep}schema=${schema}`
+  }
 }
 
 const services = [
