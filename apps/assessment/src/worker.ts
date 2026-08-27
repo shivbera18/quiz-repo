@@ -14,7 +14,7 @@
 // boundary is in the wrong place").
 import { PrismaClient } from "./generated/prisma/index.js"
 import { createLogger } from "@quiz/observability"
-import { createKafka, getProducer, startOutboxPublisher } from "@quiz/kafka-kit"
+import { createKafka, getProducer, startOutboxPublisher, isKafkaDisabled } from "@quiz/kafka-kit"
 import { createOutboxStore } from "./outbox-store.js"
 import { submitAttempt } from "./attempt-service.js"
 
@@ -44,9 +44,19 @@ async function sweepExpiredAttempts() {
 }
 
 async function main() {
-  const kafkaClient = createKafka("assessment-worker")
-  const producer = await getProducer(kafkaClient)
-  const stopOutbox = startOutboxPublisher(producer, createOutboxStore(prisma))
+  let stopOutbox: () => void = () => {}
+  let producer: Awaited<ReturnType<typeof getProducer>> | null = null
+  try {
+    if (isKafkaDisabled()) {
+      logger.warn("Kafka disabled - assessment outbox disabled, sweeper still running")
+    } else {
+      const kafkaClient = createKafka("assessment-worker")
+      producer = await getProducer(kafkaClient)
+      stopOutbox = startOutboxPublisher(producer, createOutboxStore(prisma))
+    }
+  } catch (err) {
+    logger.warn(err, "Kafka init failed - running sweeper without outbox")
+  }
 
   const sweepTimer = setInterval(() => {
     sweepExpiredAttempts().catch((err) => logger.error(err, "sweep cycle failed"))
@@ -55,7 +65,7 @@ async function main() {
   const close = async () => {
     clearInterval(sweepTimer)
     stopOutbox()
-    await producer.disconnect()
+    if (producer) await producer.disconnect().catch(() => {})
     await prisma.$disconnect()
     process.exit(0)
   }
