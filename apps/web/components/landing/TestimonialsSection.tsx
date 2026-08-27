@@ -169,57 +169,54 @@ const titleVariants = {
     },
 };
 
-export default function Testimonial() {
-    return (
-        <section className="relative overflow-hidden py-20 lg:py-32">
-            {/* Decorative SVG Elements */}
-            <Cap className="absolute top-10 right-10 size-24 md:size-40 text-foreground opacity-10" />
-            <Book className="absolute bottom-20 left-10 size-24 md:size-40 text-foreground opacity-10" />
-            <Trophy className="absolute top-1/2 left-20 size-16 md:size-28 text-foreground opacity-10 hidden lg:block" />
-            <Atom className="absolute bottom-1/3 right-20 size-20 md:size-32 text-foreground opacity-10 hidden lg:block" />
+export default function TestimonialsSection() {
+  return (
+    <section id="testimonials" className="py-20 md:py-28 bg-background">
+      <div className="container mx-auto px-4 md:px-8">
+        {/* Positivus Section Header */}
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-10 mb-16">
+          <div className="px-3 py-1 bg-[#B9FF66] text-[#191A23] text-2xl sm:text-3xl md:text-4xl font-bold rounded-[7px] border-2 border-[#191A23] font-heading shrink-0 shadow-[2px_2px_0px_0px_#191A23]">
+            Testimonials
+          </div>
+          <p className="text-muted-foreground text-base md:text-lg max-w-xl font-medium leading-relaxed">
+            Hear from our students: Read through our success stories to see how Quizzy helped them crack their banking exams.
+          </p>
+        </div>
 
-            <div className="relative z-10 container mx-auto">
-                <motion.div
-                    className="mb-16 text-center md:mb-20"
-                    variants={containerVariants}
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true, amount: 0.3 }}
-                >
-                    <motion.h2
-                        className="mx-auto mb-6 max-w-4xl text-center text-4xl leading-tight font-black tracking-tighter md:text-5xl lg:text-6xl"
-                        variants={titleVariants}
-                    >
-                        What Students Say
-                    </motion.h2>
-                    <motion.p
-                        className="text-muted-foreground mx-auto max-w-3xl text-center text-lg leading-relaxed tracking-tight md:text-xl"
-                        variants={titleVariants}
-                    >
-                        Join thousands of students who have aced their banking exams with Quizzy
-                    </motion.p>
-                </motion.div>
+        {/* Positivus Dark Testimonials Carousel Container */}
+        <div className="bg-[#191A23] text-white rounded-[35px] md:rounded-[45px] p-8 sm:p-12 md:p-16 border-2 border-[#191A23] shadow-[0px_6px_0px_0px_#191A23] dark:shadow-[0px_6px_0px_0px_#000]">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {testimonials.slice(0, 3).map((item, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: idx * 0.15 }}
+                className="flex flex-col justify-between"
+              >
+                {/* Speech Bubble */}
+                <div className="relative rounded-[30px] border-2 border-[#B9FF66] p-6 sm:p-8 bg-transparent text-white/90 text-sm sm:text-base leading-relaxed mb-6">
+                  &ldquo;{item.content}&rdquo;
+                  {/* Bubble pointer triangle */}
+                  <div className="absolute -bottom-3 left-10 w-6 h-6 bg-[#191A23] border-b-2 border-r-2 border-[#B9FF66] rotate-45" />
+                </div>
 
-                <motion.div
-                    className="mx-4 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 lg:gap-12"
-                    variants={containerVariants}
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true, amount: 0.2 }}
-                >
-                    {testimonials.map((testimonial, index) => (
-                        <TestimonialCard
-                            key={index}
-                            name={testimonial.name}
-                            role={testimonial.role}
-                            image={testimonial.image}
-                            content={testimonial.content}
-                            rating={testimonial.rating}
-                            delay={index * 0.1}
-                        />
-                    ))}
-                </motion.div>
-            </div>
-        </section>
-    );
+                {/* Author Info */}
+                <div className="pl-6 pt-2 flex items-center gap-3">
+                  <div className="relative h-10 w-10 rounded-full border-2 border-[#B9FF66] overflow-hidden">
+                    <Image src={item.image} alt={item.name} fill className="object-cover" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-white font-heading">{item.name}</div>
+                    <div className="text-xs text-[#B9FF66] font-medium">{item.role}</div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }
