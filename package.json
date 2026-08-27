@@ -5,18 +5,12 @@
   "packageManager": "pnpm@10.12.3",
   "scripts": {
     "dev": "turbo run dev",
-    "dev:local": "cross-env DISABLE_KAFKA=true DISABLE_REDIS=true DISABLE_S3=true turbo run dev",
-    "dev:local:full": "cross-env DISABLE_REDIS=true turbo run dev",
-    "dev:services": "cross-env DISABLE_KAFKA=true DISABLE_REDIS=true DISABLE_S3=true turbo run dev --filter=gateway --filter=identity-svc --filter=catalog-svc --filter=assessment-svc --filter=analytics-svc --filter=notification-svc",
-    "dev:web": "pnpm --filter web dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:e2e": "turbo run test:e2e",
     "db:generate": "turbo run prisma:generate",
-    "db:migrate:local": "node scripts/setup-local-db.mjs && node scripts/migrate-local.mjs",
-    "db:seed:local": "pnpm --filter identity-svc db:seed && pnpm --filter catalog-svc db:seed",
     "db:seed:identity": "pnpm --filter identity-svc db:seed",
     "compose:up": "docker compose -f infra/docker-compose.yml up -d --build",
     "compose:down": "docker compose -f infra/docker-compose.yml down",
@@ -26,9 +20,6 @@
     "compose:prod:logs": "docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml logs -f"
   },
   "devDependencies": {
-    "cross-env": "^7.0.3",
-    "dotenv": "^16.6.1",
-    "pg": "^8.22.0",
     "turbo": "^2.10.7",
     "typescript": "^5"
   },

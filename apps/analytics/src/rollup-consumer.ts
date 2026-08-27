@@ -12,8 +12,8 @@
 // is what makes replay safe (a crash between the pre-check and the upsert
 // would otherwise silently double-apply on redelivery).
 import { PrismaClient, Prisma } from "./generated/prisma/index.js"
-import { createLogger, ensureDatabaseUrl } from "@quiz/observability"
-import { createKafka, runConsumer, TOPICS, isKafkaDisabled } from "@quiz/kafka-kit"
+import { createLogger } from "@quiz/observability"
+import { createKafka, runConsumer, TOPICS } from "@quiz/kafka-kit"
 import { getRedisClient } from "@quiz/redis-kit"
 import { recordLeaderboardEntry } from "@quiz/redis-kit"
 import { keys } from "@quiz/redis-kit"
@@ -28,7 +28,6 @@ import type {
 } from "@quiz/contracts"
 
 const logger = createLogger("analytics-rollup-consumer")
-ensureDatabaseUrl("analytics")
 const prisma = new PrismaClient()
 const redis = getRedisClient()
 const CONSUMER_GROUP = "analytics-rollup-consumer"
@@ -413,21 +412,15 @@ async function handleAttemptSubmitted(data: AttemptSubmittedData, eventId: strin
 
   // Best-effort, outside the transaction: Redis is a projection of a
   // projection here, not the system of record for any of this.
-  try {
-    await recordLeaderboardEntry(redis, {
-      userId: data.userId,
-      userName: data.userName,
-      quizId: data.quizId,
-      subjectId: subjectId ?? undefined,
-      totalScorePct: data.totalScore,
-      timeSpentSec: Math.round(data.timeSpentMs / 1000),
-    })
-  } catch (err) {
-    logger.warn({ err, attemptId: data.attemptId }, "leaderboard write failed (non-fatal)")
-  }
-  try {
-    await redis.del(keys.cacheAnalyticsQuiz(data.quizId), keys.cacheAnalyticsUser(data.userId), keys.cacheAnalyticsOverview())
-  } catch {}
+  await recordLeaderboardEntry(redis, {
+    userId: data.userId,
+    userName: data.userName,
+    quizId: data.quizId,
+    subjectId: subjectId ?? undefined,
+    totalScorePct: data.totalScore,
+    timeSpentSec: Math.round(data.timeSpentMs / 1000),
+  })
+  await redis.del(keys.cacheAnalyticsQuiz(data.quizId), keys.cacheAnalyticsUser(data.userId), keys.cacheAnalyticsOverview())
 }
 
 async function handleQuizChanged(data: QuizChangedData, eventId: string) {
@@ -567,11 +560,6 @@ async function handleAttemptStarted(_data: AttemptStartedData, eventId: string) 
 }
 
 async function main() {
-  if (isKafkaDisabled()) {
-    logger.warn("Kafka disabled - analytics-rollup-consumer idle (no events will be processed)")
-    await new Promise(() => {})
-    return
-  }
   const kafka = createKafka("analytics-rollup-consumer")
 
   await runConsumer<
@@ -629,19 +617,19 @@ async function main() {
       switch (topic) {
         case TOPICS.QUIZ_CHANGED: {
           const deleted = await prisma.dimQuiz.deleteMany({ where: { quizId: key } })
-          try { await redis.del(keys.cacheAnalyticsQuiz(key), keys.cacheAnalyticsOverview()) } catch {}
+          await redis.del(keys.cacheAnalyticsQuiz(key), keys.cacheAnalyticsOverview())
           logger.info({ quizId: key, deleted: deleted.count }, "quiz dimension removed via tombstone")
           return
         }
         case TOPICS.CHAPTER_CHANGED: {
           const deleted = await prisma.dimChapter.deleteMany({ where: { chapterId: key } })
-          try { await redis.del(keys.cacheAnalyticsOverview()) } catch {}
+          await redis.del(keys.cacheAnalyticsOverview())
           logger.info({ chapterId: key, deleted: deleted.count }, "chapter dimension removed via tombstone")
           return
         }
         case TOPICS.SUBJECT_CHANGED: {
           const deleted = await prisma.dimSubject.deleteMany({ where: { subjectId: key } })
-          try { await redis.del(keys.cacheAnalyticsOverview()) } catch {}
+          await redis.del(keys.cacheAnalyticsOverview())
           logger.info({ subjectId: key, deleted: deleted.count }, "subject dimension removed via tombstone")
           return
         }

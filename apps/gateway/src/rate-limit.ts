@@ -8,20 +8,14 @@ import { checkRateLimit, RATE_LIMIT_POLICIES, type RateLimitPolicy } from "@quiz
 // that reaches a service directly (e.g. server-to-server on the Docker
 // network) bypasses this. Not duplicated there in this pass.
 export async function enforceRateLimit(redis: Redis, reply: FastifyReply, policy: RateLimitPolicy, subject: string): Promise<boolean> {
-  try {
-    const result = await checkRateLimit(redis, policy, subject)
-    reply.header("X-RateLimit-Limit", result.limit)
-    reply.header("X-RateLimit-Remaining", result.remaining)
-    if (!result.allowed) {
-      reply.code(429).send({ message: "Too many requests" })
-      return false
-    }
-    return true
-  } catch (err) {
-    // Redis unavailable (local dev without Docker) - allow request instead of 500
-    // Log once at debug level, don't break the gateway
-    return true
+  const result = await checkRateLimit(redis, policy, subject)
+  reply.header("X-RateLimit-Limit", result.limit)
+  reply.header("X-RateLimit-Remaining", result.remaining)
+  if (!result.allowed) {
+    reply.code(429).send({ message: "Too many requests" })
+    return false
   }
+  return true
 }
 
 export { RATE_LIMIT_POLICIES }

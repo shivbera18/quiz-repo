@@ -1,5 +1,4 @@
 export * from "./client.js"
-export * from "./memory.js"
 export * from "./keys.js"
 export * from "./rateLimit.js"
 export * from "./leaderboard.js"
