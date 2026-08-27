@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
+import Image from "next/image"
 import { ArrowRight } from "lucide-react"
 
 export default function CTASection() {
@@ -38,19 +39,16 @@ export default function CTASection() {
               </div>
             </div>
 
-            {/* Right: Positivus Graphic Illustration */}
+            {/* Right: Exact Figma CTA Illustration */}
             <div className="lg:col-span-5 flex justify-center items-center relative">
-              <div className="relative w-48 h-48 md:w-64 md:h-64 rounded-full bg-[#B9FF66] border-2 border-[#191A23] flex items-center justify-center shadow-[6px_6px_0px_0px_#191A23] rotate-6">
-                <div className="text-center p-4">
-                  <div className="text-4xl md:text-5xl font-black text-[#191A23]">100%</div>
-                  <div className="text-xs md:text-sm font-bold text-[#191A23] uppercase tracking-wider mt-1">
-                    Free Practice
-                  </div>
-                </div>
-                {/* Floating star */}
-                <div className="absolute -top-3 -right-3 h-10 w-10 rounded-full bg-[#191A23] text-[#B9FF66] flex items-center justify-center font-black text-lg border border-[#191A23]">
-                  ✦
-                </div>
+              <div className="relative w-full max-w-[380px]">
+                <Image
+                  src="/figma/cta-illustration.svg"
+                  alt="Positivus CTA Graphic"
+                  width={494}
+                  height={395}
+                  className="w-full h-auto object-contain select-none pointer-events-none"
+                />
               </div>
             </div>
           </div>
