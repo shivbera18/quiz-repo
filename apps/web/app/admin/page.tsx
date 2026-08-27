@@ -33,8 +33,29 @@ interface Quiz {
   negativeMarkValue: number
   version?: number
   chapterId?: string | null
+  startTime?: string | null
+  endTime?: string | null
 }
 
+function toLocalInputValue(iso: string | null | undefined): string {
+  if (!iso) return ""
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ""
+  const pad = (n: number) => String(n).padStart(2, "0")
+  const y = d.getFullYear()
+  const m = pad(d.getMonth() + 1)
+  const day = pad(d.getDate())
+  const h = pad(d.getHours())
+  const min = pad(d.getMinutes())
+  return `${y}-${m}-${day}T${h}:${min}`
+}
+
+function fromLocalInputValue(val: string): string | null {
+  if (!val || val.trim() === "") return null
+  const d = new Date(val)
+  if (Number.isNaN(d.getTime())) return null
+  return d.toISOString()
+}
 interface Question {
   id: string
   quizId: string
@@ -122,6 +143,8 @@ export default function AdminPage() {
     sections: [] as string[],
     negativeMarking: true,
     negativeMarkValue: 0.25,
+    startTime: "",
+    endTime: "",
   })
 
   // Subject and Chapter data
@@ -342,6 +365,8 @@ export default function AdminPage() {
           questions: [],
           negativeMarking: newQuiz.negativeMarking,
           negativeMarkValue: newQuiz.negativeMarkValue,
+          startTime: fromLocalInputValue(newQuiz.startTime),
+          endTime: fromLocalInputValue(newQuiz.endTime),
         }),
       })
 
@@ -394,6 +419,8 @@ export default function AdminPage() {
         sections: [],
         negativeMarking: true,
         negativeMarkValue: 0.25,
+        startTime: "",
+        endTime: "",
       })
       setShowQuizForm(false)
 
@@ -467,6 +494,8 @@ export default function AdminPage() {
       sections: quiz.sections,
       negativeMarking: quiz.negativeMarking ?? true,
       negativeMarkValue: quiz.negativeMarkValue ?? 0.25,
+      startTime: toLocalInputValue(quiz.startTime),
+      endTime: toLocalInputValue(quiz.endTime),
     })
     setShowQuizForm(true)
   }
@@ -495,6 +524,8 @@ export default function AdminPage() {
           isActive: editingQuiz.isActive, // Keep existing active status
           negativeMarking: newQuiz.negativeMarking,
           negativeMarkValue: newQuiz.negativeMarkValue,
+          startTime: fromLocalInputValue(newQuiz.startTime),
+          endTime: fromLocalInputValue(newQuiz.endTime),
         }),
       })
 
@@ -519,6 +550,8 @@ export default function AdminPage() {
         sections: [],
         negativeMarking: true,
         negativeMarkValue: 0.25,
+        startTime: "",
+        endTime: "",
       })
     } catch {
       setError("Failed to update quiz in database")
@@ -859,14 +892,18 @@ export default function AdminPage() {
                 </Link>
               </Card>
 
-              <Card className="hover:shadow-lg transition-shadow" variant="neobrutalist">
+              <Card
+                className="hover:shadow-lg transition-shadow cursor-pointer"
+                variant="neobrutalist"
+                onClick={() => setSelectedAdminTab("quizzes")}
+              >
                 <CardHeader className="text-center pb-2">
                   <Clock className="h-8 w-8 md:h-12 md:w-12 mx-auto text-orange-600 mb-2" />
                   <CardTitle className="text-sm md:text-base font-bold">Scheduled Exams</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <CardDescription className="text-center text-xs font-medium">
-                    Set open/close windows on any quiz from its editor
+                    View & manage exam schedule windows in Manage Quizzes
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -1141,6 +1178,45 @@ export default function AdminPage() {
               </div>
             </div>
 
+            {/* Schedule Window */}
+            <div className="border-2 border-black dark:border-white/30 p-4 rounded-md space-y-3 bg-muted/20">
+              <div>
+                <Label className="font-bold flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-orange-600" />
+                  Exam Schedule Window (Optional)
+                </Label>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Set open and close dates/times. Leave blank for self-paced exams available anytime.
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="quizStartTime" className="text-xs font-semibold">
+                    Opens At (Start Time)
+                  </Label>
+                  <Input
+                    id="quizStartTime"
+                    type="datetime-local"
+                    value={newQuiz.startTime}
+                    onChange={(e) => setNewQuiz((prev) => ({ ...prev, startTime: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="quizEndTime" className="text-xs font-semibold">
+                    Closes At (End Time)
+                  </Label>
+                  <Input
+                    id="quizEndTime"
+                    type="datetime-local"
+                    value={newQuiz.endTime}
+                    onChange={(e) => setNewQuiz((prev) => ({ ...prev, endTime: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="flex gap-2">
               <Button onClick={editingQuiz ? handleUpdateQuiz : createQuiz} variant="neobrutalist">
                 {editingQuiz ? "Update Quiz" : "Create Quiz"}
@@ -1159,6 +1235,8 @@ export default function AdminPage() {
                     sections: [],
                     negativeMarking: true,
                     negativeMarkValue: 0.25,
+                    startTime: "",
+                    endTime: "",
                   })
                   setError("")
                   setSuccess("")
@@ -1270,6 +1348,23 @@ export default function AdminPage() {
                       <p className="font-medium">{quiz.isActive ? "Active" : "Inactive"}</p>
                     </div>
                   </div>
+
+                  {(quiz.startTime || quiz.endTime) && (
+                    <div className="flex items-center gap-2 text-xs font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30 px-2.5 py-1.5 rounded border border-orange-300 dark:border-orange-800 w-fit">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>
+                        {(() => {
+                          const now = Date.now()
+                          const start = quiz.startTime ? Date.parse(quiz.startTime) : null
+                          const end = quiz.endTime ? Date.parse(quiz.endTime) : null
+                          if (end && now > end) return `Closed (Ended ${new Date(end).toLocaleDateString()})`
+                          if (start && now < start) return `Opens ${new Date(start).toLocaleString()}`
+                          if (end) return `Closes ${new Date(end).toLocaleString()}`
+                          return "Scheduled"
+                        })()}
+                      </span>
+                    </div>
+                  )}
 
                   <div>
                     <span className="text-muted-foreground text-sm">Sections:</span>
