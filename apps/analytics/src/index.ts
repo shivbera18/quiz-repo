@@ -16,7 +16,30 @@ const prisma = new PrismaClient()
 const redis = getRedisClient()
 const PORT = Number(process.env.PORT) || 4004
 const OVERVIEW_CACHE_TTL_SEC = 300
+const CATALOG_SVC_URL = process.env.CATALOG_SVC_URL || "http://catalog-svc:4002"
 
+interface CatalogQuizMeta {
+  id: string
+  title: string
+  questionCount: number
+  isActive: boolean
+  createdAt?: string
+  chapterId?: string | null
+  subjectId?: string | null
+}
+
+async function fetchCatalogQuizMeta(): Promise<Map<string, CatalogQuizMeta>> {
+  try {
+    const res = await fetch(`${CATALOG_SVC_URL}/internal/quizzes-meta`, {
+      signal: AbortSignal.timeout(3000),
+    })
+    if (!res.ok) return new Map()
+    const items = (await res.json()) as CatalogQuizMeta[]
+    return new Map(items.map((q) => [q.id, q]))
+  } catch {
+    return new Map()
+  }
+}
 async function main() {
   const app = Fastify({ loggerInstance: logger as any })
   await app.register(cors, { origin: true })
@@ -105,12 +128,13 @@ async function main() {
     if (!requireAdmin(request, reply)) return
     const facts = await prisma.attemptFact.findMany({ orderBy: { submittedAt: "desc" }, take: 500 })
     const attemptIds = facts.map((f) => f.attemptId)
-    const [users, quizzes, sectionFacts] = await Promise.all([
+    const [users, quizzes, sectionFacts, catalogMeta] = await Promise.all([
       prisma.dimUser.findMany({ where: { deletedAt: null } }),
       prisma.dimQuiz.findMany(),
       // Scoped to the fetched attempts so this query stays bounded as the
       // fact tables grow; unbounded would load every section row in history.
       prisma.attemptSectionFact.findMany({ where: { attemptId: { in: attemptIds } } }),
+      fetchCatalogQuizMeta(),
     ])
     const userById = new Map(users.map((u) => [u.userId, u]))
     const quizById = new Map(quizzes.map((q) => [q.quizId, q]))
@@ -121,15 +145,28 @@ async function main() {
       sectionsByAttempt.set(s.attemptId, m)
     }
 
+    // Self-healing dimension sync: ensures seeded/pre-split quizzes exist in DimQuiz
+    for (const [id, q] of catalogMeta.entries()) {
+      if (!quizById.has(id)) {
+        prisma.dimQuiz.upsert({
+          where: { quizId: id },
+          update: { title: q.title, questionCount: q.questionCount, isActive: q.isActive, chapterId: q.chapterId, subjectId: q.subjectId },
+          create: { quizId: id, quizVersion: 1, title: q.title, questionCount: q.questionCount, isActive: q.isActive, chapterId: q.chapterId, subjectId: q.subjectId },
+        }).catch(() => {})
+      }
+    }
+
     const results = facts.map((f) => {
       const user = userById.get(f.userId)
       const quiz = quizById.get(f.quizId)
+      const catalogInfo = catalogMeta.get(f.quizId)
+      const title = catalogInfo?.title ?? quiz?.title ?? "Unknown Quiz"
       return {
         id: f.attemptId,
         _id: f.attemptId,
         date: f.submittedAt.toISOString(),
         quizId: f.quizId,
-        quizName: quiz?.title ?? "Unknown Quiz",
+        quizName: title,
         totalScore: f.totalScore,
         rawScore: f.rawScore,
         maxScore: f.maxScore,
@@ -141,15 +178,28 @@ async function main() {
         userName: user?.name ?? "Unknown User",
         userEmail: user?.email ?? "",
         user: { id: f.userId, name: user?.name ?? "Unknown User", email: user?.email ?? "" },
-        quiz: { id: f.quizId, title: quiz?.title ?? "Unknown Quiz" },
+        quiz: { id: f.quizId, title },
         sections: sectionsByAttempt.get(f.attemptId) ?? {},
+      }
+    })
+
+    const allQuizIds = new Set([...quizzes.map((q) => q.quizId), ...catalogMeta.keys()])
+    const combinedQuizzes = Array.from(allQuizIds).map((id) => {
+      const dim = quizById.get(id)
+      const cat = catalogMeta.get(id)
+      return {
+        id,
+        title: cat?.title ?? dim?.title ?? "Unknown Quiz",
+        questionCount: cat?.questionCount ?? dim?.questionCount ?? 0,
+        isActive: cat?.isActive ?? dim?.isActive ?? true,
+        createdAt: dim?.createdAt?.toISOString() ?? cat?.createdAt ?? new Date().toISOString(),
       }
     })
 
     return {
       success: true,
       results,
-      quizzes: quizzes.map((q) => ({ id: q.quizId, title: q.title, questionCount: q.questionCount, isActive: q.isActive })),
+      quizzes: combinedQuizzes,
     }
   })
 
@@ -232,7 +282,7 @@ async function main() {
       reply.code(403)
       return { message: "Forbidden" }
     }
-    const [stats, activity, user, facts] = await Promise.all([
+    const [stats, activity, user, facts, catalogMeta] = await Promise.all([
       prisma.userStats.findUnique({ where: { userId: id } }),
       prisma.userDailyActivity.findMany({
         where: { userId: id, activityDate: { gte: new Date(Date.now() - 90 * 86_400_000) } },
@@ -240,6 +290,7 @@ async function main() {
       }),
       prisma.dimUser.findUnique({ where: { userId: id } }),
       prisma.attemptFact.findMany({ where: { userId: id }, orderBy: { submittedAt: "desc" } }),
+      fetchCatalogQuizMeta(),
     ])
     if (!stats && facts.length === 0 && !user) {
       // Genuinely unknown user (no dimension, no stats, no facts).
@@ -261,7 +312,7 @@ async function main() {
     const titleByQuiz = new Map(quizzes.map((q) => [q.quizId, q.title]))
     const quizPerformance = Array.from(byQuiz.entries()).map(([quizId, agg]) => ({
       quizId,
-      quizTitle: titleByQuiz.get(quizId) ?? "Unknown Quiz",
+      quizTitle: catalogMeta.get(quizId)?.title ?? titleByQuiz.get(quizId) ?? "Unknown Quiz",
       totalAttempts: agg.attempts.length,
       bestScore: agg.bestScore,
       averageScore: agg.attempts.length > 0 ? Math.round(agg.sumScore / agg.attempts.length) : 0,

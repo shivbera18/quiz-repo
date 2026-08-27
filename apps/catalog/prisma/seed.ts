@@ -1,7 +1,8 @@
 import { PrismaClient } from "../src/generated/prisma/index.js"
+import { TOPICS, createEnvelope } from "@quiz/contracts"
+import { quizChangedPayload } from "../src/lib/events.js"
 
 const prisma = new PrismaClient()
-
 async function main() {
   console.log("Seeding catalog-svc...")
 
@@ -28,6 +29,16 @@ async function main() {
       isActive: true,
       negativeMarking: true,
       negativeMarkValue: 0.25,
+    },
+  })
+  await prisma.outbox.create({
+    data: {
+      aggregateType: "Quiz",
+      aggregateId: quiz.id,
+      topic: TOPICS.QUIZ_CHANGED,
+      key: quiz.id,
+      payload: createEnvelope(TOPICS.QUIZ_CHANGED, quizChangedPayload(quiz), { producer: "catalog-svc" }) as any,
+      headers: { "content-type": "application/json", "event-type": TOPICS.QUIZ_CHANGED },
     },
   })
 
