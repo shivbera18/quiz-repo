@@ -6,6 +6,10 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = request.headers.get("authorization")
+    if (!auth?.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
     const { topic, difficulty, count, section } = await request.json()
 
     if (!topic || !difficulty || !count || !section) {
@@ -13,6 +17,19 @@ export async function POST(request: NextRequest) {
         { error: 'Missing required fields: topic, difficulty, count, section' },
         { status: 400 }
       )
+    }
+    if (typeof count !== "number" || !Number.isInteger(count) || count < 1 || count > 20) {
+      return NextResponse.json({ error: "count must be an integer 1-20" }, { status: 400 })
+    }
+    if (typeof topic !== "string" || topic.trim().length < 2 || topic.trim().length > 200) {
+      return NextResponse.json({ error: "topic must be 2-200 chars" }, { status: 400 })
+    }
+    if (typeof section !== "string" || section.trim().length < 1 || section.trim().length > 100) {
+      return NextResponse.json({ error: "section must be 1-100 chars" }, { status: 400 })
+    }
+    const allowed = ["easy", "medium", "hard"]
+    if (!allowed.includes(difficulty)) {
+      return NextResponse.json({ error: "difficulty must be one of easy, medium, hard" }, { status: 400 })
     }
 
     if (!process.env.GEMINI_API_KEY) {
