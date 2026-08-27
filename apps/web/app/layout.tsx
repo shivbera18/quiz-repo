@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
-import { Inter } from "next/font/google"
+import { Inter, Space_Grotesk } from "next/font/google"
 import Script from "next/script"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -9,7 +9,8 @@ import ServiceWorkerRegistration from "@/components/service-worker-registration"
 import PWAHandler from "@/components/pwa-handler"
 import { AppShell } from "@/components/layout/app-shell"
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
+const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk" })
 
 export const metadata: Metadata = {
   title: "Banking Exam Preparation",
@@ -68,7 +69,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Quizzy" />
       </head>
-      <body className={inter.className} suppressHydrationWarning>
+      <body className={`${spaceGrotesk.variable} ${inter.variable} font-sans`} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

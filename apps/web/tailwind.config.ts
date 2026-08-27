@@ -11,7 +11,19 @@ const config: Config = {
   ],
   theme: {
   	extend: {
+  		fontFamily: {
+  			sans: ["var(--font-space-grotesk)", "var(--font-inter)", "sans-serif"],
+  			heading: ["var(--font-space-grotesk)", "sans-serif"],
+  		},
   		colors: {
+  			positivus: {
+  				green: "#B9FF66",
+  				dark: "#191A23",
+  				grey: "#F3F3F3",
+  				black: "#000000",
+  				white: "#FFFFFF",
+  				cardDark: "#292A32",
+  			},
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {
@@ -90,6 +102,10 @@ const config: Config = {
             'low': '0 1px 3px rgba(0,0,0,0.06)',
             'medium': '0 4px 12px rgba(0,0,0,0.08)',
             'high': '0 6px 20px rgba(0,0,0,0.12)',
+            'positivus': '0px 5px 0px 0px #191A23',
+            'positivus-lg': '0px 8px 0px 0px #191A23',
+            'positivus-sm': '0px 3px 0px 0px #191A23',
+            'positivus-dark': '0px 5px 0px 0px rgba(255,255,255,0.9)',
         },
   		keyframes: {
   			'accordion-down': {
