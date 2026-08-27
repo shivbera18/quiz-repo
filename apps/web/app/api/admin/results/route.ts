@@ -1,4 +1,4 @@
-import { type NextRequest } from "next/server"
+import { NextResponse, type NextRequest } from "next/server"
 import { proxyToGateway } from "@/lib/gateway-client"
 
 export const dynamic = "force-dynamic"
@@ -17,6 +17,9 @@ export async function DELETE(request: NextRequest) {
       proxyToGateway(request, `/v1/analytics/attempts/${encodeURIComponent(id)}`),
       proxyToGateway(request, `/v1/admin/attempts/${encodeURIComponent(id)}`),
     ])
+    if (analyticsRes.ok || analyticsRes.status === 404) {
+      return NextResponse.json({ message: "Quiz result deleted successfully", deletedId: id })
+    }
     return analyticsRes
   }
   if (userId) {
@@ -25,7 +28,10 @@ export async function DELETE(request: NextRequest) {
       proxyToGateway(request, `/v1/analytics/users/${encodeURIComponent(userId)}/attempts${query ? `?${query}` : ""}`),
       proxyToGateway(request, `/v1/admin/legacy-results?${query}`),
     ])
+    if (analyticsRes.ok || analyticsRes.status === 404) {
+      return NextResponse.json({ message: "User results deleted successfully" })
+    }
     return analyticsRes
   }
-  return Response.json({ message: "id or userId required" }, { status: 400 })
+  return NextResponse.json({ message: "id or userId required" }, { status: 400 })
 }

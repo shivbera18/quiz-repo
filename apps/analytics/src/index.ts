@@ -488,8 +488,7 @@ async function main() {
     const fact = await prisma.attemptFact.findFirst({ where: { attemptId: id }, select: { userId: true, quizId: true } })
     const deleted = await prisma.attemptFact.deleteMany({ where: { attemptId: id } })
     if (deleted.count === 0) {
-      reply.code(404)
-      return { message: "Result not found" }
+      return { message: "Result already deleted or not found", deletedId: id }
     }
     if (fact) await recomputeAfterFactDeletion([id], [fact.userId], [fact.quizId])
     return { message: "Quiz result deleted successfully", deletedId: id }
@@ -508,8 +507,7 @@ async function main() {
     const doomed = await prisma.attemptFact.findMany({ where, select: { attemptId: true, quizId: true } })
     const deleted = await prisma.attemptFact.deleteMany({ where })
     if (deleted.count === 0) {
-      reply.code(404)
-      return { message: "No results found for this user" }
+      return { message: "User results already deleted or not found", deletedCount: 0 }
     }
     await recomputeAfterFactDeletion(
       doomed.map((d) => d.attemptId),
