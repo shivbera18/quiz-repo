@@ -3,7 +3,11 @@ import { Kafka, logLevel, type Producer } from "kafkajs"
 export function isKafkaDisabled(): boolean {
   const brokers = process.env.KAFKA_BROKERS
   if (process.env.DISABLE_KAFKA === "true") return true
+  if (process.env.DISABLE_KAFKA === "false") return false
   if (brokers === "disabled" || brokers === "memory://" || brokers === "") return true
+  // For local dev without Docker: no explicit brokers and not in production -> use no-op
+  // This makes `pnpm dev` work without a running Redpanda; Docker sets KAFKA_BROKERS=redpanda:9092
+  if (!process.env.KAFKA_BROKERS && process.env.NODE_ENV !== "production") return true
   return false
 }
 

@@ -15,7 +15,7 @@
     "test": "turbo run test",
     "test:e2e": "turbo run test:e2e",
     "db:generate": "turbo run prisma:generate",
-    "db:migrate:local": "node scripts/setup-local-db.mjs && turbo run db:migrate",
+    "db:migrate:local": "node scripts/setup-local-db.mjs && node scripts/migrate-local.mjs",
     "db:seed:local": "pnpm --filter identity-svc db:seed && pnpm --filter catalog-svc db:seed",
     "db:seed:identity": "pnpm --filter identity-svc db:seed",
     "compose:up": "docker compose -f infra/docker-compose.yml up -d --build",

@@ -291,32 +291,40 @@ export class InMemoryRedis {
     return slice.map(([member]) => member);
   }
 
-  // --- pub/sub (best-effort no-op for single process) ---
-  private listeners = new Map<string, Array<(channel: string, msg: string) => void>>();
-  // simple in-proc pubsub
+  // --- pub/sub (best-effort in-proc for single-process SSE) ---
+  private messageHandlers: Array<(channel: string, msg: string) => void> = []
+  private subscriptions = new Set<string>()
   async publish(channel: string, message: string): Promise<number> {
-    const cbs = this.listeners.get(channel) ?? [];
-    // also broadcast wildcard? For local dev, just no-op fine
-    for (const cb of cbs) cb(channel, message);
-    // also deliver to 'message' listeners on duplicate clients
-    return cbs.length;
+    // Deliver to all `on("message")` handlers if they subscribed to this channel
+    // For local dev single-process, deliver to all handlers (filtering is best-effort)
+    let delivered = 0
+    for (const h of this.messageHandlers) {
+      try {
+        // Only deliver if handler's subscriber is subscribed to this channel or broadcast
+        // We track subscriptions globally; simplest: deliver to all
+        h(channel, message)
+        delivered++
+      } catch {}
+    }
+    return delivered
   }
   async subscribe(...channels: string[]): Promise<void> {
-    // subscribing is no-op; we just ensure listeners map exists
-    for (const ch of channels) if (!this.listeners.has(ch)) this.listeners.set(ch, []);
+    for (const ch of channels) this.subscriptions.add(ch)
   }
   async unsubscribe(...channels: string[]): Promise<void> {
-    for (const ch of channels) this.listeners.delete(ch);
+    for (const ch of channels) this.subscriptions.delete(ch)
   }
   on(event: string, handler: (...args: any[]) => void): void {
     if (event === "message") {
-      // store as generic listener; publish will invoke
-      // For simplicity, treat first subscribed channel's listeners
-      // This mock keeps it simple: global message handler
-      const key = "__message__";
-      const arr = this.listeners.get(key) ?? [];
-      arr.push(handler as any);
-      this.listeners.set(key, arr);
+      this.messageHandlers.push(handler as any)
+    }
+  }
+  // Also support `off`/`removeListener` for cleanup (fanout cleanup calls unsubscribe)
+  off(event: string, handler?: (...args: any[]) => void): void {
+    if (event === "message" && handler) {
+      this.messageHandlers = this.messageHandlers.filter((h) => h !== handler)
+    } else if (event === "message") {
+      this.messageHandlers = []
     }
   }
   // duplicate returns a new client sharing same underlying storage

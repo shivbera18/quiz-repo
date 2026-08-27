@@ -43,8 +43,15 @@ if (!rawUrl) {
 }
 
 // Strip ?schema= param for admin connection - we need to create schemas themselves
-const url = rawUrl.split("?")[0] + (rawUrl.includes("sslmode") ? "?" + rawUrl.split("?")[1]?.replace(/&?schema=[^&]*/g, "").replace(/^&/, "") : "")
-const cleanUrl = url.replace(/&&/g, "&").replace(/\?&/, "?").replace(/\?$/, "")
+let cleanUrl = rawUrl
+try {
+  const parsed = new URL(rawUrl)
+  parsed.searchParams.delete("schema")
+  cleanUrl = parsed.toString()
+} catch {
+  // Fallback string handling for non-URL-parseable strings
+  cleanUrl = rawUrl.replace(/[?&]schema=[^&]*/g, "").replace(/\?&/, "?").replace(/&&/g, "&").replace(/\?$/, "")
+}
 
 const schemas = ["identity", "catalog", "assessment", "analytics", "notification"]
 

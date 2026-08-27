@@ -131,8 +131,8 @@ async function main() {
     return
   }
   // S3 is optional for local dev: check if export storage is configured
-  if (!process.env.S3_ENDPOINT && !process.env.S3_ACCESS_KEY && process.env.DISABLE_S3 === "true") {
-    logger.warn("S3 disabled - export worker will fail exports until S3/MinIO is configured")
+  if (process.env.DISABLE_S3 === "true" || (!process.env.S3_ENDPOINT && !process.env.S3_ACCESS_KEY_ID && !process.env.AWS_ACCESS_KEY_ID)) {
+    logger.warn("S3/MinIO not configured or DISABLE_S3=true - exports will fail until S3 is configured (set S3_ENDPOINT etc or run without export features)")
   }
   const kafka = createKafka("analytics-export-worker")
   const producer = await getProducer(kafka)

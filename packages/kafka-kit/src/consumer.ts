@@ -1,6 +1,6 @@
 import type { Consumer, EachMessagePayload, Kafka, Producer } from "kafkajs"
 import type { EventEnvelope } from "@quiz/contracts"
-import { getProducer } from "./client.js"
+import { getProducer, isKafkaDisabled } from "./client.js"
 
 // Consumer-side idempotency: each service keeps its own `processed_event(event_id,
 // consumer_group, processed_at)` table and checks/inserts it in the SAME
@@ -269,6 +269,13 @@ export async function runConsumer<T>(
     dlq?: DlqOptions
   }
 ): Promise<Consumer> {
+  if (isKafkaDisabled()) {
+    console.warn(`[kafka-kit] runConsumer(${opts.groupId}) skipped - Kafka disabled (DISABLE_KAFKA=true)`)
+    return {
+      disconnect: async () => {},
+      stop: async () => {},
+    } as unknown as Consumer
+  }
   const dlq: Required<DlqOptions> = { ...DEFAULT_DLQ, ...(opts.dlq ?? {}) }
 
   const consumer = kafka.consumer({
