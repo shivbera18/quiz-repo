@@ -76,27 +76,12 @@ const config: Config = {
   			}
   		},
   		borderRadius: {
-  			lg: 'var(--radius)', // 0.75rem / 12px (Small elements) - Wait, user said Small=lg, Button=xl. 
-            // Let's map them:
-            // User: Small elements (inputs, chips): rounded-lg
-            // User: Buttons: rounded-xl
-            // User: Cards: rounded-2xl
-            // User: Dialogs: rounded-3xl
-            
-            // Tailwind defaults:
-            // rounded-lg: 0.5rem (8px)
-            // rounded-xl: 0.75rem (12px)
-            // rounded-2xl: 1rem (16px)
-            // rounded-3xl: 1.5rem (24px)
-            
-            // My globals.css has --radius: 0.75rem (12px).
-            // shadcn uses `radius` for `rounded-md` usually.
-            // I will override the defaults to match user specs exactly if needed, or just use the classes.
-            // The user said "Small elements: rounded-lg". 
-            // I will ensure the classes exist.
-            
+  			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
+  			sm: 'calc(var(--radius) - 4px)',
+  			'positivus-card': '45px',
+  			'positivus-btn': '14px',
+  			'positivus-pill': '7px',
   		},
         boxShadow: {
             'low': '0 1px 3px rgba(0,0,0,0.06)',

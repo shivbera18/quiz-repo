@@ -2,11 +2,6 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { ChevronDown, HelpCircle } from "lucide-react"
-import Book from "../svgs/Book"
-import Atom from "../svgs/Atom"
-import Science from "../svgs/Science"
-import Calculator from "../svgs/Calculator"
 
 const steps = [
   {
@@ -49,7 +44,8 @@ export default function FAQSection() {
   };
 
   return (
-    <section id="process" className="py-20 md:py-28 bg-background">
+    <section id="process" className="py-20 md:py-28 bg-background relative">
+      <span id="faq" className="absolute -top-24" />
       <div className="container mx-auto px-4 md:px-8">
         {/* Positivus Section Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-10 mb-16">

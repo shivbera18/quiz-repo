@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Link from "next/link";
-import { QuizzyLogo } from "@/components/ui/quizzy-logo";
-
 export default function LandingHeader() {
     const router = useRouter();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -41,7 +39,7 @@ export default function LandingHeader() {
     };
 
     return (
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md border-b-2 border-[#191A23] dark:border-white/20 transition-colors">
+        <nav aria-label="Main Navigation" className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md border-b-2 border-[#191A23] dark:border-white/20 transition-colors">
             <div className="container mx-auto px-4 md:px-8">
                 <div className="flex items-center justify-between h-20">
                     <Link href="/" className="flex items-center gap-2 group">

@@ -1,18 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight as ArrowRightIcon, BookOpen as BookOpenIcon, Star as StarIcon } from "lucide-react";
+import { ArrowRight as ArrowRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import HandDrawnArrow from "../svgs/HandDrawnArrow";
-import Science from "../svgs/Science";
-import Cap from "../svgs/Cap";
-import Atom from "../svgs/Atom";
 import Trophy from "../svgs/Trophy";
-import Calculator from "../svgs/Calculator";
-import Book from "../svgs/Book";
 import Image from "next/image";
 
 interface Testimonial {
@@ -32,17 +25,9 @@ const testimonials: Testimonial[] = [
 
 export default function HeroSection() {
     const router = useRouter();
-    const [titleNumber, setTitleNumber] = useState(0);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-
-    const titles = useMemo(
-        () => ["smart", "fast", "efficient", "quick", "effective"],
-        [],
-    );
-
     useEffect(() => {
-        // Check auth state
         const token = localStorage.getItem("token");
         const user = localStorage.getItem("user");
         if (token && user) {
@@ -50,18 +35,6 @@ export default function HeroSection() {
         }
         setIsLoading(false);
     }, []);
-
-    useEffect(() => {
-        const timeoutId = setTimeout(() => {
-            if (titleNumber === titles.length - 1) {
-                setTitleNumber(0);
-            } else {
-                setTitleNumber(titleNumber + 1);
-            }
-        }, 2000);
-        return () => clearTimeout(timeoutId);
-    }, [titleNumber, titles]);
-
     const handleDashboardClick = () => {
         const user = localStorage.getItem("user");
         if (user) {
@@ -81,7 +54,7 @@ export default function HeroSection() {
     };
 
     return (
-        <div className="w-full pt-28 pb-16 md:pt-36 md:pb-24 overflow-hidden">
+        <section aria-label="Hero" className="w-full pt-28 pb-16 md:pt-36 md:pb-24 overflow-hidden">
             <div className="container mx-auto px-4 md:px-8">
                 {/* 2-Column Hero */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
@@ -222,6 +195,6 @@ export default function HeroSection() {
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
     );
 }

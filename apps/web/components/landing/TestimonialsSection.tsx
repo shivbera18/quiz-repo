@@ -2,102 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Star as StarIcon, Quote as QuotesIcon } from "lucide-react";
 import Image from "next/image";
-import Cap from "../svgs/Cap";
-import Book from "../svgs/Book";
-import Trophy from "../svgs/Trophy";
-import Atom from "../svgs/Atom";
-
-interface TestimonialCardProps {
-    name: string;
-    role: string;
-    image: string;
-    content: string;
-    rating: number;
-    delay?: number;
-}
-
-function TestimonialCard({
-    name,
-    role,
-    image,
-    content,
-    rating,
-    delay = 0,
-}: TestimonialCardProps) {
-    const cardVariants = {
-        hidden: { opacity: 0, y: 50 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: {
-                duration: 0.7,
-                delay: delay,
-            },
-        },
-    };
-
-    return (
-        <motion.div
-            className="group relative"
-            variants={cardVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
-        >
-            <div className="relative rounded-md border-4 border-black bg-card p-8 shadow-[8px_8px_0px_0px_#000] transition-all duration-300 hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#000] dark:border-white/65 dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.65)] dark:hover:shadow-[12px_12px_0px_0px_rgba(255,255,255,0.75)]">
-                <div className="relative z-10">
-                    {/* Quote Icon */}
-                    <div className="mb-4">
-                        <QuotesIcon
-                            className="h-8 w-8 text-foreground opacity-30"
-                        />
-                    </div>
-
-                    {/* Rating */}
-                    <div className="mb-4 flex gap-1">
-                        {Array.from({ length: 5 }).map((_, index) => (
-                            <StarIcon
-                                key={index}
-                                className={`h-4 w-4 ${index < rating
-                                        ? "text-yellow-500 fill-yellow-500"
-                                        : "text-gray-400 dark:text-gray-600"
-                                    }`}
-                            />
-                        ))}
-                    </div>
-
-                    {/* Content */}
-                    <p className="mb-6 leading-relaxed font-medium text-foreground">
-                        &quot;{content}&quot;
-                    </p>
-
-                    {/* Author */}
-                    <div className="flex items-center gap-3">
-                        <div className="relative h-12 w-12 rounded-md border-4 border-black dark:border-white/65 overflow-hidden">
-                            <Image
-                                src={image}
-                                alt={name}
-                                fill
-                                className="object-cover"
-                            />
-                        </div>
-                        <div>
-                            <h4 className="font-bold text-foreground">
-                                {name}
-                            </h4>
-                            <p className="text-sm font-medium text-muted-foreground">
-                                {role}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </motion.div>
-    );
-}
-
 const testimonials = [
     {
         name: "Priya Sharma",
@@ -149,25 +54,6 @@ const testimonials = [
     },
 ];
 
-const containerVariants = {
-    hidden: {},
-    visible: {
-        transition: {
-            staggerChildren: 0.2,
-        },
-    },
-};
-
-const titleVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        transition: {
-            duration: 0.8,
-        },
-    },
-};
 
 export default function TestimonialsSection() {
   return (

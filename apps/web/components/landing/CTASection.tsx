@@ -4,12 +4,6 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import { ArrowRight } from "lucide-react"
-import Science from "../svgs/Science"
-import Cap from "../svgs/Cap"
-import Atom from "../svgs/Atom"
-import Trophy from "../svgs/Trophy"
-import Calculator from "../svgs/Calculator"
-import Book from "../svgs/Book"
 
 export default function CTASection() {
   return (

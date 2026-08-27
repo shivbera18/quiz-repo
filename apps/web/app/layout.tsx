@@ -47,8 +47,7 @@ export const metadata: Metadata = {
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  themeColor: '#7c3aed',
+  themeColor: '#191A23',
 }
 
 export default function RootLayout({
@@ -64,7 +63,7 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png" />
         {/* iOS home-screen icon: without this, Add to Home Screen snapshots the page. */}
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-        <meta name="theme-color" content="#7c3aed" />
+        <meta name="theme-color" content="#191A23" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Quizzy" />
