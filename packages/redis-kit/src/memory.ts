@@ -82,11 +82,40 @@ class MemoryPipeline {
 }
 
 export class InMemoryRedis {
-  private kv = new Map<string, { value: string; expAt?: number }>();
-  private hashes = new Map<string, Map<string, string>>();
-  private lists = new Map<string, string[]>();
-  private zsets = new Map<string, Map<string, number>>();
-  private expiry = new Map<string, NodeJS.Timeout>();
+  private kv: Map<string, { value: string; expAt?: number }>;
+  private hashes: Map<string, Map<string, string>>;
+  private lists: Map<string, string[]>;
+  private zsets: Map<string, Map<string, number>>;
+  private expiry: Map<string, NodeJS.Timeout>;
+  private subscribers: Set<InMemoryRedis>;
+  private messageHandlers: Array<(channel: string, msg: string) => void> = [];
+  private subscriptions = new Set<string>();
+
+  constructor(shared?: {
+    kv: Map<string, { value: string; expAt?: number }>;
+    hashes: Map<string, Map<string, string>>;
+    lists: Map<string, string[]>;
+    zsets: Map<string, Map<string, number>>;
+    expiry: Map<string, NodeJS.Timeout>;
+    subscribers: Set<InMemoryRedis>;
+  }) {
+    if (shared) {
+      this.kv = shared.kv;
+      this.hashes = shared.hashes;
+      this.lists = shared.lists;
+      this.zsets = shared.zsets;
+      this.expiry = shared.expiry;
+      this.subscribers = shared.subscribers;
+    } else {
+      this.kv = new Map();
+      this.hashes = new Map();
+      this.lists = new Map();
+      this.zsets = new Map();
+      this.expiry = new Map();
+      this.subscribers = new Set();
+    }
+    this.subscribers.add(this);
+  }
 
   private isExpired(key: string): boolean {
     const entry = this.kv.get(key);
@@ -95,6 +124,9 @@ export class InMemoryRedis {
       this.kv.delete(key);
       this.hashes.delete(key);
       this.lists.delete(key);
+      this.zsets.delete(key);
+      clearTimeout(this.expiry.get(key));
+      this.expiry.delete(key);
       return true;
     }
     return false;
@@ -135,11 +167,9 @@ export class InMemoryRedis {
     if (expAt) {
       const ttl = expAt - Date.now();
       if (ttl > 0) {
-        const existing = this.expiry.get(key);
-        if (existing) clearTimeout(existing);
+        clearTimeout(this.expiry.get(key));
         const t = setTimeout(() => this.kv.delete(key), ttl);
-        // don't keep process alive
-        (t as any).unref?.();
+        t.unref();
         this.expiry.set(key, t);
       }
     }
@@ -149,10 +179,10 @@ export class InMemoryRedis {
   async del(...keys: string[]): Promise<number> {
     let n = 0;
     for (const k of keys) {
-      if (this.kv.delete(k)) n++;
-      if (this.hashes.delete(k)) n++;
-      if (this.lists.delete(k)) n++;
-      if (this.zsets.delete(k)) n++;
+      clearTimeout(this.expiry.get(k));
+      this.expiry.delete(k);
+      const existed = this.kv.delete(k) || this.hashes.delete(k) || this.lists.delete(k) || this.zsets.delete(k);
+      if (existed) n++;
     }
     return n;
   }
@@ -165,6 +195,7 @@ export class InMemoryRedis {
   async expire(key: string, seconds: number): Promise<number> {
     const has = this.kv.has(key) || this.hashes.has(key) || this.lists.has(key) || this.zsets.has(key);
     if (!has) return 0;
+    clearTimeout(this.expiry.get(key));
     const expAt = Date.now() + seconds * 1000;
     const entry = this.kv.get(key);
     if (entry) entry.expAt = expAt;
@@ -174,8 +205,10 @@ export class InMemoryRedis {
       this.hashes.delete(key);
       this.lists.delete(key);
       this.zsets.delete(key);
+      this.expiry.delete(key);
     }, seconds * 1000);
-    (t as any).unref?.();
+    t.unref();
+    this.expiry.set(key, t);
     return 1;
   }
 
@@ -252,9 +285,10 @@ export class InMemoryRedis {
     }
     // filter out GT, CH flags
     const filtered: unknown[] = args.filter((a) => a !== "GT" && a !== "CH");
-    // filtered is now [score, member, score, member ...]
     let added = 0;
+    let changed = 0;
     const gt = args.includes("GT");
+    const ch = args.includes("CH");
     for (let i = 0; i < filtered.length; i += 2) {
       const score = Number(filtered[i]);
       const member = String(filtered[i + 1]);
@@ -264,10 +298,11 @@ export class InMemoryRedis {
         added++;
       } else {
         if (gt && score <= existing) continue; // GT means only greater
+        if (score !== existing) changed++;
         m.set(member, score);
       }
     }
-    return added;
+    return ch ? added + changed : added;
   }
 
   async zrevrange(key: string, start: number, stop: number, withScores?: string): Promise<string[]> {
@@ -291,48 +326,62 @@ export class InMemoryRedis {
     return slice.map(([member]) => member);
   }
 
-  // --- pub/sub (best-effort in-proc for single-process SSE) ---
-  private messageHandlers: Array<(channel: string, msg: string) => void> = []
-  private subscriptions = new Set<string>()
+  // --- pub/sub (isolated per duplicated client instance) ---
   async publish(channel: string, message: string): Promise<number> {
-    // Deliver to all `on("message")` handlers if they subscribed to this channel
-    // For local dev single-process, deliver to all handlers (filtering is best-effort)
-    let delivered = 0
-    for (const h of this.messageHandlers) {
-      try {
-        // Only deliver if handler's subscriber is subscribed to this channel or broadcast
-        // We track subscriptions globally; simplest: deliver to all
-        h(channel, message)
-        delivered++
-      } catch {}
+    let delivered = 0;
+    for (const sub of this.subscribers) {
+      // Deliver if subscriber has subscribed to channel, or if global broadcast
+      if (sub.subscriptions.size === 0 || sub.subscriptions.has(channel)) {
+        for (const h of sub.messageHandlers) {
+          try {
+            h(channel, message);
+            delivered++;
+          } catch {}
+        }
+      }
     }
-    return delivered
+    return delivered;
   }
+
   async subscribe(...channels: string[]): Promise<void> {
-    for (const ch of channels) this.subscriptions.add(ch)
+    for (const ch of channels) this.subscriptions.add(ch);
   }
+
   async unsubscribe(...channels: string[]): Promise<void> {
-    for (const ch of channels) this.subscriptions.delete(ch)
+    for (const ch of channels) this.subscriptions.delete(ch);
   }
-  on(event: string, handler: (...args: any[]) => void): void {
+
+  on(event: string, handler: (...args: unknown[]) => void): void {
     if (event === "message") {
-      this.messageHandlers.push(handler as any)
+      this.messageHandlers.push(handler as (channel: string, msg: string) => void);
     }
   }
-  // Also support `off`/`removeListener` for cleanup (fanout cleanup calls unsubscribe)
+
   off(event: string, handler?: (...args: any[]) => void): void {
     if (event === "message" && handler) {
-      this.messageHandlers = this.messageHandlers.filter((h) => h !== handler)
+      this.messageHandlers = this.messageHandlers.filter((h) => h !== handler);
     } else if (event === "message") {
-      this.messageHandlers = []
+      this.messageHandlers = [];
     }
   }
-  // duplicate returns a new client sharing same underlying storage
+
+  // duplicate returns a new client instance sharing underlying data & pubsub bus
   duplicate(): InMemoryRedis {
-    // For local dev single-process SSE, sharing storage is correct
-    return this;
+    return new InMemoryRedis({
+      kv: this.kv,
+      hashes: this.hashes,
+      lists: this.lists,
+      zsets: this.zsets,
+      expiry: this.expiry,
+      subscribers: this.subscribers,
+    });
   }
-  disconnect(): void {}
+
+  disconnect(): void {
+    this.subscribers.delete(this);
+    this.messageHandlers = [];
+    this.subscriptions.clear();
+  }
   pipeline(): MemoryPipeline {
     return new MemoryPipeline(this);
   }
