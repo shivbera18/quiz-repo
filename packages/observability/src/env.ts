@@ -44,31 +44,32 @@ export function ensureDatabaseUrl(service: "identity" | "catalog" | "assessment"
   loadEnv()
   const perServiceKey = `${service.toUpperCase()}_DATABASE_URL` as const
   const perServiceUrl = (process.env as Record<string, string | undefined>)[perServiceKey]
-  let url = perServiceUrl || process.env.DATABASE_URL
+  const rawUrl = perServiceUrl || process.env.DATABASE_URL
 
-  if (!url) return undefined
+  if (!rawUrl) return undefined
 
-  // If URL already has schema=, respect it (Docker, explicit config)
-  if (url.includes("schema=")) {
-    if (perServiceUrl) process.env.DATABASE_URL = perServiceUrl
-    return url
+  try {
+    const parsed = new URL(rawUrl)
+    if (parsed.searchParams.has("schema")) {
+      const urlWithSchema = parsed.toString()
+      if (perServiceUrl) process.env.DATABASE_URL = urlWithSchema
+      return urlWithSchema
+    }
+    parsed.searchParams.set("schema", service)
+    const finalUrl = parsed.toString()
+    process.env.DATABASE_URL = finalUrl
+    return finalUrl
+  } catch {
+    // Fallback string handling for non-standard connection strings
+    if (rawUrl.includes("schema=")) {
+      if (perServiceUrl) process.env.DATABASE_URL = rawUrl
+      return rawUrl
+    }
+    const sep = rawUrl.includes("?") ? "&" : "?"
+    const fallbackUrl = `${rawUrl}${sep}schema=${service}`
+    process.env.DATABASE_URL = fallbackUrl
+    return fallbackUrl
   }
-
-  // Append schema for Neon single-URL local dev
-  const schemaMap: Record<string, string> = {
-    identity: "identity",
-    catalog: "catalog",
-    assessment: "assessment",
-    analytics: "analytics",
-    notification: "notification",
-  }
-  const schema = schemaMap[service] ?? service
-  const sep = url.includes("?") ? "&" : "?"
-  url = `${url}${sep}schema=${schema}`
-
-  // Mutate process.env so Prisma's env("DATABASE_URL") sees the schema-qualified URL
-  process.env.DATABASE_URL = url
-  return url
 }
 
 export function isLocalDevWithoutDocker(): boolean {
