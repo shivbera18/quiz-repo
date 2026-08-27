@@ -63,6 +63,11 @@ function formatScheduleLabel(q: Quiz, status: SchedulingStatus): string | null {
     return null
 }
 
+function formatClosesLabel(endTime?: string | null): string | null {
+    if (!endTime) return null
+    try { return `Closes ${new Date(endTime).toLocaleString()}` } catch { return null }
+}
+
 export function QuizList({ quizzes, emptyMessage = "No quizzes found." }: QuizListProps) {
     if (quizzes.length === 0) {
         return (
@@ -83,84 +88,87 @@ export function QuizList({ quizzes, emptyMessage = "No quizzes found." }: QuizLi
             {quizzes.map((quiz) => {
                 const status = computeStatus(quiz)
                 const scheduleLabel = formatScheduleLabel(quiz, status)
+                const closesLabel = status === "available" ? formatClosesLabel(quiz.endTime) : null
                 const isLocked = status !== "available"
+                const card = (
+                    <Card variant="neobrutalist" className="h-full flex flex-col">
+                        <CardHeader className="pb-3">
+                            <div className="flex items-start justify-between mb-3 gap-2 flex-wrap">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <Badge className="capitalize text-xs font-bold bg-yellow-300 text-black border-2 border-black hover:bg-yellow-400">
+                                        General
+                                    </Badge>
+                                    {quiz.sectionNames.length > 1 && (
+                                        <Badge className="text-xs font-bold bg-blue-300 text-black border-2 border-black hover:bg-blue-400">Full Mock</Badge>
+                                    )}
+                                </div>
+                                {status !== "available" && (
+                                    <Badge className={`text-xs font-bold border-2 border-black ${status === "upcoming" ? "bg-blue-300 text-black" : "bg-red-300 text-black"}`}>
+                                        {status === "upcoming" ? "Upcoming" : "Closed"}
+                                    </Badge>
+                                )}
+                            </div>
+                            <CardTitle className="line-clamp-2 text-lg font-black group-hover:text-primary transition-colors leading-tight">
+                                {quiz.title}
+                            </CardTitle>
+                            <CardDescription className="line-clamp-2 text-sm mt-1.5 font-medium">
+                                {quiz.description}
+                            </CardDescription>
+                        </CardHeader>
+
+                        <CardContent className="flex-grow pb-3">
+                            <div className="flex items-center gap-4 text-sm mb-4">
+                                <div className="flex items-center gap-1.5 bg-green-200 dark:bg-green-400/30 px-2 py-1 rounded-lg border-2 border-black dark:border-white/65">
+                                    <Clock className="h-3.5 w-3.5" />
+                                    <span className="text-xs font-bold">{Math.ceil(quiz.timeLimitSec / 60)}m</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 bg-purple-200 dark:bg-purple-400/30 px-2 py-1 rounded-lg border-2 border-black dark:border-white/65">
+                                    <BookOpen className="h-3.5 w-3.5" />
+                                    <span className="text-xs font-bold">{quiz.questionCount} Qs</span>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-wrap gap-1.5">
+                                {quiz.sectionNames.slice(0, 3).map((section) => (
+                                    <Badge key={section} variant="outline" className="text-xs font-bold px-2 py-0.5 border-2 border-black dark:border-white/65 bg-white dark:bg-zinc-800">
+                                        {section}
+                                    </Badge>
+                                ))}
+                                {quiz.sectionNames.length > 3 && (
+                                    <Badge variant="outline" className="text-xs font-bold px-2 py-0.5 border-2 border-black dark:border-white/65 bg-white dark:bg-zinc-800">
+                                        +{quiz.sectionNames.length - 3}
+                                    </Badge>
+                                )}
+                            </div>
+                            {(scheduleLabel || closesLabel) && (
+                                <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs font-bold text-muted-foreground">
+                                    {scheduleLabel && (
+                                        <>
+                                            <CalendarClock className="h-3.5 w-3.5" />
+                                            <span>{scheduleLabel}</span>
+                                        </>
+                                    )}
+                                    {closesLabel && <span>· {closesLabel}</span>}
+                                </div>
+                            )}
+                        </CardContent>
+
+                        <CardFooter className="pt-3 border-t-4 border-black dark:border-white/65 bg-orange-100 dark:bg-orange-400/20 rounded-b-xl">
+                            <Button variant="neobrutalistInverted" className={`w-full text-sm font-bold ${isLocked ? "opacity-60 cursor-not-allowed" : ""}`} disabled={isLocked}>
+                                {isLocked ? (status === "upcoming" ? "Not yet open" : "Closed") : (
+                                    <>Start Quiz <ArrowRight className="ml-2 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" /></>
+                                )}
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                )
                 return (
                 <motion.div key={quiz.id} variants={staggerItem}>
-                    <div className={isLocked ? "block group opacity-95" : "block group"}>
-                        <Card variant="neobrutalist" className="h-full flex flex-col">
-                            <CardHeader className="pb-3">
-                                <div className="flex items-start justify-between mb-3 gap-2 flex-wrap">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <Badge className="capitalize text-xs font-bold bg-yellow-300 text-black border-2 border-black hover:bg-yellow-400">
-                                            General
-                                        </Badge>
-                                        {quiz.sectionNames.length > 1 && (
-                                            <Badge className="text-xs font-bold bg-blue-300 text-black border-2 border-black hover:bg-blue-400">Full Mock</Badge>
-                                        )}
-                                    </div>
-                                    {status !== "available" && (
-                                        <Badge className={`text-xs font-bold border-2 border-black ${status === "upcoming" ? "bg-blue-300 text-black" : "bg-red-300 text-black"}`}>
-                                            {status === "upcoming" ? "Upcoming" : "Closed"}
-                                        </Badge>
-                                    )}
-                                </div>
-                                <CardTitle className="line-clamp-2 text-lg font-black group-hover:text-primary transition-colors leading-tight">
-                                    {quiz.title}
-                                </CardTitle>
-                                <CardDescription className="line-clamp-2 text-sm mt-1.5 font-medium">
-                                    {quiz.description}
-                                </CardDescription>
-                            </CardHeader>
-
-                            <CardContent className="flex-grow pb-3">
-                                <div className="flex items-center gap-4 text-sm mb-4">
-                                    <div className="flex items-center gap-1.5 bg-green-200 dark:bg-green-400/30 px-2 py-1 rounded-lg border-2 border-black dark:border-white/65">
-                                        <Clock className="h-3.5 w-3.5" />
-                                        <span className="text-xs font-bold">{Math.ceil(quiz.timeLimitSec / 60)}m</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 bg-purple-200 dark:bg-purple-400/30 px-2 py-1 rounded-lg border-2 border-black dark:border-white/65">
-                                        <BookOpen className="h-3.5 w-3.5" />
-                                        <span className="text-xs font-bold">{quiz.questionCount} Qs</span>
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-wrap gap-1.5">
-                                    {quiz.sectionNames.slice(0, 3).map((section) => (
-                                        <Badge key={section} variant="outline" className="text-xs font-bold px-2 py-0.5 border-2 border-black dark:border-white/65 bg-white dark:bg-zinc-800">
-                                            {section}
-                                        </Badge>
-                                    ))}
-                                    {quiz.sectionNames.length > 3 && (
-                                        <Badge variant="outline" className="text-xs font-bold px-2 py-0.5 border-2 border-black dark:border-white/65 bg-white dark:bg-zinc-800">
-                                            +{quiz.sectionNames.length - 3}
-                                        </Badge>
-                                    )}
-                                </div>
-                                {scheduleLabel && (
-                                    <div className="mt-3 flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
-                                        <CalendarClock className="h-3.5 w-3.5" />
-                                        <span>{scheduleLabel}</span>
-                                        {quiz.endTime && status === "available" && (() => { try { return <span>· Closes {new Date(quiz.endTime!).toLocaleString()}</span> } catch { return null } })()}
-                                    </div>
-                                )}
-                            </CardContent>
-
-                            <CardFooter className="pt-3 border-t-4 border-black dark:border-white/65 bg-orange-100 dark:bg-orange-400/20 rounded-b-xl">
-                                {isLocked ? (
-                                    <Button variant="neobrutalistInverted" className="w-full text-sm font-bold opacity-60 cursor-not-allowed" disabled>
-                                        {status === "upcoming" ? "Not yet open" : "Closed"}
-                                    </Button>
-                                ) : (
-                                    <Link href={`/quiz/${quiz.id}`} className="w-full">
-                                        <Button variant="neobrutalistInverted" className="w-full text-sm font-bold">
-                                            Start Quiz
-                                            <ArrowRight className="ml-2 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
-                                        </Button>
-                                    </Link>
-                                )}
-                            </CardFooter>
-                        </Card>
-                    </div>
+                    {isLocked ? (
+                        <div className="block group opacity-95">{card}</div>
+                    ) : (
+                        <Link href={`/quiz/${quiz.id}`} className="block group">{card}</Link>
+                    )}
                 </motion.div>
                 )})}
         </motion.div>
