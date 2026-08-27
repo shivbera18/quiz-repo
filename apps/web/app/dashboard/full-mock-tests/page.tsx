@@ -10,6 +10,7 @@ interface QuizAttemptSummary {
   quizId: string
 }
 
+type SchedulingStatus = "available" | "upcoming" | "closed"
 interface Quiz {
   id: string
   title: string
@@ -18,6 +19,9 @@ interface Quiz {
   sectionNames: string[]
   questionCount: number
   isActive: boolean
+  startTime?: string | null
+  endTime?: string | null
+  schedulingStatus?: SchedulingStatus
 }
 
 export default function FullMockTestsPage() {
