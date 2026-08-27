@@ -1,8 +1,8 @@
 import Fastify from "fastify"
 import cors from "@fastify/cors"
 import { PrismaClient } from "./generated/prisma/index.js"
-import { createLogger, TRACE_HEADER, getOrCreateTraceId } from "@quiz/observability"
-import { createKafka, getProducer, startOutboxPublisher } from "@quiz/kafka-kit"
+import { createLogger, TRACE_HEADER, getOrCreateTraceId, ensureDatabaseUrl } from "@quiz/observability"
+import { createKafka, getProducer, startOutboxPublisher, isKafkaDisabled } from "@quiz/kafka-kit"
 import { autosaveRequestSchema, startAttemptRequestSchema, submitAttemptRequestSchema } from "@quiz/contracts"
 import { createOutboxStore } from "./outbox-store.js"
 import { requireUser, requireAdmin } from "./auth.js"
@@ -12,6 +12,7 @@ import { registerNotebookRoutes } from "./notebook.js"
 import { fetchQuizMeta, type LegacyQuizMeta } from "./legacy-client.js"
 
 const logger = createLogger("assessment-svc")
+ensureDatabaseUrl("assessment")
 const prisma = new PrismaClient()
 const PORT = Number(process.env.PORT) || 4003
 
@@ -201,13 +202,23 @@ async function main() {
   registerLegacyRoutes(app, prisma)
   registerNotebookRoutes(app, prisma)
 
-  const kafkaClient = createKafka("assessment-svc")
-  const producer = await getProducer(kafkaClient)
-  const stopOutbox = startOutboxPublisher(producer, createOutboxStore(prisma))
+  let stopOutbox: () => void = () => {}
+  let producer: Awaited<ReturnType<typeof getProducer>> | null = null
+  try {
+    if (isKafkaDisabled()) {
+      logger.warn("Kafka disabled - assessment outbox disabled")
+    } else {
+      const kafkaClient = createKafka("assessment-svc")
+      producer = await getProducer(kafkaClient)
+      stopOutbox = startOutboxPublisher(producer, createOutboxStore(prisma))
+    }
+  } catch (err) {
+    logger.warn(err, "Failed to init Kafka - continuing without outbox")
+  }
 
   const close = async () => {
     stopOutbox()
-    await producer.disconnect()
+    if (producer) await producer.disconnect().catch(() => {})
     await prisma.$disconnect()
     await app.close()
     process.exit(0)

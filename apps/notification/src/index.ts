@@ -2,8 +2,8 @@ import Fastify from "fastify"
 import cors from "@fastify/cors"
 import { randomUUID } from "node:crypto"
 import { PrismaClient } from "./generated/prisma/index.js"
-import { createLogger, TRACE_HEADER, getOrCreateTraceId } from "@quiz/observability"
-import { createKafka, getProducer, startOutboxPublisher, createEnvelope, TOPICS } from "@quiz/kafka-kit"
+import { createLogger, TRACE_HEADER, getOrCreateTraceId, ensureDatabaseUrl } from "@quiz/observability"
+import { createKafka, getProducer, startOutboxPublisher, createEnvelope, TOPICS, isKafkaDisabled } from "@quiz/kafka-kit"
 import { getRedisClient, keys } from "@quiz/redis-kit"
 import type { AnnouncementPublishedData } from "@quiz/contracts"
 import { createOutboxStore } from "./outbox-store.js"
@@ -11,6 +11,7 @@ import { requireUser, requireAdmin, getUser } from "./auth.js"
 import { getBacklogSince, type SseEvent } from "./sse.js"
 
 const logger = createLogger("notification-svc")
+ensureDatabaseUrl("notification")
 const prisma = new PrismaClient()
 const redis = getRedisClient()
 const PORT = Number(process.env.PORT) || 4005
@@ -175,6 +176,10 @@ async function main() {
   // Re-publishing has no paired state change, so direct Kafka production is sufficient.
   app.post("/v1/admin/announcements/:id/repush", async (request, reply) => {
     if (!requireAdmin(request, reply)) return
+    if (isKafkaDisabled()) {
+      reply.code(503)
+      return { message: "Kafka disabled - republish not available in local dev without Kafka" }
+    }
     const { id } = request.params as { id: string }
     const announcement = await prisma.announcement.findUnique({ where: { id } })
     if (!announcement) {
@@ -254,7 +259,12 @@ async function main() {
     const user = requireUser(request, reply)
     if (!user) return
     const ticket = randomUUID()
-    await redis.set(keys.sseTicket(ticket), user.userId, "EX", SSE_TICKET_TTL_SEC)
+    try {
+      await redis.set(keys.sseTicket(ticket), user.userId, "EX", SSE_TICKET_TTL_SEC)
+    } catch (err) {
+      logger.warn(err, "redis set ticket failed - SSE may not work without Redis")
+      // still return ticket: mock redis in memory handles this; real failure -> warn
+    }
     return { ticket, expiresInSec: SSE_TICKET_TTL_SEC }
   })
 
@@ -264,7 +274,10 @@ async function main() {
       reply.code(401)
       return { message: "ticket query parameter required" }
     }
-    const userId = await redis.getdel(keys.sseTicket(ticket))
+    let userId: string | null = null
+    try {
+      userId = await redis.getdel(keys.sseTicket(ticket))
+    } catch {}
     if (!userId) {
       reply.code(401)
       return { message: "Invalid or expired ticket" }
@@ -280,40 +293,60 @@ async function main() {
     })
 
     const lastEventId = request.headers["last-event-id"] as string | undefined
-    const backlog = await getBacklogSince(redis, userId, lastEventId)
+    let backlog: SseEvent[] = []
+    try {
+      backlog = await getBacklogSince(redis, userId, lastEventId)
+    } catch {}
     for (const evt of backlog) {
       res.write(`id: ${evt.id}\nevent: ${evt.event}\ndata: ${JSON.stringify(evt.data)}\n\n`)
     }
 
-    const subscriber = redis.duplicate()
-    await subscriber.subscribe(keys.pubsubUser(userId), keys.pubsubBroadcast())
-    subscriber.on("message", (_channel, message) => {
-      try {
-        const evt: SseEvent = JSON.parse(message)
-        res.write(`id: ${evt.id}\nevent: ${evt.event}\ndata: ${JSON.stringify(evt.data)}\n\n`)
-      } catch (err) {
-        logger.error(err, "failed to forward SSE message")
-      }
-    })
+    let subscriber: ReturnType<typeof redis.duplicate> | null = null
+    try {
+      subscriber = redis.duplicate()
+      await subscriber.subscribe(keys.pubsubUser(userId), keys.pubsubBroadcast())
+      subscriber.on("message", (_channel, message) => {
+        try {
+          const evt: SseEvent = JSON.parse(message)
+          res.write(`id: ${evt.id}\nevent: ${evt.event}\ndata: ${JSON.stringify(evt.data)}\n\n`)
+        } catch (err) {
+          logger.error(err, "failed to forward SSE message")
+        }
+      })
+    } catch (err) {
+      logger.warn(err, "SSE subscribe failed - running without Redis pubsub")
+    }
 
     const heartbeat = setInterval(() => res.write(": heartbeat\n\n"), 15_000)
 
     const cleanup = () => {
       clearInterval(heartbeat)
-      subscriber.unsubscribe().catch(() => {})
-      subscriber.disconnect()
+      if (subscriber) {
+        subscriber.unsubscribe().catch(() => {})
+        subscriber.disconnect()
+      }
     }
     request.raw.on("close", cleanup)
   })
-  const kafkaClient = createKafka("notification-svc")
-  const producer = await getProducer(kafkaClient)
-  const stopOutbox = startOutboxPublisher(producer, createOutboxStore(prisma))
+  let stopOutbox: () => void = () => {}
+  let producer: Awaited<ReturnType<typeof getProducer>> | null = null
+  try {
+    if (isKafkaDisabled()) {
+      logger.warn("Kafka disabled - notification outbox disabled")
+    } else {
+      const kafkaClient = createKafka("notification-svc")
+      producer = await getProducer(kafkaClient)
+      stopOutbox = startOutboxPublisher(producer, createOutboxStore(prisma))
+    }
+  } catch (err) {
+    logger.warn(err, "Failed to init Kafka for notification-svc")
+  }
 
   const close = async () => {
     stopOutbox()
     await app.close()
-    await producer.disconnect()
-    redis.disconnect()
+    if (producer) await producer.disconnect().catch(() => {})
+    try { redis.disconnect() } catch {}
     await prisma.$disconnect()
   }
   process.on("SIGTERM", close)

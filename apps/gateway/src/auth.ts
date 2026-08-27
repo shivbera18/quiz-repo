@@ -20,9 +20,15 @@ export interface IntrospectedUser {
 
 export async function introspectToken(redis: Redis, token: string): Promise<IntrospectedUser | null> {
   const cacheKey = keys.tokenCache(token)
-  const cached = await redis.get(cacheKey)
-  if (cached !== null) {
-    return cached === "" ? null : JSON.parse(cached)
+  // Cache is best-effort: if Redis is unavailable (local dev without Docker)
+  // we degrade to direct introspection without caching rather than failing.
+  try {
+    const cached = await redis.get(cacheKey)
+    if (cached !== null) {
+      return cached === "" ? null : JSON.parse(cached)
+    }
+  } catch {
+    // Redis unavailable - fall through to direct fetch
   }
 
   const res = await fetch(`${IDENTITY_SVC_URL}/v1/internal/introspect`, {
@@ -39,11 +45,15 @@ export async function introspectToken(redis: Redis, token: string): Promise<Intr
 
   const body = (await res.json()) as { valid: boolean; userId?: string; name?: string; email?: string; isAdmin?: boolean }
   if (!body.valid || !body.userId) {
-    await redis.set(cacheKey, "", "EX", TOKEN_CACHE_TTL_SEC)
+    try {
+      await redis.set(cacheKey, "", "EX", TOKEN_CACHE_TTL_SEC)
+    } catch {}
     return null
   }
 
   const user: IntrospectedUser = { userId: body.userId, name: body.name ?? "", email: body.email ?? "", isAdmin: body.isAdmin ?? false }
-  await redis.set(cacheKey, JSON.stringify(user), "EX", TOKEN_CACHE_TTL_SEC)
+  try {
+    await redis.set(cacheKey, JSON.stringify(user), "EX", TOKEN_CACHE_TTL_SEC)
+  } catch {}
   return user
 }
