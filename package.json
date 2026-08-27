@@ -20,6 +20,7 @@
     "compose:prod:logs": "docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml logs -f"
   },
   "devDependencies": {
+    "dotenv": "^16.6.1",
     "turbo": "^2.10.7",
     "typescript": "^5"
   },
