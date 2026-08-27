@@ -21,6 +21,20 @@ interface Quiz {
   schedulingStatus?: SchedulingStatus
 }
 
+function computeStatus(q: Quiz): SchedulingStatus {
+  if (q.schedulingStatus) return q.schedulingStatus
+  const now = Date.now()
+  if (q.endTime) {
+    const end = Date.parse(q.endTime)
+    if (!Number.isNaN(end) && now > end) return "closed"
+  }
+  if (q.startTime) {
+    const start = Date.parse(q.startTime)
+    if (!Number.isNaN(start) && now < start) return "upcoming"
+  }
+  return "available"
+}
+
 interface ChapterInfo {
   id: string;
   name: string;
@@ -121,14 +135,15 @@ export default function ChapterQuizzesPage() {
       {/* Quizzes List */}
       <div className="space-y-4">
         {quizzes.map((quiz, index) => {
-          const now = Date.now()
-          let status: SchedulingStatus = quiz.schedulingStatus ?? "available"
-          if (!quiz.schedulingStatus) {
-            if (quiz.endTime && !Number.isNaN(Date.parse(quiz.endTime)) && now > Date.parse(quiz.endTime)) status = "closed"
-            else if (quiz.startTime && !Number.isNaN(Date.parse(quiz.startTime)) && now < Date.parse(quiz.startTime)) status = "upcoming"
-          }
+          const status = computeStatus(quiz)
           const isLocked = status !== "available"
-          const scheduleLabel = status === "upcoming" && quiz.startTime ? `Opens ${new Date(quiz.startTime).toLocaleString()}` : status === "closed" ? "Closed" : quiz.endTime ? `Closes ${new Date(quiz.endTime).toLocaleString()}` : null
+          let scheduleLabel: string | null = null
+          if (status === "upcoming" && quiz.startTime) {
+            try { scheduleLabel = `Opens ${new Date(quiz.startTime).toLocaleString()}` } catch { scheduleLabel = "Upcoming" }
+          } else if (status === "closed") scheduleLabel = "Closed"
+          else if (quiz.endTime) {
+            try { scheduleLabel = `Closes ${new Date(quiz.endTime).toLocaleString()}` } catch { scheduleLabel = null }
+          }
           return (
           <Card key={quiz.id} className="hover:shadow-md transition-shadow border-2 hover:border-blue-200">
             <CardContent className="p-6">
