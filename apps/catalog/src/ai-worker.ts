@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { PrismaClient } from "./generated/prisma/index.js"
 import { createLogger } from "@quiz/observability"
-import { createKafka, createEnvelope, TOPICS, runConsumer, getProducer } from "@quiz/kafka-kit"
+import { createKafka, createEnvelope, TOPICS, runConsumer, getProducer, isKafkaDisabled } from "@quiz/kafka-kit"
 import type { AiQuizGenerationRequestedData, AiQuizGenerationCompletedData } from "@quiz/contracts"
 import { quizChangedPayload } from "./lib/events.js"
 
@@ -58,6 +58,12 @@ Return a JSON object with this exact structure:
 }
 
 async function main() {
+  if (isKafkaDisabled()) {
+    logger.warn("Kafka disabled - catalog-ai-worker not consuming (AI generation requires Kafka). Exiting idle mode.")
+    // Keep process alive for turbo dev but not failing
+    await new Promise(() => {})
+    return
+  }
   const kafka = createKafka("catalog-ai-worker")
   const producer = await getProducer(kafka)
 

@@ -13,7 +13,7 @@
 // would otherwise silently double-apply on redelivery).
 import { PrismaClient, Prisma } from "./generated/prisma/index.js"
 import { createLogger } from "@quiz/observability"
-import { createKafka, runConsumer, TOPICS } from "@quiz/kafka-kit"
+import { createKafka, runConsumer, TOPICS, isKafkaDisabled } from "@quiz/kafka-kit"
 import { getRedisClient } from "@quiz/redis-kit"
 import { recordLeaderboardEntry } from "@quiz/redis-kit"
 import { keys } from "@quiz/redis-kit"
@@ -560,6 +560,11 @@ async function handleAttemptStarted(_data: AttemptStartedData, eventId: string) 
 }
 
 async function main() {
+  if (isKafkaDisabled()) {
+    logger.warn("Kafka disabled - analytics-rollup-consumer idle (no events will be processed)")
+    await new Promise(() => {})
+    return
+  }
   const kafka = createKafka("analytics-rollup-consumer")
 
   await runConsumer<
