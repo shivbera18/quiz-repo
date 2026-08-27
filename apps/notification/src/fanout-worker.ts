@@ -1,7 +1,7 @@
 // Pages active subscriptions into per-subscription push jobs so announcement
 // requests never wait on external browser push services.
 import { PrismaClient } from "./generated/prisma/index.js"
-import { createLogger } from "@quiz/observability"
+import { createLogger, ensureDatabaseUrl } from "@quiz/observability"
 import { createKafka, runConsumer, getProducer, createEnvelope, TOPICS, isKafkaDisabled } from "@quiz/kafka-kit"
 import { getRedisClient } from "@quiz/redis-kit"
 import type { AnnouncementPublishedData, PushSendRequestedData, UserChangedData, UserErasureRequestedData } from "@quiz/contracts"
@@ -9,6 +9,7 @@ import { publishBroadcast } from "./sse.js"
 import { sendPushToSubscription } from "./push.js"
 
 const logger = createLogger("notification-fanout-worker")
+ensureDatabaseUrl("notification")
 const prisma = new PrismaClient()
 const redis = getRedisClient()
 const CONSUMER_GROUP = "notification-fanout-worker"

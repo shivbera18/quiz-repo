@@ -1,12 +1,13 @@
 import Fastify from "fastify"
 import cors from "@fastify/cors"
 import { PrismaClient } from "./generated/prisma/index.js"
-import { createLogger, TRACE_HEADER, getOrCreateTraceId } from "@quiz/observability"
+import { createLogger, TRACE_HEADER, getOrCreateTraceId, ensureDatabaseUrl } from "@quiz/observability"
 import { createKafka, getProducer, startOutboxPublisher, createEnvelope, TOPICS, isKafkaDisabled } from "@quiz/kafka-kit"
 import { loginRequestSchema, signupRequestSchema, type UserChangedData } from "@quiz/contracts"
 import { createOutboxStore } from "./outbox-store.js"
 
 const logger = createLogger("identity-svc")
+ensureDatabaseUrl("identity")
 const prisma = new PrismaClient()
 const PORT = Number(process.env.PORT) || 4001
 

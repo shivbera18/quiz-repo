@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto"
 import { GetObjectCommand } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 import { PrismaClient } from "./generated/prisma/index.js"
-import { createLogger, TRACE_HEADER, getOrCreateTraceId } from "@quiz/observability"
+import { createLogger, TRACE_HEADER, getOrCreateTraceId, ensureDatabaseUrl } from "@quiz/observability"
 import { createKafka, getProducer, createEnvelope, TOPICS, isKafkaDisabled } from "@quiz/kafka-kit"
 import { getRedisClient, getLeaderboard, isoWeek, keys } from "@quiz/redis-kit"
 import type { ExportRequestedData } from "@quiz/contracts"
@@ -12,6 +12,7 @@ import { requireAdmin, getUserId } from "./auth.js"
 import { getObjectStoreClient, EXPORT_BUCKET } from "./object-store.js"
 
 const logger = createLogger("analytics-svc")
+ensureDatabaseUrl("analytics")
 const prisma = new PrismaClient()
 const redis = getRedisClient()
 const PORT = Number(process.env.PORT) || 4004

@@ -12,7 +12,7 @@
 // is what makes replay safe (a crash between the pre-check and the upsert
 // would otherwise silently double-apply on redelivery).
 import { PrismaClient, Prisma } from "./generated/prisma/index.js"
-import { createLogger } from "@quiz/observability"
+import { createLogger, ensureDatabaseUrl } from "@quiz/observability"
 import { createKafka, runConsumer, TOPICS, isKafkaDisabled } from "@quiz/kafka-kit"
 import { getRedisClient } from "@quiz/redis-kit"
 import { recordLeaderboardEntry } from "@quiz/redis-kit"
@@ -28,6 +28,7 @@ import type {
 } from "@quiz/contracts"
 
 const logger = createLogger("analytics-rollup-consumer")
+ensureDatabaseUrl("analytics")
 const prisma = new PrismaClient()
 const redis = getRedisClient()
 const CONSUMER_GROUP = "analytics-rollup-consumer"

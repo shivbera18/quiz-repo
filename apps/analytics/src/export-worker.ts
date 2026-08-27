@@ -8,13 +8,14 @@
 import { Readable } from "node:stream"
 import { Upload } from "@aws-sdk/lib-storage"
 import { PrismaClient } from "./generated/prisma/index.js"
-import { createLogger } from "@quiz/observability"
+import { createLogger, ensureDatabaseUrl } from "@quiz/observability"
 import { createKafka, createEnvelope, runConsumer, getProducer, TOPICS, isKafkaDisabled } from "@quiz/kafka-kit"
 import type { ExportRequestedData, ExportCompletedData } from "@quiz/contracts"
 import { getObjectStoreClient, EXPORT_BUCKET } from "./object-store.js"
 import { csvRow } from "./csv.js"
 
 const logger = createLogger("analytics-export-worker")
+ensureDatabaseUrl("analytics")
 const prisma = new PrismaClient()
 const PAGE_SIZE = 500
 const PRESIGNED_TTL_SEC = 24 * 60 * 60
