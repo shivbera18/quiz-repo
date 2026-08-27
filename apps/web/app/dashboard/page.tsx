@@ -175,8 +175,15 @@ export default function DashboardPage() {
 
 
 
+  function isAvailable(q: Quiz): boolean {
+    if (q.schedulingStatus) return q.schedulingStatus === "available"
+    const now = Date.now()
+    if (q.endTime && !Number.isNaN(Date.parse(q.endTime)) && now > Date.parse(q.endTime)) return false
+    if (q.startTime && !Number.isNaN(Date.parse(q.startTime)) && now < Date.parse(q.startTime)) return false
+    return true
+  }
   const attemptedQuizIds = allAttempts.map(attempt => attempt.quizId)
-  const unattemptedQuizzes = availableQuizzes.filter((quiz: Quiz) => !attemptedQuizIds.includes(quiz.id))
+  const unattemptedQuizzes = availableQuizzes.filter((quiz: Quiz) => !attemptedQuizIds.includes(quiz.id) && isAvailable(quiz))
   const fullMockTests = unattemptedQuizzes.filter((q: Quiz) => q.sectionNames.length > 1)
   const sectionalTests = unattemptedQuizzes.filter((q: Quiz) => q.sectionNames.length === 1)
 
