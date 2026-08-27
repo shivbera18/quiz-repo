@@ -41,7 +41,7 @@ function createNoopProducer(): Producer {
     connect: async () => {},
     disconnect: async () => {},
     send: async () => [{ topicName: "", partition: 0, errorCode: 0, baseOffset: "0", logAppendTime: "-1", logStartOffset: "0" }],
-    sendBatch: async () => {},
+    sendBatch: async () => [],
   } as unknown as Producer
 }
 
