@@ -39,31 +39,35 @@ export default function LandingHeader() {
     };
 
     return (
-        <nav aria-label="Main Navigation" className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md border-b-2 border-[#191A23] dark:border-white/20 transition-colors">
-            <div className="container mx-auto px-4 md:px-8">
+        <nav aria-label="Main Navigation" className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md transition-colors py-2">
+            <div className="container mx-auto px-4 md:px-12">
                 <div className="flex items-center justify-between h-20">
-                    <Link href="/" className="flex items-center gap-2 group">
-                        <div className="h-9 w-9 rounded-lg bg-[#B9FF66] border-2 border-[#191A23] flex items-center justify-center font-black text-[#191A23] text-lg shadow-[2px_2px_0px_0px_#191A23] group-hover:translate-y-[-1px] transition-transform">
-                            ✦
-                        </div>
-                        <span className="font-bold text-2xl tracking-tight text-foreground font-heading">
-                            Positivus<span className="text-[#B9FF66] font-black">.</span>
+                    <Link href="/" className="flex items-center gap-2.5 group">
+                        {/* Positivus 4-point star icon */}
+                        <svg width="32" height="32" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-[#191A23] dark:text-white transition-transform group-hover:rotate-12">
+                            <path d="M18 0L21.8 14.2L36 18L21.8 21.8L18 36L14.2 21.8L0 18L14.2 14.2L18 0Z" fill="currentColor"/>
+                        </svg>
+                        <span className="font-bold text-2xl md:text-3xl tracking-tight text-[#191A23] dark:text-white font-heading">
+                            Positivus
                         </span>
                     </Link>
 
                     {/* Nav Links */}
-                    <div className="hidden lg:flex items-center gap-8 text-sm font-medium text-foreground">
-                        <a href="#services" className="hover:text-primary transition-colors hover:underline underline-offset-4">
+                    <div className="hidden md:flex items-center gap-7 lg:gap-10 text-base md:text-lg font-normal text-[#191A23] dark:text-white font-heading">
+                        <a href="#about" className="hover:text-primary transition-colors">
+                            About us
+                        </a>
+                        <a href="#services" className="hover:text-primary transition-colors">
                             Services
                         </a>
-                        <a href="#process" className="hover:text-primary transition-colors hover:underline underline-offset-4">
-                            Working Process
+                        <a href="#use-cases" className="hover:text-primary transition-colors">
+                            Use Cases
                         </a>
-                        <a href="#pricing" className="hover:text-primary transition-colors hover:underline underline-offset-4">
+                        <a href="#pricing" className="hover:text-primary transition-colors">
                             Pricing
                         </a>
-                        <a href="#faq" className="hover:text-primary transition-colors hover:underline underline-offset-4">
-                            FAQ
+                        <a href="#blog" className="hover:text-primary transition-colors">
+                            Blog
                         </a>
                     </div>
 
@@ -75,24 +79,21 @@ export default function LandingHeader() {
                                     <Button
                                         onClick={handleDashboardClick}
                                         variant="positivus"
-                                        size="sm"
-                                        className="font-bold"
+                                        size="default"
+                                        className="font-medium text-base"
                                     >
                                         Dashboard →
                                     </Button>
                                 ) : (
-                                    <div className="flex items-center gap-2">
-                                        <Link href="/auth/login">
-                                            <Button variant="ghost" size="sm" className="font-medium text-sm">
-                                                Log in
-                                            </Button>
-                                        </Link>
-                                        <Link href="/auth/signup">
-                                            <Button variant="positivusOutline" size="sm" className="hidden sm:inline-flex">
-                                                Request a quote
-                                            </Button>
-                                        </Link>
-                                    </div>
+                                    <Link href="/auth/signup">
+                                        <Button
+                                            variant="positivusOutline"
+                                            size="default"
+                                            className="font-medium text-base md:text-lg px-6 py-4 rounded-[14px] border-2 border-[#191A23] dark:border-white shadow-none hover:bg-[#B9FF66] hover:text-[#191A23] hover:border-[#191A23] transition-all"
+                                        >
+                                            Request a quote
+                                        </Button>
+                                    </Link>
                                 )}
                             </>
                         )}
