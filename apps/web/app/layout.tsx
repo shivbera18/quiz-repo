@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
-import { Inter, Space_Grotesk } from "next/font/google"
+import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google"
 import Script from "next/script"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -9,8 +9,8 @@ import ServiceWorkerRegistration from "@/components/service-worker-registration"
 import PWAHandler from "@/components/pwa-handler"
 import { AppShell } from "@/components/layout/app-shell"
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
-const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk" })
+const ibmSans = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400","500","600","700"], variable: "--font-ibm-sans" })
+const ibmMono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400","500"], variable: "--font-ibm-mono" })
 
 export const metadata: Metadata = {
   title: "Banking Exam Preparation",
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#191A23',
+  themeColor: '#09090b',
 }
 
 export default function RootLayout({
@@ -56,24 +56,23 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.webmanifest" />
         <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
         <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png" />
         {/* iOS home-screen icon: without this, Add to Home Screen snapshots the page. */}
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-        <meta name="theme-color" content="#191A23" />
+        <meta name="theme-color" content="#09090b" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Quizzy" />
       </head>
-      <body className={`${spaceGrotesk.variable} ${inter.variable} font-sans`} suppressHydrationWarning>
+      <body className={`${ibmSans.variable} ${ibmMono.variable} font-sans`} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
-          enableSystem
-          themes={['light', 'dark', 'system', 'blue', 'green', 'purple', 'orange', 'red', 'pink', 'teal']}
+          defaultTheme="dark"
+          enableSystem={false}
+          themes={['dark', 'light']}
           disableTransitionOnChange
         >
           <PageTransition>
