@@ -1,29 +1,23 @@
 import LandingHeader from "@/components/landing/LandingHeader";
 import HeroSection from "@/components/landing/HeroSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
-import CTASection from "@/components/landing/CTASection";
-import CaseStudiesSection from "@/components/landing/CaseStudiesSection";
-import FAQSection from "@/components/landing/FAQSection";
-import TeamSection from "@/components/landing/TeamSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
-import ContactSection from "@/components/landing/ContactSection";
 import PricingSection from "@/components/landing/PricingSection";
+import FAQSection from "@/components/landing/FAQSection";
+import CTASection from "@/components/landing/CTASection";
 import { Footer } from "@/components/layout/footer";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans">
+    <div className="min-h-screen bg-background">
       <LandingHeader />
       <main>
         <HeroSection />
         <FeaturesSection />
-        <CTASection />
-        <CaseStudiesSection />
-        <FAQSection />
-        <TeamSection />
         <TestimonialsSection />
-        <ContactSection />
         <PricingSection />
+        <FAQSection />
+        <CTASection />
       </main>
       <Footer />
     </div>

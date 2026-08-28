@@ -57,7 +57,8 @@ const testimonials = [
 
 export default function TestimonialsSection() {
   return (
-    <section id="testimonials" className="py-20 md:py-28 bg-background scroll-mt-28">
+    <section id="testimonials" className="py-20 md:py-28 bg-background relative scroll-mt-28">
+      <span id="use-cases" className="absolute -top-28" />
       <div className="container mx-auto px-4 md:px-12">
         {/* Positivus Section Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-10 mb-16">
