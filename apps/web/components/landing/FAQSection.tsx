@@ -2,118 +2,124 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { ChevronDown, HelpCircle } from "lucide-react"
+import Book from "../svgs/Book"
+import Atom from "../svgs/Atom"
+import Science from "../svgs/Science"
+import Calculator from "../svgs/Calculator"
 
-const steps = [
+const faqs = [
   {
-    number: "01",
-    title: "Diagnostic & Skill Assessment",
-    description: "Start with a 15-minute diagnostic test across Reasoning, Quantitative Aptitude, and English to pinpoint your strengths and identify high-yield improvement areas.",
+    question: "What banking exams does Quizzy cover?",
+    answer: "Quizzy covers all major banking exams including IBPS PO, IBPS Clerk, SBI PO, SBI Clerk, RBI Grade B, RBI Assistant, NABARD, SIDBI, and more. Our question bank is regularly updated to match the latest exam patterns.",
   },
   {
-    number: "02",
-    title: "Topic-Wise Sectional Drills",
-    description: "Practice targeted sectional drills with timer constraints to build problem-solving muscle memory and reduce average time per question.",
+    question: "How are the mock tests similar to actual exams?",
+    answer: "Our mock tests replicate the exact pattern, difficulty level, and time constraints of actual banking exams. We analyze previous years' papers and current trends to ensure our tests provide the most realistic practice experience.",
   },
   {
-    number: "03",
-    title: "AI Question Generation & Flashcards",
-    description: "Generate customized practice sets and 2-digit/3-digit arithmetic flashcards on demand using our built-in AI tools to master quick calculations.",
+    question: "Can I access Quizzy on mobile devices?",
+    answer: "Yes! Quizzy is fully responsive and works seamlessly on all devices - smartphones, tablets, and desktops. You can practice anytime, anywhere without compromising on features or experience.",
   },
   {
-    number: "04",
-    title: "Full-Length Exam Simulations",
-    description: "Take timed, full-pattern mock exams replicating the exact difficulty and marking schemes of SBI, IBPS, and RBI examinations.",
+    question: "How does the analytics feature help me?",
+    answer: "Our analytics dashboard provides detailed insights into your performance - subject-wise scores, time taken per question, accuracy trends, and comparison with toppers. This helps you identify weak areas and focus your preparation effectively.",
   },
   {
-    number: "05",
-    title: "Real-Time Ranking & Leaderboards",
-    description: "Benchmark your score and completion speed against thousands of other candidates on national weekly leaderboards with speed-based tie breakers.",
+    question: "Is there a free trial available?",
+    answer: "Absolutely! Our Free plan gives you access to 50 practice questions per day, basic analytics, and 2 mock tests per month - forever free. This allows you to experience the platform before upgrading to a paid plan.",
   },
   {
-    number: "06",
-    title: "Event-Driven Analytics & Review",
-    description: "Review detailed question-by-question explanations, time spent per section, and 90-day activity streaks to maintain daily exam readiness.",
+    question: "Can I switch between plans?",
+    answer: "Yes, you can upgrade or downgrade your plan at any time. If you upgrade, you'll be charged the prorated amount. If you downgrade, the change will take effect from your next billing cycle.",
   },
-];
+  {
+    question: "Do you provide solutions for wrong answers?",
+    answer: "Yes! Every question comes with a detailed explanation, including the concept used, step-by-step solution, and tips to solve similar questions faster. This helps you learn from your mistakes.",
+  },
+  {
+    question: "How often is the question bank updated?",
+    answer: "We add new questions weekly and update our question bank based on the latest exam patterns. Our team of subject experts ensures all questions are accurate, relevant, and aligned with current exam trends.",
+  },
+]
 
 export default function FAQSection() {
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
-
-  const toggleItem = (index: number) => {
-    setOpenIndex(openIndex === index ? null : index);
-  };
+  const [openIndex, setOpenIndex] = useState<number | null>(0)
 
   return (
-    <section id="process" className="py-20 md:py-28 bg-background relative">
-      <span id="faq" className="absolute -top-24" />
-      <div className="container mx-auto px-4 md:px-8">
-        {/* Positivus Section Header */}
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-10 mb-16">
-          <div className="px-3 py-1 bg-[#B9FF66] text-[#191A23] text-2xl sm:text-3xl md:text-4xl font-bold rounded-[7px] border-2 border-[#191A23] font-heading shrink-0 shadow-[2px_2px_0px_0px_#191A23]">
-            Our Working Process
-          </div>
-          <p className="text-muted-foreground text-base md:text-lg max-w-xl font-medium leading-relaxed">
-            Step-by-Step Guide to Achieving Your Target Banking Exam Percentile and Selection.
+    <section id="faq" className="py-20 md:py-32 relative overflow-hidden">
+      {/* Decorative SVG Elements */}
+      <Book className="absolute top-10 left-10 size-24 md:size-40 text-foreground opacity-10" />
+      <Atom className="absolute bottom-20 right-10 size-24 md:size-40 text-foreground opacity-10" />
+      <Science className="absolute top-1/2 right-20 size-16 md:size-28 text-foreground opacity-10 hidden lg:block" />
+      <Calculator className="absolute bottom-1/3 left-20 size-20 md:size-32 text-foreground opacity-10 hidden lg:block" />
+      
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-16"
+        >
+          <span className="inline-block px-4 py-2 bg-primary/10 border-2 border-primary rounded-full text-sm font-bold text-primary mb-4">
+            FAQ
+          </span>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight mb-4">
+            Frequently Asked{" "}
+            <span className="relative inline-block">
+              <span className="relative z-10">Questions</span>
+              <span className="absolute bottom-1 left-0 right-0 h-3 bg-blue-400 -z-10 -rotate-1" />
+            </span>
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Got questions? We&apos;ve got answers. If you can&apos;t find what you&apos;re looking for, feel free to contact us.
           </p>
-        </div>
+        </motion.div>
 
-        {/* Numbered Process Accordion */}
-        <div className="space-y-6 max-w-4xl mx-auto">
-          {steps.map((step, idx) => {
-            const isOpen = openIndex === idx;
-            return (
-              <div
-                key={step.number}
-                className={`rounded-[35px] md:rounded-[45px] border-2 border-[#191A23] dark:border-white/30 transition-all duration-300 shadow-[0px_5px_0px_0px_#191A23] dark:shadow-[0px_5px_0px_0px_#000] overflow-hidden ${
-                  isOpen
-                    ? "bg-[#B9FF66] text-[#191A23]"
-                    : "bg-[#F3F3F3] dark:bg-[#1E1F2A] text-foreground hover:bg-[#eaeaea] dark:hover:bg-[#252736]"
-                }`}
+        {/* FAQ List */}
+        <div className="max-w-3xl mx-auto space-y-4">
+          {faqs.map((faq, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.05 }}
+            >
+              <div 
+                className={`bg-card border-4 border-foreground rounded-2xl overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] transition-all ${openIndex === index ? 'shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.2)]' : ''}`}
               >
                 <button
-                  type="button"
-                  onClick={() => toggleItem(idx)}
-                  className="w-full p-6 sm:p-8 md:p-10 flex items-center justify-between text-left gap-4 cursor-pointer"
+                  onClick={() => setOpenIndex(openIndex === index ? null : index)}
+                  className="w-full px-6 py-5 flex items-center justify-between gap-4 text-left hover:bg-muted/50 transition-colors"
                 >
-                  <div className="flex items-center gap-4 sm:gap-6 md:gap-8 min-w-0">
-                    <span className="text-3xl sm:text-4xl md:text-5xl font-black font-heading shrink-0">
-                      {step.number}
-                    </span>
-                    <span className="text-lg sm:text-xl md:text-2xl font-bold font-heading truncate">
-                      {step.title}
-                    </span>
-                  </div>
-
-                  <div
-                    className={`h-11 w-11 md:h-14 md:w-14 rounded-full border-2 border-[#191A23] flex items-center justify-center font-bold text-xl md:text-2xl shrink-0 transition-transform ${
-                      isOpen ? "bg-white text-[#191A23] rotate-180" : "bg-[#F3F3F3] dark:bg-[#1E1F2A] text-[#191A23] dark:text-white"
-                    }`}
-                  >
-                    {isOpen ? "−" : "+"}
-                  </div>
+                  <span className="font-bold text-lg">{faq.question}</span>
+                  <ChevronDown className={`h-6 w-6 transition-transform flex-shrink-0 ${openIndex === index ? 'rotate-180' : ''}`} />
                 </button>
-
-                <AnimatePresence initial={false}>
-                  {isOpen && (
+                
+                <AnimatePresence>
+                  {openIndex === index && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.25, ease: "easeInOut" }}
+                      transition={{ duration: 0.3 }}
                     >
-                      <div className="px-6 sm:px-8 md:px-10 pb-8 md:pb-10 pt-2 border-t-2 border-[#191A23]/20">
-                        <p className="text-base md:text-lg font-medium text-[#191A23] leading-relaxed">
-                          {step.description}
-                        </p>
+                      <div className="px-6 pb-5 pt-0">
+                        <div className="text-muted-foreground leading-relaxed">
+                          {faq.answer}
+                        </div>
                       </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
-            );
-          })}
+            </motion.div>
+          ))}
         </div>
       </div>
     </section>
-  );
+  )
 }
