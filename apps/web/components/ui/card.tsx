@@ -3,20 +3,18 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'neobrutalist' | 'positivus' | 'positivusDark' | 'positivusGreen' | 'positivusGrey' | 'glass' | 'glass-strong'
+  variant?: 'default' | 'neobrutalist' | 'positivus' | 'positivusDark' | 'positivusGreen' | 'positivusGrey'
 }
 
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ({ className, variant = 'default', ...props }, ref) => {
     const variantClasses = {
-      default: "rounded-lg border bg-card text-card-foreground",
-      neobrutalist: "rounded-lg border bg-card text-card-foreground",
-      positivus: "rounded-lg border bg-card text-card-foreground",
-      positivusDark: "rounded-lg border bg-card text-card-foreground glass",
-      positivusGreen: "rounded-lg border bg-primary text-primary-foreground",
-      positivusGrey: "rounded-lg border bg-muted text-muted-foreground",
-      glass: "rounded-lg glass shine-top",
-      "glass-strong": "rounded-lg glass-strong shine-top",
+      default: "rounded-[45px] border border-dark bg-white text-black shadow-[0px_5px_0px_#191a23]",
+      neobrutalist: "rounded-[45px] border border-dark bg-white shadow-[0px_5px_0px_#191a23]",
+      positivus: "rounded-[45px] border border-dark bg-white text-black shadow-[0px_5px_0px_#191a23]",
+      positivusDark: "rounded-[45px] border border-dark bg-dark text-white shadow-[0px_5px_0px_#191a23]",
+      positivusGreen: "rounded-[45px] border border-dark bg-green text-black shadow-[0px_5px_0px_#191a23]",
+      positivusGrey: "rounded-[45px] border border-dark bg-gray text-black shadow-[0px_5px_0px_#191a23]",
     }[variant]
 
     return (
@@ -49,7 +47,7 @@ const CardTitle = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "text-xl font-semibold leading-none tracking-tight",
+      "text-2xl font-medium leading-none tracking-tight font-grotesk",
       className
     )}
     {...props}

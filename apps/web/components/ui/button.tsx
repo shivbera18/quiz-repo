@@ -5,29 +5,32 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[14px] text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 glow-accent",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-        // Rivet-style aliases for legacy landing code
-        positivus: "bg-primary text-primary-foreground hover:bg-primary/90 glow-accent",
-        positivusDark: "bg-card text-card-foreground border border-white/10 hover:bg-accent glass",
-        positivusOutline: "border border-white/10 bg-white/[0.02] backdrop-blur-md hover:bg-white/5",
-        glass: "glass hover:bg-white/[0.04]",
-        neobrutalist: "bg-primary text-primary-foreground hover:bg-primary/90",
-        neobrutalistInverted: "bg-card text-card-foreground border border-white/10 hover:bg-accent",
+        default: "bg-dark text-white hover:bg-green hover:text-black",
+        destructive:
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline:
+          "border border-black bg-transparent hover:bg-black hover:text-white",
+        secondary:
+          "bg-gray text-black hover:bg-dark hover:text-white",
+        ghost: "hover:bg-gray hover:text-black",
+        link: "text-dark underline-offset-4 hover:underline",
+        // Reference-aligned Positivus variants
+        positivus: "bg-green text-black hover:bg-white border border-dark",
+        positivusDark: "bg-dark text-white hover:bg-green hover:text-black border border-dark",
+        positivusOutline: "border border-dark bg-white text-black hover:bg-black hover:text-white",
+        // Legacy neobrutalist kept for backward compat but muted to reference style
+        neobrutalist: "bg-green text-black border border-dark shadow-[0px_5px_0px_#191a23] hover:translate-y-[-1px]",
+        neobrutalistInverted: "bg-dark text-white border border-dark shadow-[0px_5px_0px_#191a23] hover:translate-y-[-1px]",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
+        default: "h-[56px] px-[35px] py-5",
+        sm: "h-9 px-3 rounded-[10px] text-xs",
+        lg: "h-[60px] px-8 py-5 text-base font-medium",
+        icon: "h-11 w-11",
       },
     },
     defaultVariants: {
