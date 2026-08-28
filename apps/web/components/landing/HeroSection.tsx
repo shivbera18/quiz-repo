@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowRight as ArrowRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
@@ -38,43 +39,119 @@ export default function HeroSection() {
     };
 
     return (
-        <section id="about" className="w-full max-w-[1240px] mx-auto px-6 md:px-8 scroll-mt-28">
-            <div className="relative flex flex-col-reverse items-center md:flex-row" id="hero">
-                <div className="row items-center py-5 md:w-6/12 md:pb-20 md:pt-10">
-                    <div className="text-left space-y-3">
-                        <h1 className="text-4xl font-medium leading-none md:text-6xl text-center md:text-left font-grotesk">Navigating the <br /> digital landscape <br /> for success</h1>
-                        <p className="mt-6 mb-8 text-lg font-normal leading-7 sm:mb-12 text-center md:text-left md:pr-12">Our digital marketing agency helps businesses grow and succeed online through a range of services including SEO, PPC, social media marketing, and content creation.</p>
-                        <div className="w-full justify-center md:justify-start items-center inline-flex min-h-[56px]">
-                            {!isLoading ? (
-                                isLoggedIn ? (
-                                    <Button onClick={handleDashboardClick} className="px-8 py-5 bg-zinc-900 hover:bg-black text-white rounded-[14px]">Go to Dashboard</Button>
+        <section id="about" aria-label="Hero" className="w-full pt-28 pb-12 md:pt-36 md:pb-20 overflow-hidden scroll-mt-28">
+            <div className="container mx-auto px-4 md:px-12">
+                {/* 2-Column Hero */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+                    {/* Left Column: Heading, Description, CTA */}
+                    <div className="lg:col-span-6 space-y-6 md:space-y-9 text-left">
+                        <h1 className="text-4xl sm:text-5xl lg:text-[60px] font-medium tracking-tight text-[#191A23] dark:text-white font-heading leading-[1.15]">
+                            Navigating the digital landscape for success
+                        </h1>
+
+                        <p className="text-base sm:text-lg md:text-xl text-[#191A23]/80 dark:text-white/80 font-normal leading-relaxed max-w-xl font-heading">
+                            Our digital marketing agency helps businesses grow and succeed online through a range of services including SEO, PPC, social media marketing, and content creation.
+                        </p>
+
+                        {!isLoading && (
+                            <div className="pt-2">
+                                {isLoggedIn ? (
+                                    <Button
+                                        onClick={handleDashboardClick}
+                                        size="lg"
+                                        variant="positivusDark"
+                                        className="text-lg md:text-xl px-9 py-6 rounded-[14px] font-normal"
+                                    >
+                                        Go to Dashboard
+                                    </Button>
                                 ) : (
-                                    <Link href="/auth/signup"><Button className="px-8 py-5 bg-zinc-900 hover:bg-black text-white rounded-[14px]">Book a consultation</Button></Link>
-                                )
-                            ) : <div className="h-12 w-48 bg-gray rounded-[14px] animate-pulse" />}
+                                    <Link href="/auth/signup">
+                                        <Button
+                                            size="lg"
+                                            variant="positivusDark"
+                                            className="text-lg md:text-xl px-9 py-6 rounded-[14px] font-normal bg-[#191A23] text-white hover:bg-[#B9FF66] hover:text-[#191A23] hover:border-[#191A23] transition-all border border-[#191A23]"
+                                        >
+                                            Book a consultation
+                                        </Button>
+                                    </Link>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Right Column: Exact Figma Megaphone SVG Illustration */}
+                    <div className="lg:col-span-6 flex justify-center items-center relative">
+                        <div className="relative w-full max-w-[560px]">
+                            <Image
+                                src="/figma/hero-illustration.svg"
+                                alt="Positivus Megaphone Illustration"
+                                width={561}
+                                height={460}
+                                priority
+                                className="w-full h-auto object-contain select-none pointer-events-none"
+                            />
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center py-5 md:w-6/12 md:pb-20 md:pt-10 justify-center">
-                    <Image src="/figma/hero-illustration.svg" alt="Hero Illustration" width={600} height={515} priority className="w-full h-auto object-contain select-none pointer-events-none" />
-                </div>
-            </div>
 
-            {/* Sponsors - reference Sponsors.astro */}
-            <div className="flex-row items-center mt-8">
-                <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-6">
-                    {[
-                        { src: "/figma/logo-amazon.svg", alt: "Amazon logo" },
-                        { src: "/figma/logo-dribbble.svg", alt: "Dribbble logo" },
-                        { src: "/figma/logo-hubspot.svg", alt: "HubSpot logo" },
-                        { src: "/figma/logo-notion.svg", alt: "Notion logo" },
-                        { src: "/figma/logo-netflix.svg", alt: "Netflix logo" },
-                        { src: "/figma/logo-zoom.svg", alt: "Zoom logo" },
-                    ].map((sponsor) => (
-                        <div key={sponsor.alt} className="p-4 grayscale transition duration-200 hover:grayscale-0">
-                            <Image src={sponsor.src} className="h-12 w-auto mx-auto" alt={sponsor.alt} width={125} height={48} />
+                {/* Exact Positivus Client Logos Bar with Responsive Grid */}
+                <div className="mt-16 md:mt-24 pt-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap md:items-center md:justify-between gap-8 md:gap-10 grayscale dark:invert opacity-85 hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-center">
+                            <Image
+                                src="/figma/logo-amazon.svg"
+                                alt="Amazon"
+                                width={125}
+                                height={48}
+                                className="h-7 md:h-9 w-auto object-contain"
+                            />
                         </div>
-                    ))}
+                        <div className="flex items-center justify-center">
+                            <Image
+                                src="/figma/logo-dribbble.svg"
+                                alt="Dribbble"
+                                width={127}
+                                height={48}
+                                className="h-7 md:h-9 w-auto object-contain"
+                            />
+                        </div>
+                        <div className="flex items-center justify-center">
+                            <Image
+                                src="/figma/logo-hubspot.svg"
+                                alt="HubSpot"
+                                width={129}
+                                height={48}
+                                className="h-7 md:h-9 w-auto object-contain"
+                            />
+                        </div>
+                        <div className="flex items-center justify-center">
+                            <Image
+                                src="/figma/logo-notion.svg"
+                                alt="Notion"
+                                width={146}
+                                height={48}
+                                className="h-7 md:h-9 w-auto object-contain"
+                            />
+                        </div>
+                        <div className="flex items-center justify-center">
+                            <Image
+                                src="/figma/logo-netflix.svg"
+                                alt="Netflix"
+                                width={126}
+                                height={48}
+                                className="h-7 md:h-9 w-auto object-contain"
+                            />
+                        </div>
+                        <div className="flex items-center justify-center">
+                            <Image
+                                src="/figma/logo-zoom.svg"
+                                alt="Zoom"
+                                width={111}
+                                height={48}
+                                className="h-7 md:h-9 w-auto object-contain"
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>

@@ -2,82 +2,135 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
-const team = [
+interface TeamMember {
+  name: string;
+  role: string;
+  experience: string;
+  avatar: string;
+  linkedin: string;
+}
+
+const team: TeamMember[] = [
   {
-    pic: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=faces",
-    name: "John Smith",
-    role: "CEO and Founder",
-    description: "10+ years of experience in digital marketing. Expertise in SEO, PPC, and content strategy",
-    link: "#",
+    name: "Shiv Choudhary",
+    role: "Lead Platform Engineer & Founder",
+    experience: "5+ years in full-stack architecture, distributed systems, and modern AI testing engines.",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop&crop=faces",
+    linkedin: "https://github.com/shivbera18",
   },
   {
-    pic: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=faces",
-    name: "Jane Doe",
-    role: "Director of Operations",
-    description: "7+ years of experience in project management and team leadership. Strong organizational and communication skills",
-    link: "#",
+    name: "Aarav Sharma",
+    role: "Head of Content & Exam Strategy",
+    experience: "Ex-SBI PO top scorer with 7+ years mentoring 20,000+ candidates for banking examinations.",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=faces",
+    linkedin: "#",
   },
   {
-    pic: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&crop=faces",
-    name: "Michael Brown",
-    role: "Senior SEO Specialist",
-    description: "5+ years of experience in SEO and content creation. Proficient in keyword research and on-page optimization",
-    link: "#",
+    name: "Rhea Sen",
+    role: "Senior Reasoning Specialist",
+    experience: "Expert in complex analytical puzzles, critical reasoning algorithms, and syllabus curriculum.",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=faces",
+    linkedin: "#",
   },
   {
-    pic: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&crop=faces",
-    name: "Emily Johnson",
-    role: "PPC Manager",
-    description: "3+ years of experience in paid search advertising. Skilled in campaign management and performance analysis",
-    link: "#",
+    name: "Devendra Verma",
+    role: "Quantitative Aptitude Lead",
+    experience: "Specialist in high-speed arithmetic shortcuts, data interpretation, and quantitative speed drills.",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&crop=faces",
+    linkedin: "#",
   },
   {
-    pic: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop&crop=faces",
-    name: "Brian Williams",
-    role: "Social Media Specialist",
-    description: "4+ years of experience in social media marketing. Proficient in creating and scheduling content, analyzing metrics",
-    link: "#",
+    name: "Kavita Reddy",
+    role: "English Language & Verbal Faculty",
+    experience: "MA in English Linguistics with 8+ years developing reading comprehension and vocabulary benchmarks.",
+    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop&crop=faces",
+    linkedin: "#",
   },
   {
-    pic: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&h=200&fit=crop&crop=faces",
-    name: "Sarah Kim",
-    role: "Content Creator",
-    description: "2+ years of experience in writing and editing. Skilled in creating compelling, SEO-optimized content for various industries",
-    link: "#",
+    name: "Nikhil Joshi",
+    role: "AI & Analytics Engineer",
+    experience: "Designs adaptive question recommendation models, latency metrics, and real-time rank pipelines.",
+    avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&h=200&fit=crop&crop=faces",
+    linkedin: "#",
   },
 ];
 
 export default function TeamSection() {
   return (
-    <section id="team" className="w-full max-w-[1240px] mx-auto px-6 md:px-8 scroll-mt-28">
-      <div className="mt-[140px]">
-        <div className="flex flex-col items-center gap-10 mb-20 sm:flex-row">
-          <h2 className="greenhead text-center sm:text-left text-3xl sm:text-4xl">Team</h2>
-          <p className="w-auto text-center sm:text-left sm:w-[580px]">Meet the skilled and experienced team behind our successful digital marketing strategies</p>
+    <section id="team" className="py-16 md:py-24 bg-background scroll-mt-28">
+      <div className="container mx-auto px-4 md:px-12">
+        {/* Positivus Section Header */}
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-10 mb-16">
+          <div className="px-3 py-1 bg-[#B9FF66] text-[#191A23] text-3xl md:text-4xl font-medium rounded-[7px] border-2 border-[#191A23] font-heading shrink-0 shadow-[2px_2px_0px_0px_#191A23]">
+            Team
+          </div>
+          <p className="text-[#191A23]/80 dark:text-white/80 text-base md:text-lg max-w-xl font-normal leading-relaxed font-heading">
+            Meet the skilled educators and engineers behind our top-ranking exam preparation platform.
+          </p>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+
+        {/* 6-Card Team Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {team.map((member, idx) => (
-            <div key={idx} className="rounded-[45px] border border-dark shadow-[0px_5px_0px_#191a23]">
-              <div className="p-[40px] sm:p-[60px]">
-                <div className="flex flex-col sm:flex-row relative">
-                  <div className="h-20 w-20 rounded-full overflow-hidden shrink-0">
-                    <Image src={member.pic} alt={member.name} width={80} height={80} className="object-cover w-full h-full" />
+            <div
+              key={idx}
+              className="rounded-[35px] md:rounded-[45px] p-8 md:p-10 border-2 border-[#191A23] dark:border-white/30 bg-[#FFFFFF] dark:bg-[#1E1F2A] shadow-[0px_5px_0px_0px_#191A23] dark:shadow-[0px_5px_0px_0px_#000] flex flex-col justify-between transition-all hover:translate-y-[-2px]"
+            >
+              <div>
+                <div className="flex items-start justify-between gap-4 relative">
+                  <div className="flex items-center gap-4">
+                    <div className="relative h-16 w-16 rounded-full overflow-hidden border-2 border-[#191A23] shrink-0">
+                      <Image
+                        src={member.avatar}
+                        alt={member.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div>
+                      <h3 className="text-lg md:text-xl font-bold text-[#191A23] dark:text-white font-heading">
+                        {member.name}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground font-medium">
+                        {member.role}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex flex-col justify-end sm:ml-5 mt-4 sm:mt-0">
-                    <h3 className="text-lg font-medium">{member.name}</h3>
-                    <p className="text-sm font-normal">{member.role}</p>
-                  </div>
-                  <a href={member.link} className="absolute right-0 top-0 h-8 w-8 rounded-full bg-dark text-green flex items-center justify-center text-xs font-bold">in</a>
+
+                  <a
+                    href={member.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${member.name} LinkedIn`}
+                    className="h-9 w-9 rounded-full bg-[#191A23] text-[#B9FF66] flex items-center justify-center font-bold text-xs shrink-0 hover:scale-105 transition-transform"
+                  >
+                    in
+                  </a>
                 </div>
-                <div className="w-full h-[1px] bg-black my-7" />
-                <div className="text-sm">{member.description}</div>
+
+                <div className="w-full h-[1px] bg-[#191A23]/20 dark:bg-white/20 my-6" />
+
+                <p className="text-sm text-[#191A23]/80 dark:text-white/80 leading-relaxed font-normal">
+                  {member.experience}
+                </p>
               </div>
             </div>
           ))}
         </div>
+
+        {/* Team CTA */}
         <div className="flex justify-end mt-10">
-          <Link href="#contact" className="btn-primary">See all team</Link>
+          <a href="#contact">
+            <Button
+              variant="positivusDark"
+              size="lg"
+              className="text-base font-medium px-8 py-5"
+            >
+              Contact our team
+            </Button>
+          </a>
         </div>
       </div>
     </section>

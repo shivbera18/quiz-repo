@@ -191,6 +191,3 @@ jspm_packages/
 *.db-*
 prisma/dev.db*
 backup-data/
-
-# Positivus reference clone (local design reference, not project source)
-reference/

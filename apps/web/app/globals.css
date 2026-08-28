@@ -3,179 +3,117 @@
 @tailwind utilities;
 
 @layer base {
-  @font-face {
-    font-family: "Grotesk";
-    src: url("/fonts/grotesk/SpaceGrotesk-Regular.woff") format("woff");
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-  }
-
-  @font-face {
-    font-family: "Grotesk";
-    src: url("/fonts/grotesk/SpaceGrotesk-Medium.woff") format("woff");
-    font-weight: 500;
-    font-style: normal;
-    font-display: swap;
-  }
-
   :root {
     color-scheme: light;
-    /* Positivus reference palette */
-    --green: #b9ff66;
-    --black: rgb(0, 0, 0);
-    --dark: #191a23;
-    --gray: #f3f3f3;
-    --white: #ffffff;
-
-    /* shadcn mapping to Positivus */
+    /* Positivus Light Mode */
     --background: 0 0% 100%;
-    --foreground: 240 6% 10%;
+    /* #FFFFFF */
+    --foreground: 233 17% 12%;
+    /* #191A23 Dark Charcoal */
+
     --card: 0 0% 100%;
-    --card-foreground: 240 6% 10%;
+    /* #FFFFFF */
+    --card-foreground: 233 17% 12%;
+    /* #191A23 */
+
     --popover: 0 0% 100%;
-    --popover-foreground: 240 6% 10%;
-    --primary: 80 100% 70%;
-    --primary-foreground: 240 6% 10%;
+    /* #FFFFFF */
+    --popover-foreground: 233 17% 12%;
+    /* #191A23 */
+
+    --primary: 88 100% 70%;
+    /* #B9FF66 Positivus Lime Green */
+    --primary-foreground: 233 17% 12%;
+    /* #191A23 */
+
     --secondary: 0 0% 95%;
-    --secondary-foreground: 240 6% 10%;
+    /* #F3F3F3 Positivus Grey */
+    --secondary-foreground: 233 17% 12%;
+    /* #191A23 */
+
     --muted: 0 0% 95%;
-    --muted-foreground: 0 0% 45%;
-    --accent: 80 100% 70%;
-    --accent-foreground: 240 6% 10%;
-    --destructive: 0 84% 60%;
+    /* #F3F3F3 */
+    --muted-foreground: 0 0% 40%;
+
+    --accent: 88 100% 70%;
+    /* #B9FF66 */
+    --accent-foreground: 233 17% 12%;
+
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 6% 10%;
-    --input: 240 6% 10%;
-    --ring: 80 100% 70%;
-    --radius: 0.75rem;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5% 26%;
-    --sidebar-primary: 240 6% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 0 0% 95%;
-    --sidebar-accent-foreground: 240 6% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217 91% 60%;
+
+    --border: 233 17% 12%;
+    /* #191A23 Neobrutalist Solid Border */
+    --input: 233 17% 12%;
+    --ring: 88 100% 70%;
+
+    --radius: 0.875rem;
+    /* 14px Positivus radius */
+
     --mobile-header-padding: 3.25rem;
   }
 
   .dark {
     color-scheme: dark;
-    --background: 240 6% 10%;
-    --foreground: 0 0% 95%;
-    --card: 240 6% 10%;
-    --card-foreground: 0 0% 95%;
-    --popover: 240 6% 10%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 80 100% 70%;
-    --primary-foreground: 240 6% 10%;
-    --secondary: 240 4% 16%;
-    --secondary-foreground: 0 0% 95%;
-    --muted: 240 4% 16%;
-    --muted-foreground: 0 0% 64%;
-    --accent: 80 100% 70%;
-    --accent-foreground: 240 6% 10%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
-    --ring: 80 100% 70%;
-  }
+    /* Positivus Dark Mode */
+    --background: 233 17% 10%;
+    /* #14151C */
+    --foreground: 0 0% 98%;
+    /* #FAFAFA */
 
+    --card: 235 11% 18%;
+    /* #292A32 */
+    --card-foreground: 0 0% 98%;
+
+    --popover: 235 11% 18%;
+    /* #292A32 */
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 88 100% 70%;
+    /* #B9FF66 Positivus Lime Green */
+    --primary-foreground: 233 17% 12%;
+    /* #191A23 */
+
+    --secondary: 233 15% 15%;
+    /* #20222C */
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 233 15% 15%;
+    /* #20222C */
+    --muted-foreground: 0 0% 70%;
+
+    --accent: 88 100% 70%;
+    /* #B9FF66 */
+    --accent-foreground: 233 17% 12%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 233 15% 28%;
+    /* #3A3D4E */
+    --input: 233 15% 28%;
+    --ring: 88 100% 70%;
+  }
+}
+
+@layer base {
   * {
     @apply border-border;
   }
 
-  html {
-    scroll-behavior: smooth;
-  }
-
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: "Grotesk", var(--font-space-grotesk), var(--font-inter), sans-serif;
-  }
-
-  .font-outline {
-    -webkit-text-stroke: 2.5px black;
-    background-color: transparent;
-  }
-
-  .font-outline-sm {
-    -webkit-text-stroke: 1.2px black;
-    background-color: transparent;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    background-image: radial-gradient(hsl(var(--foreground) / 0.1) 1px, transparent 1px);
+    background-size: 24px 24px;
   }
 }
 
-@layer components {
-  .btn-primary {
-    @apply bg-dark text-white rounded-[14px] px-[35px] py-5 transition-all duration-200 font-medium;
-  }
-  .btn-primary:hover {
-    @apply bg-green text-black scale-[1.02];
-  }
-
-  .btn-secondary {
-    @apply bg-transparent text-black px-[35px] py-5 rounded-[14px] border border-solid border-black transition-all duration-200 font-medium;
-  }
-  .btn-secondary:hover {
-    @apply bg-black text-white border-green scale-[1.02];
-  }
-
-  .btn-tertiary {
-    @apply bg-green text-black rounded-[14px] px-[35px] py-5 transition-all duration-200 font-medium;
-  }
-  .btn-tertiary:hover {
-    @apply bg-white text-black scale-[1.02];
-  }
-
-  .greenhead {
-    @apply bg-green text-black rounded-[7px] px-[7px] font-medium;
-  }
-
-  .whitehead {
-    @apply bg-white text-black rounded-[7px] px-[7px] font-medium;
-  }
-
-  .blackhead {
-    @apply bg-black text-white rounded-[7px] px-[7px] font-medium;
-  }
-}
-
-/* custom scrollbar - reference */
-::-webkit-scrollbar {
-  width: 10px;
-}
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-::-webkit-scrollbar-thumb {
-  background: #000000;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-/* markdown style */
-.content p {
-  margin: 20px 0;
-  font-size: 1.1rem;
-}
-.content h2 {
-  margin: 20px 0;
-  font-size: 1.4rem;
-  font-weight: bold;
-}
-
-/* Mobile header padding utility */
+/* Mobile header padding utility - transitions smoothly with hamburger visibility */
 @layer utilities {
   .mobile-header-safe-zone {
     padding-top: var(--mobile-header-padding);
+    transition: padding-top 0.2s ease-out;
   }
 
   @media (min-width: 768px) {
@@ -190,25 +128,32 @@
   --rdp-accent-color: hsl(var(--primary));
   --rdp-accent-background-color: hsl(var(--primary) / 0.1);
 }
+
 .rdp-day_button:hover {
   background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
 }
+
 .rdp-selected .rdp-day_button {
   background-color: hsl(var(--primary));
   color: hsl(var(--primary-foreground));
 }
+
 .rdp-today:not(.rdp-selected) .rdp-day_button {
-  font-weight: 600;
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
 }
 
 @keyframes marquee {
   0% {
     transform: translateX(0);
   }
+
   100% {
     transform: translateX(-50%);
   }
 }
+
 .animate-marquee {
   animation: marquee 30s linear infinite;
 }

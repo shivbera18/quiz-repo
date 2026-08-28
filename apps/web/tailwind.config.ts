@@ -12,27 +12,17 @@ const config: Config = {
   theme: {
   	extend: {
   		fontFamily: {
-  			grotesk: ["Grotesk", "var(--font-space-grotesk)", "sans-serif"],
-  			sans: ["Grotesk", "var(--font-space-grotesk)", "var(--font-inter)", "sans-serif"],
-  			heading: ["Grotesk", "var(--font-space-grotesk)", "sans-serif"],
-  		},
-  		fontWeight: {
-  			regular: "400",
-  			medium: "500",
+  			sans: ["var(--font-space-grotesk)", "var(--font-inter)", "sans-serif"],
+  			heading: ["var(--font-space-grotesk)", "sans-serif"],
   		},
   		colors: {
-  			green: "var(--green)",
-  			black: "var(--black)",
-  			dark: "var(--dark)",
-  			gray: "var(--gray)",
-  			white: "var(--white)",
   			positivus: {
-  				green: "var(--green)",
-  				dark: "var(--dark)",
-  				grey: "var(--gray)",
-  				black: "var(--black)",
-  				white: "var(--white)",
-  				cardDark: "var(--dark)",
+  				green: "#B9FF66",
+  				dark: "#191A23",
+  				grey: "#F3F3F3",
+  				black: "#000000",
+  				white: "#FFFFFF",
+  				cardDark: "#292A32",
   			},
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
@@ -104,12 +94,20 @@ const config: Config = {
         },
   		keyframes: {
   			'accordion-down': {
-  				from: { height: '0' },
-  				to: { height: 'var(--radix-accordion-content-height)' }
+  				from: {
+  					height: '0'
+  				},
+  				to: {
+  					height: 'var(--radix-accordion-content-height)'
+  				}
   			},
   			'accordion-up': {
-  				from: { height: 'var(--radix-accordion-content-height)' },
-  				to: { height: '0' }
+  				from: {
+  					height: 'var(--radix-accordion-content-height)'
+  				},
+  				to: {
+  					height: '0'
+  				}
   			}
   		},
   		animation: {
