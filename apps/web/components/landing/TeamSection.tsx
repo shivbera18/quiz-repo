@@ -120,17 +120,17 @@ export default function TeamSection() {
           ))}
         </div>
 
-        {/* View All Team Button */}
+        {/* Team CTA */}
         <div className="flex justify-end mt-10">
-          <Link href="/about">
+          <a href="#contact">
             <Button
               variant="positivusDark"
               size="lg"
               className="text-base font-medium px-8 py-5"
             >
-              See all team members
+              Contact our team
             </Button>
-          </Link>
+          </a>
         </div>
       </div>
     </section>
