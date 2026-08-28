@@ -13,7 +13,6 @@ export default function LandingHeader() {
     const [isLoading, setIsLoading] = useState(true);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     useEffect(() => {
-        // Check auth state
         const token = localStorage.getItem("token");
         const user = localStorage.getItem("user");
         if (token && user) {
@@ -41,123 +40,67 @@ export default function LandingHeader() {
     };
 
     return (
-        <nav aria-label="Main Navigation" className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md transition-colors py-2">
-            <div className="container mx-auto px-4 md:px-12">
-                <div className="flex items-center justify-between h-20">
-                    <Link href="/" className="flex items-center gap-2.5 group">
-                        {/* Positivus 4-point star icon */}
-                        <svg width="32" height="32" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-[#191A23] dark:text-white transition-transform group-hover:rotate-12">
-                            <path d="M18 0L21.8 14.2L36 18L21.8 21.8L18 36L14.2 21.8L0 18L14.2 14.2L18 0Z" fill="currentColor"/>
-                        </svg>
-                        <span className="font-bold text-2xl md:text-3xl tracking-tight text-[#191A23] dark:text-white font-heading">
-                            Positivus
-                        </span>
-                    </Link>
-
-                    {/* Desktop Nav Links */}
-                    <div className="hidden md:flex items-center gap-6 lg:gap-10 text-base md:text-lg font-normal text-[#191A23] dark:text-white font-heading">
-                        <a href="#about" className="hover:text-primary transition-colors">
-                            About us
-                        </a>
-                        <a href="#services" className="hover:text-primary transition-colors">
-                            Services
-                        </a>
-                        <a href="#use-cases" className="hover:text-primary transition-colors">
-                            Use Cases
-                        </a>
-                        <a href="#process" className="hover:text-primary transition-colors">
-                            Process
-                        </a>
-                        <a href="#pricing" className="hover:text-primary transition-colors">
-                            Pricing
-                        </a>
+        <div className="mt-20">
+            <nav className="w-full top-0 left-0 z-50 fixed bg-white dark:bg-dark border-b border-transparent dark:border-white/10">
+                <header className="flex flex-col lg:flex-row justify-between items-center my-5 px-6 md:px-8 lg:px-12 max-w-[1240px] mx-auto">
+                    <div className="flex w-full lg:w-auto items-center justify-between">
+                        <Link href="/" className="flex items-center gap-2.5">
+                            <svg width="32" height="32" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-black dark:text-white">
+                                <path d="M18 0L21.8 14.2L36 18L21.8 21.8L18 36L14.2 21.8L0 18L14.2 14.2L18 0Z" fill="currentColor"/>
+                            </svg>
+                            <span className="font-medium text-2xl tracking-tight text-black dark:text-white font-grotesk">
+                                Positivus
+                            </span>
+                        </Link>
+                        <div className="block lg:hidden">
+                            <button
+                                type="button"
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                className="w-8 h-8 text-black dark:text-white cursor-pointer"
+                                aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+                                aria-expanded={mobileMenuOpen}
+                                aria-controls="menu-items"
+                            >
+                                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                            </button>
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <nav id="menu-items" className={`${mobileMenuOpen ? "flex" : "hidden"} w-full lg:w-auto mt-2 lg:flex lg:mt-0`}>
+                        <ul className="font-medium flex flex-col p-4 lg:p-0 mt-4 border rounded-lg lg:flex-row lg:space-x-8 lg:mt-0 lg:border-0 bg-white dark:bg-dark w-full lg:w-auto items-center">
+                            <li><a href="#about" onClick={() => setMobileMenuOpen(false)} className="block py-2 px-3 text-black dark:text-white rounded lg:bg-transparent lg:p-0">About us</a></li>
+                            <li><a href="#services" onClick={() => setMobileMenuOpen(false)} className="block py-2 px-3 text-black dark:text-white rounded lg:bg-transparent lg:p-0">Services</a></li>
+                            <li><a href="#use-cases" onClick={() => setMobileMenuOpen(false)} className="block py-2 px-3 text-black dark:text-white rounded lg:bg-transparent lg:p-0">Use Cases</a></li>
+                            <li><a href="#process" onClick={() => setMobileMenuOpen(false)} className="block py-2 px-3 text-black dark:text-white rounded lg:bg-transparent lg:p-0">Pricing</a></li>
+                            <li><a href="#testimonials" onClick={() => setMobileMenuOpen(false)} className="block py-2 px-3 text-black dark:text-white rounded lg:bg-transparent lg:p-0">Blog</a></li>
+                            <li className="lg:hidden flex items-center justify-center mt-3 gap-4">
+                                <div className="min-w-[140px] flex justify-center">
+                                    {!isLoading ? (
+                                        isLoggedIn ? (
+                                            <Button onClick={handleDashboardClick} className="px-9 py-5 rounded-2xl border border-zinc-900 bg-zinc-900 text-white">Dashboard →</Button>
+                                        ) : (
+                                            <Link href="/auth/signup"><Button variant="outline" className="px-9 py-5 rounded-2xl border border-zinc-900 bg-white text-black hover:bg-black hover:text-white">Request a quote</Button></Link>
+                                        )
+                                    ) : <div className="h-11 w-32 rounded-2xl bg-gray animate-pulse" />}
+                                </div>
+                            </li>
+                        </ul>
+                    </nav>
+
+                    <div className="hidden lg:flex items-center gap-4">
                         <ThemeToggle />
-                        
-                        <div className="min-w-[140px] flex justify-end">
+                        <div className="min-w-[160px] flex justify-end">
                             {!isLoading ? (
                                 isLoggedIn ? (
-                                    <Button
-                                        onClick={handleDashboardClick}
-                                        variant="positivus"
-                                        size="default"
-                                        className="font-medium text-base"
-                                    >
-                                        Dashboard →
-                                    </Button>
+                                    <Button onClick={handleDashboardClick} className="px-9 py-5 rounded-2xl border border-zinc-900 bg-zinc-900 text-white hover:bg-black">Dashboard →</Button>
                                 ) : (
-                                    <Link href="/auth/signup">
-                                        <Button
-                                            variant="positivusOutline"
-                                            size="default"
-                                            className="font-medium text-sm md:text-base px-5 py-3 rounded-[14px] border-2 border-[#191A23] dark:border-white shadow-none hover:bg-[#B9FF66] hover:text-[#191A23] hover:border-[#191A23] transition-all"
-                                        >
-                                            Request a quote
-                                        </Button>
-                                    </Link>
+                                    <Link href="/auth/signup"><Button variant="outline" className="px-9 py-5 rounded-2xl border border-zinc-900 bg-white hover:bg-black text-black hover:text-white">Request a quote</Button></Link>
                                 )
-                            ) : (
-                                <div className="h-11 w-32 rounded-[14px] bg-muted/40 animate-pulse" />
-                            )}
-                        </div>
-
-                        {/* Mobile Menu Button */}
-                        <button
-                            type="button"
-                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                            className="md:hidden p-2 rounded-lg border-2 border-[#191A23] dark:border-white text-foreground"
-                            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-                        >
-                            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                        </button>
-                    </div>
-                </div>
-
-                {/* Mobile Dropdown Nav */}
-                {mobileMenuOpen && (
-                    <div className="md:hidden pt-4 pb-6 border-t-2 border-[#191A23]/10 dark:border-white/10 space-y-4">
-                        <div className="flex flex-col gap-3 font-heading text-lg">
-                            <a
-                                href="#about"
-                                onClick={() => setMobileMenuOpen(false)}
-                                className="px-3 py-2 rounded-lg hover:bg-muted font-medium"
-                            >
-                                About us
-                            </a>
-                            <a
-                                href="#services"
-                                onClick={() => setMobileMenuOpen(false)}
-                                className="px-3 py-2 rounded-lg hover:bg-muted font-medium"
-                            >
-                                Services
-                            </a>
-                            <a
-                                href="#use-cases"
-                                onClick={() => setMobileMenuOpen(false)}
-                                className="px-3 py-2 rounded-lg hover:bg-muted font-medium"
-                            >
-                                Use Cases
-                            </a>
-                            <a
-                                href="#process"
-                                onClick={() => setMobileMenuOpen(false)}
-                                className="px-3 py-2 rounded-lg hover:bg-muted font-medium"
-                            >
-                                Process
-                            </a>
-                            <a
-                                href="#pricing"
-                                onClick={() => setMobileMenuOpen(false)}
-                                className="px-3 py-2 rounded-lg hover:bg-muted font-medium"
-                            >
-                                Pricing
-                            </a>
+                            ) : <div className="h-11 w-36 rounded-2xl bg-gray animate-pulse" />}
                         </div>
                     </div>
-                )}
-            </div>
-        </nav>
+                </header>
+            </nav>
+        </div>
     );
 }
