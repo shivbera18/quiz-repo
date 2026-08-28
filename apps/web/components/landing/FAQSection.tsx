@@ -44,9 +44,10 @@ export default function FAQSection() {
   };
 
   return (
-    <section id="process" className="py-20 md:py-28 bg-background relative scroll-mt-28">
-      <span id="faq" className="absolute -top-28" />
-      <div className="container mx-auto px-4 md:px-12">
+    <section id="process" className="py-20 md:py-28 bg-background relative">
+      <span id="faq" className="absolute -top-24" />
+      <div className="container mx-auto px-4 md:px-8">
+        {/* Positivus Section Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-10 mb-16">
           <div className="px-3 py-1 bg-[#B9FF66] text-[#191A23] text-2xl sm:text-3xl md:text-4xl font-bold rounded-[7px] border-2 border-[#191A23] font-heading shrink-0 shadow-[2px_2px_0px_0px_#191A23]">
             Our Working Process
@@ -72,8 +73,6 @@ export default function FAQSection() {
                 <button
                   type="button"
                   onClick={() => toggleItem(idx)}
-                  aria-expanded={isOpen}
-                  aria-controls={`step-content-${step.number}`}
                   className="w-full p-6 sm:p-8 md:p-10 flex items-center justify-between text-left gap-4 cursor-pointer"
                 >
                   <div className="flex items-center gap-4 sm:gap-6 md:gap-8 min-w-0">
@@ -86,7 +85,6 @@ export default function FAQSection() {
                   </div>
 
                   <div
-                    aria-hidden="true"
                     className={`h-11 w-11 md:h-14 md:w-14 rounded-full border-2 border-[#191A23] flex items-center justify-center font-bold text-xl md:text-2xl shrink-0 transition-transform ${
                       isOpen ? "bg-white text-[#191A23] rotate-180" : "bg-[#F3F3F3] dark:bg-[#1E1F2A] text-[#191A23] dark:text-white"
                     }`}
@@ -98,9 +96,6 @@ export default function FAQSection() {
                 <AnimatePresence initial={false}>
                   {isOpen && (
                     <motion.div
-                      id={`step-content-${step.number}`}
-                      role="region"
-                      aria-label={step.title}
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
