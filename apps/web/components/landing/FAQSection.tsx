@@ -24,14 +24,14 @@ export default function FAQSection() {
             const isOpen = open === i;
             return (
               <div key={s.n} className={`rounded-lg border transition-colors ${isOpen ? "bg-white/[0.04] border-white/10" : "glass"}`}>
-                <button onClick={() => setOpen(isOpen ? null : i)} className="w-full flex items-center justify-between p-6 text-left">
+                <button type="button" aria-expanded={isOpen} aria-controls={`panel-${s.n}`} id={`trigger-${s.n}`} onClick={() => setOpen(isOpen ? null : i)} className="w-full flex items-center justify-between p-6 text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-lg">
                   <div className="flex items-center gap-4">
-                    <span className="text-2xl font-mono text-primary">{s.n}</span>
+                    <span className="text-2xl font-mono text-primary" aria-hidden="true">{s.n}</span>
                     <span className="font-medium">{s.t}</span>
                   </div>
-                  <span className={`h-8 w-8 rounded-full border flex items-center justify-center text-sm ${isOpen ? "bg-primary text-primary-foreground border-primary" : "border-white/10"}`}>{isOpen ? "−" : "+"}</span>
+                  <span aria-hidden="true" className={`h-8 w-8 rounded-full border flex items-center justify-center text-sm shrink-0 ${isOpen ? "bg-primary text-primary-foreground border-primary" : "border-white/10"}`}>{isOpen ? "−" : "+"}</span>
                 </button>
-                {isOpen && <div className="px-6 pb-6 text-sm text-muted-foreground border-t border-white/10 pt-4 mx-6">{s.d}</div>}
+                {isOpen && <div id={`panel-${s.n}`} role="region" aria-labelledby={`trigger-${s.n}`} className="px-6 pb-6 text-sm text-muted-foreground border-t border-white/10 pt-4 mx-6">{s.d}</div>}
               </div>
             );
           })}
