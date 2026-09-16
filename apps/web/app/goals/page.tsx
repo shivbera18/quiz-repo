@@ -150,20 +150,38 @@ export default function GoalsPage() {
       return
     }
 
-    const goal: Goal = {
-      id: Date.now().toString(),
-      title: newGoal.title,
-      description: newGoal.description,
-      type: newGoal.type,
-      target: newGoal.target,
-      current: 0,
-      section: newGoal.section || undefined,
-      deadline: newGoal.deadline,
-      status: "active",
-      createdAt: new Date().toISOString(),
-    }
+    if (editingGoal) {
+      const updatedGoals = goals.map((g) =>
+        g.id === editingGoal.id
+          ? {
+              ...g,
+              title: newGoal.title,
+              description: newGoal.description,
+              type: newGoal.type,
+              target: newGoal.target,
+              section: newGoal.section || undefined,
+              deadline: newGoal.deadline,
+            }
+          : g,
+      )
+      saveGoals(updatedGoals)
+    } else {
+      const goal: Goal = {
+        id: Date.now().toString(),
+        title: newGoal.title,
+        description: newGoal.description,
+        type: newGoal.type,
+        target: newGoal.target,
+        current: 0,
+        section: newGoal.section || undefined,
+        deadline: newGoal.deadline,
+        status: "active",
+        createdAt: new Date().toISOString(),
+      }
 
-    saveGoals([...goals, goal])
+      saveGoals([...goals, goal])
+    }
+    setEditingGoal(null)
     setNewGoal({
       title: "",
       description: "",
@@ -309,7 +327,7 @@ export default function GoalsPage() {
         {showAddForm && (
           <Card variant="neobrutalist" className="mb-8">
             <CardHeader>
-              <CardTitle className="font-black">Create New Goal</CardTitle>
+              <CardTitle className="font-black">{editingGoal ? "Edit Goal" : "Create New Goal"}</CardTitle>
               <CardDescription>Set a new performance target to work towards</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -396,7 +414,7 @@ export default function GoalsPage() {
               </div>
 
               <div className="flex gap-2">
-                <Button variant="neobrutalist" onClick={handleAddGoal}>Create Goal</Button>
+                <Button variant="neobrutalist" onClick={handleAddGoal}>{editingGoal ? "Save Changes" : "Create Goal"}</Button>
                 <Button variant="neobrutalistInverted" onClick={() => setShowAddForm(false)}>
                   Cancel
                 </Button>
@@ -433,7 +451,18 @@ export default function GoalsPage() {
                             <CardDescription>{goal.description}</CardDescription>
                           </div>
                           <div className="flex gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => setEditingGoal(goal)}>
+                            <Button variant="ghost" size="icon" onClick={() => {
+                              setNewGoal({
+                                title: goal.title,
+                                description: goal.description || "",
+                                type: goal.type,
+                                target: goal.target,
+                                section: goal.section || "",
+                                deadline: goal.deadline,
+                              })
+                              setEditingGoal(goal)
+                              setShowAddForm(true)
+                            }}>
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => handleDeleteGoal(goal.id)}>

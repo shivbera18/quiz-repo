@@ -88,6 +88,8 @@ export default function ProfilePage() {
   const calculateAchievements = () => {
     if (typeof window === 'undefined') return
     const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
+    const totalQuizzes = results.length
+    const bestScore = totalQuizzes > 0 ? Math.max(...results.map((r: any) => r.totalScore)) : 0
 
     const achievementsList: Achievement[] = [
       {
@@ -95,8 +97,8 @@ export default function ProfilePage() {
         title: "Getting Started",
         description: "Complete your first quiz",
         icon: BookOpen,
-        unlocked: results.length >= 1,
-        progress: Math.min(results.length, 1),
+        unlocked: totalQuizzes >= 1,
+        progress: Math.min(totalQuizzes, 1),
         requirement: 1
       },
       {
@@ -104,8 +106,8 @@ export default function ProfilePage() {
         title: "Excellence",
         description: "Achieve a score of 90% or higher",
         icon: Trophy,
-        unlocked: stats.bestScore >= 90,
-        progress: Math.min(stats.bestScore, 90),
+        unlocked: bestScore >= 90,
+        progress: Math.min(bestScore, 90),
         requirement: 90
       },
       {
@@ -113,8 +115,8 @@ export default function ProfilePage() {
         title: "Quiz Master",
         description: "Complete 25 quizzes",
         icon: Star,
-        unlocked: stats.totalQuizzes >= 25,
-        progress: Math.min(stats.totalQuizzes, 25),
+        unlocked: totalQuizzes >= 25,
+        progress: Math.min(totalQuizzes, 25),
         requirement: 25
       },
       {
@@ -122,8 +124,8 @@ export default function ProfilePage() {
         title: "Perfectionist",
         description: "Achieve a perfect score of 100%",
         icon: Award,
-        unlocked: stats.bestScore >= 100,
-        progress: stats.bestScore >= 100 ? 1 : 0,
+        unlocked: bestScore >= 100,
+        progress: bestScore >= 100 ? 1 : 0,
         requirement: 1
       }
     ]
