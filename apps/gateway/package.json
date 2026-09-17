@@ -15,7 +15,7 @@
     "@quiz/contracts": "workspace:*",
     "@quiz/observability": "workspace:*",
     "@quiz/redis-kit": "workspace:*",
-    "fastify": "^5.10.0",
+    "fastify": "^5.12.1",
     "ioredis": "^5.4.2"
   },
   "devDependencies": {
