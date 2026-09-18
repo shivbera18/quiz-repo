@@ -128,10 +128,16 @@ export default function DashboardPage() {
       }
     }
 
-    // run immediately and again shortly after (to catch dynamic mounts)
-    unblockOverlays()
-    const t = window.setTimeout(unblockOverlays, 300)
-    return () => window.clearTimeout(t)
+    // run immediately and again shortly after (to catch dynamic mounts).
+    // Defer both passes with setTimeout so the expensive full-DOM scan
+    // (getComputedStyle/getBoundingClientRect on every element) never blocks
+    // first paint or first interaction on the dashboard.
+    const t1 = window.setTimeout(unblockOverlays, 0)
+    const t2 = window.setTimeout(unblockOverlays, 300)
+    return () => {
+      window.clearTimeout(t1)
+      window.clearTimeout(t2)
+    }
   }, [])
 
   useEffect(() => {
