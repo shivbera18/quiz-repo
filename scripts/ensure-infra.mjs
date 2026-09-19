@@ -4,15 +4,13 @@
 // Used by `pnpm dev` so a single terminal does everything.
 import { spawnSync } from "node:child_process"
 
-const essential = ["postgres", "redis", "redpanda", "redpanda-console", "minio", "minio-init"]
+const essential = ["postgres", "redis", "redpanda", "redpanda-console", "minio"]
 
 console.log("[ensure-infra] Checking essential Docker infra (postgres, redis, redpanda, minio)...")
 const res = spawnSync("docker", ["compose", "-f", "infra/docker-compose.yml", "up", "-d", ...essential], {
   stdio: "inherit",
-  shell: true,
 })
 
-// wait a moment for health, but don't block long
 if (res.status === 0) {
   console.log("[ensure-infra] Infra up (data volumes preserved).")
 } else {
