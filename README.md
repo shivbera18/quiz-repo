@@ -40,17 +40,42 @@ A Turborepo/pnpm monorepo: an API gateway, five backend services, and a Next.js 
 ## Prerequisites
 
 - Node.js 22 and pnpm (the repo has a committed `pnpm-lock.yaml` — use pnpm, not npm/yarn)
-- Docker Desktop — the realistic way to run 11+ processes plus Postgres/Redis/Kafka/MinIO locally
+- Docker Desktop — required only for **essential infra** (Postgres/Redis/Redpanda/MinIO), not for the 11 app images
 - Google Gemini API key (optional — only needed for AI generation features)
 
-## Installation & Deployment
+## Local Development
 
-See **[HOSTING.md](HOSTING.md)** for the full setup guide — local development with Docker Compose, running the test suites, and deploying online. Deploying specifically to an Oracle VPS (backend) + Vercel (frontend) with auto-deploy on every push? See **[DEPLOYMENT.md](DEPLOYMENT.md)** instead. Quick start:
+**Recommended: hybrid single-command (`pnpm dev`)** — infra in Docker, apps + workers natively. Full functionality, fast `tsx watch` hot reload, no rebuilding 11 images.
 
 ```bash
 git clone https://github.com/shivbera18/quiz-repo.git
 cd quiz-repo
 pnpm install
+
+# 1) Configure local env (infra ports are host-mapped: 5433/6380/19092/9000)
+cp .env.local.example .env.local
+# For hybrid (recommended): in .env.local set
+#   DATABASE_URL="postgresql://quiz_admin:quiz_admin_pw@localhost:5433/quiz"
+#   KAFKA_BROKERS="localhost:19092"
+#   REDIS_URL="redis://localhost:6380"
+#   S3_ENDPOINT="http://localhost:9000"
+#   DISABLE_KAFKA=false / DISABLE_REDIS=false / DISABLE_S3=false
+# For cloud-free (no Docker): use a single Neon URL + DISABLE_*=true
+
+# 2) Start everything in ONE terminal — ensures infra up (keeps volumes), then streams 6 APIs + 5 workers + web
+pnpm dev
+
+# or step-by-step:
+pnpm dev:infra        # up postgres/redis/redpanda/minio only (~400 MB, no app builds)
+pnpm db:generate && pnpm db:migrate:local && pnpm db:seed:local  # first time only
+pnpm dev              # same as above
+```
+
+Open `http://localhost:3000` (web), `http://localhost:4000/healthz` (gateway), `http://localhost:8090` (Redpanda Console), `http://localhost:9001` (MinIO `minioadmin`/`minioadmin`).
+
+**Alternative: full Docker** (`infra/docker-compose.yml` builds all 11 images — slower iteration, useful for prod parity):
+
+```bash
 pnpm compose:up                              # builds and starts all 11 backend processes + infra
 # then, per service (see HOSTING.md Part 1 step 4):
 docker compose -f infra/docker-compose.yml exec identity-svc pnpm db:migrate
@@ -58,6 +83,8 @@ docker compose -f infra/docker-compose.yml exec identity-svc pnpm db:seed
 # ...repeat db:migrate for catalog-svc, assessment-svc, analytics-svc, notification-svc
 GATEWAY_URL=http://localhost:4000 pnpm --filter web dev
 ```
+
+See **[HOSTING.md](HOSTING.md)** for the full setup guide, test suites, and deploy notes. Oracle VPS + Vercel auto-deploy? See **[DEPLOYMENT.md](DEPLOYMENT.md)** instead.
 
 ## Usage
 
