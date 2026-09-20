@@ -257,12 +257,17 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
         body: JSON.stringify({ answers: [save] }),
       })
       if (response.ok) return true
-      // A post-expiry autosave returns 409 and flips the attempt to EXPIRED
-      // server-side. Surface it instead of silently discarding the answer,
-      // and do NOT queue for retry -- no save can succeed after expiry.
+      // Only 409 means the attempt expired server-side (no save can succeed
+      // after expiry, so settle it and prompt submit). Any other rejection
+      // (400/429/500) is transient -- return false so the caller queues it
+      // for the periodic flush instead of showing the wrong banner.
+      if (response.status === 409) {
+        console.warn("Autosave rejected: attempt expired")
+        setSubmitError("Your time for this quiz has ended. Submit now to record your answers.")
+        return true // treated as settled so it leaves the retry queue
+      }
       console.warn("Autosave rejected:", response.status)
-      setSubmitError("Your time for this quiz has ended. Submit now to record your answers.")
-      return true // treated as settled so it leaves the retry queue
+      return false
     } catch (error) {
       console.warn("Autosave failed:", error)
       return false
