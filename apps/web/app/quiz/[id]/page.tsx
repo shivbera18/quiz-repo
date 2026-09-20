@@ -257,12 +257,17 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
         body: JSON.stringify({ answers: [save] }),
       })
       if (response.ok) return true
-      // A post-expiry autosave returns 409 and flips the attempt to EXPIRED
-      // server-side. Surface it instead of silently discarding the answer,
-      // and do NOT queue for retry -- no save can succeed after expiry.
+      // Only 409 means the attempt expired server-side (no save can succeed
+      // after expiry, so settle it and prompt submit). Any other rejection
+      // (400/429/500) is transient -- return false so the caller queues it
+      // for the periodic flush instead of showing the wrong banner.
+      if (response.status === 409) {
+        console.warn("Autosave rejected: attempt expired")
+        setSubmitError("Your time for this quiz has ended. Submit now to record your answers.")
+        return true // treated as settled so it leaves the retry queue
+      }
       console.warn("Autosave rejected:", response.status)
-      setSubmitError("Your time for this quiz has ended. Submit now to record your answers.")
-      return true // treated as settled so it leaves the retry queue
+      return false
     } catch (error) {
       console.warn("Autosave failed:", error)
       return false
@@ -397,10 +402,46 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
     postAnswerSync(currentQuestion.id, currentQuestion.section, null, questionStatuses[currentQuestion.id]?.markedForReview || false)
   }
 
-  const handleSaveAndNext = () => {
-    // Only advance if there's an answer (already saved/green)
-    if (userAnswer && currentQuestionIndex < questions.length - 1) {
-      navigateToQuestion(currentQuestionIndex + 1)
+  const handleSaveAndNext = async () => {
+    // This button is rendered on the FINAL question, where there's no "next".
+    // Historically it only advanced (guarded by `currentQuestionIndex <
+    // questions.length - 1`) and therefore did nothing at all on the last
+    // question -- a dead button. Give it its real job: deterministically
+    // await-persist the current answer before the student proceeds to submit.
+    // Awaited (unlike the fire-and-forget autosave in handleAnswerChange), so
+    // a transient network blip surfaces here instead of silently deferring to
+    // the periodic flush that may never run before submit.
+    const currentQuestion = questions[currentQuestionIndex]
+    if (!currentQuestion) return
+    const currentAnswer = answers.find((a) => a.questionId === currentQuestion.id)?.selectedAnswer ?? null
+    const currentMarked = questionStatuses[currentQuestion.id]?.markedForReview || false
+    recordTimeOnCurrentQuestion()
+    const ok = await sendAnswerSave({
+      questionId: currentQuestion.id,
+      section: currentQuestion.section,
+      selectedAnswer: currentAnswer,
+      markedForReview: currentMarked,
+      visited: true,
+      timeSpentMs: questionTimesRef.current[currentQuestion.id],
+      clientSeq: ++clientSeqRef.current,
+    })
+    if (!ok) {
+      // sendAnswerSave does not queue on network failure; mirror handleSubmit
+      // so a transient blip is retried by the periodic flush, not lost.
+      pendingSavesRef.current.set(currentQuestion.id, {
+        questionId: currentQuestion.id,
+        section: currentQuestion.section,
+        selectedAnswer: currentAnswer,
+        markedForReview: currentMarked,
+        visited: true,
+        timeSpentMs: questionTimesRef.current[currentQuestion.id],
+        clientSeq: clientSeqRef.current,
+      })
+    } else {
+      pendingSavesRef.current.delete(currentQuestion.id)
+      if (currentQuestionIndex < questions.length - 1) {
+        navigateToQuestion(currentQuestionIndex + 1)
+      }
     }
   }
 
@@ -525,10 +566,33 @@ export default function QuizPage(props: { params: Promise<{ id: string }> }) {
     )
   }
 
-  if (loading || authLoading || questions.length === 0) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    )
+  }
+
+  // An empty question set is a legal admin write (PATCH questions:[] passes
+  // catalog-validation), so it must not fall through to the loading spinner --
+  // that branch never resolves and strands the student on a forever-spinner
+  // with no way to quit. Surface a clear, actionable state instead.
+  if (questions.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center border-4 border-yellow-500 rounded-2xl bg-yellow-50 dark:bg-yellow-900/20 p-8">
+          <h1 className="text-xl font-black mb-2">This quiz has no questions</h1>
+          <p className="text-sm font-semibold text-muted-foreground mb-6">
+            This quiz has not been set up with any questions yet. Please contact your administrator.
+          </p>
+          <button
+            onClick={() => router.push(getBackUrl())}
+            className="px-5 py-2 rounded-lg border-2 border-black dark:border-white bg-primary text-primary-foreground font-bold"
+          >
+            Go back
+          </button>
+        </div>
       </div>
     )
   }
