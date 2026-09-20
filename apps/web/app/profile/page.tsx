@@ -58,13 +58,13 @@ export default function ProfilePage() {
 
   const calculateUserStats = () => {
     if (typeof window === 'undefined') return
-    const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
+    const results: { totalScore?: number; timeSpent?: number }[] = JSON.parse(localStorage.getItem("quizResults") || "[]")
     if (results.length === 0) return
 
     const totalQuizzes = results.length
-    const averageScore = parseFloat((results.reduce((sum: number, r: any) => sum + r.totalScore, 0) / totalQuizzes).toFixed(2))
-    const bestScore = Math.max(...results.map((r: any) => r.totalScore))
-    const totalTimeSpent = results.reduce((sum: number, r: any) => sum + (r.timeSpent || 0), 0)
+    const averageScore = parseFloat((results.reduce((sum, r) => sum + (r.totalScore ?? 0), 0) / totalQuizzes).toFixed(2))
+    const bestScore = results.reduce((m, r) => Math.max(m, r.totalScore ?? 0), 0)
+    const totalTimeSpent = results.reduce((sum, r) => sum + (r.timeSpent || 0), 0)
     const experience = totalQuizzes * 10 + averageScore * 2
     const level = Math.floor(experience / 100) + 1
 
