@@ -255,7 +255,7 @@ export default function GoalsPage() {
           </div>
           <div className="flex gap-2">
             <ThemeToggle />
-            <Button variant="neobrutalist" onClick={() => setShowAddForm(true)}>
+            <Button variant="neobrutalist" onClick={() => { setEditingGoal(null); setNewGoal({ title: "", description: "", type: "score", target: 0, section: "", deadline: "" }); setShowAddForm(true) }}>
               <Plus className="h-4 w-4 mr-2" />
               Add Goal
             </Button>
@@ -415,7 +415,7 @@ export default function GoalsPage() {
 
               <div className="flex gap-2">
                 <Button variant="neobrutalist" onClick={handleAddGoal}>{editingGoal ? "Save Changes" : "Create Goal"}</Button>
-                <Button variant="neobrutalistInverted" onClick={() => setShowAddForm(false)}>
+                <Button variant="neobrutalistInverted" onClick={() => { setShowAddForm(false); setEditingGoal(null); setNewGoal({ title: "", description: "", type: "score", target: 0, section: "", deadline: "" }) }}>
                   Cancel
                 </Button>
               </div>
@@ -429,7 +429,7 @@ export default function GoalsPage() {
             <CardContent className="text-center py-12">
               <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground mb-4 font-bold">No performance goals set yet</p>
-              <Button variant="neobrutalist" onClick={() => setShowAddForm(true)}>
+              <Button variant="neobrutalist" onClick={() => { setEditingGoal(null); setNewGoal({ title: "", description: "", type: "score", target: 0, section: "", deadline: "" }); setShowAddForm(true) }}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create Your First Goal
               </Button>

@@ -87,9 +87,9 @@ export default function ProfilePage() {
 
   const calculateAchievements = () => {
     if (typeof window === 'undefined') return
-    const results = JSON.parse(localStorage.getItem("quizResults") || "[]")
+    const results: { totalScore?: number }[] = JSON.parse(localStorage.getItem("quizResults") || "[]")
     const totalQuizzes = results.length
-    const bestScore = totalQuizzes > 0 ? Math.max(...results.map((r: any) => r.totalScore)) : 0
+    const bestScore = results.reduce((m, r) => Math.max(m, r.totalScore ?? 0), 0)
 
     const achievementsList: Achievement[] = [
       {
