@@ -1,8 +1,18 @@
-# Hybrid deployment: data plane in Docker, 11 Node processes under host PM2.
-# See the hybrid deploy plan: infra/docker-compose.infra.yml + ecosystem.config.cjs
-# (VPS-only, holds secrets, never committed) + host Nginx for TLS.
+# Hybrid deployment: 3 data-plane containers in Docker (postgres, redis,
+# redpanda), 11 Node processes under host PM2, MinIO as a host systemd unit,
+# host Nginx for TLS. No application Docker images are ever built on the VPS.
+#
+# Storage budget on the VPS (30G /, ~11G free): this workflow adds ~0 net
+# bytes per deploy -- `pnpm install` reuses the content-addressed store,
+# `docker compose pull` only fetches changed layers, and no dangling images
+# or tmp leftovers are ever created.
+# Secrets this workflow needs (set in GitHub repo Settings > Secrets):
+#   EC2_HOST     -- VPS public IP or hostname
+#   EC2_SSH_KEY  -- private key for the `opc` user (update it there; nothing
+#                   in this file changes when you rotate it)
+# VPS-only files CI must never overwrite (both hold secrets, chmod 600):
+#   ~/quiz-platform/infra/.env, ~/quiz-platform/ecosystem.config.cjs
 name: Deploy Backend Stack to EC2
-# Last deployment trigger: 2026-08-12
 
 on:
   push:
@@ -15,7 +25,8 @@ on:
       - "apps/analytics/**"
       - "apps/notification/**"
       - "packages/**"
-      - "infra/**"
+      - "infra/docker-compose.infra.yml"
+      - "infra/postgres/**"
       - ".github/workflows/deploy-ec2.yml"
   workflow_dispatch: {}
 
@@ -57,31 +68,29 @@ jobs:
           command_timeout: 30m
           script: |
             set -e
-            if [ -d "$HOME/quiz-platform" ]; then
-              cd "$HOME/quiz-platform"
-            elif [ -d "$HOME/quiz-repo-microservice" ]; then
-              cd "$HOME/quiz-repo-microservice"
-            elif [ -d "$HOME/quiz-repo" ]; then
-              cd "$HOME/quiz-repo"
-            else
+            cd "$HOME/quiz-platform" 2>/dev/null || {
               git clone https://github.com/shivbera18/quiz-repo.git "$HOME/quiz-platform"
               cd "$HOME/quiz-platform"
-            fi
+            }
 
             git fetch origin main
             git reset --hard origin/main
 
-            # Data plane only: pulls 4 prebuilt images, never builds.
-            # No sed hacks, no COMPOSE_PARALLEL_LIMIT, no prod overlay
-            # (host Nginx owns 80/443; Caddy would fight it).
+            # Data plane: 3 prebuilt images (postgres, redis, redpanda), never
+            # built. `pull` is a no-op when tags are unchanged, so steady-state
+            # deploys cost zero bytes here.
+            docker compose -f infra/docker-compose.infra.yml pull
             docker compose -f infra/docker-compose.infra.yml up -d
 
-            # Single shared pnpm store replaces ~5 GB of per-image node_modules.
-            pnpm install --frozen-lockfile
+            # JS deps: single shared pnpm store (~1.1G, content-addressed).
+            # Unchanged packages are hardlinks, not downloads -- steady state
+            # is a few MB, not ~5G of per-image node_modules rebuilds.
+            # --prefer-offline avoids re-hitting the registry for pinned bits.
+            pnpm install --frozen-lockfile --prefer-offline
             pnpm db:generate
 
-            # Host-side DATABASE_URLs from infra/.env (VPS-only, never in CI).
-            # migrate deploy only -- never migrate dev against live data.
+            # Migrate + seed with host-side DATABASE_URLs from infra/.env
+            # (VPS-only, never in CI). deploy only, never dev, against live.
             set -a
             # shellcheck source=/dev/null
             . infra/.env
@@ -98,13 +107,19 @@ jobs:
             pnpm --filter notification-svc db:migrate
             unset DATABASE_URL
 
-            # Seeds: identity + catalog only. assessment-svc has no seed
-            # (its db:seed points at a nonexistent file -- known gap).
-            pnpm --filter identity-svc db:seed || true
-            pnpm --filter catalog-svc db:seed || true
+            # Seeds are upserts (identity users, sample quiz) -- safe to
+            # re-run every deploy; never seed assessment (no seed file).
+            pnpm --filter identity-svc db:seed
+            pnpm --filter catalog-svc db:seed
 
             # Restart the 11 quiz-* PM2 apps with fresh code+env.
-            # ecosystem.config.cjs and infra/.env live only on the VPS
-            # (both hold secrets) -- CI must never overwrite them.
+            # Never touches the 4 existing fyndr processes.
             pm2 reload ecosystem.config.cjs --update-env
             pm2 save
+
+            # Pass/fail gate: every service must answer /healthz after reload.
+            for p in 4000 4001 4002 4003 4004 4005; do
+              curl -sf --max-time 10 "http://localhost:$p/healthz" >/dev/null \
+                || { echo "healthz FAILED on port $p"; exit 1; }
+            done
+            echo "deploy ok: data plane + 11 PM2 apps + 6 healthz"
