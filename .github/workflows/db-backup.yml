@@ -27,8 +27,8 @@ jobs:
           echo "BACKUP_DATE=$BACKUP_DATE" >> $GITHUB_ENV
           
           # SSH to EC2, run pg_dumpall inside postgres container, stream compressed SQL back to runner
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem ubuntu@${{ secrets.EC2_HOST }} \
-            "docker exec quiz-platform-postgres-1 pg_dumpall -U quiz_admin" | gzip > "db_backup_${BACKUP_DATE}.sql.gz"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem opc@${{ secrets.EC2_HOST }} \
+            "docker exec quiz-infra-postgres-1 pg_dumpall -U quiz_admin" | gzip > "db_backup_${BACKUP_DATE}.sql.gz"
           
           # Check backup file size
           ls -lh "db_backup_${BACKUP_DATE}.sql.gz"

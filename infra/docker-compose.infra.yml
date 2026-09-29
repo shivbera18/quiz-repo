@@ -1,0 +1,132 @@
+# Data plane only for the hybrid PM2 deployment (Oracle VPS alongside fyndr).
+# Run on the VPS: docker compose -f infra/docker-compose.infra.yml up -d
+#
+# This file is a strict subset of infra/docker-compose.yml: postgres, redis,
+# redpanda, minio, minio-init copied verbatim, with exactly these deviations:
+#  - redpanda --memory=512M -> --memory=200M (1 vCPU / 5.6 GB box)
+#  - all host ports bind 127.0.0.1 and minio moved to 9100/9101 (host 9000 is
+#    taken by the g3 process; nothing external needs these ports -- PM2 apps
+#    reach everything via localhost)
+#  - project name quiz-infra so volumes/containers can never collide with a
+#    full-stack checkout (quiz-platform_*)
+#
+# Deliberately absent: gateway/app services (run under host PM2), web (Vercel),
+# caddy (host Nginx owns 80/443), redpanda-console (use rpk via docker exec).
+# No firewall changes: 80/443 already open; never expose 4000-4005, 5433,
+# 6380, 19092, 9100-9101.
+
+name: quiz-infra
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_USER: quiz_admin
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:-quiz_admin_pw}
+      POSTGRES_DB: quiz
+      IDENTITY_RW_PASSWORD: ${IDENTITY_RW_PASSWORD:-identity_rw_pw}
+      CATALOG_RW_PASSWORD: ${CATALOG_RW_PASSWORD:-catalog_rw_pw}
+      ASSESSMENT_RW_PASSWORD: ${ASSESSMENT_RW_PASSWORD:-assessment_rw_pw}
+      ANALYTICS_RW_PASSWORD: ${ANALYTICS_RW_PASSWORD:-analytics_rw_pw}
+      NOTIFICATION_RW_PASSWORD: ${NOTIFICATION_RW_PASSWORD:-notification_rw_pw}
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quiz_admin -d quiz"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "127.0.0.1:6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redpanda:
+    image: redpandadata/redpanda:v24.2.18
+    restart: unless-stopped
+    logging: *default-logging
+    command:
+      - redpanda
+      - start
+      - --smp=1
+      - --memory=200M
+      - --overprovisioned
+      - --node-id=0
+      - --check=false
+      - --kafka-addr=PLAINTEXT://0.0.0.0:9092,OUTSIDE://0.0.0.0:19092
+      - --advertise-kafka-addr=PLAINTEXT://redpanda:9092,OUTSIDE://localhost:19092
+      - --pandaproxy-addr=0.0.0.0:8082
+      - --advertise-pandaproxy-addr=localhost:8082
+    ports:
+      - "127.0.0.1:19092:19092" # Kafka API, for PM2 services running on the host
+      - "127.0.0.1:8082:8082" # pandaproxy (REST)
+      - "127.0.0.1:9644:9644" # admin API, used by the healthcheck below
+    volumes:
+      - redpanda-data:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -q 'Healthy:.*true'"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    logging: *default-logging
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "127.0.0.1:9100:9000" # S3 API (host 9000 taken by g3)
+      - "127.0.0.1:9101:9001" # web console
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-shot: creates the export bucket and exits. `mc` has no long-running
+  # process, so this container is expected to reach status "exited (0)" --
+  # no restart policy, it's not meant to run again once it succeeds.
+  minio-init:
+    image: minio/mc:latest
+    logging: *default-logging
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      i=0;
+      until mc alias set local http://minio:9000 \"${MINIO_ROOT_USER:-minioadmin}\" \"${MINIO_ROOT_PASSWORD:-minioadmin}\" || [ \$$i -gt 15 ]; do
+        i=\$$((i+1));
+        sleep 2;
+      done &&
+      mc mb --ignore-existing local/quiz-exports
+      "
+
+volumes:
+  postgres-data:
+  redpanda-data:
+  minio-data:

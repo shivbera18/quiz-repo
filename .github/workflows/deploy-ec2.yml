@@ -1,4 +1,6 @@
-# EC2 Deployment Trigger: Single repository push mode - run 2
+# Hybrid deployment: data plane in Docker, 11 Node processes under host PM2.
+# See the hybrid deploy plan: infra/docker-compose.infra.yml + ecosystem.config.cjs
+# (VPS-only, holds secrets, never committed) + host Nginx for TLS.
 name: Deploy Backend Stack to EC2
 # Last deployment trigger: 2026-08-12
 
@@ -49,7 +51,7 @@ jobs:
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
+          username: opc
           key: ${{ steps.read_key.outputs.key }}
           port: 22
           command_timeout: 30m
@@ -69,73 +71,40 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            # Prune dangling build objects before building to guarantee free space
-            docker image prune -f
-            docker builder prune -f --keep-storage 1GB
+            # Data plane only: pulls 4 prebuilt images, never builds.
+            # No sed hacks, no COMPOSE_PARALLEL_LIMIT, no prod overlay
+            # (host Nginx owns 80/443; Caddy would fight it).
+            docker compose -f infra/docker-compose.infra.yml up -d
 
-            # Tune Redpanda for low-RAM VM
-            sed -i 's/--memory=512M/--memory=200M/' infra/docker-compose.yml
+            # Single shared pnpm store replaces ~5 GB of per-image node_modules.
+            pnpm install --frozen-lockfile
+            pnpm db:generate
 
-            # Build every service ONE AT A TIME (never batched, never
-            # parallel) -- COMPOSE_PARALLEL_LIMIT=1 is a belt-and-suspenders
-            # safety net on top of that. Two things this buys us on a
-            # low-RAM t3.small:
-            #
-            # 1. Each app's API service is built immediately before its own
-            #    worker(s). Both are now built from ONE multi-stage Dockerfile
-            #    per app (see apps/*/Dockerfile) that shares a `base` stage --
-            #    node_modules + the generated Prisma client. Building them
-            #    back-to-back means the worker build is a 100% BuildKit cache
-            #    hit (near-instant, zero additional layer storage) instead of
-            #    an independent ~800MB rebuild racing the API build for the
-            #    same pnpm store cache mount.
-            # 2. No two `pnpm install` processes ever touch the shared
-            #    `--mount=type=cache,id=pnpm` store at the same time, which
-            #    used to cause CPU/RAM contention when Compose built several
-            #    services in parallel.
-            export COMPOSE_PARALLEL_LIMIT=1
-            for svc in gateway identity-svc \
-                       catalog-svc catalog-ai-worker \
-                       assessment-svc assessment-worker \
-                       analytics-svc analytics-rollup-consumer analytics-export-worker \
-                       notification-svc notification-worker; do
-              docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml build "$svc"
-            done
+            # Host-side DATABASE_URLs from infra/.env (VPS-only, never in CI).
+            # migrate deploy only -- never migrate dev against live data.
+            set -a
+            # shellcheck source=/dev/null
+            . infra/.env
+            set +a
+            export DATABASE_URL="postgresql://identity_rw:${IDENTITY_RW_PASSWORD}@localhost:5433/quiz?schema=identity"
+            pnpm --filter identity-svc db:migrate
+            export DATABASE_URL="postgresql://catalog_rw:${CATALOG_RW_PASSWORD}@localhost:5433/quiz?schema=catalog"
+            pnpm --filter catalog-svc db:migrate
+            export DATABASE_URL="postgresql://assessment_rw:${ASSESSMENT_RW_PASSWORD}@localhost:5433/quiz?schema=assessment"
+            pnpm --filter assessment-svc db:migrate
+            export DATABASE_URL="postgresql://analytics_rw:${ANALYTICS_RW_PASSWORD}@localhost:5433/quiz?schema=analytics"
+            pnpm --filter analytics-svc db:migrate
+            export DATABASE_URL="postgresql://notification_rw:${NOTIFICATION_RW_PASSWORD}@localhost:5433/quiz?schema=notification"
+            pnpm --filter notification-svc db:migrate
+            unset DATABASE_URL
 
-            # Prune lingering stopped containers to prevent name conflicts
-            docker container prune -f || true
+            # Seeds: identity + catalog only. assessment-svc has no seed
+            # (its db:seed points at a nonexistent file -- known gap).
+            pnpm --filter identity-svc db:seed || true
+            pnpm --filter catalog-svc db:seed || true
 
-            # Start the full backend stack. Data-plane containers first
-            # (Compose already serializes these via depends_on/healthchecks),
-            # then the app processes.
-            docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml \
-              up -d --remove-orphans \
-              postgres redis redpanda minio minio-init \
-              gateway identity-svc catalog-svc catalog-ai-worker \
-              assessment-svc assessment-worker \
-              analytics-svc analytics-rollup-consumer analytics-export-worker \
-              notification-svc notification-worker \
-              caddy
-
-            # Reclaim the now-superseded previous images as early as
-            # possible -- a fresh build set + the still-running old
-            # containers can otherwise both be on disk at once, which is the
-            # single biggest transient storage spike in this whole script.
-            docker image prune -f
-
-            # Wait 10 seconds for services to initialize
-            sleep 10
-
-            # Run Prisma database migrations
-            docker compose -f infra/docker-compose.yml exec -T identity-svc pnpm --filter identity-svc db:migrate || true
-            docker compose -f infra/docker-compose.yml exec -T catalog-svc pnpm --filter catalog-svc db:migrate || true
-            docker compose -f infra/docker-compose.yml exec -T assessment-svc pnpm --filter assessment-svc db:migrate || true
-            docker compose -f infra/docker-compose.yml exec -T analytics-svc pnpm --filter analytics-svc db:migrate || true
-            docker compose -f infra/docker-compose.yml exec -T notification-svc pnpm --filter notification-svc db:migrate || true
-
-            # Seed database initial data if needed
-            docker compose -f infra/docker-compose.yml exec -T identity-svc pnpm --filter identity-svc db:seed || true
-            docker compose -f infra/docker-compose.yml exec -T catalog-svc pnpm --filter catalog-svc db:seed || true
-
-            # Clean up residual dangling layers
-            docker image prune -f
+            # Restart the 11 quiz-* PM2 apps with fresh code+env.
+            # ecosystem.config.cjs and infra/.env live only on the VPS
+            # (both hold secrets) -- CI must never overwrite them.
+            pm2 reload ecosystem.config.cjs --update-env
+            pm2 save
